@@ -6,6 +6,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.util.Log;
 import android.view.View;
 
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -17,34 +18,50 @@ import com.example.chovoshayom.databinding.ActivityMainBinding;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAdapter.ItemClickListener{
 
     private ActivityMainBinding binding;
     private RecyclerView recyclerView;
 
     private RecyclerView.LayoutManager layoutManager;
-    private RecyclerView.Adapter adapter;
+    MyRecyclerViewAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-        setSupportActionBar(binding.toolbar);
-        layoutManager = new GridLayoutManager(this, 2);
-        binding.contentMain.recyclerView.setLayoutManager(layoutManager);
-        adapter = new RecyclerAdapter();
-        binding.contentMain.recyclerView.setAdapter(adapter);
+        setContentView(R.layout.activity_main);
 
+        // data to populate the RecyclerView with
+        String[] tasks = {
+                "Tanach",
+                "Mishnayos",
+                "Shas",
+                "Yerushalmi",
+                "Rambam",
+                "Tur",
+                "Shulchan Aruch",
+                "Mishna Berurah"
+        };
+        int[] images = {R.drawable.android_tanach,
+                R.drawable.android_mishnayos,
+                R.drawable.android_shas,
+                R.drawable.android_yerushalmi,
+                R.drawable.android_rambam,
+                R.drawable.android_tur,
+                R.drawable.android_shulchan_aruch,
+                R.drawable.android_mishna_berurah};
+        // set up the RecyclerView
+        RecyclerView recyclerView = findViewById(R.id.recycler_view);
+        int numberOfColumns = 2;
+        recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
+        adapter = new MyRecyclerViewAdapter(this, tasks, images);
+        adapter.setClickListener(this);
+        recyclerView.setAdapter(adapter);
+    }
 
-        binding.fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAnchorView(R.id.fab)
-                        .setAction("Action", null).show();
-            }
-        });
+    @Override
+    public void onItemClick(View view, String task) {
+        Log.i("TAG",task);
     }
 
     @Override
