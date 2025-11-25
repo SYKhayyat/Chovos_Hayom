@@ -1,5 +1,6 @@
 package com.example.chovoshayom;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -26,21 +27,44 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapter adapter;
 
+    Task tanach = new Task("Tanach", "Perek", 931);
+    Task mishnayos = new Task("Mishnayos", "Perek", 525);
+    Task shas = new Task("Shas", "Daf", 2675);
+    //        This differs from the commonly accepted number of 2711. That is because of two factors:
+//          1. We did not include Shekalim, as it is Yerushalmi.
+//          2. We counted an amud at the end of a mesechta as half a daf, not a full daf.
+    Task yerushalmi = new Task("Yerushalmi", "Halacha", 2211);
+    Task rambam = new Task("Rambam", "Perek", 1000);
+    Task tur = new Task("Tur", "Siman", 1704);
+    Task shulchanAruch = new Task("Shulchan Aruch", "Siman", 1704);
+    Task mishnaBerura = new Task("Mishna Berura", "Siman", 697);
+
+    Task[] tasksObjects = {
+            tanach,
+            mishnayos,
+            shas,
+            yerushalmi,
+            rambam,
+            tur,
+            shulchanAruch,
+            mishnaBerura
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // data to populate the RecyclerView with
+
         String[] tasks = {
-                "Tanach",
-                "Mishnayos",
-                "Shas",
-                "Yerushalmi",
-                "Rambam",
-                "Tur",
-                "Shulchan Aruch",
-                "Mishna Berurah"
+                tanach.getName(),
+                mishnayos.getName(),
+                shas.getName(),
+                yerushalmi.getName(),
+                rambam.getName(),
+                tur.getName(),
+                shulchanAruch.getName(),
+                mishnaBerura.getName()
         };
         int[] images = {R.drawable.android_tanach,
                 R.drawable.android_mishnayos,
@@ -60,8 +84,11 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     }
 
     @Override
-    public void onItemClick(View view, String task) {
-        Log.i("TAG",task);
+    public void onItemClick(View view, int position) {
+        Intent intent = new Intent(this, DashboardActivity.class);
+        startActivity(intent);
+        intent.putExtra("taskObject", tasksObjects[position]);
+        startActivity(intent);
     }
 
     @Override

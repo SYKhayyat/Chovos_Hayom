@@ -43,5 +43,5 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-
+    implementation ("com.google.code.autovalue:autovalue-parcel:2.0.0:android")
 }
