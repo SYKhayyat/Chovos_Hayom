@@ -2,6 +2,8 @@ package com.example.chovoshayom;
 
 import android.content.Intent;
 import android.os.Bundle;
+import com.google.gson.Gson;
+
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -18,6 +20,7 @@ import com.example.chovoshayom.databinding.ActivityMainBinding;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import java.io.Serializable;
 
 public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAdapter.ItemClickListener{
 
@@ -85,8 +88,9 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
 
     @Override
     public void onItemClick(View view, int position) {
+//        Gson gson = new Gson();
+//        String myJson = gson.toJson(tasksObjects[position]);
         Intent intent = new Intent(this, DashboardActivity.class);
-        startActivity(intent);
         intent.putExtra("taskObject", tasksObjects[position]);
         startActivity(intent);
     }
@@ -112,5 +116,6 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
 
         return super.onOptionsItemSelected(item);
     }
+
 
 }

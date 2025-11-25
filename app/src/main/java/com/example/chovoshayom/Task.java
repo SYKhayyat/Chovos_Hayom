@@ -1,9 +1,11 @@
 package com.example.chovoshayom;
 
 
-import android.os.Parcelable;
+import com.google.gson.Gson;
 
-public class Task implements Parcelable {
+import java.io.Serializable;
+
+public class Task implements Serializable {
     private String name;
     private String unitName;
     private double learned;
@@ -62,35 +64,11 @@ public class Task implements Parcelable {
         return getName().equals(task.getName());
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
+
+    public static Task getTaskFromJSON (String json)
+    {
+        Gson gson = new Gson ();
+        return gson.fromJson (json, Task.class);
     }
 
-    @Override
-    public void writeToParcel(android.os.Parcel dest, int flags) {
-        dest.writeString(this.name);
-        dest.writeString(this.unitName);
-        dest.writeDouble(this.learned);
-        dest.writeDouble(this.total);
-    }
-
-    protected Task(android.os.Parcel in) {
-        this.name = in.readString();
-        this.unitName = in.readString();
-        this.learned = in.readDouble();
-        this.total = in.readDouble();
-    }
-
-    public static final android.os.Parcelable.Creator<Task> CREATOR = new android.os.Parcelable.Creator<Task>() {
-        @Override
-        public Task createFromParcel(android.os.Parcel source) {
-            return new Task(source);
-        }
-
-        @Override
-        public Task[] newArray(int size) {
-            return new Task[size];
-        }
-    };
 }

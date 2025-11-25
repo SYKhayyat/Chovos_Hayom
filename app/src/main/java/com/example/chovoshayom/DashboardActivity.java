@@ -1,27 +1,39 @@
 package com.example.chovoshayom;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.chovoshayom.databinding.ActivityDashboardBinding;
+import com.google.gson.Gson;
 
 public class DashboardActivity extends AppCompatActivity {
 
+
+//    Intent intent = new Intent();
+//    String taskString = intent.getStringExtra("taskObject");
+//    Task task = Task.getTaskFromJSON(taskString);
+
+
     private ActivityDashboardBinding binding;
 
-    private Task task = getIntent().getParcelableExtra("taskObject");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Intent myIntent = getIntent();
 
+        // Get the MyCustomObject from the intent's extras
+        Task task = (Task) myIntent.getSerializableExtra("taskObject");
         binding = ActivityDashboardBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -36,33 +48,21 @@ public class DashboardActivity extends AppCompatActivity {
             }
         });
 
-        setPercentage();
-        setProgressBar();
-        setFraction();
-        setupButton();
-    }
 
-    private void setPercentage() {
-        TextView percent = (TextView) findViewById(R.id.percent);
-        double percentFinished = task.getPercentage();
-        String displayPercentage = percentFinished + "%";
-        percent.setText(displayPercentage);
-    }
 
-    private void setProgressBar() {
-        ProgressBar progressBar = findViewById(R.id.progressBar);
-        progressBar.setMax((int) task.getTotal());
-        progressBar.setProgress((int) task.getLearned());
-    }
+        Button startButton = findViewById(R.id.buttonForMore);
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
 
-    private void setFraction() {
-        TextView fraction = (TextView) findViewById(R.id.fraction);
-        String getFraction = task.getLearned() + " / " + task.getTotal();
-        fraction.setText(getFraction);
-    }
-
-    private void setupButton() {
+                Intent intent = new Intent(DashboardActivity.this, ChooseActivity.class);
+                intent.putExtra("taskObject", task);
+                startActivity(intent);
+            }
+        });
 
     }
+
+
 
 }
