@@ -11,11 +11,22 @@ public class Task implements Serializable {
     private double learned;
     private double total;
 
-    public Task(String name, String unitName, double total){
+    boolean isGeneral;
+
+    private String[] children;
+
+    public Task(String name, String unitName, double total, boolean isGeneral, String[] children){
         this.name = name;
         this.unitName = unitName;
         learned = 0;
         this.total = total;
+        this.isGeneral = isGeneral;
+        if (isGeneral){
+            this.children = children;
+        }
+        else{
+            children = null;
+        }
     }
 
     public String getName(){
@@ -41,6 +52,16 @@ public class Task implements Serializable {
         double originalNumber = 100 * (learned)/total;
         double roundedNumber = Math.round(originalNumber * 100.0) / 100.0;
         return roundedNumber;
+    }
+
+    public boolean getIsGeneral(){
+        return isGeneral;
+    }
+
+    public String[] getChildren(){
+        String[] childrenList = new String[children.length];
+        System.arraycopy(children, 0, childrenList, 0, children.length);
+        return childrenList;
     }
 
     public boolean finished(){

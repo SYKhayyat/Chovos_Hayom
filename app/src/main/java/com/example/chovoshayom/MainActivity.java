@@ -30,17 +30,26 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapter adapter;
 
-    Task tanach = new Task("Tanach", "Perek", 931);
-    Task mishnayos = new Task("Mishnayos", "Perek", 525);
-    Task shas = new Task("Shas", "Daf", 2675);
+    String[] tanachChildren = {"Torah", "Neviim", "Kesuvim"};
+    String[] mishnayosChildren = {"Zeraim", "Moed", "Nashim", "Nezikin", "Kodshim", "Taharos"};
+    String[] yerushalmiChildren = {"Zeraim", "Moed", "Nashim", "Nezikin", "Taharos"};
+    String[] rambamChildren = {"Sefer Hamitzvos", "Madda", "Ahava", "Zemanim", "Nashim",
+            "Kedusha", "Haflaah", "Zeraim", "Avodah",
+            "Korbanos", "Tahara", "Nezikin", "Kinyan",
+            "Mishpatim", "Shoftim"};
+    String[] turChildren = {"Orech Chaim", "Choshen Mishpat", "Yoreh Deah", "Even HaEzer"};
+    String[] mishnaBeruraChildren = {"Chelek 1", "Chelek 2", "Chelek 3", "Chelek 4", "Chelek 5", "Chelek 6"};
+    Task tanach = new Task("Tanach", "Perek", 931, true, tanachChildren);
+    Task mishnayos = new Task("Mishnayos", "Perek", 525, true, mishnayosChildren);
+    Task shas = new Task("Shas", "Daf", 2675, true, mishnayosChildren);
     //        This differs from the commonly accepted number of 2711. That is because of two factors:
 //          1. We did not include Shekalim, as it is Yerushalmi.
 //          2. We counted an amud at the end of a mesechta as half a daf, not a full daf.
-    Task yerushalmi = new Task("Yerushalmi", "Halacha", 2211);
-    Task rambam = new Task("Rambam", "Perek", 1000);
-    Task tur = new Task("Tur", "Siman", 1704);
-    Task shulchanAruch = new Task("Shulchan Aruch", "Siman", 1704);
-    Task mishnaBerura = new Task("Mishna Berura", "Siman", 697);
+    Task yerushalmi = new Task("Yerushalmi", "Halacha", 2211, true, yerushalmiChildren);
+    Task rambam = new Task("Rambam", "Perek", 1000, true, rambamChildren);
+    Task tur = new Task("Tur", "Siman", 1704, true, turChildren);
+    Task shulchanAruch = new Task("Shulchan Aruch", "Siman", 1704, true, turChildren);
+    Task mishnaBerura = new Task("Mishna Berura", "Siman", 697, true, mishnaBeruraChildren);
 
     Task[] tasksObjects = {
             tanach,
