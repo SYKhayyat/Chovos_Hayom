@@ -21,12 +21,8 @@ import com.google.gson.Gson;
 
 import kotlinx.coroutines.scheduling.TasksKt;
 
-public class DashboardActivity extends AppCompatActivity {
+public class DashboardActivity extends AppCompatActivity implements MyRecyclerViewAdapterDashboard.ItemClickListener {
 
-
-//    Intent intent = new Intent();
-//    String taskString = intent.getStringExtra("taskObject");
-//    Task task = Task.getTaskFromJSON(taskString);
 
 
     private ActivityDashboardBinding binding;
@@ -43,14 +39,15 @@ public class DashboardActivity extends AppCompatActivity {
         Intent myIntent = getIntent();
         Task task = (Task) myIntent.getSerializableExtra("taskObject");
         Log.i("Hello", task.getName());
+
+        binding = ActivityDashboardBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         setName(task);
         setPercent(task);
         setProgressBar(task);
         setFraction(task);
         setButtons(task);
         setRecycler(task);
-        binding = ActivityDashboardBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
 
         setSupportActionBar(binding.toolbar);
 
@@ -116,7 +113,7 @@ public class DashboardActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.recycler_view_dashboard);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new MyRecyclerViewAdapterDashboard(this, task.getChildren());
-        adapter.setClickListener((MyRecyclerViewAdapterDashboard.ItemClickListener) this);
+        adapter.setClickListener(this);
         recyclerView.setAdapter(adapter);
     }
 
