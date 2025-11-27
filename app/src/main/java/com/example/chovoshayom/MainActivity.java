@@ -29,17 +29,13 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
 
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapter adapter;
-
-    String[] tanachChildren = {"Torah", "Neviim", "Kesuvim"};
-    String[] mishnayosChildren = {"Zeraim", "Moed", "Nashim", "Nezikin", "Kodshim", "Taharos"};
-    String[] yerushalmiChildren = {"Zeraim", "Moed", "Nashim", "Nezikin", "Taharos"};
-    String[] rambamChildren = {"Sefer Hamitzvos", "Madda", "Ahava", "Zemanim", "Nashim",
-            "Kedusha", "Haflaah", "Zeraim", "Avodah",
-            "Korbanos", "Tahara", "Nezikin", "Kinyan",
-            "Mishpatim", "Shoftim"};
-    String[] turChildren = {"Orech Chaim", "Choshen Mishpat", "Yoreh Deah", "Even HaEzer"};
-    String[] mishnaBeruraChildren = {"Chelek 1", "Chelek 2", "Chelek 3", "Chelek 4", "Chelek 5", "Chelek 6"};
-    Task tanach = new Task("Tanach", "Perek", 931, true, tanachChildren);
+    //region Lots of Tasks
+    Task tanach = new Task("Tanach", "Perek", 931, tanachChildren);
+        Task torah = new Task("Torah", "Perek", 187, torahChildren, tanach);
+            Task bereishis = new Task("Bereishis", "Perek", 50, torah);
+            Task shemos = new Task()
+        Task neviim = new Task("Neviim", "Perek", 380, neviimChildren, tanach);
+        Task kesuvim = new Task("Kesuvim", "Perek", 362, true, kesuvimChildren, tanach);
     Task mishnayos = new Task("Mishnayos", "Perek", 525, true, mishnayosChildren);
     Task shas = new Task("Shas", "Daf", 2675, true, mishnayosChildren);
     //        This differs from the commonly accepted number of 2711. That is because of two factors:
@@ -50,6 +46,17 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     Task tur = new Task("Tur", "Siman", 1704, true, turChildren);
     Task shulchanAruch = new Task("Shulchan Aruch", "Siman", 1704, true, turChildren);
     Task mishnaBerura = new Task("Mishna Berura", "Siman", 697, true, mishnaBeruraChildren);
+// endregion
+    String[] tanachChildren = {"Torah", "Neviim", "Kesuvim"};
+    String[] mishnayosChildren = {"Zeraim", "Moed", "Nashim", "Nezikin", "Kodshim", "Taharos"};
+    String[] yerushalmiChildren = {"Zeraim", "Moed", "Nashim", "Nezikin", "Taharos"};
+    String[] rambamChildren = {"Sefer Hamitzvos", "Madda", "Ahava", "Zemanim", "Nashim",
+            "Kedusha", "Haflaah", "Zeraim", "Avodah",
+            "Korbanos", "Tahara", "Nezikin", "Kinyan",
+            "Mishpatim", "Shoftim"};
+    String[] turChildren = {"Orech Chaim", "Choshen Mishpat", "Yoreh Deah", "Even HaEzer"};
+    String[] mishnaBeruraChildren = {"Chelek 1", "Chelek 2", "Chelek 3", "Chelek 4", "Chelek 5", "Chelek 6"};
+
 
     Task[] tasksObjects = {
             tanach,

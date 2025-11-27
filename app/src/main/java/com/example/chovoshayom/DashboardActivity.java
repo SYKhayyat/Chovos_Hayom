@@ -95,6 +95,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
             RecyclerView recyclerView = findViewById(R.id.recycler_view);
             reset.setVisibility(View.GONE);
         }
+
     }
 
     private void setRecycler(Task task) {
@@ -112,7 +113,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     private void populateRecyclerView(Task task) {
         RecyclerView recyclerView = findViewById(R.id.recycler_view_dashboard);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new MyRecyclerViewAdapterDashboard(this, task.getChildren());
+        adapter = new MyRecyclerViewAdapterDashboard(this, task.getChildrenStrings());
         adapter.setClickListener(this);
         recyclerView.setAdapter(adapter);
     }

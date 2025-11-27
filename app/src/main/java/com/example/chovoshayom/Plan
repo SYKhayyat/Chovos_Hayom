@@ -1,0 +1,30 @@
+Layout:
+    MainActivity:
+There are eight buttons, arranged in a grid. On each, there is a picture of its
+category, and the category name is written.
+Thought has not yet been given to a floating action button, a bottom bar, a snackbar, or a taskbar.
+    DashboardActivity:
+        General:
+There are essentially two section. The first shows the progress,
+in percentage and in fraction, together with a progress bar.
+The second shows the children of the category as buttons.
+        Specific:
+There are essentially two section. The first shows the progress,
+in percentage and in fraction, together with a progress bar.
+The second shows two buttons. One gives the ability (either in a popup, or in a new Activity)
+to add, and the second gives the ability to reset to a user-set value.
+Implementation:
+    MainActivity:
+Main activity holds an array containing task objects. (A task object has six fields -
+name, unit name, amount learned, total, whether it is general, and an array holding children.
+Another field should be added to hold a pointer to the parent.) Each button
+is correlated with a task object. Clicking any button brings one to the Dashboard Activity
+and sends along the task object.
+    DashboardActivity:
+This activity receives the task and uses its attributes to display the name and progress.
+The rest of this activity depends on whether it is general or not.
+If it is, a list of the children is shown. Clicking a button will send
+that child as a task object to a newly inflated DashboardActivity.
+If it is not general, The user will be presented with two buttons. Clicking the
+buttons enables the user to add or reset the value.
+Setting the value of a child will travel up, and change the value of the parent.
