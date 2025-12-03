@@ -96,7 +96,6 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
             Button reset = findViewById(R.id.buttonToReset);
             reset.setVisibility(View.VISIBLE);
             RecyclerView recyclerView = findViewById(R.id.recycler_view);
-            reset.setVisibility(View.GONE);
         }
 
     }
