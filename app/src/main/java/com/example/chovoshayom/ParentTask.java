@@ -20,6 +20,7 @@ public class ParentTask extends Task implements Serializable {
     }
 
     public ParentTask(String name, String unitName){
+        super.setIsGeneral(true);
         setName(name);
         setUnitName(unitName);
     }

@@ -6,6 +6,7 @@ import android.os.Bundle;
 import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.view.menu.MenuView;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -13,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -86,6 +88,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
     private void setButtons(Task task) {
         if (! task.getIsGeneral()){
+            Log.i("hello", "isNotGeneral");
             Button add = findViewById(R.id.buttonForMore);
             add.setVisibility(View.VISIBLE);
             Button reset = findViewById(R.id.buttonToReset);
@@ -98,11 +101,11 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
     private void setRecycler(Task task) {
         if (task.getIsGeneral()){
+            Log.i("hello", "isGeneral");
             Button add = findViewById(R.id.buttonForMore);
             add.setVisibility(View.GONE);
             Button reset = findViewById(R.id.buttonToReset);
             reset.setVisibility(View.GONE);
-            RecyclerView recyclerView = findViewById(R.id.recycler_view);
             reset.setVisibility(View.VISIBLE);
             populateRecyclerView(task);
         }
@@ -110,9 +113,11 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
     private void populateRecyclerView(Task task) {
         RecyclerView recyclerView = findViewById(R.id.recycler_view_dashboard);
+        ImageView myImage = findViewById(R.id.itemImage);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new MyRecyclerViewAdapterDashboard(this, ((ParentTask) task).getChildrenStrings());
         adapter.setClickListener(this);
+        Log.i("Hello", ((ParentTask) task).getChildrenStrings()[1]);
         recyclerView.setAdapter(adapter);
     }
 
