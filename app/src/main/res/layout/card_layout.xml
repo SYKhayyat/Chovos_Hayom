@@ -26,10 +26,11 @@
                 app:layout_constraintTop_toTopOf="parent" />
         <TextView
                 android:id="@+id/itemTitle"
-                android:layout_width="236dp"
-                android:layout_height="39dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginStart="0dp"
                 android:textSize="20sp"
+                android:gravity="center"
                 app:layout_constraintTop_toBottomOf="@+id/itemImage"
                 app:layout_constraintStart_toStartOf="@+id/itemImage"
                 app:layout_constraintBottom_toBottomOf="parent"

@@ -34,12 +34,14 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapterDashboard adapter;
 
+    Task task;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent myIntent = getIntent();
-        Task task = (Task) myIntent.getSerializableExtra("taskObject");
+        task = (Task) myIntent.getSerializableExtra("taskObject");
         binding = ActivityDashboard2Binding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         setName(task);
@@ -101,12 +103,10 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
     private void setRecycler(Task task) {
         if (task.getIsGeneral()){
-            Log.i("hello", "isGeneral");
             Button add = findViewById(R.id.buttonForMore);
             add.setVisibility(View.GONE);
             Button reset = findViewById(R.id.buttonToReset);
             reset.setVisibility(View.GONE);
-            reset.setVisibility(View.VISIBLE);
             populateRecyclerView(task);
         }
     }
@@ -117,13 +117,15 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new MyRecyclerViewAdapterDashboard(this, ((ParentTask) task).getChildrenStrings());
         adapter.setClickListener(this);
-        Log.i("Hello", ((ParentTask) task).getChildrenStrings()[1]);
         recyclerView.setAdapter(adapter);
     }
 
 
     public void onItemClick(View view, int position) {
-        Log.i("Note", Integer.toString(position));
+        Intent intent = new Intent(this, DashboardActivity.class);
+        Task[] tasksObjects = ((ParentTask) task).getChildren();
+        intent.putExtra("taskObject", tasksObjects[position]);
+        startActivity(intent);
     }
 
 }
