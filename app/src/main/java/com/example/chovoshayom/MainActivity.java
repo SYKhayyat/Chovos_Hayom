@@ -26,12 +26,23 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapter adapter;
 
+    public ParentTask[] tasksObjects= {
+            tanach,
+            mishnayos,
+            shas,
+            yerushalmi,
+            rambam,
+            tur,
+            shulchanAruch,
+            mishnaBerura
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        TasksSetup.setupTasks();
         setContentView(R.layout.activity_main2);
-
         String[] tasks = {
                 tanach.getName(),
                 mishnayos.getName(),
@@ -57,6 +68,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         adapter = new MyRecyclerViewAdapter(this, tasks, images);
         adapter.setClickListener(this);
         recyclerView.setAdapter(adapter);
+        TasksSetup.setupTotals();
     }
 
     @Override
@@ -66,7 +78,6 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         Intent intent = new Intent(this, DashboardActivity.class);
         intent.putExtra("taskObject", tasksObjects[position]);
         startActivity(intent);
-        tanach.getName();
     }
 
     @Override
@@ -87,9 +98,6 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         if (id == R.id.action_settings) {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
-
-
 }

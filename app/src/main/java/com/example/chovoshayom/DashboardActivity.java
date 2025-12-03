@@ -16,7 +16,7 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.example.chovoshayom.databinding.ActivityDashboardBinding;
+import com.example.chovoshayom.databinding.ActivityDashboard2Binding;
 import com.google.gson.Gson;
 
 import kotlinx.coroutines.scheduling.TasksKt;
@@ -25,7 +25,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
 
 
-    private ActivityDashboardBinding binding;
+    private ActivityDashboard2Binding binding;
 
     private RecyclerView recyclerView;
 
@@ -38,9 +38,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         super.onCreate(savedInstanceState);
         Intent myIntent = getIntent();
         Task task = (Task) myIntent.getSerializableExtra("taskObject");
-        Log.i("Hello", task.getName());
-
-        binding = ActivityDashboardBinding.inflate(getLayoutInflater());
+        binding = ActivityDashboard2Binding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         setName(task);
         setPercent(task);
@@ -113,7 +111,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     private void populateRecyclerView(Task task) {
         RecyclerView recyclerView = findViewById(R.id.recycler_view_dashboard);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new MyRecyclerViewAdapterDashboard(this, task.getChildrenStrings());
+        adapter = new MyRecyclerViewAdapterDashboard(this, ((ParentTask) task).getChildrenStrings());
         adapter.setClickListener(this);
         recyclerView.setAdapter(adapter);
     }

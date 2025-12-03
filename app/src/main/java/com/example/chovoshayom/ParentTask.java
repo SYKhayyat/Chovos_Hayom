@@ -55,4 +55,5 @@ public class ParentTask extends Task implements Serializable {
         }
         reset(learned);
     }
-}
+
+    }
