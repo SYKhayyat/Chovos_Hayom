@@ -1,62 +1,36 @@
 package com.example.chovoshayom;
 
+import static com.example.chovoshayom.TasksSetup.*;
+
 import android.content.Intent;
 import android.os.Bundle;
-import com.google.gson.Gson;
 
-
-import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.util.Log;
 import android.view.View;
 
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.example.chovoshayom.databinding.ActivityMainBinding;
 
 import android.view.Menu;
 import android.view.MenuItem;
-import java.io.Serializable;
+
+import com.example.chovoshayom.databinding.ActivityMain2Binding;
 
 public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAdapter.ItemClickListener{
 
-    private ActivityMainBinding binding;
+    private ActivityMain2Binding binding;
     private RecyclerView recyclerView;
 
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapter adapter;
 
-    String[] tanachChildren = {"Torah", "Neviim", "Kesuvim"};
-    String[] mishnayosChildren = {"Zeraim", "Moed", "Nashim", "Nezikin", "Kodshim", "Taharos"};
-    String[] yerushalmiChildren = {"Zeraim", "Moed", "Nashim", "Nezikin", "Taharos"};
-    String[] rambamChildren = {"Sefer Hamitzvos", "Madda", "Ahava", "Zemanim", "Nashim",
-            "Kedusha", "Haflaah", "Zeraim", "Avodah",
-            "Korbanos", "Tahara", "Nezikin", "Kinyan",
-            "Mishpatim", "Shoftim"};
-    String[] turChildren = {"Orech Chaim", "Choshen Mishpat", "Yoreh Deah", "Even HaEzer"};
-    String[] mishnaBeruraChildren = {"Chelek 1", "Chelek 2", "Chelek 3", "Chelek 4", "Chelek 5", "Chelek 6"};
-
-
-    Task[] tasksObjects = {
-            tanach,
-            mishnayos,
-            shas,
-            yerushalmi,
-            rambam,
-            tur,
-            shulchanAruch,
-            mishnaBerura
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
+        setContentView(R.layout.activity_main2);
 
         String[] tasks = {
                 tanach.getName(),
@@ -92,6 +66,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         Intent intent = new Intent(this, DashboardActivity.class);
         intent.putExtra("taskObject", tasksObjects[position]);
         startActivity(intent);
+        tanach.getName();
     }
 
     @Override

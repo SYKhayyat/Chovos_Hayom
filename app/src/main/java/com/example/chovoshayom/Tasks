@@ -1,32 +1,4 @@
 //region Lots of Tasks
 
 
-        Task maddah = new Task("Maddah", "Perek", 46, true, hakdamaChildren, rambam);
-        Task ahava = new Task("Ahava", "Perek", 51, true, hakdamaChildren, rambam);
-        Task zemanim = new Task("Zemanim", "Perek", 98, true, hakdamaChildren, rambam);
-        Task nashimRambam = new Task("Nashim", "Perek", 53, true, hakdamaChildren, rambam);
-        Task kedusha = new Task("Kedusha", "Perek", 53, true, hakdamaChildren, rambam);
-        Task haflaah = new Task("Haflaah", "Perek", 43, true, hakdamaChildren, rambam);
-        Task zeraimRambam = new Task("Zeraim (Rambam)", "Perek", 85, true, hakdamaChildren, rambam);
-        Task avodah = new Task("Avodah", "Perek", 95, true, hakdamaChildren, rambam);
-        Task korbanos = new Task("Korbanos", "Perek", 45, true, hakdamaChildren, rambam);
-        Task tahara = new Task("Tahara", "Perek", 144, true, hakdamaChildren, rambam);
-        Task nezikinRambam = new Task("Nezikin (Rambam)", "Perek", 62, true, hakdamaChildren, rambam);
-        Task kinyan = new Task("Kinyan", "Perek", 75, true, hakdamaChildren, rambam);
-        Task mishpatim = new Task("Mishpatim", "Perek", 75, true, hakdamaChildren, rambam);
-        Task shoftim = new Task("Shoftim", "Perek", 81, true, hakdamaChildren, rambam);
-        Task orachChaim = new task("Orech Chaim (Tur)", 697, true, orechChaimChildren, tur);
-        Task yorehDeah = new task("Yoreh Deah (Tur)", 403, true, orechChaimChildren, tur);
-        Task choshenMishpat = new task("Choshen Mishpat (Tur)", 427, true, orechChaimChildren, tur);
-        Task evenHaezer = new task("Even Haezer (Tur)", 178, true, orechChaimChildren, tur);
-        Task orachChaimSA = new task("Orech Chaim (Shulchan Aruch)", 697, true, orechChaimChildren, tur);
-        Task yorehDeahSA = new task("Yoreh Deah (Shulchan Aruch)", 403, true, orechChaimChildren, tur);
-        Task choshenMishpatSA = new task("Choshen Mishpat (Shulchan Aruch)", 427, true, orechChaimChildren, tur);
-        Task evenHaezerSA = new task("Even Haezer (Shulchan Aruch)", 178, true, orechChaimChildren, tur);
-        Task chelek1 = new Task("Cheleck Alef", "Siman", 127, mishnaBerura);
-        Task chelek2 = new Task("Cheleck Beis", "Siman", 114, mishnaBerura);
-        Task chelek3 = new Task("Cheleck Gimmel", "Siman", 103, mishnaBerura);
-        Task chelek4 = new Task("Cheleck Daled", "Siman", 84, mishnaBerura);
-        Task chelek5 = new Task("Cheleck Hei", "Siman", 99, mishnaBerura);
-        Task chelek6 = new Task("Cheleck Vuv", "Siman", 168, mishnaBerura);
 // endregion
