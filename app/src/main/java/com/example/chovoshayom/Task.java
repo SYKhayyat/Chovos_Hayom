@@ -73,7 +73,7 @@ public class Task implements Serializable {
         this.isGeneral = isGeneral;
     }
     public void add(double added){
-        learned += learned;
+        learned += added;
     }
     public void reset(double value){
         learned = value;

@@ -1,5 +1,6 @@
 package com.example.chovoshayom;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -121,9 +122,31 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         intent.putExtra("taskObject", task);
         intent.putExtra("setting", setting);
         startActivityForResult(intent, LAUNCH_SECOND_ACTIVITY);
+        Log.i("hello", "called");
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.i("hello", "returned");
 
+        if (requestCode == 1) {
+            if (resultCode == Activity.RESULT_OK) {
+                task = (Task) data.getSerializableExtra("result");
+                Log.i("Task", String.valueOf(task.getLearned()));
+                TasksSetup.setupLearned();
+                setName(task);
+                setPercent(task);
+                setProgressBar(task);
+                setFraction(task);
+                setButtons(task);
+                setRecycler(task);
+            }
+            if (resultCode == Activity.RESULT_CANCELED) {
+                Log.i("Result", "Cancelled");
+            }
+        }
+    }
 
     private void setRecycler(Task task) {
         RecyclerView recyclerView = findViewById(R.id.recycler_view_dashboard);

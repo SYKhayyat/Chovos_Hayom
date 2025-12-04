@@ -355,6 +355,41 @@ public class TasksSetup {
         shulchanAruch.setTotal();
         mishnaBerura.setTotal();
 
+    }
+
+    public static void setupLearned(){
+
+        torah.setLearned();
+        neviim.setLearned();
+        kesuvim.setLearned();
+
+        zeraim.setLearned();
+        moed.setLearned();
+        nashim.setLearned();
+        nezikin.setLearned();
+        kodshim.setLearned();
+        taharos.setLearned();
+
+        zeraimShas.setLearned();
+        moedShas.setLearned();
+        nashimShas.setLearned();
+        nezikinShas.setLearned();
+        kodshimShas.setLearned();
+        taharosShas.setLearned();
+
+        zeraimYerushalmi.setLearned();
+        moedYerushalmi.setLearned();
+        nashimYerushalmi.setLearned();
+        nezikinYerushalmi.setLearned();
+        taharosYerushalmi.setLearned();
+        tanach.setLearned();
+        mishnayos.setLearned();
+        shas.setLearned();
+        yerushalmi.setLearned();
+        rambam.setLearned();
+        tur.setLearned();
+        shulchanAruch.setLearned();
+        mishnaBerura.setLearned();
 
     }
 

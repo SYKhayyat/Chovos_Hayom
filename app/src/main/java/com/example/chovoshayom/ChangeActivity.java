@@ -1,5 +1,6 @@
 package com.example.chovoshayom;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -56,8 +57,13 @@ public class ChangeActivity extends AppCompatActivity {
                 public void onClick(View v) {
                     String input = myEditText.getText().toString();
                     double amount = Double.parseDouble(input);
+                    Log.i("TaskA", input);
+                    Log.i("TaskB", String.valueOf(amount));
                     task.add(amount);
-                    TasksSetup.setupTotals();
+                    Log.i("TaskC", String.valueOf(task.getLearned()));
+                    Intent returnIntent = new Intent();
+                    returnIntent.putExtra("result",task);
+                    setResult(Activity.RESULT_OK,returnIntent);
                     finish();
                 }
             });
@@ -70,7 +76,9 @@ public class ChangeActivity extends AppCompatActivity {
                     String input = myEditText.getText().toString();
                     double amount = Double.parseDouble(input);
                     task.reset(amount);
-                    TasksSetup.setupTotals();
+                    Intent returnIntent = new Intent();
+                    returnIntent.putExtra("result",task);
+                    setResult(Activity.RESULT_OK,returnIntent);
                     finish();
                 }
             });
