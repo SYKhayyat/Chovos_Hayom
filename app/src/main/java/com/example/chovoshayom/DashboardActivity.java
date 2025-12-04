@@ -6,6 +6,8 @@ import android.os.Bundle;
 
 import com.google.android.material.snackbar.Snackbar;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.menu.MenuView;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -13,6 +15,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.util.Log;
+import androidx.appcompat.widget.Toolbar;
+
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -44,6 +49,8 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         Intent myIntent = getIntent();
         task = (Task) myIntent.getSerializableExtra("taskObject");
         binding = ActivityDashboard2Binding.inflate(getLayoutInflater());
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
         setContentView(binding.getRoot());
         setName(task);
         setPercent(task);
@@ -51,8 +58,6 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         setFraction(task);
         setButtons(task);
         setRecycler(task);
-
-        setSupportActionBar(binding.toolbar);
 
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -62,11 +67,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
                         .setAction("Action", null).show();
             }
         });
-
-
     }
-
-
 
     private void setName(Task task) {
         TextView name = (TextView) findViewById(R.id.name);
@@ -117,11 +118,10 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
     }
     public void openInputActivity(Task task, String setting){
-        int LAUNCH_SECOND_ACTIVITY = 1;
         Intent intent = new Intent(this, ChangeActivity.class);
         intent.putExtra("taskObject", task);
         intent.putExtra("setting", setting);
-        startActivityForResult(intent, LAUNCH_SECOND_ACTIVITY);
+        startActivityForResult(intent, 1);
         Log.i("hello", "called");
     }
 
@@ -173,7 +173,19 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         Intent intent = new Intent(this, DashboardActivity.class);
         Task[] tasksObjects = ((ParentTask) task).getChildren();
         intent.putExtra("taskObject", tasksObjects[position]);
-        startActivity(intent);
+        startActivityForResult(intent, 1);
+    }
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                Intent returnIntent = new Intent();
+                returnIntent.putExtra("result",task);
+                setResult(Activity.RESULT_OK,returnIntent);
+                finish();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
 }

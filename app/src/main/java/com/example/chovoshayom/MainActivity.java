@@ -2,12 +2,15 @@ package com.example.chovoshayom;
 
 import static com.example.chovoshayom.TasksSetup.*;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -17,6 +20,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.example.chovoshayom.databinding.ActivityMain2Binding;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAdapter.ItemClickListener{
 
@@ -25,6 +30,8 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
 
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapter adapter;
+
+    Task task;
 
     public ParentTask[] tasksObjects= {
             tanach,
@@ -41,8 +48,40 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        TasksSetup.setupTasks();
         setContentView(R.layout.activity_main2);
+        FloatingActionButton fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Snackbar.make(view, "Here's a Snackbar", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
+        TasksSetup.setupTasks();
+        TasksSetup.setupTotals();
+        setupRecycler();
+    }
+
+
+
+    public void setupRecycler(){
+
+        // Get DisplayMetrics instance
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+
+        // Screen width in pixels
+        int widthPx = displayMetrics.widthPixels;
+
+        // Convert pixels to dp
+        float density = displayMetrics.density; // density = px/dp
+        float widthDp = widthPx / density;
+
+        // Store as variable
+        int screenWidthDp = Math.round(widthDp);
+        if (screenWidthDp < 200){
+            screenWidthDp = 200;
+        }
+        Log.i("width", String.valueOf(screenWidthDp));
         String[] tasks = {
                 tanach.getName(),
                 mishnayos.getName(),
@@ -63,21 +102,22 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
                 R.drawable.android_mishna_berurah};
         // set up the RecyclerView
         RecyclerView recyclerView = findViewById(R.id.recycler_view);
-        int numberOfColumns = 2;
+        int numberOfColumns = screenWidthDp/200;
         recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
         adapter = new MyRecyclerViewAdapter(this, tasks, images);
         adapter.setClickListener(this);
         recyclerView.setAdapter(adapter);
-        TasksSetup.setupTotals();
     }
+
 
     @Override
     public void onItemClick(View view, int position) {
 //        Gson gson = new Gson();
 //        String myJson = gson.toJson(tasksObjects[position]);
         Intent intent = new Intent(this, DashboardActivity.class);
-        intent.putExtra("taskObject", tasksObjects[position]);
-        startActivity(intent);
+        task = tasksObjects[position];
+        intent.putExtra("taskObject", task);
+        startActivityForResult(intent, 1);
     }
 
     @Override
@@ -100,4 +140,20 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         }
         return super.onOptionsItemSelected(item);
     }
-}
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.i("hello", "returned");
+
+        if (requestCode == 1) {
+            if (resultCode == Activity.RESULT_OK) {
+                task = (Task) data.getSerializableExtra("result");
+                Log.i("Task", String.valueOf(task.getLearned()));
+                TasksSetup.setupLearned();
+            if (resultCode == Activity.RESULT_CANCELED) {
+                Log.i("Result", "Cancelled");
+            }
+        }
+    }
+}}

@@ -33,7 +33,6 @@ public class ChangeActivity extends AppCompatActivity {
         binding = ActivityChangeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        setSupportActionBar(binding.toolbar);
 
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
