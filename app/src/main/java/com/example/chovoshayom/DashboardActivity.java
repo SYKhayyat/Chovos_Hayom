@@ -61,6 +61,8 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
                         .setAction("Action", null).show();
             }
         });
+
+
     }
 
 
@@ -89,24 +91,48 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     }
 
     private void setButtons(Task task) {
+        Button add = findViewById(R.id.buttonForMore);
+        Button reset = findViewById(R.id.buttonToReset);
         if (! task.getIsGeneral()){
-            Log.i("hello", "isNotGeneral");
-            Button add = findViewById(R.id.buttonForMore);
             add.setVisibility(View.VISIBLE);
-            Button reset = findViewById(R.id.buttonToReset);
+            add.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    openInputActivity(task, "add");
+                }
+            });
             reset.setVisibility(View.VISIBLE);
-            RecyclerView recyclerView = findViewById(R.id.recycler_view);
+            reset.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    openInputActivity(task, "reset");
+                }
+            });
+        }
+        else {
+            add.setVisibility(View.GONE);
+            reset.setVisibility(View.GONE);
         }
 
     }
+    public void openInputActivity(Task task, String setting){
+        int LAUNCH_SECOND_ACTIVITY = 1;
+        Intent intent = new Intent(this, ChangeActivity.class);
+        intent.putExtra("taskObject", task);
+        intent.putExtra("setting", setting);
+        startActivityForResult(intent, LAUNCH_SECOND_ACTIVITY);
+    }
+
+
 
     private void setRecycler(Task task) {
+        RecyclerView recyclerView = findViewById(R.id.recycler_view_dashboard);
         if (task.getIsGeneral()){
-            Button add = findViewById(R.id.buttonForMore);
-            add.setVisibility(View.GONE);
-            Button reset = findViewById(R.id.buttonToReset);
-            reset.setVisibility(View.GONE);
+            recyclerView.setVisibility(View.VISIBLE);
             populateRecyclerView(task);
+        }
+        else{
+            recyclerView.setVisibility(View.GONE);
         }
     }
 
