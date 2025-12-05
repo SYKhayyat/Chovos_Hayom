@@ -27,6 +27,7 @@ public class ParentTask extends Task implements Serializable {
     public void setChildren(Task[] children){
         this.children = children;
     }
+    @Override
     public Task[] getChildren(){
         Task[] childrenList = new Task[children.length];
         System.arraycopy(children, 0, childrenList, 0, children.length);

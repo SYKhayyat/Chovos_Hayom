@@ -1,5 +1,8 @@
 package com.example.chovoshayom;
 
+import static com.example.chovoshayom.MainActivity.task;
+import static com.example.chovoshayom.TasksSetup.bereishis;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -19,7 +22,6 @@ public class ChangeActivity extends AppCompatActivity {
 
     private ActivityChangeBinding binding;
 
-    Task task;
     String setting;
 
     @Override
@@ -27,7 +29,6 @@ public class ChangeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         Intent myIntent = getIntent();
-        task = (Task) myIntent.getSerializableExtra("taskObject");
         setting = myIntent.getStringExtra("setting");
 
         binding = ActivityChangeBinding.inflate(getLayoutInflater());
@@ -63,6 +64,7 @@ public class ChangeActivity extends AppCompatActivity {
                     Intent returnIntent = new Intent();
                     returnIntent.putExtra("result",task);
                     setResult(Activity.RESULT_OK,returnIntent);
+                    Log.i("Bereishis", String.valueOf(bereishis.getLearned()));
                     finish();
                 }
             });

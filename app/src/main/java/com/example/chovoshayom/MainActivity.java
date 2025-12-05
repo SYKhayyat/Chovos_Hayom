@@ -31,9 +31,9 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapter adapter;
 
-    Task task;
+    public static Task task;
 
-    public ParentTask[] tasksObjects= {
+    public static ParentTask[] tasksObjects= {
             tanach,
             mishnayos,
             shas,
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
 //        String myJson = gson.toJson(tasksObjects[position]);
         Intent intent = new Intent(this, DashboardActivity.class);
         task = tasksObjects[position];
-        intent.putExtra("taskObject", task);
+        intent.putExtra("taskObject", position);
         startActivityForResult(intent, 1);
     }
 

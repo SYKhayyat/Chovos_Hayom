@@ -91,5 +91,16 @@ public class Task implements Serializable {
         return gson.fromJson (json, Task.class);
     }
 
+    public Task getParent(){
+        return null;
+    }
+    public boolean isChild(){
+        return getParent() == null;
+    }
+
+    public Task[] getChildren(){
+        return null;
+    }
+
 
 }

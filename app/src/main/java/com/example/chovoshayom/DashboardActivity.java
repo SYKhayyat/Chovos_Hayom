@@ -1,5 +1,8 @@
 package com.example.chovoshayom;
 
+import static com.example.chovoshayom.MainActivity.*;
+import static com.example.chovoshayom.TasksSetup.bereishis;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -23,6 +26,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import com.example.chovoshayom.MainActivity.*;
 
 import com.example.chovoshayom.databinding.ActivityDashboard2Binding;
 import com.google.gson.Gson;
@@ -39,25 +43,22 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapterDashboard adapter;
-
-    Task task;
-
+    int position;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent myIntent = getIntent();
-        task = (Task) myIntent.getSerializableExtra("taskObject");
         binding = ActivityDashboard2Binding.inflate(getLayoutInflater());
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
         setContentView(binding.getRoot());
-        setName(task);
-        setPercent(task);
-        setProgressBar(task);
-        setFraction(task);
-        setButtons(task);
-        setRecycler(task);
+        setName();
+        setPercent();
+        setProgressBar();
+        setFraction();
+        setButtons();
+        setRecycler();
 
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -69,30 +70,30 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         });
     }
 
-    private void setName(Task task) {
+    private void setName() {
         TextView name = (TextView) findViewById(R.id.name);
         name.setText(task.getName());
     }
 
-    private void setPercent(Task task) {
+    private void setPercent() {
         TextView percent = findViewById(R.id.percent);
         String percentString = task.getPercentage() + "%";
         percent.setText(percentString);
     }
 
-    private void setProgressBar(Task task) {
+    private void setProgressBar() {
         ProgressBar progressBar = findViewById(R.id.progressBar);
         progressBar.setMax((int) task.getTotal());
         progressBar.setProgress((int) task.getLearned());
     }
 
-    private void setFraction(Task task) {
+    private void setFraction() {
         TextView fraction = findViewById(R.id.fraction);
         String fractionText = task.getLearned() + " / " + task.getTotal();
         fraction.setText(fractionText);
     }
 
-    private void setButtons(Task task) {
+    private void setButtons() {
         Button add = findViewById(R.id.buttonForMore);
         Button reset = findViewById(R.id.buttonToReset);
         if (! task.getIsGeneral()){
@@ -100,14 +101,14 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
             add.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    openInputActivity(task, "add");
+                    openInputActivity("add");
                 }
             });
             reset.setVisibility(View.VISIBLE);
             reset.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    openInputActivity(task, "reset");
+                    openInputActivity("reset");
                 }
             });
         }
@@ -117,7 +118,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         }
 
     }
-    public void openInputActivity(Task task, String setting){
+    public void openInputActivity(String setting){
         Intent intent = new Intent(this, ChangeActivity.class);
         intent.putExtra("taskObject", task);
         intent.putExtra("setting", setting);
@@ -132,15 +133,15 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
         if (requestCode == 1) {
             if (resultCode == Activity.RESULT_OK) {
-                task = (Task) data.getSerializableExtra("result");
                 Log.i("Task", String.valueOf(task.getLearned()));
                 TasksSetup.setupLearned();
-                setName(task);
-                setPercent(task);
-                setProgressBar(task);
-                setFraction(task);
-                setButtons(task);
-                setRecycler(task);
+                setName();
+                setPercent();
+                setProgressBar();
+                setFraction();
+                setButtons();
+                setRecycler();
+                Log.i("Bereishis1", String.valueOf(bereishis.getLearned()));
             }
             if (resultCode == Activity.RESULT_CANCELED) {
                 Log.i("Result", "Cancelled");
@@ -148,18 +149,18 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         }
     }
 
-    private void setRecycler(Task task) {
+    private void setRecycler() {
         RecyclerView recyclerView = findViewById(R.id.recycler_view_dashboard);
         if (task.getIsGeneral()){
             recyclerView.setVisibility(View.VISIBLE);
-            populateRecyclerView(task);
+            populateRecyclerView();
         }
         else{
             recyclerView.setVisibility(View.GONE);
         }
     }
 
-    private void populateRecyclerView(Task task) {
+    private void populateRecyclerView() {
         RecyclerView recyclerView = findViewById(R.id.recycler_view_dashboard);
         ImageView myImage = findViewById(R.id.itemImage);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -171,17 +172,22 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
     public void onItemClick(View view, int position) {
         Intent intent = new Intent(this, DashboardActivity.class);
-        Task[] tasksObjects = ((ParentTask) task).getChildren();
-        intent.putExtra("taskObject", tasksObjects[position]);
+        task = task.getChildren()[position];
         startActivityForResult(intent, 1);
     }
+
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
                 Intent returnIntent = new Intent();
+                if (task.getParent() != null){
+                    task = task.getParent();}
+                TasksSetup.setupLearned();
+                Log.i("Bereishis", String.valueOf(bereishis.getLearned()));
                 returnIntent.putExtra("result",task);
                 setResult(Activity.RESULT_OK,returnIntent);
+                Log.i("Task", task.getName());
                 finish();
                 return true;
         }

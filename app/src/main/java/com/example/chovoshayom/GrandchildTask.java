@@ -26,6 +26,10 @@ public class GrandchildTask extends Task implements Serializable {
         super.setIsGeneral(false);
         setTotal(total);
     }
+    @Override
+    public Task getParent(){
+        return parent;
+    }
 
 
 }

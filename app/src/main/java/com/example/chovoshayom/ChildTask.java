@@ -34,6 +34,8 @@ public class ChildTask extends ParentTask implements Serializable {
     public void setParent(Task parent){
         this.parent = parent;
     }
+
+    @Override
     public Task getParent(){
         return parent;
     }
