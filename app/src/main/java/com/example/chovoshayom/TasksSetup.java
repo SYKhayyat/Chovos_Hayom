@@ -1,5 +1,11 @@
 package com.example.chovoshayom;
 
+import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
 public class TasksSetup {
     public static ParentTask tanach = new ParentTask("Tanach", "Perek");
     public static ParentTask mishnayos = new ParentTask("Mishnayos", "Perek");
@@ -283,7 +289,7 @@ public class TasksSetup {
     public static GrandchildTask chelek5 = new GrandchildTask("Cheleck Hei" , 99, mishnaBerura);
     public static GrandchildTask chelek6 = new GrandchildTask("Cheleck Vuv" , 168, mishnaBerura);
     public static GrandchildTask[] mishnaBeruraChildren = {chelek1, chelek2, chelek3, chelek4, chelek5, chelek6};
-
+    public static HashSet<Task> set = new HashSet<>();
 
     public static void setupTasks(){
 
@@ -390,7 +396,24 @@ public class TasksSetup {
         tur.setLearned();
         shulchanAruch.setLearned();
         mishnaBerura.setLearned();
-
     }
-
+    public static void setupSet(){
+        addToSet(set, tanach);
+        addToSet(set, mishnayos);
+        addToSet(set, shas);
+        addToSet(set, yerushalmi);
+        addToSet(set, rambam);
+        addToSet(set, tur);
+        addToSet(set, shulchanAruch);
+        addToSet(set, mishnaBerura);
+    }
+    public static void addToSet(HashSet<Task> set, Task t1){
+        set.add(t1);
+        if (t1.getIsGeneral()){
+            Log.i("Task", t1.getName());
+            for (Task t : t1.getChildren()){
+                addToSet(set, t);
+            }
+        }
+    }
 }

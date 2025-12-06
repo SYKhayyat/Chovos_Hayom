@@ -3,7 +3,9 @@ package com.example.chovoshayom;
 import static com.example.chovoshayom.TasksSetup.*;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 
@@ -18,14 +20,20 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.example.chovoshayom.databinding.ActivityMain2Binding;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.gson.Gson;
 
 public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAdapter.ItemClickListener{
 
     private ActivityMain2Binding binding;
+
+
+    SharedPreferences mPrefs;
+
     private RecyclerView recyclerView;
 
     private RecyclerView.LayoutManager layoutManager;
@@ -57,11 +65,35 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
                         .setAction("Action", null).show();
             }
         });
-        TasksSetup.setupTasks();
-        TasksSetup.setupTotals();
+        mPrefs  = getPreferences(MODE_PRIVATE);
+        setupTasksOldAndNew();
+        savePreferences();
         setupRecycler();
     }
 
+    private void setupTasksOldAndNew() {
+        SharedPreferences prefs = getSharedPreferences("Tasks", MODE_PRIVATE);
+        TasksSetup.setupTasks();
+        TasksSetup.setupTotals();
+        if (!prefs.getAll().isEmpty()) {
+            Log.i("Empty", "Empty");
+        } else {
+            Toast.makeText(this, "Loaded values from saved values.", Toast.LENGTH_SHORT).show();
+            for (Task t: set){
+                double learned = Double.longBitsToDouble(prefs.getLong(t.getName(), Double.doubleToLongBits(0)));
+                t.reset(learned);
+            }
+        }
+    }
+
+    private void savePreferences() {
+        TasksSetup.setupSet();
+        for (Task t: set){
+            SharedPreferences.Editor prefsEditor = mPrefs.edit();
+            prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(t.getLearned()));
+            prefsEditor.commit();
+        }
+    }
 
 
     public void setupRecycler(){

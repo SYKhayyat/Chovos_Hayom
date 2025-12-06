@@ -5,6 +5,7 @@ import static com.example.chovoshayom.TasksSetup.bereishis;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -19,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.util.Log;
 import androidx.appcompat.widget.Toolbar;
+
 
 import android.view.MenuItem;
 import android.view.View;
@@ -38,6 +40,8 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
 
     private ActivityDashboard2Binding binding;
+    SharedPreferences mPrefs;
+
 
     private RecyclerView recyclerView;
 
@@ -63,11 +67,24 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                saveToSharedPreferences();
+                Snackbar.make(view, "Your changes have been saved", Snackbar.LENGTH_LONG)
                         .setAnchorView(R.id.fab)
                         .setAction("Action", null).show();
             }
         });
+    }
+
+    private void saveToSharedPreferences() {
+        mPrefs = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = mPrefs.edit();
+        prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
+        prefsEditor.commit();
+        while (task.isChild()){
+            task = task.getParent();
+            prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
+            prefsEditor.commit();
+        }
     }
 
     private void setName() {
