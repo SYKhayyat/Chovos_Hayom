@@ -40,7 +40,6 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
 
     private ActivityDashboard2Binding binding;
-    SharedPreferences mPrefs;
 
 
     private RecyclerView recyclerView;
@@ -76,13 +75,17 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     }
 
     private void saveToSharedPreferences() {
-        mPrefs = getPreferences(MODE_PRIVATE);
-        SharedPreferences.Editor prefsEditor = mPrefs.edit();
+        SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
         prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
-        prefsEditor.commit();
+        prefsEditor.putString("Hello", "World");
+        if (prefsEditor.commit()){
+            Log.i("Commit", String.valueOf(task.getTotal()));
+        }
         while (task.isChild()){
             task = task.getParent();
             prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
+            prefsEditor.putString("Hello", "World");
             prefsEditor.commit();
         }
     }

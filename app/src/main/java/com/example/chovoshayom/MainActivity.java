@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     private ActivityMain2Binding binding;
 
 
-    SharedPreferences mPrefs;
+    public static SharedPreferences mPrefs;
 
     private RecyclerView recyclerView;
 
@@ -75,13 +75,15 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         SharedPreferences prefs = getSharedPreferences("Tasks", MODE_PRIVATE);
         TasksSetup.setupTasks();
         TasksSetup.setupTotals();
-        if (!prefs.getAll().isEmpty()) {
+        TasksSetup.setupSet();
+        if (prefs.getAll().isEmpty()) {
             Log.i("Empty", "Empty");
         } else {
-            Toast.makeText(this, "Loaded values from saved values.", Toast.LENGTH_SHORT).show();
+            Log.i("full", "full");
             for (Task t: set){
                 double learned = Double.longBitsToDouble(prefs.getLong(t.getName(), Double.doubleToLongBits(0)));
                 t.reset(learned);
+                setupTotals();
             }
         }
     }
@@ -89,7 +91,8 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     private void savePreferences() {
         TasksSetup.setupSet();
         for (Task t: set){
-            SharedPreferences.Editor prefsEditor = mPrefs.edit();
+            SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+            SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
             prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(t.getLearned()));
             prefsEditor.commit();
         }

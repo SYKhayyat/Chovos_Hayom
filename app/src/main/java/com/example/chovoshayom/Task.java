@@ -95,7 +95,7 @@ public class Task implements Serializable {
         return null;
     }
     public boolean isChild(){
-        return getParent() == null;
+        return getParent() != null;
     }
 
     public Task[] getChildren(){
