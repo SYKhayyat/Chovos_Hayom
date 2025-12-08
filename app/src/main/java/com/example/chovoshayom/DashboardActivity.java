@@ -2,6 +2,7 @@ package com.example.chovoshayom;
 
 import static com.example.chovoshayom.MainActivity.*;
 import static com.example.chovoshayom.TasksSetup.bereishis;
+import static com.example.chovoshayom.TasksSetup.set;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -46,7 +47,6 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapterDashboard adapter;
-    int position;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,13 +79,9 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
         prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
         prefsEditor.putString("Hello", "World");
-        if (prefsEditor.commit()){
-            Log.i("Commit", String.valueOf(task.getTotal()));
-        }
-        while (task.isChild()){
-            task = task.getParent();
-            prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
-            prefsEditor.putString("Hello", "World");
+        prefsEditor.commit();
+        for (Task t: set){
+            prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(t.getLearned()));
             prefsEditor.commit();
         }
     }

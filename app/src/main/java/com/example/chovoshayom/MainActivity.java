@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
                         .setAction("Action", null).show();
             }
         });
-        mPrefs  = getPreferences(MODE_PRIVATE);
+        mPrefs = getPreferences(MODE_PRIVATE);
         setupTasksOldAndNew();
         savePreferences();
         setupRecycler();
@@ -81,13 +81,15 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         } else {
             Log.i("full", "full");
             for (Task t: set){
-                double learned = Double.longBitsToDouble(prefs.getLong(t.getName(), Double.doubleToLongBits(0)));
-                t.reset(learned);
-                setupTotals();
+                loadLearned(t, prefs);
             }
         }
     }
-
+    private static void loadLearned(Task t, SharedPreferences prefs) {
+        double learned = Double.longBitsToDouble(prefs.getLong(t.getName(), Double.doubleToLongBits(0)));
+        t.reset(learned);
+        setupTotals();
+    }
     private void savePreferences() {
         TasksSetup.setupSet();
         for (Task t: set){
@@ -97,8 +99,6 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
             prefsEditor.commit();
         }
     }
-
-
     public void setupRecycler(){
 
         // Get DisplayMetrics instance
@@ -152,7 +152,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         Intent intent = new Intent(this, DashboardActivity.class);
         task = tasksObjects[position];
         intent.putExtra("taskObject", position);
-        startActivityForResult(intent, 1);
+        startActivity(intent);
     }
 
     @Override
@@ -175,20 +175,4 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         }
         return super.onOptionsItemSelected(item);
     }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        Log.i("hello", "returned");
-
-        if (requestCode == 1) {
-            if (resultCode == Activity.RESULT_OK) {
-                task = (Task) data.getSerializableExtra("result");
-                Log.i("Task", String.valueOf(task.getLearned()));
-                TasksSetup.setupLearned();
-            if (resultCode == Activity.RESULT_CANCELED) {
-                Log.i("Result", "Cancelled");
-            }
-        }
-    }
-}}
+}
