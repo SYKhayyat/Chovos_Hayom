@@ -12,25 +12,29 @@
         android:id="@+id/names"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
+        android:scrollbars="vertical"
+
         />
     <TextView
         android:id="@+id/learneds"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
+        android:scrollbars="vertical"
+
         />
     <TextView
         android:id="@+id/totals"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:gravity="center"
-    />
+        android:scrollbars="vertical"
+
+        />
     <TextView
         android:id="@+id/percents"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:gravity="center"
-    />
+        android:scrollbars="vertical"
+
+        />
 
 </LinearLayout>

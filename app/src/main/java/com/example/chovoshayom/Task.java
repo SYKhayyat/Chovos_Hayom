@@ -5,7 +5,7 @@ import com.google.gson.Gson;
 
 import java.io.Serializable;
 
-public class Task implements Serializable {
+public class Task implements Serializable, Comparable{
     private String name;
     private String unitName;
     private double learned;
@@ -103,4 +103,8 @@ public class Task implements Serializable {
     }
 
 
+    @Override
+    public int compareTo(Object o) {
+        return toString().compareTo(o.toString());
+    }
 }

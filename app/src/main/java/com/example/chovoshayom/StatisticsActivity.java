@@ -14,6 +14,10 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+
 public class StatisticsActivity extends AppCompatActivity {
 
     @Override
@@ -43,15 +47,18 @@ public class StatisticsActivity extends AppCompatActivity {
     }
 
     private void printStatistics() {
+        Object[] tasks = set.toArray();
+        Arrays.sort(tasks);
         String names = "Names";
         String learneds = "Learned:";
         String totals = "Total:";
         String percents = "Percent:";
-        for (Task t: set){
-            names += "\n" + t.getName();
-            learneds += "\n" + String.valueOf(t.getLearned());
-            totals += "\n" + String.valueOf(t.getTotal());
-            percents += "\n" + String.valueOf(t.getPercentage());
+        for (Object t: tasks){
+            Task task = ((Task) t);
+            names += "\n" + task.getName();
+            learneds += "\n" + String.valueOf(task.getLearned());
+            totals += "\n" + String.valueOf(task.getTotal());
+            percents += "\n" + String.valueOf(task.getPercentage());
         }
         TextView namesView = findViewById(R.id.names);
         namesView.setText(names);
