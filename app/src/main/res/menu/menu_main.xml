@@ -1,10 +1,32 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.example.chovoshayom.MainActivity">
+    tools:context="com.example.thirteen_stones.activities.MainActivity">
+
+    <item android:id="@+id/action_statistics"
+        android:icon="@android:drawable/ic_menu_recent_history"
+        android:title="View Statistics"
+        app:showAsAction="ifRoom|withText"/>
+
+    <item android:id="@+id/action_save"
+        android:icon="@drawable/m3_split_button_chevron_avd"
+        android:title="Save everything"
+        app:showAsAction="ifRoom|withText"/>
+
+    <item android:id="@+id/action_reset_stats"
+        android:icon="@drawable/m3_split_button_chevron_avd"
+        android:title="Reset everything to 0"
+        app:showAsAction="ifRoom|withText"/>
+
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
         android:title="@string/action_settings"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_about"
+        android:title="About"
+        app:showAsAction="never" />
+
 </menu>

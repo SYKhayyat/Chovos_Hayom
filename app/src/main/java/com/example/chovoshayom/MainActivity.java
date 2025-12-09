@@ -27,6 +27,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
+
 public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAdapter.ItemClickListener{
 
     private ActivityMain2Binding binding;
@@ -61,7 +63,18 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Here's a Snackbar", Snackbar.LENGTH_LONG)
+                ArrayList<String> finished = new ArrayList<>();
+                TasksSetup.setupSet();
+                for (Task t: set){
+                    if (t.getLearned() == t.getTotal()){
+                        finished.add(t.getName());
+                    }
+                }
+                String allFinished = "You have finished " + finished.size() + " items.";
+                for (String s: finished){
+                    allFinished += "\n" + s;
+                }
+                Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });
@@ -167,12 +180,40 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        int itemId = item.getItemId();
+        if (itemId == R.id.action_statistics) {
+            showStatistics();
+            return true;
+        } else if (itemId == R.id.action_save) {
+            saveToPreferences();
+            return true;
+        } else if (itemId == R.id.action_reset_stats) {
+            resetAll();
+            return true;
+        } else if (itemId == R.id.action_settings) {
+            showSettings();
+            return true;
+        } else if (itemId == R.id.action_about) {
+            showAbout();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showStatistics() {
+        Intent intent = new Intent(this, StatisticsActivity.class);
+        startActivity(intent);
+    }
+
+    private void saveToPreferences() {
+    }
+
+    private void resetAll() {
+    }
+
+    private void showSettings() {
+    }
+
+    private void showAbout() {
     }
 }
