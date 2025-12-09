@@ -53,6 +53,8 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         super.onCreate(savedInstanceState);
         Intent myIntent = getIntent();
         binding = ActivityDashboard2Binding.inflate(getLayoutInflater());
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
         setContentView(binding.getRoot());
