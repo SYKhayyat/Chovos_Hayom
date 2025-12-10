@@ -1,6 +1,8 @@
 package com.example.chovoshayom;
 
 import static com.example.chovoshayom.TasksSetup.*;
+import static com.example.chovoshayom.Methods.*;
+
 
 import android.app.Activity;
 import android.content.Context;
@@ -64,11 +66,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
             public void onClick(View view) {
                 ArrayList<String> finished = new ArrayList<>();
                 TasksSetup.setupSet();
-                for (Task t: set){
-                    if (t.getLearned() == t.getTotal()){
-                        finished.add(t.getName());
-                    }
-                }
+                Methods.getFinished(finished);
                 String allFinished = "You have finished " + finished.size() + " items.";
                 for (String s: finished){
                     allFinished += "\n" + s;
@@ -101,12 +99,9 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     }
     private void savePreferences() {
         TasksSetup.setupSet();
-        for (Task t: set){
-            SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
-            SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
-            prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(t.getLearned()));
-            prefsEditor.commit();
-        }
+        SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+        Methods.saveToSharedPreferences(prefsEditor);
     }
     public void setupRecycler(){
 
@@ -182,6 +177,9 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         } else if (itemId == R.id.action_save) {
             saveToPreferences();
             return true;
+        } else if (itemId == R.id.calculate){
+            showCalculate();
+            return true;
         } else if (itemId == R.id.action_reset_stats) {
             resetAll();
             return true;
@@ -195,6 +193,10 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         return super.onOptionsItemSelected(item);
     }
 
+    private void showCalculate() {
+
+    }
+
     private void showStatistics() {
         Intent intent = new Intent(this, StatisticsActivity.class);
         startActivity(intent);
@@ -203,12 +205,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     private void saveToPreferences() {
         SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
-        prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
-        prefsEditor.commit();
-        for (Task t: set){
-            prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(t.getLearned()));
-            prefsEditor.commit();
-        }
+        Methods.saveToSharedPreferences(prefsEditor);
     }
 
     private void resetAll() {
@@ -219,12 +216,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
             public void onClick(DialogInterface dialog, int id) {
                 SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
                 SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
-                prefsEditor.commit();
-                for (Task t: set){
-                    prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(0));
-                    prefsEditor.commit();
-                }
-            }
+                Methods.saveToSharedPreferences(prefsEditor, 0);            }
         });
         builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
@@ -235,8 +227,11 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     }
 
     private void showSettings() {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
     }
 
     private void showAbout() {
+
     }
 }

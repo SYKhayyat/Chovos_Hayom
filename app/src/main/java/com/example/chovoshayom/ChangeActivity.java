@@ -45,11 +45,7 @@ public class ChangeActivity extends AppCompatActivity {
             public void onClick(View view) {
                 ArrayList<String> finished = new ArrayList<>();
                 TasksSetup.setupSet();
-                for (Task t: set){
-                    if (t.getLearned() == t.getTotal()){
-                        finished.add(t.getName());
-                    }
-                }
+                Methods.getFinished(finished);
                 String allFinished = "You have finished " + finished.size() + " items.";
                 for (String s: finished){
                     allFinished += "\n" + s;

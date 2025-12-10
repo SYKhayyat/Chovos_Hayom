@@ -4,20 +4,20 @@
     tools:context="com.example.chovoshayom.activities.MainActivity">
 
     <item android:id="@+id/action_statistics"
-        android:icon="@android:drawable/ic_menu_recent_history"
         android:title="View Statistics"
-        app:showAsAction="ifRoom|withText"/>
+        app:showAsAction="never" />
 
     <item android:id="@+id/action_save"
-        android:icon="@drawable/outline_add_ad_24"
         android:title="Save"
-        app:showAsAction="ifRoom|withText"/>
+        app:showAsAction="never" />
+
+    <item android:id="@+id/calculate"
+        android:title="Calculate"
+        app:showAsAction="never" />
 
     <item android:id="@+id/action_reset_stats"
-        android:icon="@drawable/m3_split_button_chevron_avd"
         android:title="Reset"
-        app:showAsAction="ifRoom|withText"/>
-
+        app:showAsAction="never" />
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"

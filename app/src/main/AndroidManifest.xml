@@ -13,9 +13,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ChovosHayom">
         <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ChovosHayom" />
+        <activity
             android:name=".StatisticsActivity"
             android:exported="false"
-            android:theme="@style/Theme.ChovosHayom"/>
+            android:theme="@style/Theme.ChovosHayom" />
         <activity
             android:name=".ChangeActivity"
             android:exported="false"

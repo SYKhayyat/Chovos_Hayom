@@ -76,11 +76,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
             public void onClick(View view) {
                 ArrayList<String> finished = new ArrayList<>();
                 TasksSetup.setupSet();
-                for (Task t: set){
-                    if (t.getLearned() == t.getTotal()){
-                        finished.add(t.getName());
-                    }
-                }
+                Methods.getFinished(finished);
                 String allFinished = "You have finished " + finished.size() + " items.";
                 for (String s: finished){
                     allFinished += "\n" + s;
@@ -229,7 +225,10 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         else if (itemId == R.id.action_save) {
             saveToPreferences();
             return true;
-        } else if (itemId == R.id.action_reset_stats) {
+        } else if (itemId == R.id.calculate) {
+            showCalculate();
+            return true;
+        }else if (itemId == R.id.action_reset_stats) {
             resetAll();
             return true;
         } else if (itemId == R.id.action_settings) {
@@ -241,7 +240,9 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         }
         return super.onOptionsItemSelected(item);
     }
+    private void showCalculate() {
 
+    }
     private void showStatistics() {
         Intent intent = new Intent(this, StatisticsActivity.class);
         startActivity(intent);
@@ -250,12 +251,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     private void saveToPreferences() {
         SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
-        prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
-        prefsEditor.commit();
-        for (Task t: set){
-            prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(t.getLearned()));
-            prefsEditor.commit();
-        }
+        Methods.saveToSharedPreferences(prefsEditor);
     }
 
     private void resetAll() {
@@ -266,12 +262,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
             public void onClick(DialogInterface dialog, int id) {
                 SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
                 SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
-                prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
-                prefsEditor.commit();
-                for (Task t: set){
-                    prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(0));
-                    prefsEditor.commit();
-                }
+                Methods.saveToSharedPreferences(prefsEditor, 0);
                 finish();
             }
         });
@@ -284,6 +275,8 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     }
 
     private void showSettings() {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
     }
 
     private void showAbout() {
