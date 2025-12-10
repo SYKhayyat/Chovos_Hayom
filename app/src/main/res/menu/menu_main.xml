@@ -1,7 +1,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.example.thirteen_stones.activities.MainActivity">
+    tools:context="com.example.chovoshayom.activities.MainActivity">
 
     <item android:id="@+id/action_statistics"
         android:icon="@android:drawable/ic_menu_recent_history"
@@ -9,13 +9,13 @@
         app:showAsAction="ifRoom|withText"/>
 
     <item android:id="@+id/action_save"
-        android:icon="@drawable/m3_split_button_chevron_avd"
-        android:title="Save everything"
+        android:icon="@drawable/outline_add_ad_24"
+        android:title="Save"
         app:showAsAction="ifRoom|withText"/>
 
     <item android:id="@+id/action_reset_stats"
         android:icon="@drawable/m3_split_button_chevron_avd"
-        android:title="Reset everything to 0"
+        android:title="Reset"
         app:showAsAction="ifRoom|withText"/>
 
     <item

@@ -14,11 +14,12 @@
         android:theme="@style/Theme.ChovosHayom">
         <activity
             android:name=".StatisticsActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.ChovosHayom"/>
         <activity
             android:name=".ChangeActivity"
             android:exported="false"
-            android:theme="@style/Theme.ChovosHayom" />
+            android:theme="@style/Theme.Material3.DayNight.Dialog.MinWidth" />
         <activity
             android:name=".DashboardActivity"
             android:exported="false"

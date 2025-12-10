@@ -47,22 +47,23 @@
 
     <Button
         android:layout_width="wrap_content"
-        android:gravity="center"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/medium"
         android:layout_marginBottom="@dimen/medium"
         android:id="@+id/buttonForMore"
+        android:layout_gravity="center_horizontal"
         android:text="Add!"
-        android:visibility="gone"/>
+        android:visibility="gone"
+        />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
         android:layout_marginTop="@dimen/medium"
         android:layout_marginBottom="@dimen/medium"
         android:id="@+id/buttonToReset"
         android:text="Reset"
+        android:layout_gravity="center_horizontal"
         android:visibility="gone"/>
 
     <androidx.recyclerview.widget.RecyclerView

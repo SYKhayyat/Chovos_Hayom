@@ -4,11 +4,13 @@ import static com.example.chovoshayom.TasksSetup.*;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.util.DisplayMetrics;
@@ -33,17 +35,11 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAdapter.ItemClickListener{
 
     private ActivityMain2Binding binding;
-
-
     public static SharedPreferences mPrefs;
-
     private RecyclerView recyclerView;
-
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapter adapter;
-
     public static Task task;
-
     public static ParentTask[] tasksObjects= {
             tanach,
             mishnayos,
@@ -92,10 +88,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         TasksSetup.setupTasks();
         TasksSetup.setupTotals();
         TasksSetup.setupSet();
-        if (prefs.getAll().isEmpty()) {
-            Log.i("Empty", "Empty");
-        } else {
-            Log.i("full", "full");
+        if (! prefs.getAll().isEmpty()) {
             for (Task t: set){
                 loadLearned(t, prefs);
             }
@@ -167,7 +160,6 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
 //        String myJson = gson.toJson(tasksObjects[position]);
         Intent intent = new Intent(this, DashboardActivity.class);
         task = tasksObjects[position];
-        intent.putExtra("taskObject", position);
         startActivity(intent);
     }
 
@@ -209,9 +201,37 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     }
 
     private void saveToPreferences() {
+        SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+        prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
+        prefsEditor.commit();
+        for (Task t: set){
+            prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(t.getLearned()));
+            prefsEditor.commit();
+        }
     }
 
     private void resetAll() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("This will reset everything to zero!")
+                .setTitle("Are you sure?");
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+                SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+                prefsEditor.commit();
+                for (Task t: set){
+                    prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(0));
+                    prefsEditor.commit();
+                }
+            }
+        });
+        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     private void showSettings() {

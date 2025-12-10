@@ -2,11 +2,13 @@ package com.example.chovoshayom;
 
 import static com.example.chovoshayom.MainActivity.task;
 import static com.example.chovoshayom.TasksSetup.bereishis;
+import static com.example.chovoshayom.TasksSetup.set;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,8 +17,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.example.chovoshayom.databinding.ActivityChangeBinding;
+
+import java.util.ArrayList;
 
 public class ChangeActivity extends AppCompatActivity {
 
@@ -34,12 +39,22 @@ public class ChangeActivity extends AppCompatActivity {
         binding = ActivityChangeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-
-        binding.fab.setOnClickListener(new View.OnClickListener() {
+        FloatingActionButton fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAnchorView(R.id.fab)
+                ArrayList<String> finished = new ArrayList<>();
+                TasksSetup.setupSet();
+                for (Task t: set){
+                    if (t.getLearned() == t.getTotal()){
+                        finished.add(t.getName());
+                    }
+                }
+                String allFinished = "You have finished " + finished.size() + " items.";
+                for (String s: finished){
+                    allFinished += "\n" + s;
+                }
+                Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });
@@ -47,10 +62,13 @@ public class ChangeActivity extends AppCompatActivity {
     }
 
     public void setupButtons(Task task, String setting){
+        TextView greeting = findViewById(R.id.greeting);
         Button myButton = findViewById(R.id.buttonForChange);
         EditText myEditText = (EditText)  findViewById(R.id.input_box);
 
         if (setting.equals("add")){
+            String toAdd = "Add " + task.getUnitName() + ":";
+            greeting.setText(toAdd);
             myButton.setText("Add");
             myButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -70,6 +88,8 @@ public class ChangeActivity extends AppCompatActivity {
             });
         }
         else if (setting.equals("reset")){
+            String toReset = "Reset " + task.getUnitName() + ":";
+            greeting.setText(toReset);
             myButton.setText("Reset");
             myButton.setOnClickListener(new View.OnClickListener() {
                 @Override

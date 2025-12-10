@@ -5,14 +5,17 @@ import static com.example.chovoshayom.TasksSetup.bereishis;
 import static com.example.chovoshayom.TasksSetup.set;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.menu.MenuView;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -23,6 +26,7 @@ import android.util.Log;
 import androidx.appcompat.widget.Toolbar;
 
 
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -33,6 +37,8 @@ import com.example.chovoshayom.MainActivity.*;
 
 import com.example.chovoshayom.databinding.ActivityDashboard2Binding;
 import com.google.gson.Gson;
+
+import java.util.ArrayList;
 
 import kotlinx.coroutines.scheduling.TasksKt;
 
@@ -53,39 +59,36 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         super.onCreate(savedInstanceState);
         Intent myIntent = getIntent();
         binding = ActivityDashboard2Binding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
-        setContentView(binding.getRoot());
         setName();
         setPercent();
         setProgressBar();
         setFraction();
         setButtons();
         setRecycler();
-
-        binding.fab.setOnClickListener(new View.OnClickListener() {
+        FloatingActionButton fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                saveToSharedPreferences();
-                Snackbar.make(view, "Your changes have been saved", Snackbar.LENGTH_LONG)
-                        .setAnchorView(R.id.fab)
+                ArrayList<String> finished = new ArrayList<>();
+                TasksSetup.setupSet();
+                for (Task t: set){
+                    if (t.getLearned() == t.getTotal()){
+                        finished.add(t.getName());
+                    }
+                }
+                String allFinished = "You have finished " + finished.size() + " items.";
+                for (String s: finished){
+                    allFinished += "\n" + s;
+                }
+                Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });
-    }
-
-    private void saveToSharedPreferences() {
-        SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
-        SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
-        prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
-        prefsEditor.putString("Hello", "World");
-        prefsEditor.commit();
-        for (Task t: set){
-            prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(t.getLearned()));
-            prefsEditor.commit();
-        }
     }
 
     private void setName() {
@@ -136,6 +139,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         }
 
     }
+
     public void openInputActivity(String setting){
         Intent intent = new Intent(this, ChangeActivity.class);
         intent.putExtra("taskObject", task);
@@ -143,7 +147,6 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         startActivityForResult(intent, 1);
         Log.i("hello", "called");
     }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -195,9 +198,23 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     }
 
     @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int itemId = item.getItemId();
+        if (itemId == R.id.action_statistics) {
+            showStatistics();
+            return true;
+        }
+        else if (itemId == android.R.id.home){
                 Intent returnIntent = new Intent();
                 if (task.getParent() != null){
                     task = task.getParent();}
@@ -209,7 +226,67 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
                 finish();
                 return true;
         }
+        else if (itemId == R.id.action_save) {
+            saveToPreferences();
+            return true;
+        } else if (itemId == R.id.action_reset_stats) {
+            resetAll();
+            return true;
+        } else if (itemId == R.id.action_settings) {
+            showSettings();
+            return true;
+        } else if (itemId == R.id.action_about) {
+            showAbout();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showStatistics() {
+        Intent intent = new Intent(this, StatisticsActivity.class);
+        startActivity(intent);
+    }
+
+    private void saveToPreferences() {
+        SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+        prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
+        prefsEditor.commit();
+        for (Task t: set){
+            prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(t.getLearned()));
+            prefsEditor.commit();
+        }
+    }
+
+    private void resetAll() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("This will reset everything to zero!")
+                .setTitle("Are you sure?");
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+                SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+                prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(task.getLearned()));
+                prefsEditor.commit();
+                for (Task t: set){
+                    prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(0));
+                    prefsEditor.commit();
+                }
+                finish();
+            }
+        });
+        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                finish();
+            }
+        });
+        AlertDialog dialog = builder.create();
+    }
+
+    private void showSettings() {
+    }
+
+    private void showAbout() {
     }
 
 }

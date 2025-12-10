@@ -10,11 +10,10 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/Greeting"
+        android:id="@+id/greeting"
         android:layout_marginBottom="@dimen/medium"
         android:layout_marginTop="@dimen/medium"
         android:gravity="center"
-        android:text="Greeting"
         />
     <EditText
         android:layout_width="200dp"
