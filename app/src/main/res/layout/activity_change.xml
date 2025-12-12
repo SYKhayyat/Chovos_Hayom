@@ -29,6 +29,6 @@
         android:layout_gravity="end|bottom"
         android:src="@drawable/save"
         android:contentDescription="@string/save"
-        android:layout_margin="16dp" />
+        android:layout_margin="@dimen/_16dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

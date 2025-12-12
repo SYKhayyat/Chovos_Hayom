@@ -20,7 +20,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="This toggle enables you to switch the view of the app between a light day mode and a dark night mode."
+        android:text="@string/light_dark_text"
         app:layout_constraintTop_toBottomOf="@id/bar"
         android:id="@+id/nightDayText"
         />
@@ -28,31 +28,31 @@
         android:id="@+id/switch_night"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Night Mode:"
+        android:text="@string/night_mode"
         app:layout_constraintTop_toBottomOf="@id/nightDayText" />
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="This toggle enables you to switch between regular calculation mode (a set amount of learning per day) and advanced calculation mode (a different amount of learning for Shabbos)."
+        android:text="@string/calc_mode_text"
         app:layout_constraintTop_toBottomOf="@id/switch_night"
         android:id="@+id/calcText"/>
     <com.google.android.material.switchmaterial.SwitchMaterial
         android:id="@+id/switch_calculate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Advanced Siyum Calculation:"
+        android:text="@string/advanced_siyum_calculation"
         app:layout_constraintTop_toBottomOf="@+id/calcText" />
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="This toggle enables you to switch between write and read-only modes."
+        android:text="@string/read_only_text"
         app:layout_constraintTop_toBottomOf="@id/switch_calculate"
         android:id="@+id/readText"/>
     <com.google.android.material.switchmaterial.SwitchMaterial
         android:id="@+id/switch_read"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Read Only:"
+        android:text="@string/read_only"
         app:layout_constraintTop_toBottomOf="@id/readText"
         />
 </androidx.constraintlayout.widget.ConstraintLayout>

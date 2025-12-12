@@ -8,8 +8,8 @@
 
     >
     <TextView
-        android:layout_marginTop="100dp"
-        android:layout_marginBottom="@dimen/medium"
+        android:layout_marginTop="@dimen/top"
+        android:layout_marginBottom="@dimen/between"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
@@ -18,16 +18,14 @@
     <TextView
         android:id="@+id/percent"
         android:gravity="center"
-        android:layout_marginTop="@dimen/medium"
-        android:layout_marginBottom="@dimen/medium"
+        android:layout_marginTop="@dimen/between"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Percent"/>
+        android:text="@string/percent"/>
 
     <ProgressBar
         android:id="@+id/progressBar"
-        android:layout_marginTop="@dimen/medium"
-        android:layout_marginBottom="@dimen/medium"
+        android:layout_marginTop="@dimen/between"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -40,36 +38,32 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:layout_marginTop="@dimen/medium"
-        android:layout_marginBottom="@dimen/medium"
-        android:text="Fraction"
+        android:layout_marginTop="@dimen/between"
+        android:text="@string/fraction"
         android:id="@+id/fraction" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/medium"
-        android:layout_marginBottom="@dimen/medium"
+        android:layout_marginTop="@dimen/between"
         android:id="@+id/buttonForMore"
         android:layout_gravity="center_horizontal"
-        android:text="Add!"
+        android:text="@string/add"
         android:visibility="gone"
         />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/medium"
-        android:layout_marginBottom="@dimen/medium"
+        android:layout_marginTop="@dimen/between"
         android:id="@+id/buttonToReset"
-        android:text="Reset"
+        android:text="@string/reset"
         android:layout_gravity="center_horizontal"
         android:visibility="gone"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_dashboard"
-        android:layout_marginTop="@dimen/medium"
-        android:layout_marginBottom="@dimen/medium"
+        android:layout_marginTop="@dimen/between"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 

@@ -11,9 +11,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:id="@+id/calculateText"
-        android:layout_marginTop="30dp"
-        android:layout_marginLeft="2dp"
-        android:layout_marginRight="2dp"
+        android:layout_marginTop="@dimen/top"
+        android:layout_marginStart="@dimen/side_margin"
+        android:layout_marginEnd="@dimen/side_margin"
 
         />
     <TextView
@@ -21,16 +21,15 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:id="@+id/dailyText"
-        android:visibility="gone"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="@dimen/between"
         />
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:id="@+id/dailyEnter"
-        android:layout_marginTop="20dp"
-        android:hint="Amount you do per day"
+        android:layout_marginTop="@dimen/between"
+        android:hint="@string/amount_you_do_per_day"
         android:inputType = "numberDecimal"
         />
     <TextView
@@ -39,8 +38,7 @@
         android:layout_gravity="center_horizontal"
         android:id="@+id/shabbosText"
         android:visibility="gone"
-        android:layout_marginTop="20dp"
-        android:inputType = "numberDecimal"
+        android:layout_marginTop="@dimen/between"
         />
     <EditText
         android:layout_width="wrap_content"
@@ -48,28 +46,29 @@
         android:layout_gravity="center_horizontal"
         android:id="@+id/shabbosEnter"
         android:visibility="gone"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="@dimen/between"
+        android:inputType = "numberDecimal"
         />
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:id="@+id/buttonForCalculation"
-        android:text="Calculate"
-        android:layout_marginTop="20dp" />
+        android:text="@string/calculate"
+        android:layout_marginTop="@dimen/between" />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:id="@+id/result"
-        android:layout_marginTop="20dp" />
+        android:layout_marginTop="@dimen/between" />
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:id="@+id/buttonForDone"
-        android:text="Done"
-        android:layout_marginTop="20dp" />
+        android:text="@string/done"
+        android:layout_marginTop="@dimen/between" />
 
 
 </LinearLayout>

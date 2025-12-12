@@ -5,23 +5,23 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:id="@+id/card_view_dashboard"
-    android:layout_margin="5dp"
+    android:layout_margin="@dimen/side_margin"
     app:cardBackgroundColor="#80B3EF"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="3dp"
-    app:contentPadding="4dp" >
+    app:cardCornerRadius="@dimen/_12dp"
+    app:cardElevation="@dimen/_3dp"
+    app:contentPadding="@dimen/_4dp" >
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/relativeLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="@dimen/_16dp">
         <TextView
             android:id="@+id/itemTitle"
-            android:layout_width="236dp"
-            android:layout_height="39dp"
-            android:layout_marginStart="0dp"
-            android:textSize="20sp"
+            android:layout_width="@dimen/_236dp"
+            android:layout_height="@dimen/_39dp"
+            android:layout_marginStart="@dimen/_0dp"
+            android:textSize="@dimen/_20sp"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"

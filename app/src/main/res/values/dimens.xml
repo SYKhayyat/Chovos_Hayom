@@ -1,4 +1,16 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
-    <dimen name="medium">20dp</dimen>
+    <dimen name="between">20dp</dimen>
+    <dimen name="top">100dp</dimen>
+    <dimen name="edit_text_width">200dp</dimen>
+    <dimen name="edit_text_weight">50dp</dimen>
+    <dimen name="side_margin">5dp</dimen>
+    <dimen name="_12dp">12dp</dimen>
+    <dimen name="_3dp">3dp</dimen>
+    <dimen name="_4dp">4dp</dimen>
+    <dimen name="_16dp">16dp</dimen>
+    <dimen name="_236dp">236dp</dimen>
+    <dimen name="_39dp">39dp</dimen>
+    <dimen name="_0dp">0dp</dimen>
+    <dimen name="_20sp">20sp</dimen>
 </resources>
