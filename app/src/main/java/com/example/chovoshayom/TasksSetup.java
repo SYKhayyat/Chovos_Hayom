@@ -7,17 +7,28 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class TasksSetup {
-    public static ParentTask tanach = new ParentTask("Tanach", "Perek");
-    public static ParentTask mishnayos = new ParentTask("Mishnayos", "Perek");
-    public static ParentTask shas = new ParentTask("Shas", "Daf");
+    public static ParentTask all = new ParentTask("Kol HaTorah Kula");
+    public static ChildTask tanach = new ChildTask("Tanach", all);
+    public static ChildTask mishnayos = new ChildTask("Mishnayos", all);
+    public static ChildTask shas = new ChildTask("Shas", all);
     //        This differs from the commonly accepted number of 2711. That is because of two factors:
 //          1. We did not include Shekalim, as it is Yerushalmi.
 //          2. We counted an amud at the end of a mesechta as half a daf, not a full daf.
-    public static ParentTask yerushalmi = new ParentTask("Yerushalmi", "Halacha");
-    public static ParentTask rambam = new ParentTask("Rambam", "Perek");
-    public static ParentTask tur = new ParentTask("Tur", "Siman");
-    public static ParentTask shulchanAruch = new ParentTask("Shulchan Aruch", "Siman");
-    public static ParentTask mishnaBerura = new ParentTask("Mishna Berura", "Siman");
+    public static ChildTask yerushalmi = new ChildTask("Yerushalmi", all);
+    public static ChildTask rambam = new ChildTask("Rambam", all);
+    public static ChildTask tur = new ChildTask("Tur", all);
+    public static ChildTask shulchanAruch = new ChildTask("Shulchan Aruch", all);
+    public static ChildTask mishnaBerura = new ChildTask("Mishna Berura", all);
+    public static ChildTask[] tasksObjects= {
+            tanach,
+            mishnayos,
+            shas,
+            yerushalmi,
+            rambam,
+            tur,
+            shulchanAruch,
+            mishnaBerura
+    };
 
     public static ChildTask torah = new ChildTask("Torah", tanach);
     public static ChildTask neviim = new ChildTask("Neviim", tanach);
@@ -292,6 +303,7 @@ public class TasksSetup {
     public static HashSet<Task> set = new HashSet<>();
 
     public static void setupTasks(){
+        all.setChildren(tasksObjects);
 
         tanach.setChildren(tanachChildren);
         mishnayos.setChildren(mishnayosChildren);
@@ -329,6 +341,8 @@ public class TasksSetup {
 
     public static void setupTotals(){
 
+        all.setTotal();
+
         torah.setTotal();
         neviim.setTotal();
         kesuvim.setTotal();
@@ -365,6 +379,7 @@ public class TasksSetup {
 
     public static void setupLearned(){
 
+        all.setLearned();
         torah.setLearned();
         neviim.setLearned();
         kesuvim.setLearned();
@@ -398,19 +413,11 @@ public class TasksSetup {
         mishnaBerura.setLearned();
     }
     public static void setupSet(){
-        addToSet(set, tanach);
-        addToSet(set, mishnayos);
-        addToSet(set, shas);
-        addToSet(set, yerushalmi);
-        addToSet(set, rambam);
-        addToSet(set, tur);
-        addToSet(set, shulchanAruch);
-        addToSet(set, mishnaBerura);
+        addToSet(set, all);
     }
     public static void addToSet(HashSet<Task> set, Task t1){
         set.add(t1);
         if (t1.getIsGeneral()){
-            Log.i("Task", t1.getName());
             for (Task t : t1.getChildren()){
                 addToSet(set, t);
             }

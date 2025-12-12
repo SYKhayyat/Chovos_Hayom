@@ -19,7 +19,6 @@ public class GrandchildTask extends Task implements Serializable {
         super.setIsGeneral(false);
         setTotal(total);
         this.parent = parent;
-        super.setUnitName(parent.getUnitName());
     }
     public GrandchildTask(String name, double total){
         super.setName(name);

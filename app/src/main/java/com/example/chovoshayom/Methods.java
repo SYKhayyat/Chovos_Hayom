@@ -8,12 +8,26 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 public class Methods {
-        public static void getFinished(ArrayList<String> finished){
-            for (Task t: set){
-                if (t.getLearned() == t.getTotal()){
-                    finished.add(t.getName());
+    public static HashSet<String> finished = new HashSet<>();
+
+        public static String getFinished(Task task){
+            if (task.getLearned() == task.getTotal()){
+                finished.add(task.getName());
+            }
+            if (task.getIsGeneral()){
+                for (Task t: task.getChildren()){
+                    getFinished(t);
                 }
             }
+            for (String s: finished){
+                finished.add(s);
+            }
+
+            String allFinished = "You have finished " + finished.size() + " items in " + task.getName();
+            for (String s: finished){
+                allFinished += "\n" + s;
+            }
+            return allFinished;
         }
         public static void saveToSharedPreferences(SharedPreferences.Editor prefsEditor){
             for (Task t: set){

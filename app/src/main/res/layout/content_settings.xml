@@ -17,52 +17,42 @@
             android:layout_height="?attr/actionBarSize" />
 
     </com.google.android.material.appbar.AppBarLayout>
-    <LinearLayout
-        android:id="@+id/dayNightMode"
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:text="This toggle enables you to switch the view of the app between a light day mode and a dark night mode."
         app:layout_constraintTop_toBottomOf="@id/bar"
-        >
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Day Mode" />
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Night Mode" />
-    </LinearLayout>
-    <LinearLayout
-        app:layout_constraintTop_toBottomOf="@id/dayNightMode"
+        android:id="@+id/nightDayText"
+        />
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switch_night"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:id="@+id/calculate"
-        >
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Day Mode" />
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Night Mode" />
-    </LinearLayout>
-    <LinearLayout
-        app:layout_constraintTop_toBottomOf="@id/calculate"
-        android:id="@+id/readWrite"
+        android:text="Night Mode:"
+        app:layout_constraintTop_toBottomOf="@id/nightDayText" />
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        >
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Day Mode" />
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Night Mode" />
-    </LinearLayout>
+        android:text="This toggle enables you to switch between regular calculation mode (a set amount of learning per day) and advanced calculation mode (a different amount of learning for Shabbos)."
+        app:layout_constraintTop_toBottomOf="@id/switch_night"
+        android:id="@+id/calcText"/>
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switch_calculate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Advanced Siyum Calculation:"
+        app:layout_constraintTop_toBottomOf="@+id/calcText" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="This toggle enables you to switch between write and read-only modes."
+        app:layout_constraintTop_toBottomOf="@id/switch_calculate"
+        android:id="@+id/readText"/>
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switch_read"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Read Only:"
+        app:layout_constraintTop_toBottomOf="@id/readText"
+        />
 </androidx.constraintlayout.widget.ConstraintLayout>

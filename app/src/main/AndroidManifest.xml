@@ -13,9 +13,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ChovosHayom">
         <activity
+            android:name=".CalculateActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.DayNight.Dialog.MinWidth" />
+        <activity
             android:name=".SettingsActivity"
             android:exported="false"
-            android:theme="@style/Theme.ChovosHayom" />
+            android:theme="@style/Theme.Material3.DayNight.Dialog.MinWidth" />
         <activity
             android:name=".StatisticsActivity"
             android:exported="false"

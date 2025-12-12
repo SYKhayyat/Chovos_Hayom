@@ -74,13 +74,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ArrayList<String> finished = new ArrayList<>();
-                TasksSetup.setupSet();
-                Methods.getFinished(finished);
-                String allFinished = "You have finished " + finished.size() + " items.";
-                for (String s: finished){
-                    allFinished += "\n" + s;
-                }
+                String allFinished = Methods.getFinished(task);
                 Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
@@ -241,7 +235,8 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         return super.onOptionsItemSelected(item);
     }
     private void showCalculate() {
-
+        Intent intent = new Intent(this, CalculateActivity.class);
+        startActivity(intent);
     }
     private void showStatistics() {
         Intent intent = new Intent(this, StatisticsActivity.class);
@@ -280,6 +275,11 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     }
 
     private void showAbout() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Chovos Hayom is a simple app, designed by Shaul Khayyat, which allows you to keep track of your learning and calculate when your next siyum will be.")
+                .setTitle("Chovos Hayom");
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
 }

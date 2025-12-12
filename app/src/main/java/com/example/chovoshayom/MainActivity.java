@@ -42,41 +42,32 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapter adapter;
     public static Task task;
-    public static ParentTask[] tasksObjects= {
-            tanach,
-            mishnayos,
-            shas,
-            yerushalmi,
-            rambam,
-            tur,
-            shulchanAruch,
-            mishnaBerura
-    };
+    public int newRunChecker;
+
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
+        newRunChecker = 0;
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         FloatingActionButton fab = findViewById(R.id.fab);
+        task = all;
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ArrayList<String> finished = new ArrayList<>();
-                TasksSetup.setupSet();
-                Methods.getFinished(finished);
-                String allFinished = "You have finished " + finished.size() + " items.";
-                for (String s: finished){
-                    allFinished += "\n" + s;
-                }
+                String allFinished = Methods.getFinished(task);
                 Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });
         mPrefs = getPreferences(MODE_PRIVATE);
-        setupTasksOldAndNew();
+        if (newRunChecker == 0) {
+            setupTasksOldAndNew();
+        }
         savePreferences();
         setupRecycler();
     }
@@ -98,7 +89,6 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         setupTotals();
     }
     private void savePreferences() {
-        TasksSetup.setupSet();
         SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
         Methods.saveToSharedPreferences(prefsEditor);
@@ -107,15 +97,9 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
 
         // Get DisplayMetrics instance
         DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-
-        // Screen width in pixels
         int widthPx = displayMetrics.widthPixels;
-
-        // Convert pixels to dp
         float density = displayMetrics.density; // density = px/dp
         float widthDp = widthPx / density;
-
-        // Store as variable
         int screenWidthDp = Math.round(widthDp);
         if (screenWidthDp < 200){
             screenWidthDp = 200;
@@ -154,7 +138,8 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
 //        Gson gson = new Gson();
 //        String myJson = gson.toJson(tasksObjects[position]);
         Intent intent = new Intent(this, DashboardActivity.class);
-        task = tasksObjects[position];
+        task = task.getChildren()[position];
+        newRunChecker = 1;
         startActivity(intent);
     }
 
@@ -175,7 +160,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
             showStatistics();
             return true;
         } else if (itemId == R.id.action_save) {
-            saveToPreferences();
+            savePreferences();
             return true;
         } else if (itemId == R.id.calculate){
             showCalculate();
@@ -194,7 +179,8 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     }
 
     private void showCalculate() {
-
+        Intent intent = new Intent(this, CalculateActivity.class);
+        startActivity(intent);
     }
 
     private void showStatistics() {
@@ -202,11 +188,6 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         startActivity(intent);
     }
 
-    private void saveToPreferences() {
-        SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
-        SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
-        Methods.saveToSharedPreferences(prefsEditor);
-    }
 
     private void resetAll() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -230,8 +211,11 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
     }
-
     private void showAbout() {
-
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Chovos Hayom is a simple app, designed by Shaul Khayyat, which allows you to keep track of your learning and calculate when your next siyum will be.")
+                .setTitle("Chovos Hayom");
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 }

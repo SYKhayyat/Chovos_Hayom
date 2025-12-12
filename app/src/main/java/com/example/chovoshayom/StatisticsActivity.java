@@ -10,9 +10,11 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -37,9 +39,36 @@ public class StatisticsActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        setColumns();
         refreshStatistics();
         printStatistics();
+    }
+
+    private void setColumns() {
+        TextView namesView = findViewById(R.id.names);
+        TextView learnedView = findViewById(R.id.learneds);
+        TextView totalsView = findViewById(R.id.totals);
+        TextView percentView = findViewById(R.id.percents);
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        int widthPx = displayMetrics.widthPixels;
+        float density = displayMetrics.density; // density = px/dp
+        float widthDp = widthPx / density;
+        int screenWidthDp = Math.round(widthDp);
+        if (screenWidthDp < 250){
+            learnedView.setVisibility(View.GONE);
+            totalsView.setVisibility(View.GONE);
+            percentView.setVisibility(View.VISIBLE);
+        }
+        else if (screenWidthDp < 400){
+            learnedView.setVisibility(View.VISIBLE);
+            totalsView.setVisibility(View.VISIBLE);
+            percentView.setVisibility(View.GONE);
+        }
+        else{
+            learnedView.setVisibility(View.VISIBLE);
+            totalsView.setVisibility(View.VISIBLE);
+            percentView.setVisibility(View.VISIBLE);
+        }
     }
 
     private void refreshStatistics() {

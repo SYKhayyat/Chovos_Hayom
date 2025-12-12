@@ -14,7 +14,6 @@ public class ChildTask extends ParentTask implements Serializable {
         super();
         super.setIsGeneral(true);
         this.parent = parent;
-        super.setUnitName(parent.getUnitName());
     }
     public ChildTask(String name, Task[] children, Task parent){
         super();
@@ -22,14 +21,12 @@ public class ChildTask extends ParentTask implements Serializable {
         super.setIsGeneral(true);
         super.setChildren(children);
         this.parent = parent;
-        super.setUnitName(parent.getUnitName());
     }
 
     public ChildTask(String name, Task parent){
         super.setName(name);
         super.setIsGeneral(true);
         this.parent = parent;
-        super.setUnitName(parent.getUnitName());
     }
     public void setParent(Task parent){
         this.parent = parent;

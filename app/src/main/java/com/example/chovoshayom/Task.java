@@ -7,13 +7,11 @@ import java.io.Serializable;
 
 public class Task implements Serializable, Comparable{
     private String name;
-    private String unitName;
     private double learned;
     private double total;
     boolean isGeneral;
-    public Task(String name, String unitName, boolean isGeneral){
+    public Task(String name, boolean isGeneral){
         this.name = name;
-        this.unitName = unitName;
         this.isGeneral = isGeneral;
         learned = 0;
         total = 0;
@@ -21,7 +19,6 @@ public class Task implements Serializable, Comparable{
 
     public Task(){
         name = "";
-        unitName = "";
         isGeneral = false;
         learned = 0;
         total = 0;
@@ -29,10 +26,6 @@ public class Task implements Serializable, Comparable{
 
     public String getName(){
         return name;
-    }
-
-    public String getUnitName(){
-        return unitName;
     }
 
     public double getLearned(){
@@ -65,9 +58,6 @@ public class Task implements Serializable, Comparable{
     }
     public void setTotal(double total){
         this.total = total;
-    }
-    public void setUnitName(String unitName){
-        this.unitName = unitName;
     }
     public void setIsGeneral(boolean isGeneral){
         this.isGeneral = isGeneral;
@@ -106,5 +96,9 @@ public class Task implements Serializable, Comparable{
     @Override
     public int compareTo(Object o) {
         return toString().compareTo(o.toString());
+    }
+
+    public double getRemaining(){
+        return total - learned;
     }
 }

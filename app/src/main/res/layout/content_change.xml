@@ -22,7 +22,8 @@
         android:gravity="center"
         android:layout_marginTop="@dimen/medium"
         android:layout_marginBottom="@dimen/medium"
-        android:inputType="number"/>
+        android:inputType = "numberDecimal|numberSigned"   />
+
 
     <Button
         android:layout_width="wrap_content"
