@@ -15,6 +15,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -25,12 +26,12 @@ import com.example.chovoshayom.databinding.ActivityCalculateBinding;
 import java.util.ArrayList;
 
 public class CalculateActivity extends AppCompatActivity {
-
     private ActivityCalculateBinding binding;
     SharedPreferences prefs;
     double days;
     double weeks;
     double months;
+    double shabbosAmount;
     double years;
     Calendar calendar;
     int i;
@@ -43,20 +44,26 @@ public class CalculateActivity extends AppCompatActivity {
         setupFields();
         setDayOfWeek();
         Button calc = findViewById(R.id.buttonForCalculation);
+        if (prefs.getInt("Advanced_Calculation", -1) == 0 || prefs.getAll().isEmpty()){
+            reconfigureXmlSimple();
+        }
+        else if (prefs.getInt("Advanced_Calculation", -1) == 1){
+            reconfigureXmlAdvanced();
+        }
         calc.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 double amount = getAmountPerDay();
-                if (prefs.getInt("Advanced_Calculation", -1) == 0){
+                if (prefs.getInt("Advanced_Calculation", -1) == 0 || prefs.getAll().isEmpty()){
                     reconfigureXmlSimple();
                     days = daysUntilFinishedSimple(amount);
                     weeks = weeksUntilFinishedSimple(amount);
                     months = monthsUntilFinishedSimple(amount);
                     years = yearsUntilFinishedSimple(amount);
                 }
-                else {
-                    double shabbosAmount = getAmountPerShabbos();
+                else if (prefs.getInt("Advanced_Calculation", -1) == 1){
                     reconfigureXmlAdvanced();
+                    double shabbosAmount = getAmountPerShabbos();
                     days = daysUntilFinishedAdvanced(amount, shabbosAmount);
                     weeks = weeksUntilFinishedAdvanced(amount, shabbosAmount);
                     months = monthsUntilFinishedAdvanced(amount, shabbosAmount);
@@ -70,7 +77,6 @@ public class CalculateActivity extends AppCompatActivity {
     private void setDayOfWeek() {
         calendar = Calendar.getInstance();
         int day = calendar.get(Calendar.DAY_OF_WEEK);
-        int i;
         switch (day) {
             case Calendar.SUNDAY:
             case Calendar.SATURDAY:
@@ -96,8 +102,8 @@ public class CalculateActivity extends AppCompatActivity {
 
     private double getAmountPerShabbos() {
         EditText myEditText = findViewById(R.id.shabbosEnter);
-        String input = myEditText.getText().toString();
-        return Double.parseDouble(input);
+        String inputShab = myEditText.getText().toString();
+        return Double.parseDouble(inputShab);
     }
 
     private double daysUntilFinishedAdvanced(double amount, double shabbosAmount) {
@@ -105,8 +111,11 @@ public class CalculateActivity extends AppCompatActivity {
     }
 
     private double daysMethod(double remaining, double amount, double shabbosAmount) {
-        if (amount * i >= task.getRemaining()){
-            return task.getRemaining() / amount;
+        if (task.getRemaining() / (((6 * amount) + shabbosAmount)/ 7) > 50){
+            return task.getRemaining() / (((6 * amount) + shabbosAmount)/ 7);
+        }
+        if (amount * i >= remaining){
+            return remaining / amount;
         }
         else {
             return 7 + daysMethod((task.getRemaining() - ((amount * 6) + shabbosAmount)), amount, shabbosAmount);
@@ -135,6 +144,7 @@ public class CalculateActivity extends AppCompatActivity {
     private void reconfigureXmlAdvanced() {
         TextView shabbosText = findViewById(R.id.shabbosText);
         shabbosText.setVisibility(View.VISIBLE);
+        shabbosText.setText(R.string.shabbos_amount);
         EditText shabbosEnter = findViewById(R.id.shabbosEnter);
         shabbosEnter.setVisibility(View.VISIBLE);
     }

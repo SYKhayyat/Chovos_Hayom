@@ -61,5 +61,7 @@
     <string name="welcome_to_the_siyum_calculator_enter_the_amount_you_learn_daily_and_you_will_see_when_you_will_finish">Welcome to the Siyum Calculator. Enter the amount you learn daily, and you will see when you will finish.</string>
     <string name="welcome_to_the_siyum_calculator_enter_the_amount_you_do_daily_as_well_as_the_amount_you_learn_on_shabbos_and_you_will_see_when_you_will_finish">Welcome to the Siyum Calculator. Enter the amount you do daily, as well as the amount you learn on Shabbos, and you will see when you will finish.</string>
     <string name="daily_amount">Daily Amount:</string>
+    <string name="shabbos_amount">Shabbos Amount:</string>
+    <string name="amount_you_do_per_shabbos">Amount you do per Shabbos</string>
 
 </resources>

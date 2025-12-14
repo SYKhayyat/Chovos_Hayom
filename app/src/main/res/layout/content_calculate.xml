@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:id="@+id/calculateText"
-        android:layout_marginTop="@dimen/top"
+        android:layout_marginTop= "@dimen/between"
         android:layout_marginStart="@dimen/side_margin"
         android:layout_marginEnd="@dimen/side_margin"
 
@@ -46,6 +46,7 @@
         android:layout_gravity="center_horizontal"
         android:id="@+id/shabbosEnter"
         android:visibility="gone"
+        android:hint= "@string/amount_you_do_per_shabbos"
         android:layout_marginTop="@dimen/between"
         android:inputType = "numberDecimal"
         />

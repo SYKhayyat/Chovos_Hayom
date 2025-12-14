@@ -15,7 +15,7 @@
         <activity
             android:name=".CalculateActivity"
             android:exported="false"
-            android:theme="@style/Theme.Material3.DayNight.Dialog.MinWidth" />
+            android:theme="@style/Theme.ChovosHayom" />
         <activity
             android:name=".SettingsActivity"
             android:exported="false"
