@@ -25,6 +25,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.example.chovoshayom.databinding.ActivityMain2Binding;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -50,7 +51,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         newRunChecker = 0;
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        FloatingActionButton fab = findViewById(R.id.fab);
+        ExtendedFloatingActionButton fab = findViewById(R.id.fab);
         prefs2 = getSharedPreferences("Settings", MODE_PRIVATE);
         if (prefs2.getInt("Day_Night", -1) == 1){
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);

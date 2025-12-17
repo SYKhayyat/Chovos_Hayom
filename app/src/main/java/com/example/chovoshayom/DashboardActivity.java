@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -80,7 +81,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         setFraction();
         setButtons();
         setRecycler();
-        FloatingActionButton fab = findViewById(R.id.fab);
+        ExtendedFloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

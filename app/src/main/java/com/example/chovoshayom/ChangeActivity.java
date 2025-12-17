@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -42,15 +43,6 @@ public class ChangeActivity extends AppCompatActivity {
         binding = ActivityChangeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String allFinished = Methods.getFinished(task);
-                Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
         setupButtons(task, setting);
     }
 

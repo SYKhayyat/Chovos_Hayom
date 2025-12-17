@@ -1,57 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context=".StatisticsActivity">
+    android:fitsSystemWindows="true"
+    tools:context=".MainActivity">
+
+    <include
+        android:id="@+id/contentMain"
+        layout="@layout/content_main" />
+
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="true"/>
+        android:fitsSystemWindows="true"
+        >
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize" />
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="vertical">
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal">
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/md_theme_primary"/>
 
-        <TextView
-        android:id="@+id/names"
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <include layout="@layout/content_statistics" />
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:scrollbars="vertical"
-        />
-    <TextView
-        android:id="@+id/learneds"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:scrollbars="vertical"
-        />
-    <TextView
-        android:id="@+id/totals"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-        android:scrollbars="vertical"
-        />
-    <TextView
-        android:id="@+id/percents"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-        android:scrollbars="vertical"
-        />
-    </LinearLayout>
+        android:id="@+id/fab"
+        android:layout_gravity="end|bottom"
+        android:text="@string/siyumim"
+        android:contentDescription="@string/save"
+        android:layout_margin="@dimen/_16dp" />
 
-    </ScrollView>
-
-</LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

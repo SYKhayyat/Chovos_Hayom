@@ -2,6 +2,7 @@ package com.example.chovoshayom;
 
 import static com.example.chovoshayom.MainActivity.task;
 import static com.example.chovoshayom.TasksSetup.ahava;
+import static com.example.chovoshayom.TasksSetup.all;
 import static com.example.chovoshayom.TasksSetup.bereishis;
 import static com.example.chovoshayom.TasksSetup.set;
 import static com.example.chovoshayom.TasksSetup.setupTotals;
@@ -26,6 +27,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -46,6 +50,15 @@ public class StatisticsActivity extends AppCompatActivity {
         else {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
         }
+        ExtendedFloatingActionButton fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String allFinished = Methods.getFinished(all);
+                Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
