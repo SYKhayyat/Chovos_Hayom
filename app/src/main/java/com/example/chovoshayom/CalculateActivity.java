@@ -4,6 +4,7 @@ import static com.example.chovoshayom.MainActivity.task;
 
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.icu.util.Calendar;
 import android.os.Bundle;
@@ -11,11 +12,14 @@ import android.os.Bundle;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -27,7 +31,8 @@ import java.util.ArrayList;
 
 public class CalculateActivity extends AppCompatActivity {
     private ActivityCalculateBinding binding;
-    SharedPreferences prefs;
+    SharedPreferences prefs2;
+
     double days;
     double weeks;
     double months;
@@ -39,30 +44,43 @@ public class CalculateActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityCalculateBinding.inflate(getLayoutInflater());
+
         setContentView(binding.getRoot());
-        prefs = getSharedPreferences("Settings", MODE_PRIVATE);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
+        FloatingActionButton fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String allFinished = Methods.getFinished(task);
+                Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
+
+        prefs2 = getSharedPreferences("Settings", MODE_PRIVATE);
         setupFields();
         setDayOfWeek();
         Button calc = findViewById(R.id.buttonForCalculation);
-        if (prefs.getInt("Advanced_Calculation", -1) == 0 || prefs.getAll().isEmpty()){
+        if (prefs2.getInt("Advanced_Calculation", -1) == 0 || prefs2.getAll().isEmpty()){
             reconfigureXmlSimple();
         }
-        else if (prefs.getInt("Advanced_Calculation", -1) == 1){
+        else if (prefs2.getInt("Advanced_Calculation", -1) == 1){
             reconfigureXmlAdvanced();
         }
         calc.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 double amount = getAmountPerDay();
-                if (prefs.getInt("Advanced_Calculation", -1) == 0 || prefs.getAll().isEmpty()){
-                    reconfigureXmlSimple();
+                if (prefs2.getInt("Advanced_Calculation", -1) == 0 || prefs2.getAll().isEmpty()){
                     days = daysUntilFinishedSimple(amount);
                     weeks = weeksUntilFinishedSimple(amount);
                     months = monthsUntilFinishedSimple(amount);
                     years = yearsUntilFinishedSimple(amount);
                 }
-                else if (prefs.getInt("Advanced_Calculation", -1) == 1){
-                    reconfigureXmlAdvanced();
+                else if (prefs2.getInt("Advanced_Calculation", -1) == 1){
                     double shabbosAmount = getAmountPerShabbos();
                     days = daysUntilFinishedAdvanced(amount, shabbosAmount);
                     weeks = weeksUntilFinishedAdvanced(amount, shabbosAmount);
@@ -151,9 +169,9 @@ public class CalculateActivity extends AppCompatActivity {
 
     private void setupFields() {
         TextView greeting = findViewById(R.id.calculateText);
-        if (prefs.getInt("Advanced_Calculation", -1) == 0){
+        if (prefs2.getInt("Advanced_Calculation", -1) == 0){
             greeting.setText(R.string.welcome_to_the_siyum_calculator_enter_the_amount_you_learn_daily_and_you_will_see_when_you_will_finish);
-        } else if (prefs.getInt("Advanced_Calculation", -1) == 1){
+        } else if (prefs2.getInt("Advanced_Calculation", -1) == 1){
             greeting.setText(R.string.welcome_to_the_siyum_calculator_enter_the_amount_you_do_daily_as_well_as_the_amount_you_learn_on_shabbos_and_you_will_see_when_you_will_finish);
         }
         TextView daily = findViewById(R.id.dailyText);
@@ -199,6 +217,95 @@ public class CalculateActivity extends AppCompatActivity {
             public void onClick(View v) {
                 finish();
             }});
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int itemId = item.getItemId();
+        if (itemId == R.id.action_statistics) {
+            showStatistics();
+            return true;
+        } else if (itemId == R.id.action_save) {
+            savePreferences();
+            return true;
+        } else if (itemId == R.id.calculate){
+            showCalculate();
+            return true;
+        } else if (itemId == R.id.action_reset_stats) {
+            resetAll();
+            return true;
+        } else if (itemId == R.id.action_settings) {
+            showSettings();
+            return true;
+        } else if (itemId == R.id.action_about) {
+            showAbout();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showCalculate() {
+        Intent intent = new Intent(this, CalculateActivity.class);
+        startActivity(intent);
+    }
+
+    private void showStatistics() {
+        Intent intent = new Intent(this, StatisticsActivity.class);
+        startActivity(intent);
+    }
+
+
+    private void resetAll() {
+        if (prefs2.getInt("Read_Only", -1) != 1){
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("This will reset everything to zero!")
+                    .setTitle("Are you sure?");
+            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+                    SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+                    Methods.saveToSharedPreferences(prefsEditor, 0);
+                    finish();
+                }
+            });
+            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    finish();
+                }
+            });
+            AlertDialog dialog = builder.create();}
+        else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Read Only mode is on.")
+                    .setTitle("Not Enabled!");
+            AlertDialog dialog = builder.create();}
+
+    }
+
+    private void showSettings() {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
+    }
+    private void showAbout() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Chovos Hayom is a simple app, designed by Shaul Khayyat, which allows you to keep track of your learning and calculate when your next siyum will be.")
+                .setTitle("Chovos Hayom");
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+    private void savePreferences() {
+        SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+        Methods.saveToSharedPreferences(prefsEditor);
     }
 
 }

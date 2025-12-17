@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.view.menu.MenuView;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -50,6 +51,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
 
     private RecyclerView recyclerView;
+    SharedPreferences prefs2;
 
     private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapterDashboard adapter;
@@ -63,7 +65,15 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
+        assert actionBar != null;
         actionBar.setDisplayHomeAsUpEnabled(true);
+        prefs2 = getSharedPreferences("Settings", MODE_PRIVATE);
+        if (prefs2.getInt("Day_Night", -1) == 1){
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        }
+        else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        }
         setName();
         setPercent();
         setProgressBar();
@@ -107,7 +117,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     private void setButtons() {
         Button add = findViewById(R.id.buttonForMore);
         Button reset = findViewById(R.id.buttonToReset);
-        if (! task.getIsGeneral()){
+        if (! task.getIsGeneral() && prefs2.getInt("Read_Only", -1) != 1){
             add.setVisibility(View.VISIBLE);
             add.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -250,6 +260,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     }
 
     private void resetAll() {
+        if (prefs2.getInt("Read_Only", -1) != 1){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("This will reset everything to zero!")
                 .setTitle("Are you sure?");
@@ -266,7 +277,19 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
                 finish();
             }
         });
-        AlertDialog dialog = builder.create();
+        AlertDialog dialog = builder.create();}
+        else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Read Only mode is on.")
+                    .setTitle("Not Enabled!");
+            builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    finish();
+                }
+            });
+            AlertDialog dialog = builder.create();
+        }
+
     }
 
     private void showSettings() {

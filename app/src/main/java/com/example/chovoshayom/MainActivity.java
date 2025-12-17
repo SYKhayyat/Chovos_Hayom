@@ -1,11 +1,8 @@
 package com.example.chovoshayom;
 
 import static com.example.chovoshayom.TasksSetup.*;
-import static com.example.chovoshayom.Methods.*;
 
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -19,20 +16,17 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.example.chovoshayom.databinding.ActivityMain2Binding;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.gson.Gson;
-
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAdapter.ItemClickListener{
 
@@ -43,6 +37,8 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
     MyRecyclerViewAdapter adapter;
     public static Task task;
     public int newRunChecker;
+
+    SharedPreferences prefs2;
 
 
 
@@ -55,6 +51,13 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         FloatingActionButton fab = findViewById(R.id.fab);
+        prefs2 = getSharedPreferences("Settings", MODE_PRIVATE);
+        if (prefs2.getInt("Day_Night", -1) == 1){
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        }
+        else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        }
         task = all;
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -120,9 +123,9 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
                 R.drawable.android_shas,
                 R.drawable.android_yerushalmi,
                 R.drawable.android_rambam,
-                R.drawable.android_tur,
+                R.drawable.android_arbah_turim,
                 R.drawable.android_shulchan_aruch,
-                R.drawable.android_mishna_berurah};
+                R.drawable.android_mishna_berura};
         // set up the RecyclerView
         RecyclerView recyclerView = findViewById(R.id.recycler_view);
         int numberOfColumns = screenWidthDp/200;
@@ -190,21 +193,30 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
 
 
     private void resetAll() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("This will reset everything to zero!")
-                .setTitle("Are you sure?");
-        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
-                SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
-                Methods.saveToSharedPreferences(prefsEditor, 0);            }
-        });
-        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-            }
-        });
-        AlertDialog dialog = builder.create();
-        dialog.show();
+        if (prefs2.getInt("Read_Only", -1) != 1){
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("This will reset everything to zero!")
+                    .setTitle("Are you sure?");
+            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+                    SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+                    Methods.saveToSharedPreferences(prefsEditor, 0);
+                    finish();
+                }
+            });
+            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    finish();
+                }
+            });
+            AlertDialog dialog = builder.create();}
+        else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Read Only mode is on.")
+                    .setTitle("Not Enabled!");
+            AlertDialog dialog = builder.create();}
+
     }
 
     private void showSettings() {

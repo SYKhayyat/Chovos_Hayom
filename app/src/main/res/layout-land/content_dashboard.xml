@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:stretchColumns="*">
+
+    <TableRow>
+        <LinearLayout
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            >
+            <TextView
+                android:layout_marginTop="@dimen/top"
+                android:layout_marginBottom="@dimen/between"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:id="@+id/name"/>
+
+            <TextView
+                android:id="@+id/percent"
+                android:gravity="center"
+                android:layout_marginTop="@dimen/between"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/percent"/>
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_marginTop="@dimen/between"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:valueFrom="0"
+                android:valueTo="100"
+                android:stepSize=".1"
+                app:labelBehavior="gone" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_marginTop="@dimen/between"
+                android:text="@string/fraction"
+                android:id="@+id/fraction" />
+        </LinearLayout>
+        <LinearLayout
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            >
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="50dp"
+                android:id="@+id/buttonForMore"
+                android:layout_gravity="center_horizontal"
+                android:text="@string/add"
+                android:visibility="gone"
+                />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/between"
+                android:id="@+id/buttonToReset"
+                android:text="@string/reset"
+                android:layout_gravity="center_horizontal"
+                android:visibility="gone"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view_dashboard"
+                android:layout_marginTop="50dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+
+
+        </LinearLayout>
+    </TableRow>
+
+</TableLayout>

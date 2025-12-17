@@ -20,6 +20,7 @@ import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -30,12 +31,21 @@ import java.util.Collections;
 import java.util.Comparator;
 
 public class StatisticsActivity extends AppCompatActivity {
+    SharedPreferences prefs2;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_statistics);
         Toolbar toolbar = findViewById(R.id.toolbar);
+        prefs2 = getSharedPreferences("Settings", MODE_PRIVATE);
+        if (prefs2.getInt("Day_Night", -1) == 1){
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        }
+        else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        }
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
@@ -102,7 +112,6 @@ public class StatisticsActivity extends AppCompatActivity {
             learneds += "\n" + String.valueOf(task.getLearned());
             totals += "\n" + String.valueOf(task.getTotal());
             percents += "\n" + String.valueOf(task.getPercentage());
-            //TODO Stop from wrapping!
         }
         TextView namesView = findViewById(R.id.names);
         namesView.setText(names);
