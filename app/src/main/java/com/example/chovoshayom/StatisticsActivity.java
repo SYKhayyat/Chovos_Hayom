@@ -8,6 +8,7 @@ import static com.example.chovoshayom.TasksSetup.set;
 import static com.example.chovoshayom.TasksSetup.setupTotals;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -20,6 +21,7 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
@@ -33,6 +35,7 @@ import com.google.android.material.snackbar.Snackbar;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 
 public class StatisticsActivity extends AppCompatActivity {
     SharedPreferences prefs2;
@@ -54,7 +57,7 @@ public class StatisticsActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String allFinished = Methods.getFinished(all);
+                String allFinished = Methods.getFinished(task);
                 Methods.clearSet();
                 Snackbar snackbar = Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
                         .setAction("Action", null);
@@ -118,7 +121,8 @@ public class StatisticsActivity extends AppCompatActivity {
     }
 
     private void printStatistics() {
-        Object[] tasks = set.toArray();
+        HashSet<Task> taskSet = Methods.getCurrentSet(task);
+        Object[] tasks = taskSet.toArray();
         Arrays.sort(tasks);
         String names = "Names";
         String learneds = "Learned:";
@@ -139,6 +143,7 @@ public class StatisticsActivity extends AppCompatActivity {
         totalsView.setText(totals);
         TextView percentView = findViewById(R.id.percents);
         percentView.setText(percents);
+        Methods.clearCurrentSet();
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -153,11 +158,98 @@ public class StatisticsActivity extends AppCompatActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int itemId = item.getItemId();
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                finish();
-                return true;
+        if (itemId == R.id.action_statistics) {
+            showStatistics();
+            return true;
+        }
+        else if (itemId == android.R.id.home){
+            Intent returnIntent = new Intent();
+            if (task.getParent() != null){
+                task = task.getParent();}
+            TasksSetup.setupLearned();
+            Log.i("Bereishis", String.valueOf(bereishis.getLearned()));
+            returnIntent.putExtra("result",task);
+            setResult(Activity.RESULT_OK,returnIntent);
+            Log.i("Task", task.getName());
+            finish();
+            return true;
+        }
+        else if (itemId == R.id.action_save) {
+            saveToPreferences();
+            return true;
+        } else if (itemId == R.id.calculate) {
+            showCalculate();
+            return true;
+        }else if (itemId == R.id.action_reset_stats) {
+            resetAll();
+            return true;
+        } else if (itemId == R.id.action_settings) {
+            showSettings();
+            return true;
+        } else if (itemId == R.id.action_about) {
+            showAbout();
+            return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+    private void showCalculate() {
+        Intent intent = new Intent(this, CalculateActivity.class);
+        startActivity(intent);
+    }
+    private void showStatistics() {
+        Intent intent = new Intent(this, StatisticsActivity.class);
+        startActivity(intent);
+    }
+
+    private void saveToPreferences() {
+        SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+        Methods.saveToSharedPreferences(prefsEditor);
+    }
+
+    private void resetAll() {
+        if (prefs2.getInt("Read_Only", -1) != 1){
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("This will reset everything to zero!")
+                    .setTitle("Are you sure?");
+            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+                    SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+                    Methods.saveToSharedPreferences(prefsEditor, 0);
+                    finish();
+                }
+            });
+            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    finish();
+                }
+            });
+            AlertDialog dialog = builder.create();}
+        else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Read Only mode is on.")
+                    .setTitle("Not Enabled!");
+            builder.setNegativeButton("OK", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    finish();
+                }
+            });
+            AlertDialog dialog = builder.create();
+        }
+
+    }
+
+    private void showSettings() {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
+    }
+
+    private void showAbout() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Chovos Hayom is a simple app, designed by Shaul Khayyat, which allows you to keep track of your learning and calculate when your next siyum will be.")
+                .setTitle("Chovos Hayom");
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 }

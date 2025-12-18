@@ -1,8 +1,10 @@
 package com.example.chovoshayom;
 
 import static com.example.chovoshayom.MainActivity.task;
+import static com.example.chovoshayom.TasksSetup.bereishis;
 
 
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -236,13 +238,26 @@ public class CalculateActivity extends AppCompatActivity {
         if (itemId == R.id.action_statistics) {
             showStatistics();
             return true;
-        } else if (itemId == R.id.action_save) {
+        }
+        else if (itemId == android.R.id.home){
+            Intent returnIntent = new Intent();
+            if (task.getParent() != null){
+                task = task.getParent();}
+            TasksSetup.setupLearned();
+            Log.i("Bereishis", String.valueOf(bereishis.getLearned()));
+            returnIntent.putExtra("result",task);
+            setResult(Activity.RESULT_OK,returnIntent);
+            Log.i("Task", task.getName());
+            finish();
+            return true;
+        }
+        else if (itemId == R.id.action_save) {
             savePreferences();
             return true;
-        } else if (itemId == R.id.calculate){
+        } else if (itemId == R.id.calculate) {
             showCalculate();
             return true;
-        } else if (itemId == R.id.action_reset_stats) {
+        }else if (itemId == R.id.action_reset_stats) {
             resetAll();
             return true;
         } else if (itemId == R.id.action_settings) {

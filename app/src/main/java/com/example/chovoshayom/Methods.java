@@ -9,6 +9,7 @@ import java.util.HashSet;
 
 public class Methods {
     public static HashSet<String> finished = new HashSet<>();
+    public static HashSet<Task> currentSet = new HashSet<>();
 
         public static String getFinished(Task task){
             if (task.getLearned() == task.getTotal()){
@@ -41,5 +42,18 @@ public class Methods {
             prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(i));
             prefsEditor.commit();
         }
+    }
+
+    public static HashSet<Task> getCurrentSet(Task task) {
+            currentSet.add(task);
+        if (task.getIsGeneral()){
+            for (Task t: task.getChildren()){
+                getCurrentSet(t);
+            }
+        }
+        return currentSet;
+    }
+    public static void clearCurrentSet(){
+        currentSet.clear();
     }
 }
