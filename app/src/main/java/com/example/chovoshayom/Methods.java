@@ -19,15 +19,15 @@ public class Methods {
                     getFinished(t);
                 }
             }
-            for (String s: finished){
-                finished.add(s);
-            }
-
             String allFinished = "You have finished " + finished.size() + " items in " + task.getName();
             for (String s: finished){
                 allFinished += "\n" + s;
             }
             return allFinished;
+        }
+
+        public static void clearSet(){
+            finished.clear();
         }
         public static void saveToSharedPreferences(SharedPreferences.Editor prefsEditor){
             for (Task t: set){

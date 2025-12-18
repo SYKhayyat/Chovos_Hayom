@@ -86,8 +86,14 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
             @Override
             public void onClick(View view) {
                 String allFinished = Methods.getFinished(task);
-                Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Methods.clearSet();
+                Log.i("done", allFinished);
+                Snackbar snackbar = Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
+                        .setAction("Action", null);
+                View snackbarView = snackbar.getView();
+                TextView textView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+                textView.setMaxLines(10); // Allow up to 5 lines
+                snackbar.show();
             }
         });
     }
@@ -258,6 +264,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
         Methods.saveToSharedPreferences(prefsEditor);
+        Log.i(task.getName(), String.valueOf(task.getLearned()));
     }
 
     private void resetAll() {

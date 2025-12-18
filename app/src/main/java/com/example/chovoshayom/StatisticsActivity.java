@@ -55,8 +55,13 @@ public class StatisticsActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 String allFinished = Methods.getFinished(all);
-                Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Methods.clearSet();
+                Snackbar snackbar = Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
+                        .setAction("Action", null);
+                View snackbarView = snackbar.getView();
+                TextView textView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+                textView.setMaxLines(10); // Allow up to 5 lines
+                snackbar.show();
             }
         });
         setSupportActionBar(toolbar);

@@ -278,7 +278,7 @@ public class TasksSetup {
     public static GrandchildTask nezikinRambam = new GrandchildTask("Nezikin (Rambam)", 62, rambam);
     public static GrandchildTask kinyan = new GrandchildTask("Kinyan", 75, rambam);
     public static GrandchildTask mishpatim = new GrandchildTask("Mishpatim", 75, rambam);
-    public static GrandchildTask shoftimRambam = new GrandchildTask("Shoftim", 81, rambam);
+    public static GrandchildTask shoftimRambam = new GrandchildTask("Shoftim (Rambam)", 81, rambam);
     public static GrandchildTask[] rambamChildren = {maddah, ahava, zemanim, nashimRambam, kedusha, haflaah, zeraimRambam, avodah, korbanos, tahara, nezikinRambam, kinyan, mishpatim, shoftimRambam};
 
     public static GrandchildTask orachChaim = new GrandchildTask("Orech Chaim (Tur)", 697, tur);

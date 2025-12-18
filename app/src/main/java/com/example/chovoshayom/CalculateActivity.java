@@ -56,6 +56,7 @@ public class CalculateActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 String allFinished = Methods.getFinished(task);
+                Methods.clearSet();
                 Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }

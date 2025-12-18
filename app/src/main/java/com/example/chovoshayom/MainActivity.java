@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 import com.example.chovoshayom.databinding.ActivityMain2Binding;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
@@ -64,8 +65,13 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
             @Override
             public void onClick(View view) {
                 String allFinished = Methods.getFinished(task);
-                Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Methods.clearSet();
+                Snackbar snackbar = Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
+                        .setAction("Action", null);
+                View snackbarView = snackbar.getView();
+                TextView textView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+                textView.setMaxLines(10); // Allow up to 5 lines
+                snackbar.show();
             }
         });
         mPrefs = getPreferences(MODE_PRIVATE);
