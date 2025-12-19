@@ -201,6 +201,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
 
     private void resetAll() {
         if (prefs2.getInt("Read_Only", -1) != 1){
+            Log.i("Reset", "Reset");
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("This will reset everything to zero!")
                     .setTitle("Are you sure?");
@@ -209,21 +210,21 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
                     SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
                     SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
                     Methods.saveToSharedPreferences(prefsEditor, 0);
-                    finish();
                 }
             });
             builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
-                    finish();
+
                 }
             });
-            AlertDialog dialog = builder.create();}
+            AlertDialog dialog = builder.create();
+            dialog.show();}
         else {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("Read Only mode is on.")
                     .setTitle("Not Enabled!");
-            AlertDialog dialog = builder.create();}
-
+            AlertDialog dialog = builder.create();
+            dialog.show();}
     }
 
     private void showSettings() {

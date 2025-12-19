@@ -291,21 +291,22 @@ public class CalculateActivity extends AppCompatActivity {
                     SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
                     SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
                     Methods.saveToSharedPreferences(prefsEditor, 0);
-                    finish();
                 }
             });
             builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
-                    finish();
+
                 }
             });
-            AlertDialog dialog = builder.create();}
+            AlertDialog dialog = builder.create();
+            dialog.show();}
         else {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("Read Only mode is on.")
                     .setTitle("Not Enabled!");
-            AlertDialog dialog = builder.create();}
-
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
     }
 
     private void showSettings() {
