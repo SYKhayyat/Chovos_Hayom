@@ -6,13 +6,14 @@
     <item android:id="@+id/action_statistics"
         android:title="View Statistics"
         app:showAsAction="never" />
-
     <item android:id="@+id/action_save"
         android:title="Save"
         app:showAsAction="never" />
-
     <item android:id="@+id/calculate"
         android:title="Calculate"
+        app:showAsAction="never" />
+    <item android:id="@+id/action_reset_specific"
+        android:title="Reset Category"
         app:showAsAction="never" />
     <item android:id="@+id/action_reset_stats"
         android:title="Reset All"

@@ -2,3 +2,12 @@
 
 
 // endregion
+public static void saveToSharedPreferences(SharedPreferences.Editor prefsEditor, int i, Task task){
+        prefsEditor.putLong(task.getName(), Double.doubleToRawLongBits(i));
+        prefsEditor.commit();
+        if (task.getIsGeneral()){
+            for (Task t: task.getChildren()){
+                saveToSharedPreferences(prefsEditor, 0, t);
+        }
+        }
+    }

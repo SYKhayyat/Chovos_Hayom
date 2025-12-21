@@ -1,6 +1,7 @@
 package com.example.chovoshayom;
 
 import static com.example.chovoshayom.MainActivity.task;
+import static com.example.chovoshayom.TasksSetup.all;
 import static com.example.chovoshayom.TasksSetup.bereishis;
 
 
@@ -225,7 +226,7 @@ public class CalculateActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_other, menu);
         return true;
     }
 
@@ -257,7 +258,11 @@ public class CalculateActivity extends AppCompatActivity {
         } else if (itemId == R.id.calculate) {
             showCalculate();
             return true;
-        }else if (itemId == R.id.action_reset_stats) {
+        } else if (itemId == R.id.action_reset_specific) {
+            resetSpecific();
+            return true;
+        }
+        else if (itemId == R.id.action_reset_stats) {
             resetAll();
             return true;
         } else if (itemId == R.id.action_settings) {
@@ -270,6 +275,7 @@ public class CalculateActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+
     private void showCalculate() {
         Intent intent = new Intent(this, CalculateActivity.class);
         startActivity(intent);
@@ -280,34 +286,6 @@ public class CalculateActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-
-    private void resetAll() {
-        if (prefs2.getInt("Read_Only", -1) != 1){
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage("This will reset everything to zero!")
-                    .setTitle("Are you sure?");
-            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
-                    SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
-                    Methods.saveToSharedPreferences(prefsEditor, 0);
-                }
-            });
-            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-
-                }
-            });
-            AlertDialog dialog = builder.create();
-            dialog.show();}
-        else {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage("Read Only mode is on.")
-                    .setTitle("Not Enabled!");
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        }
-    }
 
     private void showSettings() {
         Intent intent = new Intent(this, SettingsActivity.class);
@@ -324,6 +302,53 @@ public class CalculateActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
         Methods.saveToSharedPreferences(prefsEditor);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Your progress has been saved!")
+                .setTitle("Saved!");
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void resetSpecific() {
+        askAndReset(task);
+    }
+
+    private void resetAll() {
+        askAndReset(all);
+    }
+
+    private void askAndReset(Task t) {
+        if (prefs2.getInt("Read_Only", -1) != 1){
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("This will reset everything to zero!")
+                    .setTitle("Are you sure?");
+            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+                    SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+                    if (t.equals(all)){
+                        Methods.resetAll();
+                    }
+                    else {
+                        Methods.resetSpecific(t);
+                    }
+                    TasksSetup.setupLearned();
+                    Methods.saveToSharedPreferences(prefsEditor);
+                }
+            });
+            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();}
+        else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Read Only mode is on.")
+                    .setTitle("Not Enabled!");
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
     }
 
 }

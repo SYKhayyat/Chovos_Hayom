@@ -65,13 +65,13 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
             @Override
             public void onClick(View view) {
                 String allFinished = Methods.getFinished(task);
-                Methods.clearSet();
                 Snackbar snackbar = Snackbar.make(view, allFinished, Snackbar.LENGTH_LONG)
                         .setAction("Action", null);
                 View snackbarView = snackbar.getView();
                 TextView textView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
                 textView.setMaxLines(10); // Allow up to 5 lines
                 snackbar.show();
+                Methods.clearSet();
             }
         });
         mPrefs = getPreferences(MODE_PRIVATE);
@@ -170,7 +170,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
             showStatistics();
             return true;
         } else if (itemId == R.id.action_save) {
-            savePreferences();
+            saveToPreferences();
             return true;
         } else if (itemId == R.id.calculate){
             showCalculate();
@@ -186,6 +186,17 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void saveToPreferences() {
+        SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+        Methods.saveToSharedPreferences(prefsEditor);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Your progress has been saved!")
+                .setTitle("Saved!");
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     private void showCalculate() {
@@ -209,12 +220,12 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
                 public void onClick(DialogInterface dialog, int id) {
                     SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
                     SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
-                    Methods.saveToSharedPreferences(prefsEditor, 0);
+                    Methods.resetAll();
+                    Methods.saveToSharedPreferences(prefsEditor);
                 }
             });
             builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
-
                 }
             });
             AlertDialog dialog = builder.create();

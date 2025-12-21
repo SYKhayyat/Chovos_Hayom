@@ -36,12 +36,19 @@ public class Methods {
                 prefsEditor.commit();
             }
         }
-    public static void saveToSharedPreferences(SharedPreferences.Editor prefsEditor, int i){
-        prefsEditor.commit();
-        for (Task t: set){
-            prefsEditor.putLong(t.getName(), Double.doubleToRawLongBits(i));
-            prefsEditor.commit();
+    public static void resetAll(){
+            for (Task t: set){
+            t.reset(0);
         }
+    }
+
+    public static void resetSpecific(Task task){
+            task.reset(0);
+            if (task.getIsGeneral()){
+                for (Task t: task.getChildren()){
+                    resetSpecific(t);
+                }
+            }
     }
 
     public static HashSet<Task> getCurrentSet(Task task) {
