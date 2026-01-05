@@ -6,4 +6,4 @@ It features:
 * A listing of siyumim.
 * A calculator which determines when you will finish a mesechta or seder (or more). It can calculate based on a daily amount, with an option to have a different amount of learning on Shabbos.
 
-Try it out! Head on over to [ releases ] (https://github.com/SYKhayyat/Chovos_Hayom/releases/tag/V1.0.0), and download the apk! Feel free to reach out with issues!
+Try it out! Head on over to [releases](https://github.com/SYKhayyat/Chovos_Hayom/releases/tag/V1.0.0), and download the apk! Feel free to reach out with issues!
