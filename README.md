@@ -1,4 +1,4 @@
-#Chovos Hayom - An App for Serious Learners
+# Chovos Hayom - An App for Serious Learners
 Chovos Hayom is an app I developed as a Term Project for an Android course. It is written fully in Java and xml, and features no AI input.
 The app allows you to track your progress in Torah. You can track your progress within specific mesechtos or sefarim. After saving your progress, your changes will be saved in that sefer as well as in the category containing that sefer.
 It features:
