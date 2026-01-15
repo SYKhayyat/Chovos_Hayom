@@ -14,6 +14,7 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -42,7 +43,16 @@ public class ChangeActivity extends AppCompatActivity {
 
         binding = ActivityChangeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
+        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                finishOff(0, "");
+                // Custom back press logic
+                setEnabled(false);
+                getOnBackPressedDispatcher().onBackPressed();
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, callback);
         setupButtons(task, setting);
     }
 

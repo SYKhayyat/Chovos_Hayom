@@ -15,6 +15,7 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
@@ -69,6 +70,16 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         ActionBar actionBar = getSupportActionBar();
         assert actionBar != null;
         actionBar.setDisplayHomeAsUpEnabled(true);
+        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                goHome();
+                // Custom back press logic
+                setEnabled(false);
+                getOnBackPressedDispatcher().onBackPressed();
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, callback);
         prefs2 = getSharedPreferences("Settings", MODE_PRIVATE);
         if (prefs2.getInt("Day_Night", -1) == 1){
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
@@ -221,16 +232,8 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
             return true;
         }
         else if (itemId == android.R.id.home){
-                Intent returnIntent = new Intent();
-                if (task.getParent() != null){
-                    task = task.getParent();}
-                TasksSetup.setupLearned();
-                Log.i("Bereishis", String.valueOf(bereishis.getLearned()));
-                returnIntent.putExtra("result",task);
-                setResult(Activity.RESULT_OK,returnIntent);
-                Log.i("Task", task.getName());
-                finish();
-                return true;
+            goHome();
+            return true;
         }
         else if (itemId == R.id.action_save) {
             saveToPreferences();
@@ -254,6 +257,17 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         return super.onOptionsItemSelected(item);
     }
 
+    private void goHome() {
+        Intent returnIntent = new Intent();
+        if (task.getParent() != null){
+            task = task.getParent();}
+        TasksSetup.setupLearned();
+        Log.i("Bereishis", String.valueOf(bereishis.getLearned()));
+        returnIntent.putExtra("result",task);
+        setResult(Activity.RESULT_OK,returnIntent);
+        Log.i("Task", task.getName());
+        finish();
+    }
 
 
     private void showCalculate() {
