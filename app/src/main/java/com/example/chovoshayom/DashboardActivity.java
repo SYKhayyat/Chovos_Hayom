@@ -4,6 +4,8 @@ import static com.example.chovoshayom.MainActivity.*;
 import static com.example.chovoshayom.TasksSetup.all;
 import static com.example.chovoshayom.TasksSetup.bereishis;
 import static com.example.chovoshayom.TasksSetup.set;
+import static com.example.chovoshayom.MainActivity.task;
+
 
 import android.app.Activity;
 import android.content.DialogInterface;
@@ -135,6 +137,8 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     private void setButtons() {
         Button add = findViewById(R.id.buttonForMore);
         Button reset = findViewById(R.id.buttonToReset);
+        Button finish = findViewById(R.id.buttonToFinish);
+        Button clear = findViewById(R.id.buttonToClear);
         if (! task.getIsGeneral() && prefs2.getInt("Read_Only", -1) != 1){
             add.setVisibility(View.VISIBLE);
             add.setOnClickListener(new View.OnClickListener() {
@@ -150,12 +154,43 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
                     openInputActivity("reset");
                 }
             });
+            finish.setVisibility(View.VISIBLE);
+            finish.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    task.reset(task.getTotal());
+                    saveToPreferences();
+                    displayChanges();
+                }
+            });
+            clear.setVisibility(View.VISIBLE);
+            clear.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    task.reset(0);
+                    saveToPreferences();
+                    displayChanges();
+                }
+            });
         }
         else {
             add.setVisibility(View.GONE);
             reset.setVisibility(View.GONE);
+            finish.setVisibility(View.GONE);
+            clear.setVisibility(View.GONE);
         }
 
+    }
+
+    private void displayChanges() {
+        Log.i("Task", String.valueOf(task.getLearned()));
+        TasksSetup.setupLearned();
+        setName();
+        setPercent();
+        setProgressBar();
+        setFraction();
+        setButtons();
+        setRecycler();
     }
 
     public void openInputActivity(String setting){
@@ -163,7 +198,6 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         intent.putExtra("taskObject", task);
         intent.putExtra("setting", setting);
         startActivityForResult(intent, 1);
-        Log.i("hello", "called");
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -172,14 +206,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
         if (requestCode == 1) {
             if (resultCode == Activity.RESULT_OK) {
-                Log.i("Task", String.valueOf(task.getLearned()));
-                TasksSetup.setupLearned();
-                setName();
-                setPercent();
-                setProgressBar();
-                setFraction();
-                setButtons();
-                setRecycler();
+                displayChanges();
             }
             if (resultCode == Activity.RESULT_CANCELED) {
                 Log.i("Result", "Cancelled");
@@ -237,6 +264,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         }
         else if (itemId == R.id.action_save) {
             saveToPreferences();
+            showSaved();
             return true;
         } else if (itemId == R.id.calculate) {
             showCalculate();
@@ -283,11 +311,15 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
         Methods.saveToSharedPreferences(prefsEditor);
+    }
+
+    private void showSaved() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Your progress has been saved!")
                 .setTitle("Saved!");
         AlertDialog dialog = builder.create();
-        dialog.show();    }
+        dialog.show();
+    }
 
 
     private void showSettings() {

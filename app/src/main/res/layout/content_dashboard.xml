@@ -61,6 +61,24 @@
         android:layout_gravity="center_horizontal"
         android:visibility="gone"/>
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/between"
+        android:id="@+id/buttonToFinish"
+        android:text="@string/finish"
+        android:layout_gravity="center_horizontal"
+        android:visibility="gone"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/between"
+        android:id="@+id/buttonToClear"
+        android:text="@string/clear"
+        android:layout_gravity="center_horizontal"
+        android:visibility="gone"/>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_dashboard"
         android:layout_marginTop="@dimen/between"
