@@ -122,13 +122,19 @@ public class ChangeActivity extends AppCompatActivity {
     }
     private void finishOff(double amount, String setting){
         if (setting.equals("add")){
-            task.add(amount);}
+            task.add(amount);
+            saveToPreferences();}
         else if (setting.equals("reset")){
             task.reset(amount);
+            saveToPreferences();
         }
         Intent returnIntent = new Intent();
         returnIntent.putExtra("result",task);
         setResult(Activity.RESULT_OK,returnIntent);
         finish();
     }
+    private void saveToPreferences() {
+        SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+        Methods.saveToSharedPreferences(prefsEditor);  }
 }

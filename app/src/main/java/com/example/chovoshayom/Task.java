@@ -9,6 +9,7 @@ public class Task implements Serializable, Comparable{
     private String name;
     private double learned;
     private double total;
+    private int[] learnedList;
     boolean isGeneral;
     public Task(String name, boolean isGeneral){
         this.name = name;
@@ -47,6 +48,12 @@ public class Task implements Serializable, Comparable{
 
     public boolean getIsGeneral(){
         return isGeneral;
+    }
+    public int[] getLearnedList(){
+        return learnedList;
+    }
+    public void setLearnedList(int[] list){
+        learnedList = list;
     }
 
     public boolean finished(){

@@ -64,5 +64,7 @@
     <string name="shabbos_amount">Shabbos Amount:</string>
     <string name="amount_you_do_per_shabbos">Amount you do per Shabbos</string>
     <string name="siyumim">Siyumim</string>
+    <string name="finish">Finish</string>
+    <string name="clear">Clear</string>
 
 </resources>

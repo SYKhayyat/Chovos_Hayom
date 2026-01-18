@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 public class GrandchildTask extends Task implements Serializable {
     private Task parent;
+    private int offset;
     public GrandchildTask(){
         super();
         parent = null;
@@ -14,11 +15,12 @@ public class GrandchildTask extends Task implements Serializable {
         this.parent = parent;
         super.setIsGeneral(false);
     }
-    public GrandchildTask(String name, double total, Task parent){
+    public GrandchildTask(String name, double total, Task parent, int offset){
         super.setName(name);
         super.setIsGeneral(false);
         setTotal(total);
         this.parent = parent;
+        this.offset = offset;
     }
     public GrandchildTask(String name, double total){
         super.setName(name);
