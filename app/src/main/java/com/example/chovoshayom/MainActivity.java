@@ -27,7 +27,6 @@ import android.widget.TextView;
 
 import com.example.chovoshayom.databinding.ActivityMain2Binding;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAdapter.ItemClickListener{
@@ -130,7 +129,7 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
                 R.drawable.android_shas,
                 R.drawable.android_yerushalmi,
                 R.drawable.android_rambam,
-                R.drawable.android_arbah_turim,
+                R.drawable.android_arbaah_turim,
                 R.drawable.android_shulchan_aruch,
                 R.drawable.android_mishna_berura};
         // set up the RecyclerView
