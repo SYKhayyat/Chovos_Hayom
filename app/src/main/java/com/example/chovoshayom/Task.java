@@ -70,7 +70,12 @@ public class Task implements Serializable, Comparable{
         this.isGeneral = isGeneral;
     }
     public void add(double added){
-        learned += added;
+        if (learned + added <= total){
+            learned += added;
+        }
+        else if (learned + added - 1 < total){
+            learned = total;
+        }
     }
     public void reset(double value){
         learned = value;
@@ -107,5 +112,9 @@ public class Task implements Serializable, Comparable{
 
     public double getRemaining(){
         return total - learned;
+    }
+
+    public int getOffset() {
+        return 0;
     }
 }

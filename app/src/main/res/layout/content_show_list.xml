@@ -42,45 +42,8 @@
         android:text="@string/fraction"
         android:id="@+id/fraction" />
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/between"
-        android:id="@+id/buttonForMore"
-        android:layout_gravity="center_horizontal"
-        android:text="@string/add"
-        android:visibility="gone"
-        />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/between"
-        android:id="@+id/buttonToRemove"
-        android:text="@string/remove"
-        android:layout_gravity="center_horizontal"
-        android:visibility="gone"/>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/between"
-        android:id="@+id/buttonToFinish"
-        android:text="@string/finish"
-        android:layout_gravity="center_horizontal"
-        android:visibility="gone"/>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/between"
-        android:id="@+id/buttonToClear"
-        android:text="@string/clear"
-        android:layout_gravity="center_horizontal"
-        android:visibility="gone"/>
-
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view_dashboard"
+        android:id="@+id/recycler_view_list"
         android:layout_marginTop="@dimen/between"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>

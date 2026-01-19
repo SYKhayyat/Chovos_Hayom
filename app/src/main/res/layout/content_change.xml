@@ -14,12 +14,12 @@
         android:gravity="center"
         />
     <EditText
-        android:layout_width="@dimen/edit_text_width"
+        android:layout_width="match_parent"
         android:layout_height="@dimen/edit_text_weight"
         android:id="@+id/input_box"
         android:gravity="center"
         android:layout_marginTop="@dimen/between"
-        android:inputType = "numberDecimal|numberSigned"
+        android:hint="Enter a comma-seperated list or a range of numbers."
         />
 
 

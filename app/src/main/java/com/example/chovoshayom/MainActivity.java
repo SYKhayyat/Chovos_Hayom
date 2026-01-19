@@ -74,9 +74,9 @@ public class MainActivity extends AppCompatActivity  implements MyRecyclerViewAd
             }
         });
         mPrefs = getPreferences(MODE_PRIVATE);
-        if (newRunChecker == 0) {
+//        if (newRunChecker == 0) {
             setupTasksOldAndNew();
-        }
+//        }
         savePreferences();
         setupRecycler();
     }

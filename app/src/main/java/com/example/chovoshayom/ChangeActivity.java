@@ -27,6 +27,8 @@ import android.widget.TextView;
 import com.example.chovoshayom.databinding.ActivityChangeBinding;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 
 public class ChangeActivity extends AppCompatActivity {
 
@@ -46,14 +48,14 @@ public class ChangeActivity extends AppCompatActivity {
         OnBackPressedCallback callback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                finishOff(0, "");
+                finish();
                 // Custom back press logic
                 setEnabled(false);
                 getOnBackPressedDispatcher().onBackPressed();
             }
         };
         getOnBackPressedDispatcher().addCallback(this, callback);
-        setupButtons(task, setting);
+        setupButtons(task, setting) ;
     }
 
     public void setupButtons(Task task, String setting){
@@ -70,10 +72,10 @@ public class ChangeActivity extends AppCompatActivity {
                     checkInput(setting);
             }});
         }
-        else if (setting.equals("reset")){
-            String toReset = "Reset: ";
-            greeting.setText(toReset);
-            myButton.setText("Reset");
+        else if (setting.equals("remove")){
+            String toRemove = "Remove: ";
+            greeting.setText(toRemove);
+            myButton.setText("Remove");
             myButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -86,53 +88,69 @@ public class ChangeActivity extends AppCompatActivity {
     private void checkInput(String setting){
         EditText myEditText = (EditText)  findViewById(R.id.input_box);
         String input = myEditText.getText().toString();
-        double amount = Double.parseDouble(input);
-        Log.i("task", task.getName());
-        if (setting.equals("add") && (amount > task.getTotal() - task.getLearned() || (0 - amount) > task.getLearned())
-                || setting.equals("reset") && (amount > task.getTotal() || amount < 0))
-        {
-            AlertDialog.Builder builder = new AlertDialog.Builder(ChangeActivity.this);
-            builder.setMessage("That number makes no sense!")
-                    .setTitle("Invalid input");
-            builder.setNegativeButton("Retry", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                }
-            });
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        } else if (amount < 0){
-            AlertDialog.Builder builder = new AlertDialog.Builder(ChangeActivity.this);
-            builder.setMessage("Are you sure that you want to enter in a negative number?")
-                    .setTitle("Are you sure?");
-            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    finishOff(amount, setting);
-                }
-            });
-            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                }
-            });
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        }
-        else {
-            finishOff(amount, setting);
-        }
-    }
-    private void finishOff(double amount, String setting){
+        HashSet<Integer> numsSet = returnInput(input);
         if (setting.equals("add")){
-            task.add(amount);
-            saveToPreferences();}
-        else if (setting.equals("reset")){
-            task.reset(amount);
-            saveToPreferences();
+            Methods.setupLearnedList(task, numsSet);
         }
-        Intent returnIntent = new Intent();
-        returnIntent.putExtra("result",task);
-        setResult(Activity.RESULT_OK,returnIntent);
+        else if (setting.equals("remove")){
+            Methods.removeFromLearnedList(task, numsSet);
+        }
         finish();
     }
+
+
+    private HashSet<Integer> returnInput(String input) {
+        ArrayList<String> inputList = splitIntoArrayList(input);
+        return getNumbers(inputList);
+    }
+
+    private HashSet<Integer> getNumbers(ArrayList<String> inputList) {
+        HashSet<Integer> numsSet = new HashSet<>();
+        int offset = ((GrandchildTask) task).getOffset();
+        for (String s: inputList){
+            try {
+                int n = Integer.parseInt(s);
+                if (n < offset || n > (task.getTotal() - 1 + offset)){
+                    continue;
+                }
+                if (numsSet.add(n)){
+                    task.add(1);
+                }
+            } catch (Exception e){
+                if (s.matches("\\d+\\s*-\\s*\\d+")){
+                    String[] parts = s.split("-");
+                    int start = Integer.parseInt(parts[0].trim());
+                    int end = Integer.parseInt(parts[1].trim());
+                    if (start > end || start < offset || end > (task.getTotal() - 1 + offset)) {
+                        continue;
+                    }
+                    int[] nums = new int[]{start, end};
+                    for (int n: nums){
+                        if (numsSet.add(n)){
+                            task.add(1);
+                        }
+                    }
+                }
+            }
+        }
+        if (set.isEmpty()){
+            AlertDialog.Builder builder = new AlertDialog.Builder(ChangeActivity.this);
+            builder.setMessage("Nothing was added.")
+                    .setTitle("Error");
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+        return numsSet;
+    }
+
+    private ArrayList<String> splitIntoArrayList(String input){
+        // Split by comma and parse integers
+        String[] parts = input.split("\\s*,\\s*");
+        ArrayList<String> list = new ArrayList<>(Arrays.asList(parts));
+
+        return list;
+    }
+
     private void saveToPreferences() {
         SharedPreferences sharedPreferences = getSharedPreferences("Tasks", MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = sharedPreferences.edit();

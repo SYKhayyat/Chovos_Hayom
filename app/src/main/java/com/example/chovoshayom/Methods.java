@@ -63,4 +63,25 @@ public class Methods {
     public static void clearCurrentSet(){
         currentSet.clear();
     }
+
+    public static void setupLearnedList(Task task, HashSet<Integer> numsSet){
+        int[] learnedList = task.getLearnedList();
+        int offset = task.getOffset();
+        for (int i = 0; i < learnedList.length; i++) {
+            int realIndex = i + offset;
+            if (numsSet.contains(realIndex)){
+                learnedList[i] = realIndex;
+            }
+        }
+    }
+    public static void removeFromLearnedList(Task task, HashSet<Integer> numsSet){
+        int[] learnedList = task.getLearnedList();
+        int offset = task.getOffset();
+        for (int i = 0; i < learnedList.length; i++) {
+            int realIndex = i + offset;
+            if (numsSet.contains(realIndex)){
+                learnedList[i] = 0;
+            }
+        }
+    }
 }

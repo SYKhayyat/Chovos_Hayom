@@ -21,6 +21,26 @@ public class GrandchildTask extends Task implements Serializable {
         setTotal(total);
         this.parent = parent;
         this.offset = offset;
+        setupLearnedList();
+    }
+
+    private void setupLearnedList() {
+        int size = (int) getTotal();
+        if (getTotal() - size > .2){
+            size ++;
+        }
+        int[] learned = new int [size];
+        for (int i = 0; i < size; i++) {
+            learned[i] = 0;
+        }
+        setLearnedList(learned);
+    }
+
+    public void setOffset(int offset){
+        this.offset = offset;
+    }
+    public int getOffset(){
+        return offset;
     }
     public GrandchildTask(String name, double total){
         super.setName(name);

@@ -1,9 +1,7 @@
 package com.example.chovoshayom;
 
-import static com.example.chovoshayom.MainActivity.*;
 import static com.example.chovoshayom.TasksSetup.all;
 import static com.example.chovoshayom.TasksSetup.bereishis;
-import static com.example.chovoshayom.TasksSetup.set;
 import static com.example.chovoshayom.MainActivity.task;
 
 
@@ -14,17 +12,13 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.appcompat.view.menu.MenuView;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -36,17 +30,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import com.example.chovoshayom.MainActivity.*;
 
 import com.example.chovoshayom.databinding.ActivityDashboard2Binding;
-import com.google.gson.Gson;
-
-import java.util.ArrayList;
-
-import kotlinx.coroutines.scheduling.TasksKt;
 
 public class DashboardActivity extends AppCompatActivity implements MyRecyclerViewAdapterDashboard.ItemClickListener {
 
@@ -55,10 +42,8 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
     private ActivityDashboard2Binding binding;
 
 
-    private RecyclerView recyclerView;
     SharedPreferences prefs2;
 
-    private RecyclerView.LayoutManager layoutManager;
     MyRecyclerViewAdapterDashboard adapter;
 
     @Override
@@ -136,7 +121,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
     private void setButtons() {
         Button add = findViewById(R.id.buttonForMore);
-        Button reset = findViewById(R.id.buttonToReset);
+        Button remove = findViewById(R.id.buttonToRemove);
         Button finish = findViewById(R.id.buttonToFinish);
         Button clear = findViewById(R.id.buttonToClear);
         if (! task.getIsGeneral() && prefs2.getInt("Read_Only", -1) != 1){
@@ -147,11 +132,11 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
                     openInputActivity("add");
                 }
             });
-            reset.setVisibility(View.VISIBLE);
-            reset.setOnClickListener(new View.OnClickListener() {
+            remove.setVisibility(View.VISIBLE);
+            remove.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    openInputActivity("reset");
+                    openInputActivity("remove");
                 }
             });
             finish.setVisibility(View.VISIBLE);
@@ -175,7 +160,7 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         }
         else {
             add.setVisibility(View.GONE);
-            reset.setVisibility(View.GONE);
+            remove.setVisibility(View.GONE);
             finish.setVisibility(View.GONE);
             clear.setVisibility(View.GONE);
         }
@@ -197,12 +182,11 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         Intent intent = new Intent(this, ChangeActivity.class);
         intent.putExtra("taskObject", task);
         intent.putExtra("setting", setting);
-        startActivityForResult(intent, 1);
+        startActivity(intent);
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Log.i("hello", "returned");
 
         if (requestCode == 1) {
             if (resultCode == Activity.RESULT_OK) {
@@ -227,7 +211,6 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
 
     private void populateRecyclerView() {
         RecyclerView recyclerView = findViewById(R.id.recycler_view_dashboard);
-        ImageView myImage = findViewById(R.id.itemImage);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new MyRecyclerViewAdapterDashboard(this, ((ParentTask) task).getChildrenStrings());
         adapter.setClickListener(this);
@@ -269,6 +252,9 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
         } else if (itemId == R.id.calculate) {
             showCalculate();
             return true;}
+        else if (itemId == R.id.action_list) {
+            showList();
+            return true;}
         else if (itemId == R.id.action_reset_specific) {
                 resetSpecific();
                 return true;}
@@ -283,6 +269,12 @@ public class DashboardActivity extends AppCompatActivity implements MyRecyclerVi
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showList() {
+        Intent intent = new Intent(this, ShowListActivity.class);
+        intent.putExtra("result", task);
+        startActivity(intent);
     }
 
     private void goHome() {
