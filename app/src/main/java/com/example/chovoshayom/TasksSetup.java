@@ -286,121 +286,121 @@ public class TasksSetup {
     public static GrandchildTask mitzvosLoSaasei = new GrandchildTask("Mitzvos Lo Saasei", 365, seferHamitzvos, 1);
     public static GrandchildTask[] seferHamitzvosChildren = {shorashim, mitzvosAssei, mitzvosLoSaasei};
 
-    public static GrandchildTask yesodeiHatorah = new GrandchildTask("Yesodei Torah", 10, seferHamitzvos, 1);
-    public static GrandchildTask deos = new GrandchildTask("De'os", 7, seferHamitzvos, 1);
-    public static GrandchildTask talmudTorah = new GrandchildTask("Talmud Torah", 7, seferHamitzvos, 1);
-    public static GrandchildTask avodahZaraRambam = new GrandchildTask("Avodah Zarah (Rambam)", 12, seferHamitzvos, 1);
-    public static GrandchildTask teshuva = new GrandchildTask("Teshuva", 10, seferHamitzvos, 1);
+    public static GrandchildTask yesodeiHatorah = new GrandchildTask("Yesodei Torah", 10, maddah, 1);
+    public static GrandchildTask deos = new GrandchildTask("De'os", 7, maddah, 1);
+    public static GrandchildTask talmudTorah = new GrandchildTask("Talmud Torah", 7, maddah, 1);
+    public static GrandchildTask avodahZaraRambam = new GrandchildTask("Avodah Zarah (Rambam)", 12, maddah, 1);
+    public static GrandchildTask teshuva = new GrandchildTask("Teshuva", 10, maddah, 1);
 
     public static GrandchildTask[] maddahChildren = {yesodeiHatorah, deos, talmudTorah, avodahZaraRambam, teshuva};
 
 
 
-    public static GrandchildTask kriasShema = new GrandchildTask("Krias Shmah", 4, seferHamitzvos, 1);
-    public static GrandchildTask tefilla = new GrandchildTask("Tefilla", 15, seferHamitzvos, 1);
-    public static GrandchildTask tefillinEtc = new GrandchildTask("Teffilin, Mezuza, V'Sefer Torah", 10, seferHamitzvos, 1);
-    public static GrandchildTask tzitzis = new GrandchildTask("Tzitzis", 3, seferHamitzvos, 1);
-    public static GrandchildTask berachosRambam = new GrandchildTask("Berachos (Rambam)", 11, seferHamitzvos, 1);
-    public static GrandchildTask milah = new GrandchildTask("Milah", 3, seferHamitzvos, 1);
-    public static GrandchildTask siddur = new GrandchildTask("Siddur", 1, seferHamitzvos, 1);
+    public static GrandchildTask kriasShema = new GrandchildTask("Krias Shmah", 4, ahava, 1);
+    public static GrandchildTask tefilla = new GrandchildTask("Tefilla", 15, ahava, 1);
+    public static GrandchildTask tefillinEtc = new GrandchildTask("Teffilin, Mezuza, V'Sefer Torah", 10, ahava, 1);
+    public static GrandchildTask tzitzis = new GrandchildTask("Tzitzis", 3, ahava, 1);
+    public static GrandchildTask berachosRambam = new GrandchildTask("Berachos (Rambam)", 11, ahava, 1);
+    public static GrandchildTask milah = new GrandchildTask("Milah", 3, ahava, 1);
+    public static GrandchildTask siddur = new GrandchildTask("Siddur", 1, ahava, 1);
     public static GrandchildTask[] ahavaChildren = {kriasShema, tefilla, tefillinEtc, tzitzis, berachosRambam, milah, siddur};
 
 
-    public static GrandchildTask shabbosRambam = new GrandchildTask("Shabbos (Rambam)", 30, seferHamitzvos, 1);
-    public static GrandchildTask eiruvinRambam = new GrandchildTask("Eiruvin (Rambam)", 8, seferHamitzvos, 1);
-    public static GrandchildTask shvisasAssor = new GrandchildTask("Shvissas Assor", 3, seferHamitzvos, 1);
-    public static GrandchildTask yomTov = new GrandchildTask("Yom Tov", 8, seferHamitzvos, 1);
-    public static GrandchildTask chametz = new GrandchildTask("Chametz", 8, seferHamitzvos, 1);
-    public static GrandchildTask shofar = new GrandchildTask("Shofar", 8, seferHamitzvos, 1);
-    public static GrandchildTask shekalimRambam = new GrandchildTask("Shekalim (Rambam)", 4, seferHamitzvos, 1);
-    public static GrandchildTask kiduchHachodesh = new GrandchildTask("Kiddush Hachodesh", 19, seferHamitzvos, 1);
-    public static GrandchildTask taanisRambam = new GrandchildTask("Taanis (Rambam", 5, seferHamitzvos, 1);
-    public static GrandchildTask megillahChanukah = new GrandchildTask("Megillah V'Chanukah", 4, seferHamitzvos, 1);
+    public static GrandchildTask shabbosRambam = new GrandchildTask("Shabbos (Rambam)", 30, zemanim, 1);
+    public static GrandchildTask eiruvinRambam = new GrandchildTask("Eiruvin (Rambam)", 8, zemanim, 1);
+    public static GrandchildTask shvisasAssor = new GrandchildTask("Shvissas Assor", 3, zemanim, 1);
+    public static GrandchildTask yomTov = new GrandchildTask("Yom Tov", 8, zemanim, 1);
+    public static GrandchildTask chametz = new GrandchildTask("Chametz", 8, zemanim, 1);
+    public static GrandchildTask shofar = new GrandchildTask("Shofar", 8, zemanim, 1);
+    public static GrandchildTask shekalimRambam = new GrandchildTask("Shekalim (Rambam)", 4, zemanim, 1);
+    public static GrandchildTask kiduchHachodesh = new GrandchildTask("Kiddush Hachodesh", 19, zemanim, 1);
+    public static GrandchildTask taanisRambam = new GrandchildTask("Taanis (Rambam", 5, zemanim, 1);
+    public static GrandchildTask megillahChanukah = new GrandchildTask("Megillah V'Chanukah", 4, zemanim, 1);
     public static GrandchildTask[] zemanimChildren = {shabbosRambam, eiruvinRambam, shvisasAssor, yomTov, chametz, shofar, shekalimRambam, kiduchHachodesh, taanisRambam, megillahChanukah};
 
-    public static GrandchildTask ishus = new GrandchildTask("Ishus", 25, seferHamitzvos, 1);
-    public static GrandchildTask geirushin = new GrandchildTask("Geirushin", 13, seferHamitzvos, 1);
-    public static GrandchildTask yibum = new GrandchildTask("Yibum", 8, seferHamitzvos, 1);
-    public static GrandchildTask besulah = new GrandchildTask("Besulah", 3, seferHamitzvos, 1);
-    public static GrandchildTask sotahRambam = new GrandchildTask("Sotah (Rambam)", 4, seferHamitzvos, 1);
+    public static GrandchildTask ishus = new GrandchildTask("Ishus", 25, nashimRambam, 1);
+    public static GrandchildTask geirushin = new GrandchildTask("Geirushin", 13, nashimRambam, 1);
+    public static GrandchildTask yibum = new GrandchildTask("Yibum", 8, nashimRambam, 1);
+    public static GrandchildTask besulah = new GrandchildTask("Besulah", 3, nashimRambam, 1);
+    public static GrandchildTask sotahRambam = new GrandchildTask("Sotah (Rambam)", 4, nashimRambam, 1);
     public static GrandchildTask[] nashimRambamChildren = {ishus, geirushin, yibum, besulah, sotahRambam};
 
-    public static GrandchildTask issureiBiah = new GrandchildTask("Issurei Biah", 22, seferHamitzvos, 1);
-    public static GrandchildTask maachalosAssuros = new GrandchildTask("Ma'achalos Assuros", 17, seferHamitzvos, 1);
-    public static GrandchildTask shechita = new GrandchildTask("Shechita", 14, seferHamitzvos, 1);
+    public static GrandchildTask issureiBiah = new GrandchildTask("Issurei Biah", 22, kedusha, 1);
+    public static GrandchildTask maachalosAssuros = new GrandchildTask("Ma'achalos Assuros", 17, kedusha, 1);
+    public static GrandchildTask shechita = new GrandchildTask("Shechita", 14, kedusha, 1);
     public static GrandchildTask[] kedushaChildren = {issureiBiah, maachalosAssuros, shechita};
 
-    public static GrandchildTask shevuosRambam = new GrandchildTask("Shevuos (Rambam)", 12, seferHamitzvos, 1);
-    public static GrandchildTask nedarimRambam = new GrandchildTask("Nedarim (Rambam)", 13, seferHamitzvos, 1);
-    public static GrandchildTask nezirus = new GrandchildTask("Nezirus", 10, seferHamitzvos, 1);
-    public static GrandchildTask erchinRambam = new GrandchildTask("Erchin (Rambam)", 8, seferHamitzvos, 1);
+    public static GrandchildTask shevuosRambam = new GrandchildTask("Shevuos (Rambam)", 12, haflaah, 1);
+    public static GrandchildTask nedarimRambam = new GrandchildTask("Nedarim (Rambam)", 13, haflaah, 1);
+    public static GrandchildTask nezirus = new GrandchildTask("Nezirus", 10, haflaah, 1);
+    public static GrandchildTask erchinRambam = new GrandchildTask("Erchin (Rambam)", 8, haflaah, 1);
     public static GrandchildTask[] haflaahChildren = {shevuosRambam, nedarimRambam, nezirus, erchinRambam};
 
 
-    public static GrandchildTask kelayimRambam = new GrandchildTask("Kelayim (Rambam)", 10, seferHamitzvos, 1);
-    public static GrandchildTask matnosAniim = new GrandchildTask("Matnos Aniim", 10, seferHamitzvos, 1);
-    public static GrandchildTask terumosRambam = new GrandchildTask("Terumos (Rambam)", 15, seferHamitzvos, 1);
-    public static GrandchildTask maaser = new GrandchildTask("Maaser", 14, seferHamitzvos, 1);
-    public static GrandchildTask maaserSheniNetaRevai = new GrandchildTask("Maaser Sheni V'Neta Revai", 11, seferHamitzvos, 1);
-    public static GrandchildTask matnosKehuna = new GrandchildTask("Matnos Kehuna", 12, seferHamitzvos, 1);
-    public static GrandchildTask shemita = new GrandchildTask("Shemita", 13, seferHamitzvos, 1);
+    public static GrandchildTask kelayimRambam = new GrandchildTask("Kelayim (Rambam)", 10, zeraimRambam, 1);
+    public static GrandchildTask matnosAniim = new GrandchildTask("Matnos Aniim", 10, zeraimRambam, 1);
+    public static GrandchildTask terumosRambam = new GrandchildTask("Terumos (Rambam)", 15, zeraimRambam, 1);
+    public static GrandchildTask maaser = new GrandchildTask("Maaser", 14, zeraimRambam, 1);
+    public static GrandchildTask maaserSheniNetaRevai = new GrandchildTask("Maaser Sheni V'Neta Revai", 11, zeraimRambam, 1);
+    public static GrandchildTask matnosKehuna = new GrandchildTask("Matnos Kehuna", 12, zeraimRambam, 1);
+    public static GrandchildTask shemita = new GrandchildTask("Shemita", 13, zeraimRambam, 1);
     public static GrandchildTask[] zeraimRambamChildren = {kelayimRambam, matnosAniim, terumosRambam, maaser, maaserSheniNetaRevai, matnosKehuna, shemita};
 
-    public static GrandchildTask beisHabechirah = new GrandchildTask("Beis Habechirah", 8, seferHamitzvos, 1);
-    public static GrandchildTask kleiHamikdash = new GrandchildTask("Klei Hamikdash", 10, seferHamitzvos, 1);
-    public static GrandchildTask biasHamikdash = new GrandchildTask("Bias Hamikdash", 9, seferHamitzvos, 1);
-    public static GrandchildTask mizbeach = new GrandchildTask("Mizbeach", 7, seferHamitzvos, 1);
-    public static GrandchildTask korbanosRambam = new GrandchildTask("Korbanos (Rambam)", 19, seferHamitzvos, 1);
-    public static GrandchildTask tmidim = new GrandchildTask("T'midim", 10, seferHamitzvos, 1);
-    public static GrandchildTask pesuleiMukdashin = new GrandchildTask("Pesulei Mukdashin", 19, seferHamitzvos, 1);
-    public static GrandchildTask avodasYomKippur = new GrandchildTask("Avodas Yom Kippur", 5, seferHamitzvos, 1);
-    public static GrandchildTask meilahRambam = new GrandchildTask("Meilah (Rambam)", 8, seferHamitzvos, 1);
+    public static GrandchildTask beisHabechirah = new GrandchildTask("Beis Habechirah", 8, avodah, 1);
+    public static GrandchildTask kleiHamikdash = new GrandchildTask("Klei Hamikdash", 10, avodah, 1);
+    public static GrandchildTask biasHamikdash = new GrandchildTask("Bias Hamikdash", 9, avodah, 1);
+    public static GrandchildTask mizbeach = new GrandchildTask("Mizbeach", 7, avodah, 1);
+    public static GrandchildTask korbanosRambam = new GrandchildTask("Korbanos (Rambam)", 19, avodah, 1);
+    public static GrandchildTask tmidim = new GrandchildTask("T'midim", 10, avodah, 1);
+    public static GrandchildTask pesuleiMukdashin = new GrandchildTask("Pesulei Mukdashin", 19, avodah, 1);
+    public static GrandchildTask avodasYomKippur = new GrandchildTask("Avodas Yom Kippur", 5, avodah, 1);
+    public static GrandchildTask meilahRambam = new GrandchildTask("Meilah (Rambam)", 8, avodah, 1);
     public static GrandchildTask[] avodahChildren = {beisHabechirah, kleiHamikdash, biasHamikdash, mizbeach, korbanosRambam, tmidim, pesuleiMukdashin, avodasYomKippur, meilahRambam};
 
-    public static GrandchildTask pesach = new GrandchildTask("Pesach", 10, seferHamitzvos, 1);
-    public static GrandchildTask chagigahRambam = new GrandchildTask("Chagigah (Rambam)", 3, seferHamitzvos, 1);
-    public static GrandchildTask bechorosRambam = new GrandchildTask("Bechoros (Rambam)", 8, seferHamitzvos, 1);
-    public static GrandchildTask shegagos = new GrandchildTask("Shegagos", 15, seferHamitzvos, 1);
-    public static GrandchildTask mechusreiKapparah = new GrandchildTask("Mechusrei Kapparah", 5, seferHamitzvos, 1);
-    public static GrandchildTask temurahRambam = new GrandchildTask("Temurah (Rambam)", 4, seferHamitzvos, 1);
+    public static GrandchildTask pesach = new GrandchildTask("Pesach", 10, korbanos, 1);
+    public static GrandchildTask chagigahRambam = new GrandchildTask("Chagigah (Rambam)", 3, korbanos, 1);
+    public static GrandchildTask bechorosRambam = new GrandchildTask("Bechoros (Rambam)", 8, korbanos, 1);
+    public static GrandchildTask shegagos = new GrandchildTask("Shegagos", 15, korbanos, 1);
+    public static GrandchildTask mechusreiKapparah = new GrandchildTask("Mechusrei Kapparah", 5, korbanos, 1);
+    public static GrandchildTask temurahRambam = new GrandchildTask("Temurah (Rambam)", 4, korbanos, 1);
     public static GrandchildTask[] korbanosChildren = {pesach, chagigahRambam, bechorosRambam, shegagos, mechusreiKapparah, temurahRambam};
 
-    public static GrandchildTask tumasMeis = new GrandchildTask("Tumas Meis", 25, seferHamitzvos, 1);
-    public static GrandchildTask parahRambam = new GrandchildTask("Parah (Rambam)", 15, seferHamitzvos, 1);
-    public static GrandchildTask tzaraas = new GrandchildTask("Tzaraas", 16, seferHamitzvos, 1);
-    public static GrandchildTask mishkavMoshav = new GrandchildTask("Mishkav U'Moshav", 13, seferHamitzvos, 1);
-    public static GrandchildTask shearTumos = new GrandchildTask("She'ar Tumos", 20, seferHamitzvos, 1);
-    public static GrandchildTask ochlin = new GrandchildTask("Ochlin", 16, seferHamitzvos, 1);
-    public static GrandchildTask keilimRambam = new GrandchildTask("Keilim (Rambam)", 28, seferHamitzvos, 1);
-    public static GrandchildTask mikvaosRambam = new GrandchildTask("Mikva'os (Rambam)", 11, seferHamitzvos, 1);
+    public static GrandchildTask tumasMeis = new GrandchildTask("Tumas Meis", 25, tahara, 1);
+    public static GrandchildTask parahRambam = new GrandchildTask("Parah (Rambam)", 15, tahara, 1);
+    public static GrandchildTask tzaraas = new GrandchildTask("Tzaraas", 16, tahara, 1);
+    public static GrandchildTask mishkavMoshav = new GrandchildTask("Mishkav U'Moshav", 13, tahara, 1);
+    public static GrandchildTask shearTumos = new GrandchildTask("She'ar Tumos", 20, tahara, 1);
+    public static GrandchildTask ochlin = new GrandchildTask("Ochlin", 16, tahara, 1);
+    public static GrandchildTask keilimRambam = new GrandchildTask("Keilim (Rambam)", 28, tahara, 1);
+    public static GrandchildTask mikvaosRambam = new GrandchildTask("Mikva'os (Rambam)", 11, tahara, 1);
     public static GrandchildTask[] taharaChildren = {tumasMeis, parahRambam, tzaraas, mishkavMoshav, shearTumos, ochlin, keilimRambam, mikvaosRambam};
 
-    public static GrandchildTask mamon = new GrandchildTask("Mamon", 14, seferHamitzvos, 1);
-    public static GrandchildTask geneiva = new GrandchildTask("Geneiva", 9, seferHamitzvos, 1);
-    public static GrandchildTask gezeilaAveida = new GrandchildTask("Gezeila V'Eveida", 18, seferHamitzvos, 1);
-    public static GrandchildTask chovel = new GrandchildTask("Chovel", 8, seferHamitzvos, 1);
-    public static GrandchildTask rotzeachShmira = new GrandchildTask("Rotzeach U'Shmira", 13, seferHamitzvos, 1);
+    public static GrandchildTask mamon = new GrandchildTask("Mamon", 14, nezikinRambam, 1);
+    public static GrandchildTask geneiva = new GrandchildTask("Geneiva", 9, nezikinRambam, 1);
+    public static GrandchildTask gezeilaAveida = new GrandchildTask("Gezeila V'Eveida", 18, nezikinRambam, 1);
+    public static GrandchildTask chovel = new GrandchildTask("Chovel", 8, nezikinRambam, 1);
+    public static GrandchildTask rotzeachShmira = new GrandchildTask("Rotzeach U'Shmira", 13, nezikinRambam, 1);
     public static GrandchildTask[] nezikinRambamChildren = {mamon, geneiva, gezeilaAveida, chovel, rotzeachShmira};
 
-    public static GrandchildTask mechirah = new GrandchildTask("Mechirah", 30, seferHamitzvos, 1);
-    public static GrandchildTask matanah = new GrandchildTask("Matanah", 12, seferHamitzvos, 1);
-    public static GrandchildTask shecheinim = new GrandchildTask("Shecheinim", 14, seferHamitzvos, 1);
-    public static GrandchildTask sheluchim = new GrandchildTask("Sheluchim", 10, seferHamitzvos, 1);
-    public static GrandchildTask avadim = new GrandchildTask("Avadim", 9, seferHamitzvos, 1);
+    public static GrandchildTask mechirah = new GrandchildTask("Mechirah", 30, kinyan, 1);
+    public static GrandchildTask matanah = new GrandchildTask("Matanah", 12, kinyan, 1);
+    public static GrandchildTask shecheinim = new GrandchildTask("Shecheinim", 14, kinyan, 1);
+    public static GrandchildTask sheluchim = new GrandchildTask("Sheluchim", 10, kinyan, 1);
+    public static GrandchildTask avadim = new GrandchildTask("Avadim", 9, kinyan, 1);
     public static GrandchildTask[] kinyanChildren = {mechirah, matanah, shecheinim, sheluchim, avadim};
 
-    public static GrandchildTask sechirus = new GrandchildTask("Sechirus", 13, seferHamitzvos, 1);
-    public static GrandchildTask sheeilah = new GrandchildTask("She'eilah", 8, seferHamitzvos, 1);
-    public static GrandchildTask lovehMalveh = new GrandchildTask("Loveh U'Malveh", 27, seferHamitzvos, 1);
-    public static GrandchildTask toein = new GrandchildTask("To'ein", 16, seferHamitzvos, 1);
-    public static GrandchildTask nachalos = new GrandchildTask("Nachalos", 11, seferHamitzvos, 1);
+    public static GrandchildTask sechirus = new GrandchildTask("Sechirus", 13, mishpatim, 1);
+    public static GrandchildTask sheeilah = new GrandchildTask("She'eilah", 8, mishpatim, 1);
+    public static GrandchildTask lovehMalveh = new GrandchildTask("Loveh U'Malveh", 27, mishpatim, 1);
+    public static GrandchildTask toein = new GrandchildTask("To'ein", 16, mishpatim, 1);
+    public static GrandchildTask nachalos = new GrandchildTask("Nachalos", 11, mishpatim, 1);
     public static GrandchildTask[] mishpatimChildren = {sechirus, sheeilah, lovehMalveh, toein, nachalos};
 
-    public static GrandchildTask sanhedrinRambam = new GrandchildTask("Sanhedrin (Rambam)", 26, seferHamitzvos, 1);
-    public static GrandchildTask eidus = new GrandchildTask("Eidus", 22, seferHamitzvos, 1);
-    public static GrandchildTask mamrim = new GrandchildTask("Mamrim", 7, seferHamitzvos, 1);
-    public static GrandchildTask avel = new GrandchildTask("Avel", 14, seferHamitzvos, 1);
-    public static GrandchildTask melachim = new GrandchildTask("Melachim", 12, seferHamitzvos, 1);
+    public static GrandchildTask sanhedrinRambam = new GrandchildTask("Sanhedrin (Rambam)", 26, shoftimRambam, 1);
+    public static GrandchildTask eidus = new GrandchildTask("Eidus", 22, shoftimRambam, 1);
+    public static GrandchildTask mamrim = new GrandchildTask("Mamrim", 7, shoftimRambam, 1);
+    public static GrandchildTask avel = new GrandchildTask("Avel", 14, shoftimRambam, 1);
+    public static GrandchildTask melachim = new GrandchildTask("Melachim", 12, shoftimRambam, 1);
     public static GrandchildTask[] shoftimRambamChildren = {sanhedrinRambam, eidus, mamrim, avel, melachim};
 
     public static GrandchildTask orachChaim = new GrandchildTask("Orech Chaim (Tur)", 697, tur, 1);
