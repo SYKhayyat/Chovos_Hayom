@@ -1,9 +1,0 @@
-{
-  "elements": {},
-  "imports": [
-    "package:chovos_hayom/domain/entities/enums.dart",
-    "package:chovos_hayom/domain/entities/learning_event.dart",
-    "package:chovos_hayom/domain/usecases/pace_engine.dart",
-    "package:flutter_test/flutter_test.dart"
-  ]
-}

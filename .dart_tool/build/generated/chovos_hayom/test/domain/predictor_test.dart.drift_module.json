@@ -1,7 +1,0 @@
-{
-  "elements": {},
-  "imports": [
-    "package:chovos_hayom/domain/usecases/predictor.dart",
-    "package:flutter_test/flutter_test.dart"
-  ]
-}

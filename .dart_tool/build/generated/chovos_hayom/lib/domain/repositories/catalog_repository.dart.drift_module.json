@@ -1,6 +1,0 @@
-{
-  "elements": {},
-  "imports": [
-    "package:chovos_hayom/domain/entities/catalog.dart"
-  ]
-}

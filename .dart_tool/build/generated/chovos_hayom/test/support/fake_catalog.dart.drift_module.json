@@ -1,9 +1,0 @@
-{
-  "elements": {},
-  "imports": [
-    "package:chovos_hayom/domain/entities/catalog.dart",
-    "package:chovos_hayom/domain/entities/catalog_node.dart",
-    "package:chovos_hayom/domain/entities/enums.dart",
-    "package:chovos_hayom/domain/repositories/catalog_repository.dart"
-  ]
-}
