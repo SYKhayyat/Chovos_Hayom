@@ -44,4 +44,28 @@ class LearningEvent {
         durationMin: durationMin ?? this.durationMin,
         note: note ?? this.note,
       );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'profileId': profileId,
+        'nodeId': nodeId,
+        'unitIndex': unitIndex,
+        'action': action.name,
+        'occurredAt': occurredAt.toIso8601String(),
+        'loggedAt': loggedAt.toIso8601String(),
+        if (durationMin != null) 'durationMin': durationMin,
+        if (note != null) 'note': note,
+      };
+
+  factory LearningEvent.fromJson(Map<String, dynamic> json) => LearningEvent(
+        id: json['id'] as String,
+        profileId: json['profileId'] as String,
+        nodeId: json['nodeId'] as String,
+        unitIndex: (json['unitIndex'] as num).toInt(),
+        action: EventAction.values.byName(json['action'] as String),
+        occurredAt: DateTime.parse(json['occurredAt'] as String),
+        loggedAt: DateTime.parse(json['loggedAt'] as String),
+        durationMin: (json['durationMin'] as num?)?.toInt(),
+        note: json['note'] as String?,
+      );
 }

@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'application/providers.dart';
 import 'application/settings.dart';
+import 'data/preferences/shared_prefs_preferences.dart';
 import 'features/dashboard/dashboard_screen.dart';
 
-void main() {
-  runApp(const ProviderScope(child: ChovosHayomApp()));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPrefsPreferences.load();
+  runApp(
+    ProviderScope(
+      overrides: [appPreferencesProvider.overrideWithValue(prefs)],
+      child: const ChovosHayomApp(),
+    ),
+  );
 }
 
 class ChovosHayomApp extends ConsumerWidget {

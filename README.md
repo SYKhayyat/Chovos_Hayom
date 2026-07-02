@@ -31,8 +31,8 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
 | **0 — Foundation** | Event-log core, Drift schema, catalog loader, derive engine, tests | ✅ Done |
 | **1 — Parity+** | Full catalog (312 nodes), per-unit grid, session logging, dashboard | ✅ Done |
 | **2 — Intelligence** | Charts, pace engine, predictions, Hebrew calendar | ✅ Done |
-| 3 — Power | Profiles, custom sefarim, search, export/import, goals | ⏳ Next |
-| 4 — Polish | Notifications, timer, more platforms | — |
+| **3 — Power** | Profiles, custom sefarim, search, export/import | ✅ Done |
+| 4 — Polish | Goals, notifications, timer, more platforms | ⏳ Next |
 
 ### What works today
 - Expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur, Shulchan
@@ -45,7 +45,10 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
 - **Siyum calculator** (bidirectional): "at X/day (+Y on Shabbos) I finish on …" and "to finish by
   date D I must learn R/day", for the whole Torah or any category.
 - **Hebrew or secular calendar** toggle applied to every date, plus light/dark theme.
-- 36 tests covering the derive-from-log engine, catalog integrity, analytics, and the UI flows.
+- **Multiple local profiles** (switch between users; each has its own log), **custom sefarim**
+  (add your own trackable sefer or habit with your own unit counts), **global search** across
+  everything, and **export/import** of all data as JSON. Settings persist across launches.
+- 40 tests covering the engine, catalog integrity, analytics, backup round-trip, and the UI flows.
 
 ## Developing
 

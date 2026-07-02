@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/learning_event.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/progress_repository.dart';
@@ -10,6 +11,8 @@ class InMemoryProgressRepository implements ProgressRepository {
   final Map<String, List<LearningEvent>> _events = {};
   final List<Profile> _profiles = [];
   final Map<String, StreamController<List<LearningEvent>>> _controllers = {};
+  final Map<String, List<CatalogNode>> _customNodes = {};
+  final Map<String, StreamController<List<CatalogNode>>> _customControllers = {};
 
   StreamController<List<LearningEvent>> _controllerFor(String profileId) =>
       _controllers.putIfAbsent(
@@ -58,4 +61,40 @@ class InMemoryProgressRepository implements ProgressRepository {
 
   @override
   Future<void> addProfile(Profile profile) async => _profiles.add(profile);
+
+  StreamController<List<CatalogNode>> _customControllerFor(String profileId) =>
+      _customControllers.putIfAbsent(
+        profileId,
+        () => StreamController<List<CatalogNode>>.broadcast(),
+      );
+
+  List<CatalogNode> _customSnapshot(String profileId) =>
+      List.unmodifiable(_customNodes[profileId] ?? const []);
+
+  void _emitCustom(String profileId) {
+    final c = _customControllers[profileId];
+    if (c != null && c.hasListener) c.add(_customSnapshot(profileId));
+  }
+
+  @override
+  Stream<List<CatalogNode>> watchCustomNodes(String profileId) async* {
+    final controller = _customControllerFor(profileId);
+    yield _customSnapshot(profileId);
+    yield* controller.stream;
+  }
+
+  @override
+  Future<void> addCustomNode(String profileId, CatalogNode node) async {
+    (_customNodes[profileId] ??= []).add(node);
+    _emitCustom(profileId);
+  }
+
+  @override
+  Future<void> removeCustomNode(String nodeId) async {
+    for (final entry in _customNodes.entries) {
+      final before = entry.value.length;
+      entry.value.removeWhere((n) => n.id == nodeId);
+      if (entry.value.length != before) _emitCustom(entry.key);
+    }
+  }
 }

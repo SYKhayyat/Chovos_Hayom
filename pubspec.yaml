@@ -43,6 +43,7 @@ dependencies:
   collection: ^1.19.1
   fl_chart: ^1.2.0
   kosher_dart: ^2.0.20
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

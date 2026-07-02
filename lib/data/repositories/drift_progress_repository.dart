@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/learning_event.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/progress_repository.dart';
@@ -86,5 +87,47 @@ class DriftProgressRepository implements ProgressRepository {
         name: row.name,
         createdAt: row.createdAt,
         settings: (jsonDecode(row.settingsJson) as Map).cast<String, dynamic>(),
+      );
+
+  @override
+  Stream<List<CatalogNode>> watchCustomNodes(String profileId) {
+    final query = _db.select(_db.customNodes)
+      ..where((t) => t.profileId.equals(profileId));
+    return query.watch().map((rows) => rows.map(_toNode).toList());
+  }
+
+  @override
+  Future<void> addCustomNode(String profileId, CatalogNode node) async {
+    await _db.into(_db.customNodes).insert(
+          CustomNodesCompanion.insert(
+            id: node.id,
+            profileId: profileId,
+            parentId: Value(node.parentId),
+            name: node.name,
+            nameHebrew: Value(node.nameHebrew),
+            sortOrder: Value(node.sortOrder),
+            kind: node.kind,
+            unitLabel: Value(node.unitLabel),
+            unitCount: Value(node.unitCount),
+            unitOffset: Value(node.unitOffset),
+          ),
+        );
+  }
+
+  @override
+  Future<void> removeCustomNode(String nodeId) async {
+    await (_db.delete(_db.customNodes)..where((t) => t.id.equals(nodeId))).go();
+  }
+
+  CatalogNode _toNode(CustomNodeRow row) => CatalogNode(
+        id: row.id,
+        parentId: row.parentId,
+        name: row.name,
+        nameHebrew: row.nameHebrew,
+        sortOrder: row.sortOrder,
+        kind: row.kind,
+        unitLabel: row.unitLabel,
+        unitCount: row.unitCount,
+        unitOffset: row.unitOffset,
       );
 }
