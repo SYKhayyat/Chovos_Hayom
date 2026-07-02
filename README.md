@@ -42,8 +42,10 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
   auto-fills to now). Review (chazara) passes are tracked per unit.
 - **Statistics**: overall %, current streak, 30-day pace, projected siyum date, a cumulative
   progress line chart, and a 12-week activity heatmap.
-- **Siyum calculator** (bidirectional): "at X/day (+Y on Shabbos) I finish on …" and "to finish by
-  date D I must learn R/day", for the whole Torah or any category.
+- **Siyum calculator**, three modes, for the whole Torah or any category:
+  *Rate* ("at X/day, +Y on Shabbos → finish date"), *Cycle* (a **custom repeating cycle of any
+  length** — set each cycle-day's amount and which day you're currently on, e.g. a 7- or 30-day plan),
+  and *By date* ("to finish by date D → learn R/day").
 - **Hebrew or secular calendar** toggle applied to every date, plus light/dark theme.
 - **Multiple local profiles** (switch between users; each has its own log), **custom sefarim**
   (add your own trackable sefer or habit with your own unit counts), **global search** across
@@ -52,7 +54,7 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
   rate you need; a Goals screen lists them all. A **chazara menu** (long-press a unit) logs review
   passes or un-marks; a **session stopwatch** in the log sheet fills in the duration; an optional
   **daily nudge** reminds you in-app if you haven't learned today.
-- 46 tests covering the engine, catalog integrity, analytics, goals, reminders, backup, and UI.
+- 50 tests covering the engine, catalog integrity, analytics, goals, reminders, backup, and UI.
 
 ## Remaining device-only work
 Everything above is verified via `flutter test`. Two things need a real device/build to finish and

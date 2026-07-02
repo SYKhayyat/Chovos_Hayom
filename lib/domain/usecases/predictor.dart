@@ -66,5 +66,33 @@ class Predictor {
     return null;
   }
 
+  /// Finish date under a repeating [amounts] cycle of any length, where
+  /// [startIndex] is the cycle position of [from] (0-based, e.g. day 4 of a
+  /// 7-day cycle -> 3). Generalises the flat ([amounts] of length 1) and
+  /// weekday/Shabbos (length 7) cases. Returns null if the cycle never
+  /// progresses (all amounts <= 0).
+  static DateTime? finishDateWithCycle({
+    required int remaining,
+    required List<double> amounts,
+    required int startIndex,
+    required DateTime from,
+  }) {
+    if (remaining <= 0) return _dayKey(from);
+    final n = amounts.length;
+    if (n == 0 || amounts.every((a) => a <= 0)) return null;
+
+    final start = ((startIndex % n) + n) % n; // normalize into [0, n)
+    var left = remaining.toDouble();
+    var day = _dayKey(from);
+    // Cap well above any realistic horizon; a positive cycle sum guarantees exit.
+    for (var i = 0; i < 200000; i++) {
+      final amt = amounts[(start + i) % n];
+      if (amt > 0) left -= amt;
+      if (left <= 0) return day;
+      day = day.add(const Duration(days: 1));
+    }
+    return null;
+  }
+
   static DateTime _dayKey(DateTime d) => DateTime(d.year, d.month, d.day);
 }

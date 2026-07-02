@@ -67,4 +67,47 @@ void main() {
       );
     });
   });
+
+  group('Predictor (custom cycle)', () {
+    final from = DateTime(2026, 1, 1);
+
+    test('a length-1 cycle applies a flat amount, counting today as day 0', () {
+      // 10 at 2/day: Jan1=2, Jan2=4, ... Jan5=10 -> finishes Jan 5.
+      expect(
+        Predictor.finishDateWithCycle(
+            remaining: 10, amounts: [2], startIndex: 0, from: from),
+        DateTime(2026, 1, 5),
+      );
+    });
+
+    test('honours a cycle with off-days', () {
+      // 5 on cycle-day 1, nothing the rest of a 7-day cycle.
+      // 10 remaining -> 5 today (day 0), 5 seven days later.
+      expect(
+        Predictor.finishDateWithCycle(
+            remaining: 10,
+            amounts: [5, 0, 0, 0, 0, 0, 0],
+            startIndex: 0,
+            from: from),
+        DateTime(2026, 1, 8),
+      );
+    });
+
+    test('starts mid-cycle (I am on day 3 of the cycle)', () {
+      // cycle [1,2,3]; today is cycle-day 3 -> startIndex 2 -> today does 3.
+      expect(
+        Predictor.finishDateWithCycle(
+            remaining: 3, amounts: [1, 2, 3], startIndex: 2, from: from),
+        from, // finishes today
+      );
+    });
+
+    test('an all-zero cycle never finishes', () {
+      expect(
+        Predictor.finishDateWithCycle(
+            remaining: 5, amounts: [0, 0], startIndex: 0, from: from),
+        isNull,
+      );
+    });
+  });
 }

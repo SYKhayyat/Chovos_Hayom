@@ -27,5 +27,11 @@ void main() {
     // Default node = root (156 units in the fake catalog), default rate = 1/day.
     expect(find.textContaining('156 of 156 left'), findsOneWidget);
     expect(find.textContaining('You will finish on'), findsOneWidget);
+
+    // Switch to the custom-cycle mode; default 7-day cycle should compute.
+    await tester.tap(find.text('Cycle'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Cycle length: 7 days'), findsOneWidget);
+    expect(find.textContaining('You will finish on'), findsOneWidget);
   });
 }
