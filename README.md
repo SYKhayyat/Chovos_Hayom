@@ -30,8 +30,8 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
 |---|---|---|
 | **0 — Foundation** | Event-log core, Drift schema, catalog loader, derive engine, tests | ✅ Done |
 | **1 — Parity+** | Full catalog (312 nodes), per-unit grid, session logging, dashboard | ✅ Done |
-| 2 — Intelligence | Charts, pace engine, predictions, Hebrew calendar | ⏳ Next |
-| 3 — Power | Profiles, custom sefarim, search, export/import, goals | — |
+| **2 — Intelligence** | Charts, pace engine, predictions, Hebrew calendar | ✅ Done |
+| 3 — Power | Profiles, custom sefarim, search, export/import, goals | ⏳ Next |
 | 4 — Polish | Notifications, timer, more platforms | — |
 
 ### What works today
@@ -40,7 +40,12 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
 - Tap a sefer/mesechta to open its **per-unit grid**; tap a daf to mark it, tap again to undo.
 - **Long-press** a unit to log it with a specific date, duration, and note (otherwise the date
   auto-fills to now). Review (chazara) passes are tracked per unit.
-- 28 tests covering the derive-from-log engine, catalog integrity, reactivity, and the UI flow.
+- **Statistics**: overall %, current streak, 30-day pace, projected siyum date, a cumulative
+  progress line chart, and a 12-week activity heatmap.
+- **Siyum calculator** (bidirectional): "at X/day (+Y on Shabbos) I finish on …" and "to finish by
+  date D I must learn R/day", for the whole Torah or any category.
+- **Hebrew or secular calendar** toggle applied to every date, plus light/dark theme.
+- 36 tests covering the derive-from-log engine, catalog integrity, analytics, and the UI flows.
 
 ## Developing
 

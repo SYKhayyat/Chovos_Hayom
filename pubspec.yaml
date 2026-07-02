@@ -41,6 +41,8 @@ dependencies:
   sqlite3_flutter_libs: ^0.6.0+eol
   uuid: ^4.5.3
   collection: ^1.19.1
+  fl_chart: ^1.2.0
+  kosher_dart: ^2.0.20
 
 dev_dependencies:
   flutter_test:
