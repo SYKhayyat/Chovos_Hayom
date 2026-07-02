@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 /// Result of the logging sheet. [occurredAt] is null when the user did not set a
@@ -9,8 +11,8 @@ class LogUnitResult {
   final String? note;
 }
 
-/// A modal sheet for logging a unit with an optional manual date, duration, and
-/// note. Returns null if cancelled.
+/// A modal sheet for logging a unit with an optional manual date, a built-in
+/// session stopwatch, a duration, and a note. Returns null if cancelled.
 Future<LogUnitResult?> showLogUnitSheet(
   BuildContext context, {
   required String title,
@@ -37,11 +39,35 @@ class _LogUnitSheetState extends State<_LogUnitSheet> {
   final _durationCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
 
+  final _stopwatch = Stopwatch();
+  Timer? _ticker;
+
   @override
   void dispose() {
+    _ticker?.cancel();
     _durationCtrl.dispose();
     _noteCtrl.dispose();
     super.dispose();
+  }
+
+  void _toggleTimer() {
+    setState(() {
+      if (_stopwatch.isRunning) {
+        _stopwatch.stop();
+        _ticker?.cancel();
+        final minutes = (_stopwatch.elapsed.inSeconds / 60).ceil();
+        if (minutes > 0) _durationCtrl.text = '$minutes';
+      } else {
+        _stopwatch.start();
+        _ticker = Timer.periodic(
+            const Duration(seconds: 1), (_) => setState(() {}));
+      }
+    });
+  }
+
+  String get _elapsed {
+    final s = _stopwatch.elapsed.inSeconds;
+    return '${(s ~/ 60).toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}';
   }
 
   Future<void> _pickDate() async {
@@ -93,6 +119,18 @@ class _LogUnitSheetState extends State<_LogUnitSheet> {
                 onPressed: _pickDate,
               ),
             ),
+          Row(
+            children: [
+              Text('Timer  $_elapsed',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const Spacer(),
+              FilledButton.tonalIcon(
+                icon: Icon(_stopwatch.isRunning ? Icons.pause : Icons.play_arrow),
+                label: Text(_stopwatch.isRunning ? 'Stop' : 'Start'),
+                onPressed: _toggleTimer,
+              ),
+            ],
+          ),
           TextField(
             controller: _durationCtrl,
             keyboardType: TextInputType.number,

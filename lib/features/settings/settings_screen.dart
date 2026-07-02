@@ -48,6 +48,15 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const Divider(),
+          const _SectionHeader('Reminders'),
+          SwitchListTile(
+            title: const Text('Daily learning nudge'),
+            subtitle: const Text(
+                'Show a reminder in the app if you have not learned today'),
+            value: settings.reminderEnabled,
+            onChanged: notifier.setReminderEnabled,
+          ),
+          const Divider(),
           const _SectionHeader('Profiles'),
           ListTile(
             leading: const Icon(Icons.people),

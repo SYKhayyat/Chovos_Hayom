@@ -21,4 +21,5 @@ class PrefKeys {
   static const activeProfileId = 'activeProfileId';
   static const calendarMode = 'calendarMode';
   static const themeMode = 'themeMode';
+  static const reminderEnabled = 'reminderEnabled';
 }

@@ -10,15 +10,22 @@ class SettingsState {
   const SettingsState({
     this.calendar = CalendarMode.gregorian,
     this.themeMode = ThemeMode.system,
+    this.reminderEnabled = false,
   });
 
   final CalendarMode calendar;
   final ThemeMode themeMode;
+  final bool reminderEnabled;
 
-  SettingsState copyWith({CalendarMode? calendar, ThemeMode? themeMode}) =>
+  SettingsState copyWith({
+    CalendarMode? calendar,
+    ThemeMode? themeMode,
+    bool? reminderEnabled,
+  }) =>
       SettingsState(
         calendar: calendar ?? this.calendar,
         themeMode: themeMode ?? this.themeMode,
+        reminderEnabled: reminderEnabled ?? this.reminderEnabled,
       );
 }
 
@@ -33,7 +40,15 @@ class SettingsNotifier extends Notifier<SettingsState> {
       themeMode: _enumByName(
           ThemeMode.values, prefs.getString(PrefKeys.themeMode),
           fallback: ThemeMode.system),
+      reminderEnabled: prefs.getString(PrefKeys.reminderEnabled) == 'true',
     );
+  }
+
+  Future<void> setReminderEnabled(bool enabled) async {
+    await ref
+        .read(appPreferencesProvider)
+        .setString(PrefKeys.reminderEnabled, enabled.toString());
+    state = state.copyWith(reminderEnabled: enabled);
   }
 
   Future<void> setCalendar(CalendarMode mode) async {

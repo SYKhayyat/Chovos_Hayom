@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
+import '../../application/settings.dart';
+import '../../application/stats.dart';
+import '../../domain/usecases/reminders_policy.dart';
 import '../calculator/calculator_screen.dart';
 import '../custom_node/add_custom_node_screen.dart';
+import '../goals/goals_screen.dart';
 import '../profiles/profiles_screen.dart';
 import '../search/catalog_search_delegate.dart';
 import '../settings/settings_screen.dart';
@@ -20,6 +24,14 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final forest = ref.watch(progressForestProvider);
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+
+    final reminderOn = ref.watch(settingsProvider).reminderEnabled;
+    final events = ref.watch(eventsProvider).asData?.value ?? const [];
+    final showNudge = RemindersPolicy.shouldRemind(
+      enabled: reminderOn,
+      events: events,
+      now: ref.watch(clockProvider)(),
+    );
 
     return Scaffold(
       drawer: const _AppDrawer(),
@@ -58,7 +70,10 @@ class DashboardScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (nodes) => ListView(
           padding: const EdgeInsets.only(bottom: 88),
-          children: [for (final n in nodes) ProgressTile(node: n)],
+          children: [
+            if (showNudge) const _NudgeBanner(),
+            for (final n in nodes) ProgressTile(node: n),
+          ],
         ),
       ),
     );
@@ -66,6 +81,30 @@ class DashboardScreen extends ConsumerWidget {
 
   static void _push(BuildContext context, Widget screen) {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  }
+}
+
+class _NudgeBanner extends StatelessWidget {
+  const _NudgeBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+      color: scheme.tertiaryContainer,
+      child: const Padding(
+        padding: EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.notifications_active_outlined),
+            SizedBox(width: 12),
+            Expanded(
+                child: Text("You haven't learned yet today — pick something below!")),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -103,6 +142,11 @@ class _AppDrawer extends ConsumerWidget {
                 ],
               ),
             ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.flag),
+            title: const Text('Goals'),
+            onTap: () => _go(context, const GoalsScreen()),
           ),
           ListTile(
             leading: const Icon(Icons.people),

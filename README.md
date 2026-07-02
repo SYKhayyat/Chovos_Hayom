@@ -32,7 +32,7 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
 | **1 — Parity+** | Full catalog (312 nodes), per-unit grid, session logging, dashboard | ✅ Done |
 | **2 — Intelligence** | Charts, pace engine, predictions, Hebrew calendar | ✅ Done |
 | **3 — Power** | Profiles, custom sefarim, search, export/import | ✅ Done |
-| 4 — Polish | Goals, notifications, timer, more platforms | ⏳ Next |
+| **4 — Polish** | Goals, chazara UI, session timer, in-app reminders | ✅ Done |
 
 ### What works today
 - Expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur, Shulchan
@@ -48,7 +48,18 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
 - **Multiple local profiles** (switch between users; each has its own log), **custom sefarim**
   (add your own trackable sefer or habit with your own unit counts), **global search** across
   everything, and **export/import** of all data as JSON. Settings persist across launches.
-- 40 tests covering the engine, catalog integrity, analytics, backup round-trip, and the UI flows.
+- **Goals**: set a target finish date on any sefer and see whether you're on track and the daily
+  rate you need; a Goals screen lists them all. A **chazara menu** (long-press a unit) logs review
+  passes or un-marks; a **session stopwatch** in the log sheet fills in the duration; an optional
+  **daily nudge** reminds you in-app if you haven't learned today.
+- 46 tests covering the engine, catalog integrity, analytics, goals, reminders, backup, and UI.
+
+## Remaining device-only work
+Everything above is verified via `flutter test`. Two things need a real device/build to finish and
+were intentionally left for that: **OS push notifications** (the reminder logic + preference ship
+now; wiring `flutter_local_notifications` needs on-device testing) and **running on Android/desktop**
+(needs the platform toolchains from `flutter doctor`). The app targets Android + Windows; other
+desktop platforms are a `flutter create --platforms` away.
 
 ## Developing
 

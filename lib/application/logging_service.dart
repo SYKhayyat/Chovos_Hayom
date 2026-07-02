@@ -61,4 +61,14 @@ class LoggingService {
 
   Future<LearningEvent> markUndone(String nodeId, int unitIndex) =>
       log(nodeId: nodeId, unitIndex: unitIndex, action: EventAction.undone);
+
+  /// Record a chazara (review) pass over an already-learned unit.
+  Future<LearningEvent> markReview(String nodeId, int unitIndex,
+          {DateTime? occurredAt}) =>
+      log(
+        nodeId: nodeId,
+        unitIndex: unitIndex,
+        action: EventAction.reviewed,
+        occurredAt: occurredAt,
+      );
 }
