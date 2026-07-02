@@ -1,0 +1,1 @@
+{"valid_import":true,"imports":[{"uri":"package:chovos_hayom/domain/entities/catalog.dart","transitive":false},{"uri":"package:chovos_hayom/domain/entities/catalog_node.dart","transitive":false},{"uri":"package:chovos_hayom/domain/entities/progress_node.dart","transitive":false},{"uri":"package:chovos_hayom/domain/usecases/fold_log.dart","transitive":false}],"elements":[]}

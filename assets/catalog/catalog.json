@@ -1,0 +1,21 @@
+{
+  "catalogVersion": 1,
+  "slice": "shas-moed (Phase 0 seed)",
+  "nodes": [
+    { "id": "root", "parentId": null, "name": "Kol HaTorah Kula", "nameHebrew": "כל התורה כולה", "kind": "category", "sortOrder": 0 },
+    { "id": "shas", "parentId": "root", "name": "Shas", "nameHebrew": "ש\"ס", "kind": "category", "sortOrder": 0 },
+    { "id": "shas.moed", "parentId": "shas", "name": "Moed", "nameHebrew": "מועד", "kind": "category", "sortOrder": 0 },
+
+    { "id": "shas.moed.shabbos", "parentId": "shas.moed", "name": "Shabbos", "nameHebrew": "שבת", "kind": "leaf", "sortOrder": 0, "unitLabel": "daf", "unitCount": 156, "unitOffset": 2 },
+    { "id": "shas.moed.eruvin", "parentId": "shas.moed", "name": "Eruvin", "nameHebrew": "עירובין", "kind": "leaf", "sortOrder": 1, "unitLabel": "daf", "unitCount": 104, "unitOffset": 2 },
+    { "id": "shas.moed.pesachim", "parentId": "shas.moed", "name": "Pesachim", "nameHebrew": "פסחים", "kind": "leaf", "sortOrder": 2, "unitLabel": "daf", "unitCount": 120, "unitOffset": 2 },
+    { "id": "shas.moed.rosh_hashana", "parentId": "shas.moed", "name": "Rosh Hashana", "nameHebrew": "ראש השנה", "kind": "leaf", "sortOrder": 3, "unitLabel": "daf", "unitCount": 34, "unitOffset": 2 },
+    { "id": "shas.moed.yoma", "parentId": "shas.moed", "name": "Yoma", "nameHebrew": "יומא", "kind": "leaf", "sortOrder": 4, "unitLabel": "daf", "unitCount": 87, "unitOffset": 2 },
+    { "id": "shas.moed.sukkah", "parentId": "shas.moed", "name": "Sukkah", "nameHebrew": "סוכה", "kind": "leaf", "sortOrder": 5, "unitLabel": "daf", "unitCount": 55, "unitOffset": 2 },
+    { "id": "shas.moed.beitza", "parentId": "shas.moed", "name": "Beitza", "nameHebrew": "ביצה", "kind": "leaf", "sortOrder": 6, "unitLabel": "daf", "unitCount": 39, "unitOffset": 2 },
+    { "id": "shas.moed.taanis", "parentId": "shas.moed", "name": "Taanis", "nameHebrew": "תענית", "kind": "leaf", "sortOrder": 7, "unitLabel": "daf", "unitCount": 30, "unitOffset": 2 },
+    { "id": "shas.moed.megilla", "parentId": "shas.moed", "name": "Megilla", "nameHebrew": "מגילה", "kind": "leaf", "sortOrder": 8, "unitLabel": "daf", "unitCount": 31, "unitOffset": 2 },
+    { "id": "shas.moed.moed_katan", "parentId": "shas.moed", "name": "Moed Katan", "nameHebrew": "מועד קטן", "kind": "leaf", "sortOrder": 9, "unitLabel": "daf", "unitCount": 28, "unitOffset": 2 },
+    { "id": "shas.moed.chagiga", "parentId": "shas.moed", "name": "Chagiga", "nameHebrew": "חגיגה", "kind": "leaf", "sortOrder": 10, "unitLabel": "daf", "unitCount": 26, "unitOffset": 2 }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "elements": {},
+  "imports": [
+    "package:chovos_hayom/domain/entities/catalog.dart",
+    "package:chovos_hayom/domain/entities/catalog_node.dart",
+    "package:chovos_hayom/domain/entities/progress_node.dart",
+    "package:chovos_hayom/domain/usecases/fold_log.dart"
+  ]
+}

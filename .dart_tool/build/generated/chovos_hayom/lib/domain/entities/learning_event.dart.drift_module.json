@@ -1,0 +1,6 @@
+{
+  "elements": {},
+  "imports": [
+    "package:chovos_hayom/domain/entities/enums.dart"
+  ]
+}

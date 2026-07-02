@@ -1,9 +1,49 @@
-# Chovos Hayom - An App for Serious Learners
-Chovos Hayom is an app I developed as a Term Project for an Android course. It is written fully in Java and xml, and features no AI input.
-The app allows you to track your progress in Torah. You can track your progress within specific mesechtos or sefarim. After saving your progress, your changes will be saved in that sefer as well as in the category containing that sefer.
-It features:
-* An easy way to tell where you are up to in various parts of Torah.
-* A listing of siyumim.
-* A calculator which determines when you will finish a mesechta or seder (or more). It can calculate based on a daily amount, with an option to have a different amount of learning on Shabbos.
+# Chovos Hayom
 
-Try it out! Head on over to [releases](https://github.com/SYKhayyat/Chovos_Hayom/releases/tag/V1.0.0), and download the apk! Feel free to reach out with issues!
+Track your Torah learning — perek by perek, daf by daf — with real progress, history, and
+finish-date predictions. A ground-up **Flutter** rewrite of the original Android app, built for
+Android, Windows, and (later) macOS/Linux/iOS.
+
+## Why the rewrite
+
+The original (Java/Android) stored a single aggregate count as the source of truth, which made
+`learned > total` bugs possible and left no room for history or predictions. This version inverts
+that: **an append-only event log is the single source of truth, and everything else is derived.**
+That one decision gives single-source-of-truth, undo/redo, export, history/heatmaps, and
+prediction-from-actual-pace for free.
+
+## Architecture (short version)
+
+- **Catalog** — immutable reference data (*what exists in Torah*), seeded from JSON assets.
+- **Progress** — a per-profile append-only event log (*what you learned, and when*), in SQLite.
+- **Everything derived** — counts, percentages, roll-ups, pace, and predictions are folds over the
+  log, never stored.
+
+Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Drift + JSON) ·
+`application/` (Riverpod) · `features/` (UI). Full design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+**Stack:** Flutter · Riverpod · Drift (SQLite) · `fl_chart` (later) · `kosher_dart` (later).
+
+## Status
+
+| Phase | Scope | State |
+|---|---|---|
+| **0 — Foundation** | Event-log core, Drift schema, catalog loader, derive engine, tests | ✅ Done |
+| 1 — Parity+ | Full catalog, per-unit grid, session logging, dashboard | ⏳ Next |
+| 2 — Intelligence | Charts, pace engine, predictions, Hebrew calendar | — |
+| 3 — Power | Profiles, custom sefarim, search, export/import, goals | — |
+| 4 — Polish | Notifications, timer, chazara UI, more platforms | — |
+
+## Developing
+
+```bash
+flutter pub get
+dart run build_runner build   # generates Drift code
+flutter test                  # 22 tests, all green
+```
+
+Running the app on a device/desktop needs the platform toolchains (`flutter doctor`):
+Android SDK cmdline-tools + licenses, or Visual Studio "Desktop development with C++" for Windows.
+
+---
+*Originally a term project by Shaul Khayyat; now being rebuilt properly.*

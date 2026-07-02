@@ -1,0 +1,7 @@
+{
+  "elements": {},
+  "imports": [
+    "package:chovos_hayom/domain/entities/learning_event.dart",
+    "package:chovos_hayom/domain/entities/profile.dart"
+  ]
+}

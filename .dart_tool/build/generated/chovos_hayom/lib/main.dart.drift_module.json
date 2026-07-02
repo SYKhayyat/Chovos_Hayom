@@ -1,0 +1,9 @@
+{
+  "elements": {},
+  "imports": [
+    "package:flutter/material.dart",
+    "package:flutter_riverpod/flutter_riverpod.dart",
+    "package:chovos_hayom/application/providers.dart",
+    "package:chovos_hayom/domain/entities/progress_node.dart"
+  ]
+}

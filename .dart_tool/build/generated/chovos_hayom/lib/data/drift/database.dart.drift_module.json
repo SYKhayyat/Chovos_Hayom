@@ -1,0 +1,769 @@
+{
+  "elements": {
+    "AppDatabase": {
+      "id": {
+        "library_uri": "package:chovos_hayom/data/drift/database.dart",
+        "name": "AppDatabase"
+      },
+      "declaration": {
+        "source_uri": "package:chovos_hayom/data/drift/database.dart",
+        "offset": 1986,
+        "name": "AppDatabase"
+      },
+      "references": [
+        {
+          "library_uri": "package:chovos_hayom/data/drift/database.dart",
+          "name": "profiles"
+        },
+        {
+          "library_uri": "package:chovos_hayom/data/drift/database.dart",
+          "name": "learning_events"
+        },
+        {
+          "library_uri": "package:chovos_hayom/data/drift/database.dart",
+          "name": "custom_nodes"
+        }
+      ],
+      "type": "database",
+      "tables": [
+        {
+          "library_uri": "package:chovos_hayom/data/drift/database.dart",
+          "name": "profiles"
+        },
+        {
+          "library_uri": "package:chovos_hayom/data/drift/database.dart",
+          "name": "learning_events"
+        },
+        {
+          "library_uri": "package:chovos_hayom/data/drift/database.dart",
+          "name": "custom_nodes"
+        }
+      ],
+      "views": [],
+      "includes": [],
+      "queries": [],
+      "schema_version": 1,
+      "daos": [],
+      "has_constructor_arg": true
+    },
+    "profiles": {
+      "id": {
+        "library_uri": "package:chovos_hayom/data/drift/database.dart",
+        "name": "profiles"
+      },
+      "declaration": {
+        "source_uri": "package:chovos_hayom/data/drift/database.dart",
+        "offset": 257,
+        "name": "Profiles"
+      },
+      "references": [],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "id",
+          "nameInDart": "id",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 299,
+            "name": "id"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "name",
+          "nameInDart": "name",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 332,
+            "name": "name"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "created_at",
+          "nameInDart": "createdAt",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 371,
+            "name": "createdAt"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "settings_json",
+          "nameInDart": "settingsJson",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 415,
+            "name": "settingsJson"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": {
+            "elements": [
+              "const ",
+              {
+                "lexeme": "Constant",
+                "import_uri": "package:drift/src/runtime/query_builder/query_builder.dart"
+              },
+              "('{}')"
+            ]
+          },
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [
+        {
+          "type": "primary_key",
+          "columns": [
+            "id"
+          ]
+        }
+      ],
+      "custom_parent_class": null,
+      "interfaces_for_row_class": [],
+      "fixed_entity_info_name": null,
+      "base_dart_name": "Profiles",
+      "row_class_name": "ProfileRow",
+      "companion_class_name": null,
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    },
+    "learning_events": {
+      "id": {
+        "library_uri": "package:chovos_hayom/data/drift/database.dart",
+        "name": "learning_events"
+      },
+      "declaration": {
+        "source_uri": "package:chovos_hayom/data/drift/database.dart",
+        "offset": 630,
+        "name": "LearningEvents"
+      },
+      "references": [],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "id",
+          "nameInDart": "id",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 678,
+            "name": "id"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "profile_id",
+          "nameInDart": "profileId",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 711,
+            "name": "profileId"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "node_id",
+          "nameInDart": "nodeId",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 751,
+            "name": "nodeId"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "unit_index",
+          "nameInDart": "unitIndex",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 787,
+            "name": "unitIndex"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "action",
+          "nameInDart": "action",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 829,
+            "name": "action"
+          },
+          "typeConverter": {
+            "expression": {
+              "elements": [
+                "const ",
+                {
+                  "lexeme": "EnumIndexConverter",
+                  "import_uri": "package:drift/drift.dart"
+                },
+                "<",
+                {
+                  "lexeme": "EventAction",
+                  "import_uri": "package:chovos_hayom/domain/entities/enums.dart"
+                },
+                ">(",
+                {
+                  "lexeme": "EventAction",
+                  "import_uri": "package:chovos_hayom/domain/entities/enums.dart"
+                },
+                ".values)"
+              ]
+            },
+            "dart_type": 0,
+            "json_type": 1,
+            "sql_type": {
+              "builtin": "int"
+            },
+            "dart_type_is_nullable": false,
+            "sql_type_is_nullable": false,
+            "json_type_is_nullable": false,
+            "is_drift_enum_converter": true
+          },
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "occurred_at",
+          "nameInDart": "occurredAt",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 886,
+            "name": "occurredAt"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "logged_at",
+          "nameInDart": "loggedAt",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 935,
+            "name": "loggedAt"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": true,
+          "nameInSql": "duration_min",
+          "nameInDart": "durationMin",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 977,
+            "name": "durationMin"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": true,
+          "nameInSql": "note",
+          "nameInDart": "note",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 1033,
+            "name": "note"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [
+        {
+          "type": "primary_key",
+          "columns": [
+            "id"
+          ]
+        }
+      ],
+      "custom_parent_class": null,
+      "interfaces_for_row_class": [],
+      "fixed_entity_info_name": null,
+      "base_dart_name": "LearningEvents",
+      "row_class_name": "LearningEventRow",
+      "companion_class_name": null,
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    },
+    "custom_nodes": {
+      "id": {
+        "library_uri": "package:chovos_hayom/data/drift/database.dart",
+        "name": "custom_nodes"
+      },
+      "declaration": {
+        "source_uri": "package:chovos_hayom/data/drift/database.dart",
+        "offset": 1293,
+        "name": "CustomNodes"
+      },
+      "references": [],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "id",
+          "nameInDart": "id",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 1338,
+            "name": "id"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "profile_id",
+          "nameInDart": "profileId",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 1371,
+            "name": "profileId"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": true,
+          "nameInSql": "parent_id",
+          "nameInDart": "parentId",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 1411,
+            "name": "parentId"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "name",
+          "nameInDart": "name",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 1461,
+            "name": "name"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": true,
+          "nameInSql": "name_hebrew",
+          "nameInDart": "nameHebrew",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 1496,
+            "name": "nameHebrew"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "sort_order",
+          "nameInDart": "sortOrder",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 1547,
+            "name": "sortOrder"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": {
+            "elements": [
+              "const ",
+              {
+                "lexeme": "Constant",
+                "import_uri": "package:drift/src/runtime/query_builder/query_builder.dart"
+              },
+              "(0)"
+            ]
+          },
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "kind",
+          "nameInDart": "kind",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 1620,
+            "name": "kind"
+          },
+          "typeConverter": {
+            "expression": {
+              "elements": [
+                "const ",
+                {
+                  "lexeme": "EnumIndexConverter",
+                  "import_uri": "package:drift/drift.dart"
+                },
+                "<",
+                {
+                  "lexeme": "NodeKind",
+                  "import_uri": "package:chovos_hayom/domain/entities/enums.dart"
+                },
+                ">(",
+                {
+                  "lexeme": "NodeKind",
+                  "import_uri": "package:chovos_hayom/domain/entities/enums.dart"
+                },
+                ".values)"
+              ]
+            },
+            "dart_type": 2,
+            "json_type": 3,
+            "sql_type": {
+              "builtin": "int"
+            },
+            "dart_type_is_nullable": false,
+            "sql_type_is_nullable": false,
+            "json_type_is_nullable": false,
+            "is_drift_enum_converter": true
+          },
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": true,
+          "nameInSql": "unit_label",
+          "nameInDart": "unitLabel",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 1667,
+            "name": "unitLabel"
+          },
+          "typeConverter": {
+            "expression": {
+              "elements": [
+                "const ",
+                {
+                  "lexeme": "EnumIndexConverter",
+                  "import_uri": "package:drift/drift.dart"
+                },
+                "<",
+                {
+                  "lexeme": "UnitLabel",
+                  "import_uri": "package:chovos_hayom/domain/entities/enums.dart"
+                },
+                ">(",
+                {
+                  "lexeme": "UnitLabel",
+                  "import_uri": "package:chovos_hayom/domain/entities/enums.dart"
+                },
+                ".values)"
+              ]
+            },
+            "dart_type": 4,
+            "json_type": 5,
+            "sql_type": {
+              "builtin": "int"
+            },
+            "dart_type_is_nullable": false,
+            "sql_type_is_nullable": false,
+            "json_type_is_nullable": false,
+            "is_drift_enum_converter": true
+          },
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "unit_count",
+          "nameInDart": "unitCount",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 1731,
+            "name": "unitCount"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": {
+            "elements": [
+              "const ",
+              {
+                "lexeme": "Constant",
+                "import_uri": "package:drift/src/runtime/query_builder/query_builder.dart"
+              },
+              "(0)"
+            ]
+          },
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "unit_offset",
+          "nameInDart": "unitOffset",
+          "declaration": {
+            "source_uri": "package:chovos_hayom/data/drift/database.dart",
+            "offset": 1804,
+            "name": "unitOffset"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": {
+            "elements": [
+              "const ",
+              {
+                "lexeme": "Constant",
+                "import_uri": "package:drift/src/runtime/query_builder/query_builder.dart"
+              },
+              "(0)"
+            ]
+          },
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [
+        {
+          "type": "primary_key",
+          "columns": [
+            "id"
+          ]
+        }
+      ],
+      "custom_parent_class": null,
+      "interfaces_for_row_class": [],
+      "fixed_entity_info_name": null,
+      "base_dart_name": "CustomNodes",
+      "row_class_name": "CustomNodeRow",
+      "companion_class_name": null,
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    }
+  },
+  "imports": [
+    "package:drift/drift.dart",
+    "package:drift_flutter/drift_flutter.dart",
+    "package:chovos_hayom/domain/entities/enums.dart"
+  ]
+}
