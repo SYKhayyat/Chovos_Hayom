@@ -29,10 +29,18 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
 | Phase | Scope | State |
 |---|---|---|
 | **0 — Foundation** | Event-log core, Drift schema, catalog loader, derive engine, tests | ✅ Done |
-| 1 — Parity+ | Full catalog, per-unit grid, session logging, dashboard | ⏳ Next |
-| 2 — Intelligence | Charts, pace engine, predictions, Hebrew calendar | — |
+| **1 — Parity+** | Full catalog (312 nodes), per-unit grid, session logging, dashboard | ✅ Done |
+| 2 — Intelligence | Charts, pace engine, predictions, Hebrew calendar | ⏳ Next |
 | 3 — Power | Profiles, custom sefarim, search, export/import, goals | — |
-| 4 — Polish | Notifications, timer, chazara UI, more platforms | — |
+| 4 — Polish | Notifications, timer, more platforms | — |
+
+### What works today
+- Expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur, Shulchan
+  Aruch, Mishna Berura — with live progress bars that roll up from every daf/perek to the root.
+- Tap a sefer/mesechta to open its **per-unit grid**; tap a daf to mark it, tap again to undo.
+- **Long-press** a unit to log it with a specific date, duration, and note (otherwise the date
+  auto-fills to now). Review (chazara) passes are tracked per unit.
+- 28 tests covering the derive-from-log engine, catalog integrity, reactivity, and the UI flow.
 
 ## Developing
 

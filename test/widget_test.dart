@@ -1,14 +1,14 @@
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/data/repositories/in_memory_progress_repository.dart';
 import 'package:chovos_hayom/main.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/fake_catalog.dart';
 
 void main() {
-  testWidgets('dashboard renders the catalog tree and marks a daf', (tester) async {
+  testWidgets('drill into a leaf, mark a daf in the grid, see it roll up',
+      (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -21,21 +21,23 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Top of the tree is the root category.
-    expect(find.text('Kol HaTorah Kula'), findsOneWidget);
-
-    // Drill root -> Shas -> Moed to reveal the Shabbos leaf.
+    // Drill root -> Shas -> Moed, then open the Shabbos leaf's grid.
     await tester.tap(find.text('Kol HaTorah Kula'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Shas'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Moed'));
     await tester.pumpAndSettle();
-    expect(find.text('Shabbos'), findsOneWidget);
+    await tester.tap(find.text('Shabbos'));
+    await tester.pumpAndSettle();
 
-    // Mark one daf; the leaf shows 1 / 156 and it rolls up through the parents
-    // (Moed -> Shas -> root all show the same, since Shabbos is the only leaf).
-    await tester.tap(find.byIcon(Icons.add).first);
+    // Grid shows daf cells starting at 2 (offset).
+    expect(find.text('2'), findsOneWidget);
+    await tester.tap(find.text('2'));
+    await tester.pumpAndSettle();
+
+    // Back to the dashboard; Shabbos now shows 1 / 156 (rolled up too).
+    await tester.pageBack();
     await tester.pumpAndSettle();
     expect(find.textContaining('1 / 156'), findsWidgets);
   });
