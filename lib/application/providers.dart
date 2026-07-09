@@ -7,12 +7,14 @@ import '../data/drift/database.dart';
 import '../data/repositories/drift_progress_repository.dart';
 import '../domain/entities/catalog.dart';
 import '../domain/entities/catalog_node.dart';
+import '../domain/entities/layer.dart';
 import '../domain/entities/learning_event.dart';
 import '../domain/entities/profile.dart';
 import '../domain/entities/progress_node.dart';
 import '../domain/repositories/catalog_repository.dart';
 import '../domain/repositories/progress_repository.dart';
 import '../domain/usecases/fold_log.dart';
+import '../domain/usecases/layer_requirements.dart';
 import '../domain/usecases/roll_up.dart';
 import 'logging_service.dart';
 
@@ -149,6 +151,53 @@ final catalogNodeProvider = Provider.family<CatalogNode?, String>((ref, id) {
 });
 
 // ---------------------------------------------------------------------------
+// Mefarshim (layers) + required-set config
+// ---------------------------------------------------------------------------
+
+/// The active profile's user-defined mefarshim.
+final customLayersProvider = StreamProvider<List<Layer>>((ref) {
+  final repo = ref.watch(progressRepositoryProvider);
+  return repo.watchCustomLayers(ref.watch(activeProfileProvider));
+});
+
+/// All selectable mefarshim: built-in list + this profile's custom ones.
+final allLayersProvider = Provider<List<Layer>>((ref) {
+  final custom = ref.watch(customLayersProvider).asData?.value ?? const [];
+  return [...builtInLayers, ...custom];
+});
+
+/// The active profile's required-layer settings (node + unit level).
+final layerConfigProvider = StreamProvider<List<LayerRequirementEntry>>((ref) {
+  final repo = ref.watch(progressRepositoryProvider);
+  return repo.watchLayerRequirements(ref.watch(activeProfileProvider));
+});
+
+/// The resolver that answers "which layers must this unit have to be complete?"
+/// Built once from the catalog (for inheritance) + the user's config.
+final layerRequirementsProvider = Provider<LayerRequirements>((ref) {
+  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+  final entries = ref.watch(layerConfigProvider).asData?.value ?? const [];
+
+  final parentOf = <String, String?>{};
+  if (catalog != null) {
+    for (final n in catalog.all) {
+      parentOf[n.id] = n.parentId;
+    }
+  }
+  final nodeConfig = <String, Set<String>>{};
+  final unitConfig = <String, Map<int, Set<String>>>{};
+  for (final e in entries) {
+    if (e.isNodeLevel) {
+      nodeConfig[e.nodeId] = e.layers;
+    } else {
+      (unitConfig[e.nodeId] ??= {})[e.unitIndex] = e.layers;
+    }
+  }
+  return LayerRequirements(
+      nodeConfig: nodeConfig, unitConfig: unitConfig, parentOf: parentOf);
+});
+
+// ---------------------------------------------------------------------------
 // Log + derived progress
 // ---------------------------------------------------------------------------
 
@@ -178,10 +227,11 @@ final foldProvider = Provider<AsyncValue<LogFold>>((ref) {
 final progressForestProvider = Provider<AsyncValue<List<ProgressNode>>>((ref) {
   final catalog = ref.watch(mergedCatalogProvider);
   final fold = ref.watch(foldProvider);
+  final required = ref.watch(layerRequirementsProvider);
   return catalog.when(
     loading: () => const AsyncValue.loading(),
     error: AsyncValue.error,
-    data: (c) => fold.whenData((f) => RollUp.buildForest(c, f)),
+    data: (c) => fold.whenData((f) => RollUp.buildForest(c, f, required)),
   );
 });
 
@@ -190,5 +240,5 @@ final progressNodeProvider = Provider.family<ProgressNode?, String>((ref, id) {
   final catalog = ref.watch(mergedCatalogProvider).asData?.value;
   final fold = ref.watch(foldProvider).asData?.value;
   if (catalog == null || fold == null) return null;
-  return RollUp.buildNode(catalog, id, fold);
+  return RollUp.buildNode(catalog, id, fold, ref.watch(layerRequirementsProvider));
 });

@@ -37,8 +37,45 @@ class LearningEvents extends Table {
   /// are what the Notes Journal collects.
   TextColumn get haara => text().nullable()();
 
+  /// JSON list of layer ids this event marks/unmarks (the text and/or mefarshim).
+  /// Null is read as `["main"]` — the primary text — matching pre-layers events.
+  TextColumn get layersJson => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
+}
+
+/// User-defined mefarshim (learning layers), on top of the built-in list. Custom
+/// so the user is never limited to a fixed set of commentaries.
+@DataClassName('CustomLayerRow')
+class CustomLayers extends Table {
+  TextColumn get id => text()();
+  TextColumn get profileId => text()();
+  TextColumn get name => text()();
+  TextColumn get nameHebrew => text().nullable()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {profileId, id};
+}
+
+/// Which layers are *required* for completion, pinned at a node (unitIndex = -1)
+/// or overridden for a single unit. Sparse and inherited (see LayerRequirements);
+/// absence anywhere means "just the text".
+@DataClassName('LayerRequirementRow')
+class RequiredLayerConfigs extends Table {
+  TextColumn get profileId => text()();
+  TextColumn get nodeId => text()();
+
+  /// -1 = the node-level default (applies to all its units); >= 0 = a per-unit
+  /// override for that unit index.
+  IntColumn get unitIndex => integer().withDefault(const Constant(-1))();
+
+  /// JSON list of required layer ids.
+  TextColumn get layersJson => text()();
+
+  @override
+  Set<Column> get primaryKey => {profileId, nodeId, unitIndex};
 }
 
 /// User-defined sefarim/categories. Same shape as a catalog node, but editable
@@ -63,7 +100,13 @@ class CustomNodes extends Table {
   Set<Column> get primaryKey => {profileId, id};
 }
 
-@DriftDatabase(tables: [Profiles, LearningEvents, CustomNodes])
+@DriftDatabase(tables: [
+  Profiles,
+  LearningEvents,
+  CustomNodes,
+  CustomLayers,
+  RequiredLayerConfigs
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
@@ -71,7 +114,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'chovos_hayom'));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   /// Every schema change must extend [MigrationStrategy.onUpgrade]. Without this,
   /// bumping [schemaVersion] silently does nothing on existing installs and
@@ -90,6 +133,14 @@ class AppDatabase extends _$AppDatabase {
           // their `note` as the learning-note and get a null haara).
           if (from < 3) {
             await m.addColumn(learningEvents, learningEvents.haara);
+          }
+          // v3 -> v4: per-layer (mefarshim) support — an additive column plus
+          // two new config tables. No existing row is touched; a null layersJson
+          // reads as the text-only default, so all prior progress is preserved.
+          if (from < 4) {
+            await m.addColumn(learningEvents, learningEvents.layersJson);
+            await m.createTable(customLayers);
+            await m.createTable(requiredLayerConfigs);
           }
         },
       );

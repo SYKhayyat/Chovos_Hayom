@@ -1,4 +1,5 @@
 import 'enums.dart';
+import 'layer.dart';
 
 /// An append-only record of a learning action. The event log is the single
 /// source of truth; all progress is derived from it (see ARCHITECTURE.md §1).
@@ -14,6 +15,7 @@ class LearningEvent {
     this.durationMin,
     this.note,
     this.haara,
+    this.layers = const [mainLayerId],
   });
 
   final String id;
@@ -21,6 +23,10 @@ class LearningEvent {
   final String nodeId;
   final int unitIndex;
   final EventAction action;
+
+  /// Which layers (the text and/or mefarshim) this event marks or unmarks.
+  /// Defaults to `[main]` — the primary text — matching pre-layers events.
+  final List<String> layers;
 
   /// When the unit was *learned*. Defaults to now at creation unless the user
   /// supplies a date/time.
@@ -45,6 +51,7 @@ class LearningEvent {
     int? durationMin,
     String? note,
     String? haara,
+    List<String>? layers,
   }) =>
       LearningEvent(
         id: id,
@@ -57,6 +64,7 @@ class LearningEvent {
         durationMin: durationMin ?? this.durationMin,
         note: note ?? this.note,
         haara: haara ?? this.haara,
+        layers: layers ?? this.layers,
       );
 
   /// Returns a copy with edited annotations, where passing null *clears* the
@@ -79,6 +87,7 @@ class LearningEvent {
         durationMin: durationMin,
         note: note,
         haara: haara,
+        layers: layers,
       );
 
   Map<String, dynamic> toJson() => {
@@ -92,6 +101,8 @@ class LearningEvent {
         if (durationMin != null) 'durationMin': durationMin,
         if (note != null) 'note': note,
         if (haara != null) 'haara': haara,
+        // Omit the default single-'main' list to keep old backups byte-identical.
+        if (!(layers.length == 1 && layers.first == mainLayerId)) 'layers': layers,
       };
 
   factory LearningEvent.fromJson(Map<String, dynamic> json) => LearningEvent(
@@ -105,5 +116,7 @@ class LearningEvent {
         durationMin: (json['durationMin'] as num?)?.toInt(),
         note: json['note'] as String?,
         haara: json['haara'] as String?,
+        layers: (json['layers'] as List?)?.cast<String>() ??
+            const [mainLayerId],
       );
 }

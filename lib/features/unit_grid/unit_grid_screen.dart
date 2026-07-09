@@ -7,11 +7,14 @@ import '../../application/settings.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/enums.dart';
+import '../../domain/entities/layer.dart';
 import '../../domain/entities/learning_event.dart';
 import '../../domain/usecases/fold_log.dart';
 import '../../domain/usecases/goal_evaluator.dart';
 import 'log_unit_sheet.dart';
+import 'mefarshim_config_sheet.dart';
 import 'unit_details_sheet.dart';
+import 'unit_layers_sheet.dart';
 
 /// A grid of every unit (daf/perek/siman) in a leaf. Tap toggles done; long-press
 /// opens a menu to log details, add a chazara (review), or un-mark.
@@ -29,6 +32,11 @@ class UnitGridScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(node.name),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_stories_outlined),
+            tooltip: 'Required mefarshim',
+            onPressed: () => showMefarshimConfigSheet(context, ref, node: node),
+          ),
           IconButton(
             icon: const Icon(Icons.flag_outlined),
             tooltip: 'Set goal date',
@@ -65,7 +73,8 @@ class UnitGridScreen extends ConsumerWidget {
   }
 
   Widget _grid(BuildContext context, WidgetRef ref, LogFold fold) {
-    final done = fold.doneUnits(node.id);
+    final required = ref.watch(layerRequirementsProvider);
+    final done = fold.doneUnits(node.id, required);
     // Units carrying a recorded note or duration on a `done` event — surfaced as
     // a small dot so details are discoverable at a glance.
     final events = ref.watch(eventsProvider).asData?.value ?? const <LearningEvent>[];
@@ -90,14 +99,31 @@ class UnitGridScreen extends ConsumerWidget {
       itemBuilder: (context, i) {
         final unit = node.unitOffset + i;
         final isDone = done.contains(unit);
+        final req = required.forUnit(node.id, unit);
+        final layered = req.length > 1 || !req.contains(mainLayerId);
+        // Fraction of required layers done — drives the partial fill.
+        double fraction;
+        if (isDone) {
+          fraction = 1;
+        } else if (layered && req.isNotEmpty) {
+          final have = fold.completedLayers(node.id, unit);
+          fraction = req.where(have.contains).length / req.length;
+        } else {
+          fraction = 0;
+        }
         return _UnitCell(
           label: '$unit',
           isDone: isDone,
+          fraction: fraction,
           reviewCount: fold.reviewCount(node.id, unit),
           hasDetails: isDone && annotated.contains(unit),
           onTap: () async {
-            // markUndone appends an inverse event (non-destructive, reversible by
-            // tapping again), so no confirmation — but surface any save failure.
+            // Layered units open a per-meforish checklist; text-only units
+            // toggle with a single tap (reversible — tapping again undoes).
+            if (layered) {
+              await showUnitLayersSheet(context, ref, node: node, unit: unit);
+              return;
+            }
             final logger = ref.read(loggingServiceProvider);
             final messenger = ScaffoldMessenger.of(context);
             try {
@@ -242,6 +268,7 @@ class _UnitCell extends StatelessWidget {
   const _UnitCell({
     required this.label,
     required this.isDone,
+    required this.fraction,
     required this.reviewCount,
     required this.hasDetails,
     required this.onTap,
@@ -250,6 +277,9 @@ class _UnitCell extends StatelessWidget {
 
   final String label;
   final bool isDone;
+
+  /// 0..1 share of required layers done — a partial fill for layered units.
+  final double fraction;
   final int reviewCount;
   final bool hasDetails;
   final VoidCallback onTap;
@@ -258,26 +288,44 @@ class _UnitCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final partial = !isDone && fraction > 0;
     return InkWell(
       onTap: onTap,
       onLongPress: onLongPress,
+      // Right-click / secondary-tap opens the same menu — desktop-friendly, no
+      // touchscreen required.
+      onSecondaryTap: onLongPress,
       borderRadius: BorderRadius.circular(8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDone ? scheme.primary : scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        alignment: Alignment.center,
-        child: Stack(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDone ? scheme.primary : scheme.surfaceContainerHighest,
+          ),
           alignment: Alignment.center,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: isDone ? scheme.onPrimary : scheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Partial-completion fill rising from the bottom.
+              if (partial)
+                Positioned.fill(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: FractionallySizedBox(
+                      heightFactor: fraction.clamp(0.05, 1),
+                      child: Container(
+                        color: scheme.primary.withValues(alpha: 0.35),
+                      ),
+                    ),
+                  ),
+                ),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isDone ? scheme.onPrimary : scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
             if (reviewCount > 0)
               Positioned(
                 right: 4,
@@ -287,15 +335,16 @@ class _UnitCell extends StatelessWidget {
                         fontSize: 10,
                         color: isDone ? scheme.onPrimary : scheme.primary)),
               ),
-            if (hasDetails)
-              Positioned(
-                left: 5,
-                bottom: 4,
-                child: Icon(Icons.sticky_note_2,
-                    size: 11,
-                    color: isDone ? scheme.onPrimary : scheme.primary),
-              ),
-          ],
+              if (hasDetails)
+                Positioned(
+                  left: 5,
+                  bottom: 4,
+                  child: Icon(Icons.sticky_note_2,
+                      size: 11,
+                      color: isDone ? scheme.onPrimary : scheme.primary),
+                ),
+            ],
+          ),
         ),
       ),
     );

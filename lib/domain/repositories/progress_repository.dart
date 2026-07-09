@@ -1,6 +1,8 @@
 import '../entities/catalog_node.dart';
+import '../entities/layer.dart';
 import '../entities/learning_event.dart';
 import '../entities/profile.dart';
+import '../usecases/layer_requirements.dart';
 
 /// Persists the append-only event log, profiles, and user-defined custom nodes.
 /// The log is the single source of truth; nothing derived is stored here.
@@ -40,4 +42,23 @@ abstract interface class ProgressRepository {
   /// a backup does not duplicate or throw.
   Future<void> addCustomNode(String profileId, CatalogNode node);
   Future<void> removeCustomNode(String profileId, String nodeId);
+
+  // --- Mefarshim (learning layers) -----------------------------------------
+
+  /// Reactive stream of the profile's user-defined mefarshim.
+  Stream<List<Layer>> watchCustomLayers(String profileId);
+
+  /// Add or replace a custom meforish (idempotent by (profileId, id)).
+  Future<void> addCustomLayer(String profileId, Layer layer);
+  Future<void> removeCustomLayer(String profileId, String layerId);
+
+  /// Reactive stream of the profile's required-layer settings (node + unit).
+  Stream<List<LayerRequirementEntry>> watchLayerRequirements(String profileId);
+
+  /// Pin a required-layer set at a node (unitIndex -1) or a single unit.
+  Future<void> setLayerRequirement(String profileId, LayerRequirementEntry entry);
+
+  /// Remove a required-layer setting, reverting to inheritance/default.
+  Future<void> clearLayerRequirement(
+      String profileId, String nodeId, int unitIndex);
 }

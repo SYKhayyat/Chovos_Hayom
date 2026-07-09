@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../domain/entities/catalog_node.dart';
+import '../../domain/entities/layer.dart';
 import '../../domain/entities/learning_event.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/progress_repository.dart';
+import '../../domain/usecases/layer_requirements.dart';
 import '../drift/database.dart';
 
 /// Drift-backed [ProgressRepository]. The app's real persistence layer.
@@ -43,6 +45,7 @@ class DriftProgressRepository implements ProgressRepository {
             durationMin: Value(e.durationMin),
             note: Value(e.note),
             haara: Value(e.haara),
+            layersJson: Value(_encodeLayers(e.layers)),
           ),
         );
   }
@@ -99,6 +102,12 @@ class DriftProgressRepository implements ProgressRepository {
       await (_db.delete(_db.customNodes)
             ..where((t) => t.profileId.equals(profileId)))
           .go();
+      await (_db.delete(_db.customLayers)
+            ..where((t) => t.profileId.equals(profileId)))
+          .go();
+      await (_db.delete(_db.requiredLayerConfigs)
+            ..where((t) => t.profileId.equals(profileId)))
+          .go();
       await (_db.delete(_db.profiles)..where((t) => t.id.equals(profileId)))
           .go();
     });
@@ -115,7 +124,18 @@ class DriftProgressRepository implements ProgressRepository {
         durationMin: row.durationMin,
         note: row.note,
         haara: row.haara,
+        layers: _decodeLayers(row.layersJson),
       );
+
+  /// Stores the default single-'main' list as null to keep old rows unchanged.
+  static String? _encodeLayers(List<String> layers) =>
+      (layers.length == 1 && layers.first == mainLayerId)
+          ? null
+          : jsonEncode(layers);
+
+  static List<String> _decodeLayers(String? json) => json == null
+      ? const [mainLayerId]
+      : (jsonDecode(json) as List).cast<String>();
 
   Profile _toProfile(ProfileRow row) => Profile(
         id: row.id,
@@ -169,4 +189,75 @@ class DriftProgressRepository implements ProgressRepository {
         unitCount: row.unitCount,
         unitOffset: row.unitOffset,
       );
+
+  // --- Mefarshim (custom layers) -------------------------------------------
+
+  @override
+  Stream<List<Layer>> watchCustomLayers(String profileId) {
+    final query = _db.select(_db.customLayers)
+      ..where((t) => t.profileId.equals(profileId))
+      ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]);
+    return query.watch().map((rows) => rows
+        .map((r) =>
+            Layer(id: r.id, name: r.name, nameHebrew: r.nameHebrew))
+        .toList());
+  }
+
+  @override
+  Future<void> addCustomLayer(String profileId, Layer layer) async {
+    await _db.into(_db.customLayers).insertOnConflictUpdate(
+          CustomLayersCompanion.insert(
+            id: layer.id,
+            profileId: profileId,
+            name: layer.name,
+            nameHebrew: Value(layer.nameHebrew),
+          ),
+        );
+  }
+
+  @override
+  Future<void> removeCustomLayer(String profileId, String layerId) async {
+    await (_db.delete(_db.customLayers)
+          ..where((t) => t.profileId.equals(profileId) & t.id.equals(layerId)))
+        .go();
+  }
+
+  // --- Required-layer settings ---------------------------------------------
+
+  @override
+  Stream<List<LayerRequirementEntry>> watchLayerRequirements(String profileId) {
+    final query = _db.select(_db.requiredLayerConfigs)
+      ..where((t) => t.profileId.equals(profileId));
+    return query.watch().map((rows) => rows
+        .map((r) => LayerRequirementEntry(
+              nodeId: r.nodeId,
+              unitIndex: r.unitIndex,
+              layers: (jsonDecode(r.layersJson) as List).cast<String>().toSet(),
+            ))
+        .toList());
+  }
+
+  @override
+  Future<void> setLayerRequirement(
+      String profileId, LayerRequirementEntry entry) async {
+    await _db.into(_db.requiredLayerConfigs).insertOnConflictUpdate(
+          RequiredLayerConfigsCompanion.insert(
+            profileId: profileId,
+            nodeId: entry.nodeId,
+            unitIndex: Value(entry.unitIndex),
+            layersJson: jsonEncode(entry.layers.toList()),
+          ),
+        );
+  }
+
+  @override
+  Future<void> clearLayerRequirement(
+      String profileId, String nodeId, int unitIndex) async {
+    await (_db.delete(_db.requiredLayerConfigs)
+          ..where((t) =>
+              t.profileId.equals(profileId) &
+              t.nodeId.equals(nodeId) &
+              t.unitIndex.equals(unitIndex)))
+        .go();
+  }
 }

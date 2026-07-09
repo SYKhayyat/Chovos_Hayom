@@ -420,6 +420,17 @@ class $LearningEventsTable extends LearningEvents
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _layersJsonMeta = const VerificationMeta(
+    'layersJson',
+  );
+  @override
+  late final GeneratedColumn<String> layersJson = GeneratedColumn<String>(
+    'layers_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -432,6 +443,7 @@ class $LearningEventsTable extends LearningEvents
     durationMin,
     note,
     haara,
+    layersJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -511,6 +523,12 @@ class $LearningEventsTable extends LearningEvents
         haara.isAcceptableOrUnknown(data['haara']!, _haaraMeta),
       );
     }
+    if (data.containsKey('layers_json')) {
+      context.handle(
+        _layersJsonMeta,
+        layersJson.isAcceptableOrUnknown(data['layers_json']!, _layersJsonMeta),
+      );
+    }
     return context;
   }
 
@@ -562,6 +580,10 @@ class $LearningEventsTable extends LearningEvents
         DriftSqlType.string,
         data['${effectivePrefix}haara'],
       ),
+      layersJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}layers_json'],
+      ),
     );
   }
 
@@ -592,6 +614,10 @@ class LearningEventRow extends DataClass
   /// A **haara** — a note *on the material itself* (an insight on the daf). These
   /// are what the Notes Journal collects.
   final String? haara;
+
+  /// JSON list of layer ids this event marks/unmarks (the text and/or mefarshim).
+  /// Null is read as `["main"]` — the primary text — matching pre-layers events.
+  final String? layersJson;
   const LearningEventRow({
     required this.id,
     required this.profileId,
@@ -603,6 +629,7 @@ class LearningEventRow extends DataClass
     this.durationMin,
     this.note,
     this.haara,
+    this.layersJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -627,6 +654,9 @@ class LearningEventRow extends DataClass
     if (!nullToAbsent || haara != null) {
       map['haara'] = Variable<String>(haara);
     }
+    if (!nullToAbsent || layersJson != null) {
+      map['layers_json'] = Variable<String>(layersJson);
+    }
     return map;
   }
 
@@ -646,6 +676,9 @@ class LearningEventRow extends DataClass
       haara: haara == null && nullToAbsent
           ? const Value.absent()
           : Value(haara),
+      layersJson: layersJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(layersJson),
     );
   }
 
@@ -667,6 +700,7 @@ class LearningEventRow extends DataClass
       durationMin: serializer.fromJson<int?>(json['durationMin']),
       note: serializer.fromJson<String?>(json['note']),
       haara: serializer.fromJson<String?>(json['haara']),
+      layersJson: serializer.fromJson<String?>(json['layersJson']),
     );
   }
   @override
@@ -685,6 +719,7 @@ class LearningEventRow extends DataClass
       'durationMin': serializer.toJson<int?>(durationMin),
       'note': serializer.toJson<String?>(note),
       'haara': serializer.toJson<String?>(haara),
+      'layersJson': serializer.toJson<String?>(layersJson),
     };
   }
 
@@ -699,6 +734,7 @@ class LearningEventRow extends DataClass
     Value<int?> durationMin = const Value.absent(),
     Value<String?> note = const Value.absent(),
     Value<String?> haara = const Value.absent(),
+    Value<String?> layersJson = const Value.absent(),
   }) => LearningEventRow(
     id: id ?? this.id,
     profileId: profileId ?? this.profileId,
@@ -710,6 +746,7 @@ class LearningEventRow extends DataClass
     durationMin: durationMin.present ? durationMin.value : this.durationMin,
     note: note.present ? note.value : this.note,
     haara: haara.present ? haara.value : this.haara,
+    layersJson: layersJson.present ? layersJson.value : this.layersJson,
   );
   LearningEventRow copyWithCompanion(LearningEventsCompanion data) {
     return LearningEventRow(
@@ -727,6 +764,9 @@ class LearningEventRow extends DataClass
           : this.durationMin,
       note: data.note.present ? data.note.value : this.note,
       haara: data.haara.present ? data.haara.value : this.haara,
+      layersJson: data.layersJson.present
+          ? data.layersJson.value
+          : this.layersJson,
     );
   }
 
@@ -742,7 +782,8 @@ class LearningEventRow extends DataClass
           ..write('loggedAt: $loggedAt, ')
           ..write('durationMin: $durationMin, ')
           ..write('note: $note, ')
-          ..write('haara: $haara')
+          ..write('haara: $haara, ')
+          ..write('layersJson: $layersJson')
           ..write(')'))
         .toString();
   }
@@ -759,6 +800,7 @@ class LearningEventRow extends DataClass
     durationMin,
     note,
     haara,
+    layersJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -773,7 +815,8 @@ class LearningEventRow extends DataClass
           other.loggedAt == this.loggedAt &&
           other.durationMin == this.durationMin &&
           other.note == this.note &&
-          other.haara == this.haara);
+          other.haara == this.haara &&
+          other.layersJson == this.layersJson);
 }
 
 class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
@@ -787,6 +830,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
   final Value<int?> durationMin;
   final Value<String?> note;
   final Value<String?> haara;
+  final Value<String?> layersJson;
   final Value<int> rowid;
   const LearningEventsCompanion({
     this.id = const Value.absent(),
@@ -799,6 +843,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     this.durationMin = const Value.absent(),
     this.note = const Value.absent(),
     this.haara = const Value.absent(),
+    this.layersJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningEventsCompanion.insert({
@@ -812,6 +857,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     this.durationMin = const Value.absent(),
     this.note = const Value.absent(),
     this.haara = const Value.absent(),
+    this.layersJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        profileId = Value(profileId),
@@ -831,6 +877,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     Expression<int>? durationMin,
     Expression<String>? note,
     Expression<String>? haara,
+    Expression<String>? layersJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -844,6 +891,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
       if (durationMin != null) 'duration_min': durationMin,
       if (note != null) 'note': note,
       if (haara != null) 'haara': haara,
+      if (layersJson != null) 'layers_json': layersJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -859,6 +907,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     Value<int?>? durationMin,
     Value<String?>? note,
     Value<String?>? haara,
+    Value<String?>? layersJson,
     Value<int>? rowid,
   }) {
     return LearningEventsCompanion(
@@ -872,6 +921,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
       durationMin: durationMin ?? this.durationMin,
       note: note ?? this.note,
       haara: haara ?? this.haara,
+      layersJson: layersJson ?? this.layersJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -911,6 +961,9 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     if (haara.present) {
       map['haara'] = Variable<String>(haara.value);
     }
+    if (layersJson.present) {
+      map['layers_json'] = Variable<String>(layersJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -930,6 +983,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
           ..write('durationMin: $durationMin, ')
           ..write('note: $note, ')
           ..write('haara: $haara, ')
+          ..write('layersJson: $layersJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1552,12 +1606,701 @@ class CustomNodesCompanion extends UpdateCompanion<CustomNodeRow> {
   }
 }
 
+class $CustomLayersTable extends CustomLayers
+    with TableInfo<$CustomLayersTable, CustomLayerRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomLayersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameHebrewMeta = const VerificationMeta(
+    'nameHebrew',
+  );
+  @override
+  late final GeneratedColumn<String> nameHebrew = GeneratedColumn<String>(
+    'name_hebrew',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    profileId,
+    name,
+    nameHebrew,
+    sortOrder,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'custom_layers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CustomLayerRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('name_hebrew')) {
+      context.handle(
+        _nameHebrewMeta,
+        nameHebrew.isAcceptableOrUnknown(data['name_hebrew']!, _nameHebrewMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {profileId, id};
+  @override
+  CustomLayerRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CustomLayerRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      nameHebrew: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_hebrew'],
+      ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $CustomLayersTable createAlias(String alias) {
+    return $CustomLayersTable(attachedDatabase, alias);
+  }
+}
+
+class CustomLayerRow extends DataClass implements Insertable<CustomLayerRow> {
+  final String id;
+  final String profileId;
+  final String name;
+  final String? nameHebrew;
+  final int sortOrder;
+  const CustomLayerRow({
+    required this.id,
+    required this.profileId,
+    required this.name,
+    this.nameHebrew,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['profile_id'] = Variable<String>(profileId);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || nameHebrew != null) {
+      map['name_hebrew'] = Variable<String>(nameHebrew);
+    }
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  CustomLayersCompanion toCompanion(bool nullToAbsent) {
+    return CustomLayersCompanion(
+      id: Value(id),
+      profileId: Value(profileId),
+      name: Value(name),
+      nameHebrew: nameHebrew == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nameHebrew),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory CustomLayerRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CustomLayerRow(
+      id: serializer.fromJson<String>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
+      name: serializer.fromJson<String>(json['name']),
+      nameHebrew: serializer.fromJson<String?>(json['nameHebrew']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'profileId': serializer.toJson<String>(profileId),
+      'name': serializer.toJson<String>(name),
+      'nameHebrew': serializer.toJson<String?>(nameHebrew),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  CustomLayerRow copyWith({
+    String? id,
+    String? profileId,
+    String? name,
+    Value<String?> nameHebrew = const Value.absent(),
+    int? sortOrder,
+  }) => CustomLayerRow(
+    id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
+    name: name ?? this.name,
+    nameHebrew: nameHebrew.present ? nameHebrew.value : this.nameHebrew,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  CustomLayerRow copyWithCompanion(CustomLayersCompanion data) {
+    return CustomLayerRow(
+      id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      name: data.name.present ? data.name.value : this.name,
+      nameHebrew: data.nameHebrew.present
+          ? data.nameHebrew.value
+          : this.nameHebrew,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomLayerRow(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('name: $name, ')
+          ..write('nameHebrew: $nameHebrew, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, profileId, name, nameHebrew, sortOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CustomLayerRow &&
+          other.id == this.id &&
+          other.profileId == this.profileId &&
+          other.name == this.name &&
+          other.nameHebrew == this.nameHebrew &&
+          other.sortOrder == this.sortOrder);
+}
+
+class CustomLayersCompanion extends UpdateCompanion<CustomLayerRow> {
+  final Value<String> id;
+  final Value<String> profileId;
+  final Value<String> name;
+  final Value<String?> nameHebrew;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const CustomLayersCompanion({
+    this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.nameHebrew = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CustomLayersCompanion.insert({
+    required String id,
+    required String profileId,
+    required String name,
+    this.nameHebrew = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       profileId = Value(profileId),
+       name = Value(name);
+  static Insertable<CustomLayerRow> custom({
+    Expression<String>? id,
+    Expression<String>? profileId,
+    Expression<String>? name,
+    Expression<String>? nameHebrew,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
+      if (name != null) 'name': name,
+      if (nameHebrew != null) 'name_hebrew': nameHebrew,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CustomLayersCompanion copyWith({
+    Value<String>? id,
+    Value<String>? profileId,
+    Value<String>? name,
+    Value<String?>? nameHebrew,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return CustomLayersCompanion(
+      id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
+      name: name ?? this.name,
+      nameHebrew: nameHebrew ?? this.nameHebrew,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (nameHebrew.present) {
+      map['name_hebrew'] = Variable<String>(nameHebrew.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomLayersCompanion(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('name: $name, ')
+          ..write('nameHebrew: $nameHebrew, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RequiredLayerConfigsTable extends RequiredLayerConfigs
+    with TableInfo<$RequiredLayerConfigsTable, LayerRequirementRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RequiredLayerConfigsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nodeIdMeta = const VerificationMeta('nodeId');
+  @override
+  late final GeneratedColumn<String> nodeId = GeneratedColumn<String>(
+    'node_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _unitIndexMeta = const VerificationMeta(
+    'unitIndex',
+  );
+  @override
+  late final GeneratedColumn<int> unitIndex = GeneratedColumn<int>(
+    'unit_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(-1),
+  );
+  static const VerificationMeta _layersJsonMeta = const VerificationMeta(
+    'layersJson',
+  );
+  @override
+  late final GeneratedColumn<String> layersJson = GeneratedColumn<String>(
+    'layers_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    profileId,
+    nodeId,
+    unitIndex,
+    layersJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'required_layer_configs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LayerRequirementRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('node_id')) {
+      context.handle(
+        _nodeIdMeta,
+        nodeId.isAcceptableOrUnknown(data['node_id']!, _nodeIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nodeIdMeta);
+    }
+    if (data.containsKey('unit_index')) {
+      context.handle(
+        _unitIndexMeta,
+        unitIndex.isAcceptableOrUnknown(data['unit_index']!, _unitIndexMeta),
+      );
+    }
+    if (data.containsKey('layers_json')) {
+      context.handle(
+        _layersJsonMeta,
+        layersJson.isAcceptableOrUnknown(data['layers_json']!, _layersJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_layersJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {profileId, nodeId, unitIndex};
+  @override
+  LayerRequirementRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LayerRequirementRow(
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      nodeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}node_id'],
+      )!,
+      unitIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}unit_index'],
+      )!,
+      layersJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}layers_json'],
+      )!,
+    );
+  }
+
+  @override
+  $RequiredLayerConfigsTable createAlias(String alias) {
+    return $RequiredLayerConfigsTable(attachedDatabase, alias);
+  }
+}
+
+class LayerRequirementRow extends DataClass
+    implements Insertable<LayerRequirementRow> {
+  final String profileId;
+  final String nodeId;
+
+  /// -1 = the node-level default (applies to all its units); >= 0 = a per-unit
+  /// override for that unit index.
+  final int unitIndex;
+
+  /// JSON list of required layer ids.
+  final String layersJson;
+  const LayerRequirementRow({
+    required this.profileId,
+    required this.nodeId,
+    required this.unitIndex,
+    required this.layersJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['profile_id'] = Variable<String>(profileId);
+    map['node_id'] = Variable<String>(nodeId);
+    map['unit_index'] = Variable<int>(unitIndex);
+    map['layers_json'] = Variable<String>(layersJson);
+    return map;
+  }
+
+  RequiredLayerConfigsCompanion toCompanion(bool nullToAbsent) {
+    return RequiredLayerConfigsCompanion(
+      profileId: Value(profileId),
+      nodeId: Value(nodeId),
+      unitIndex: Value(unitIndex),
+      layersJson: Value(layersJson),
+    );
+  }
+
+  factory LayerRequirementRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LayerRequirementRow(
+      profileId: serializer.fromJson<String>(json['profileId']),
+      nodeId: serializer.fromJson<String>(json['nodeId']),
+      unitIndex: serializer.fromJson<int>(json['unitIndex']),
+      layersJson: serializer.fromJson<String>(json['layersJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'profileId': serializer.toJson<String>(profileId),
+      'nodeId': serializer.toJson<String>(nodeId),
+      'unitIndex': serializer.toJson<int>(unitIndex),
+      'layersJson': serializer.toJson<String>(layersJson),
+    };
+  }
+
+  LayerRequirementRow copyWith({
+    String? profileId,
+    String? nodeId,
+    int? unitIndex,
+    String? layersJson,
+  }) => LayerRequirementRow(
+    profileId: profileId ?? this.profileId,
+    nodeId: nodeId ?? this.nodeId,
+    unitIndex: unitIndex ?? this.unitIndex,
+    layersJson: layersJson ?? this.layersJson,
+  );
+  LayerRequirementRow copyWithCompanion(RequiredLayerConfigsCompanion data) {
+    return LayerRequirementRow(
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      nodeId: data.nodeId.present ? data.nodeId.value : this.nodeId,
+      unitIndex: data.unitIndex.present ? data.unitIndex.value : this.unitIndex,
+      layersJson: data.layersJson.present
+          ? data.layersJson.value
+          : this.layersJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LayerRequirementRow(')
+          ..write('profileId: $profileId, ')
+          ..write('nodeId: $nodeId, ')
+          ..write('unitIndex: $unitIndex, ')
+          ..write('layersJson: $layersJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(profileId, nodeId, unitIndex, layersJson);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LayerRequirementRow &&
+          other.profileId == this.profileId &&
+          other.nodeId == this.nodeId &&
+          other.unitIndex == this.unitIndex &&
+          other.layersJson == this.layersJson);
+}
+
+class RequiredLayerConfigsCompanion
+    extends UpdateCompanion<LayerRequirementRow> {
+  final Value<String> profileId;
+  final Value<String> nodeId;
+  final Value<int> unitIndex;
+  final Value<String> layersJson;
+  final Value<int> rowid;
+  const RequiredLayerConfigsCompanion({
+    this.profileId = const Value.absent(),
+    this.nodeId = const Value.absent(),
+    this.unitIndex = const Value.absent(),
+    this.layersJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RequiredLayerConfigsCompanion.insert({
+    required String profileId,
+    required String nodeId,
+    this.unitIndex = const Value.absent(),
+    required String layersJson,
+    this.rowid = const Value.absent(),
+  }) : profileId = Value(profileId),
+       nodeId = Value(nodeId),
+       layersJson = Value(layersJson);
+  static Insertable<LayerRequirementRow> custom({
+    Expression<String>? profileId,
+    Expression<String>? nodeId,
+    Expression<int>? unitIndex,
+    Expression<String>? layersJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (profileId != null) 'profile_id': profileId,
+      if (nodeId != null) 'node_id': nodeId,
+      if (unitIndex != null) 'unit_index': unitIndex,
+      if (layersJson != null) 'layers_json': layersJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RequiredLayerConfigsCompanion copyWith({
+    Value<String>? profileId,
+    Value<String>? nodeId,
+    Value<int>? unitIndex,
+    Value<String>? layersJson,
+    Value<int>? rowid,
+  }) {
+    return RequiredLayerConfigsCompanion(
+      profileId: profileId ?? this.profileId,
+      nodeId: nodeId ?? this.nodeId,
+      unitIndex: unitIndex ?? this.unitIndex,
+      layersJson: layersJson ?? this.layersJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (nodeId.present) {
+      map['node_id'] = Variable<String>(nodeId.value);
+    }
+    if (unitIndex.present) {
+      map['unit_index'] = Variable<int>(unitIndex.value);
+    }
+    if (layersJson.present) {
+      map['layers_json'] = Variable<String>(layersJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RequiredLayerConfigsCompanion(')
+          ..write('profileId: $profileId, ')
+          ..write('nodeId: $nodeId, ')
+          ..write('unitIndex: $unitIndex, ')
+          ..write('layersJson: $layersJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ProfilesTable profiles = $ProfilesTable(this);
   late final $LearningEventsTable learningEvents = $LearningEventsTable(this);
   late final $CustomNodesTable customNodes = $CustomNodesTable(this);
+  late final $CustomLayersTable customLayers = $CustomLayersTable(this);
+  late final $RequiredLayerConfigsTable requiredLayerConfigs =
+      $RequiredLayerConfigsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1566,6 +2309,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     profiles,
     learningEvents,
     customNodes,
+    customLayers,
+    requiredLayerConfigs,
   ];
 }
 
@@ -1761,6 +2506,7 @@ typedef $$LearningEventsTableCreateCompanionBuilder =
       Value<int?> durationMin,
       Value<String?> note,
       Value<String?> haara,
+      Value<String?> layersJson,
       Value<int> rowid,
     });
 typedef $$LearningEventsTableUpdateCompanionBuilder =
@@ -1775,6 +2521,7 @@ typedef $$LearningEventsTableUpdateCompanionBuilder =
       Value<int?> durationMin,
       Value<String?> note,
       Value<String?> haara,
+      Value<String?> layersJson,
       Value<int> rowid,
     });
 
@@ -1837,6 +2584,11 @@ class $$LearningEventsTableFilterComposer
     column: $table.haara,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get layersJson => $composableBuilder(
+    column: $table.layersJson,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$LearningEventsTableOrderingComposer
@@ -1897,6 +2649,11 @@ class $$LearningEventsTableOrderingComposer
     column: $table.haara,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get layersJson => $composableBuilder(
+    column: $table.layersJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LearningEventsTableAnnotationComposer
@@ -1941,6 +2698,11 @@ class $$LearningEventsTableAnnotationComposer
 
   GeneratedColumn<String> get haara =>
       $composableBuilder(column: $table.haara, builder: (column) => column);
+
+  GeneratedColumn<String> get layersJson => $composableBuilder(
+    column: $table.layersJson,
+    builder: (column) => column,
+  );
 }
 
 class $$LearningEventsTableTableManager
@@ -1990,6 +2752,7 @@ class $$LearningEventsTableTableManager
                 Value<int?> durationMin = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<String?> haara = const Value.absent(),
+                Value<String?> layersJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningEventsCompanion(
                 id: id,
@@ -2002,6 +2765,7 @@ class $$LearningEventsTableTableManager
                 durationMin: durationMin,
                 note: note,
                 haara: haara,
+                layersJson: layersJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2016,6 +2780,7 @@ class $$LearningEventsTableTableManager
                 Value<int?> durationMin = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<String?> haara = const Value.absent(),
+                Value<String?> layersJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningEventsCompanion.insert(
                 id: id,
@@ -2028,6 +2793,7 @@ class $$LearningEventsTableTableManager
                 durationMin: durationMin,
                 note: note,
                 haara: haara,
+                layersJson: layersJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -2356,6 +3122,407 @@ typedef $$CustomNodesTableProcessedTableManager =
       CustomNodeRow,
       PrefetchHooks Function()
     >;
+typedef $$CustomLayersTableCreateCompanionBuilder =
+    CustomLayersCompanion Function({
+      required String id,
+      required String profileId,
+      required String name,
+      Value<String?> nameHebrew,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+typedef $$CustomLayersTableUpdateCompanionBuilder =
+    CustomLayersCompanion Function({
+      Value<String> id,
+      Value<String> profileId,
+      Value<String> name,
+      Value<String?> nameHebrew,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+
+class $$CustomLayersTableFilterComposer
+    extends Composer<_$AppDatabase, $CustomLayersTable> {
+  $$CustomLayersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameHebrew => $composableBuilder(
+    column: $table.nameHebrew,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CustomLayersTableOrderingComposer
+    extends Composer<_$AppDatabase, $CustomLayersTable> {
+  $$CustomLayersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nameHebrew => $composableBuilder(
+    column: $table.nameHebrew,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CustomLayersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CustomLayersTable> {
+  $$CustomLayersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get nameHebrew => $composableBuilder(
+    column: $table.nameHebrew,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+}
+
+class $$CustomLayersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CustomLayersTable,
+          CustomLayerRow,
+          $$CustomLayersTableFilterComposer,
+          $$CustomLayersTableOrderingComposer,
+          $$CustomLayersTableAnnotationComposer,
+          $$CustomLayersTableCreateCompanionBuilder,
+          $$CustomLayersTableUpdateCompanionBuilder,
+          (
+            CustomLayerRow,
+            BaseReferences<_$AppDatabase, $CustomLayersTable, CustomLayerRow>,
+          ),
+          CustomLayerRow,
+          PrefetchHooks Function()
+        > {
+  $$CustomLayersTableTableManager(_$AppDatabase db, $CustomLayersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CustomLayersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CustomLayersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CustomLayersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> profileId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> nameHebrew = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CustomLayersCompanion(
+                id: id,
+                profileId: profileId,
+                name: name,
+                nameHebrew: nameHebrew,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String profileId,
+                required String name,
+                Value<String?> nameHebrew = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CustomLayersCompanion.insert(
+                id: id,
+                profileId: profileId,
+                name: name,
+                nameHebrew: nameHebrew,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CustomLayersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CustomLayersTable,
+      CustomLayerRow,
+      $$CustomLayersTableFilterComposer,
+      $$CustomLayersTableOrderingComposer,
+      $$CustomLayersTableAnnotationComposer,
+      $$CustomLayersTableCreateCompanionBuilder,
+      $$CustomLayersTableUpdateCompanionBuilder,
+      (
+        CustomLayerRow,
+        BaseReferences<_$AppDatabase, $CustomLayersTable, CustomLayerRow>,
+      ),
+      CustomLayerRow,
+      PrefetchHooks Function()
+    >;
+typedef $$RequiredLayerConfigsTableCreateCompanionBuilder =
+    RequiredLayerConfigsCompanion Function({
+      required String profileId,
+      required String nodeId,
+      Value<int> unitIndex,
+      required String layersJson,
+      Value<int> rowid,
+    });
+typedef $$RequiredLayerConfigsTableUpdateCompanionBuilder =
+    RequiredLayerConfigsCompanion Function({
+      Value<String> profileId,
+      Value<String> nodeId,
+      Value<int> unitIndex,
+      Value<String> layersJson,
+      Value<int> rowid,
+    });
+
+class $$RequiredLayerConfigsTableFilterComposer
+    extends Composer<_$AppDatabase, $RequiredLayerConfigsTable> {
+  $$RequiredLayerConfigsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nodeId => $composableBuilder(
+    column: $table.nodeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get unitIndex => $composableBuilder(
+    column: $table.unitIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get layersJson => $composableBuilder(
+    column: $table.layersJson,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RequiredLayerConfigsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RequiredLayerConfigsTable> {
+  $$RequiredLayerConfigsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nodeId => $composableBuilder(
+    column: $table.nodeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get unitIndex => $composableBuilder(
+    column: $table.unitIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get layersJson => $composableBuilder(
+    column: $table.layersJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RequiredLayerConfigsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RequiredLayerConfigsTable> {
+  $$RequiredLayerConfigsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
+
+  GeneratedColumn<String> get nodeId =>
+      $composableBuilder(column: $table.nodeId, builder: (column) => column);
+
+  GeneratedColumn<int> get unitIndex =>
+      $composableBuilder(column: $table.unitIndex, builder: (column) => column);
+
+  GeneratedColumn<String> get layersJson => $composableBuilder(
+    column: $table.layersJson,
+    builder: (column) => column,
+  );
+}
+
+class $$RequiredLayerConfigsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RequiredLayerConfigsTable,
+          LayerRequirementRow,
+          $$RequiredLayerConfigsTableFilterComposer,
+          $$RequiredLayerConfigsTableOrderingComposer,
+          $$RequiredLayerConfigsTableAnnotationComposer,
+          $$RequiredLayerConfigsTableCreateCompanionBuilder,
+          $$RequiredLayerConfigsTableUpdateCompanionBuilder,
+          (
+            LayerRequirementRow,
+            BaseReferences<
+              _$AppDatabase,
+              $RequiredLayerConfigsTable,
+              LayerRequirementRow
+            >,
+          ),
+          LayerRequirementRow,
+          PrefetchHooks Function()
+        > {
+  $$RequiredLayerConfigsTableTableManager(
+    _$AppDatabase db,
+    $RequiredLayerConfigsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RequiredLayerConfigsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RequiredLayerConfigsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$RequiredLayerConfigsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> profileId = const Value.absent(),
+                Value<String> nodeId = const Value.absent(),
+                Value<int> unitIndex = const Value.absent(),
+                Value<String> layersJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RequiredLayerConfigsCompanion(
+                profileId: profileId,
+                nodeId: nodeId,
+                unitIndex: unitIndex,
+                layersJson: layersJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String profileId,
+                required String nodeId,
+                Value<int> unitIndex = const Value.absent(),
+                required String layersJson,
+                Value<int> rowid = const Value.absent(),
+              }) => RequiredLayerConfigsCompanion.insert(
+                profileId: profileId,
+                nodeId: nodeId,
+                unitIndex: unitIndex,
+                layersJson: layersJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RequiredLayerConfigsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RequiredLayerConfigsTable,
+      LayerRequirementRow,
+      $$RequiredLayerConfigsTableFilterComposer,
+      $$RequiredLayerConfigsTableOrderingComposer,
+      $$RequiredLayerConfigsTableAnnotationComposer,
+      $$RequiredLayerConfigsTableCreateCompanionBuilder,
+      $$RequiredLayerConfigsTableUpdateCompanionBuilder,
+      (
+        LayerRequirementRow,
+        BaseReferences<
+          _$AppDatabase,
+          $RequiredLayerConfigsTable,
+          LayerRequirementRow
+        >,
+      ),
+      LayerRequirementRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2366,4 +3533,8 @@ class $AppDatabaseManager {
       $$LearningEventsTableTableManager(_db, _db.learningEvents);
   $$CustomNodesTableTableManager get customNodes =>
       $$CustomNodesTableTableManager(_db, _db.customNodes);
+  $$CustomLayersTableTableManager get customLayers =>
+      $$CustomLayersTableTableManager(_db, _db.customLayers);
+  $$RequiredLayerConfigsTableTableManager get requiredLayerConfigs =>
+      $$RequiredLayerConfigsTableTableManager(_db, _db.requiredLayerConfigs);
 }

@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import '../../domain/entities/catalog_node.dart';
+import '../../domain/entities/layer.dart';
 import '../../domain/entities/learning_event.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/progress_repository.dart';
+import '../../domain/usecases/layer_requirements.dart';
 
 /// In-memory [ProgressRepository] with no native dependencies. Used by tests and
 /// as a reference implementation; the app uses the Drift-backed repository.
@@ -86,8 +88,12 @@ class InMemoryProgressRepository implements ProgressRepository {
     _profiles.removeWhere((p) => p.id == profileId);
     _events.remove(profileId);
     _customNodes.remove(profileId);
+    _customLayers.remove(profileId);
+    _requirements.remove(profileId);
     _emit(profileId);
     _emitCustom(profileId);
+    _emitLayers(profileId);
+    _emitReqs(profileId);
   }
 
   StreamController<List<CatalogNode>> _customControllerFor(String profileId) =>
@@ -131,5 +137,92 @@ class InMemoryProgressRepository implements ProgressRepository {
     final before = list.length;
     list.removeWhere((n) => n.id == nodeId);
     if (list.length != before) _emitCustom(profileId);
+  }
+
+  // --- Mefarshim + required layers -----------------------------------------
+
+  final Map<String, List<Layer>> _customLayers = {};
+  final Map<String, StreamController<List<Layer>>> _layerControllers = {};
+  final Map<String, List<LayerRequirementEntry>> _requirements = {};
+  final Map<String, StreamController<List<LayerRequirementEntry>>> _reqControllers =
+      {};
+
+  StreamController<List<Layer>> _layerControllerFor(String profileId) =>
+      _layerControllers.putIfAbsent(
+          profileId, () => StreamController<List<Layer>>.broadcast());
+
+  void _emitLayers(String profileId) {
+    final c = _layerControllers[profileId];
+    if (c != null && c.hasListener) {
+      c.add(List.unmodifiable(_customLayers[profileId] ?? const []));
+    }
+  }
+
+  @override
+  Stream<List<Layer>> watchCustomLayers(String profileId) async* {
+    final controller = _layerControllerFor(profileId);
+    yield List.unmodifiable(_customLayers[profileId] ?? const []);
+    yield* controller.stream;
+  }
+
+  @override
+  Future<void> addCustomLayer(String profileId, Layer layer) async {
+    final list = _customLayers[profileId] ??= [];
+    final i = list.indexWhere((l) => l.id == layer.id);
+    if (i == -1) {
+      list.add(layer);
+    } else {
+      list[i] = layer;
+    }
+    _emitLayers(profileId);
+  }
+
+  @override
+  Future<void> removeCustomLayer(String profileId, String layerId) async {
+    final list = _customLayers[profileId];
+    if (list == null) return;
+    final before = list.length;
+    list.removeWhere((l) => l.id == layerId);
+    if (list.length != before) _emitLayers(profileId);
+  }
+
+  StreamController<List<LayerRequirementEntry>> _reqControllerFor(
+          String profileId) =>
+      _reqControllers.putIfAbsent(profileId,
+          () => StreamController<List<LayerRequirementEntry>>.broadcast());
+
+  void _emitReqs(String profileId) {
+    final c = _reqControllers[profileId];
+    if (c != null && c.hasListener) {
+      c.add(List.unmodifiable(_requirements[profileId] ?? const []));
+    }
+  }
+
+  @override
+  Stream<List<LayerRequirementEntry>> watchLayerRequirements(
+      String profileId) async* {
+    final controller = _reqControllerFor(profileId);
+    yield List.unmodifiable(_requirements[profileId] ?? const []);
+    yield* controller.stream;
+  }
+
+  @override
+  Future<void> setLayerRequirement(
+      String profileId, LayerRequirementEntry entry) async {
+    final list = _requirements[profileId] ??= [];
+    list.removeWhere(
+        (e) => e.nodeId == entry.nodeId && e.unitIndex == entry.unitIndex);
+    list.add(entry);
+    _emitReqs(profileId);
+  }
+
+  @override
+  Future<void> clearLayerRequirement(
+      String profileId, String nodeId, int unitIndex) async {
+    final list = _requirements[profileId];
+    if (list == null) return;
+    final before = list.length;
+    list.removeWhere((e) => e.nodeId == nodeId && e.unitIndex == unitIndex);
+    if (list.length != before) _emitReqs(profileId);
   }
 }

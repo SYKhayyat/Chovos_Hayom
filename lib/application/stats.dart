@@ -89,5 +89,5 @@ final siyumimProvider = Provider<List<Siyum>>((ref) {
   final catalog = ref.watch(mergedCatalogProvider).asData?.value;
   final events = ref.watch(eventsProvider).asData?.value;
   if (catalog == null || events == null) return const [];
-  return SiyumFinder.completed(catalog, events);
+  return SiyumFinder.completed(catalog, events, ref.watch(layerRequirementsProvider));
 });

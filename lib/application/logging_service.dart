@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 
 import '../domain/entities/enums.dart';
+import '../domain/entities/layer.dart';
 import '../domain/entities/learning_event.dart';
 import '../domain/repositories/progress_repository.dart';
 
@@ -31,6 +32,7 @@ class LoggingService {
     int? durationMin,
     String? note,
     String? haara,
+    List<String> layers = const [mainLayerId],
   }) async {
     final now = _now();
     final event = LearningEvent(
@@ -44,13 +46,18 @@ class LoggingService {
       durationMin: durationMin,
       note: note,
       haara: haara,
+      layers: layers,
     );
     await _repo.addEvent(event);
     return event;
   }
 
   Future<LearningEvent> markDone(String nodeId, int unitIndex,
-          {DateTime? occurredAt, int? durationMin, String? note, String? haara}) =>
+          {DateTime? occurredAt,
+          int? durationMin,
+          String? note,
+          String? haara,
+          List<String> layers = const [mainLayerId]}) =>
       log(
         nodeId: nodeId,
         unitIndex: unitIndex,
@@ -59,10 +66,16 @@ class LoggingService {
         durationMin: durationMin,
         note: note,
         haara: haara,
+        layers: layers,
       );
 
-  Future<LearningEvent> markUndone(String nodeId, int unitIndex) =>
-      log(nodeId: nodeId, unitIndex: unitIndex, action: EventAction.undone);
+  Future<LearningEvent> markUndone(String nodeId, int unitIndex,
+          {List<String> layers = const [mainLayerId]}) =>
+      log(
+          nodeId: nodeId,
+          unitIndex: unitIndex,
+          action: EventAction.undone,
+          layers: layers);
 
   /// Edit the annotations (learned-at date/time, duration, note, haara) of an
   /// existing event. Null [durationMin]/[note]/[haara] clear the field. The

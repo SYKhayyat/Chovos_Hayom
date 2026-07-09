@@ -51,8 +51,9 @@ class _DafYomiCard extends ConsumerWidget {
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
     final fold = ref.watch(foldProvider).asData?.value;
     final match = catalog == null ? null : _matchMesechta(catalog.all, info);
-    final alreadyDone =
-        match != null && (fold?.doneUnits(match.id).contains(info.daf) ?? false);
+    final required = ref.watch(layerRequirementsProvider);
+    final alreadyDone = match != null &&
+        (fold?.doneUnits(match.id, required).contains(info.daf) ?? false);
     final inRange = match != null && match.containsUnit(info.daf);
 
     return Card(

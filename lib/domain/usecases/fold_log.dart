@@ -1,26 +1,52 @@
 import '../entities/enums.dart';
+import '../entities/layer.dart';
 import '../entities/learning_event.dart';
+import 'layer_requirements.dart';
 
-/// The state derived by folding the event log: which units are done, and how
-/// many review passes each has had, per node.
+/// The state derived by folding the event log: which *layers* of each unit are
+/// done, and how many review passes each unit has had, per node.
 class LogFold {
-  const LogFold(this.doneByNode, this.reviewsByNode);
+  const LogFold(this.completedByNode, this.reviewsByNode);
 
-  /// nodeId -> set of unit indices currently marked done.
-  final Map<String, Set<int>> doneByNode;
+  /// nodeId -> (unit index -> set of layer ids completed).
+  final Map<String, Map<int, Set<String>>> completedByNode;
 
   /// nodeId -> (unit index -> review count).
   final Map<String, Map<int, int>> reviewsByNode;
 
-  Set<int> doneUnits(String nodeId) => doneByNode[nodeId] ?? const {};
+  /// The layers completed for one unit (empty if none).
+  Set<String> completedLayers(String nodeId, int unitIndex) =>
+      completedByNode[nodeId]?[unitIndex] ?? const {};
+
   int reviewCount(String nodeId, int unitIndex) =>
       reviewsByNode[nodeId]?[unitIndex] ?? 0;
+
+  /// Units currently *complete* — every required layer is done. With no
+  /// [required] resolver the requirement is just the text (`{main}`), which
+  /// reproduces the pre-layers behaviour exactly.
+  Set<int> doneUnits(String nodeId, [LayerRequirements? required]) {
+    final byUnit = completedByNode[nodeId];
+    if (byUnit == null) return const {};
+    final out = <int>{};
+    byUnit.forEach((unit, completed) {
+      final req = required?.forUnit(nodeId, unit) ?? const {mainLayerId};
+      if (_subset(req, completed)) out.add(unit);
+    });
+    return out;
+  }
+
+  static bool _subset(Set<String> required, Set<String> have) {
+    for (final r in required) {
+      if (!have.contains(r)) return false;
+    }
+    return true;
+  }
 }
 
 /// Folds an event log into current [LogFold] state.
 ///
-/// This is the single source of truth for "what is learned". `learned` is never
-/// stored — it is computed here, which makes `learned > total` impossible by
+/// This is the single source of truth for "what is learned". Nothing is stored —
+/// it is computed here in one pass, which makes `learned > total` impossible by
 /// construction (see ARCHITECTURE.md §1).
 class FoldLog {
   const FoldLog._();
@@ -35,16 +61,21 @@ class FoldLog {
         return c != 0 ? c : a.id.compareTo(b.id);
       });
 
-    final done = <String, Set<int>>{};
+    final completed = <String, Map<int, Set<String>>>{};
     final reviews = <String, Map<int, int>>{};
 
     for (final e in sorted) {
       switch (e.action) {
         case EventAction.done:
-          (done[e.nodeId] ??= <int>{}).add(e.unitIndex);
+          final byUnit = completed[e.nodeId] ??= <int, Set<String>>{};
+          (byUnit[e.unitIndex] ??= <String>{}).addAll(e.layers);
           break;
         case EventAction.undone:
-          done[e.nodeId]?.remove(e.unitIndex);
+          final set = completed[e.nodeId]?[e.unitIndex];
+          if (set != null) {
+            set.removeAll(e.layers);
+            if (set.isEmpty) completed[e.nodeId]!.remove(e.unitIndex);
+          }
           // Un-marking clears the unit's review history too, so a later re-mark
           // starts fresh (matches ChazaraSchedule and the grid's ↻ badge).
           reviews[e.nodeId]?.remove(e.unitIndex);
@@ -56,6 +87,6 @@ class FoldLog {
       }
     }
 
-    return LogFold(done, reviews);
+    return LogFold(completed, reviews);
   }
 }

@@ -3,6 +3,7 @@ import '../entities/catalog_node.dart';
 import '../entities/enums.dart';
 import '../entities/learning_event.dart';
 import 'fold_log.dart';
+import 'layer_requirements.dart';
 
 /// A completed sefer/mesechta and when its final unit was learned.
 class Siyum {
@@ -27,7 +28,8 @@ class SiyumFinder {
   const SiyumFinder._();
 
   /// All completed leaves, most-recently-finished first.
-  static List<Siyum> completed(Catalog catalog, Iterable<LearningEvent> events) {
+  static List<Siyum> completed(Catalog catalog, Iterable<LearningEvent> events,
+      [LayerRequirements? required]) {
     final fold = FoldLog.fold(events);
 
     // Latest `done` date per (node, unit), for dating the siyum.
@@ -42,7 +44,7 @@ class SiyumFinder {
     final out = <Siyum>[];
     for (final node in catalog.all) {
       if (!node.isLeaf || node.unitCount <= 0) continue;
-      final done = fold.doneUnits(node.id);
+      final done = fold.doneUnits(node.id, required);
 
       var count = 0;
       DateTime? last;

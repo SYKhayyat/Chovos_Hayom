@@ -25,10 +25,16 @@ Catalog _catalog() => Catalog(const [
           unitOffset: 1), // valid units: 1,2
     ]);
 
+/// Builds a text-only (`{main}`) completed-layer map from done unit sets.
+Map<String, Map<int, Set<String>>> _completed(Map<String, Set<int>> done) => {
+      for (final e in done.entries)
+        e.key: {for (final u in e.value) u: {'main'}}
+    };
+
 void main() {
   group('RollUp', () {
     test('leaf learned counts done units in range', () {
-      final fold = LogFold({'a': {2, 3}}, {});
+      final fold = LogFold(_completed({'a': {2, 3}}), {});
       final root = RollUp.buildForest(_catalog(), fold).single;
       final a = root.children.firstWhere((n) => n.id == 'a');
       expect(a.learned, 2);
@@ -36,7 +42,7 @@ void main() {
     });
 
     test('out-of-range done units are ignored (learned never exceeds total)', () {
-      final fold = LogFold({'a': {2, 3, 4, 99}}, {});
+      final fold = LogFold(_completed({'a': {2, 3, 4, 99}}), {});
       final root = RollUp.buildForest(_catalog(), fold).single;
       final a = root.children.firstWhere((n) => n.id == 'a');
       expect(a.learned, 3);
@@ -45,7 +51,7 @@ void main() {
     });
 
     test('parent aggregates children', () {
-      final fold = LogFold({'a': {2, 3}, 'b': {1}}, {});
+      final fold = LogFold(_completed({'a': {2, 3}, 'b': {1}}), {});
       final root = RollUp.buildForest(_catalog(), fold).single;
       expect(root.learned, 3);
       expect(root.total, 5);
