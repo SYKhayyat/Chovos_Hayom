@@ -97,13 +97,24 @@ class LoggingService {
     return updated;
   }
 
-  /// Record a chazara (review) pass over an already-learned unit.
+  /// Record a chazara (review) pass over an already-learned unit. A pass carries
+  /// its own date/time, duration, notes, and the [layers] (mefarshim) it covered
+  /// — each chazara is defined independently of the main learning and of other
+  /// passes.
   Future<LearningEvent> markReview(String nodeId, int unitIndex,
-          {DateTime? occurredAt}) =>
+          {DateTime? occurredAt,
+          int? durationMin,
+          String? note,
+          String? haara,
+          List<String> layers = const [mainLayerId]}) =>
       log(
         nodeId: nodeId,
         unitIndex: unitIndex,
         action: EventAction.reviewed,
         occurredAt: occurredAt,
+        durationMin: durationMin,
+        note: note,
+        haara: haara,
+        layers: layers,
       );
 }

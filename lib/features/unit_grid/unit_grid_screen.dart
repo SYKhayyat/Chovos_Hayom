@@ -11,6 +11,7 @@ import '../../domain/entities/layer.dart';
 import '../../domain/entities/learning_event.dart';
 import '../../domain/usecases/fold_log.dart';
 import '../../domain/usecases/goal_evaluator.dart';
+import 'add_chazara_sheet.dart';
 import 'log_unit_sheet.dart';
 import 'mefarshim_config_sheet.dart';
 import 'unit_details_sheet.dart';
@@ -186,7 +187,7 @@ class UnitGridScreen extends ConsumerWidget {
                 title: const Text('Add chazara (review)'),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  logger.markReview(node.id, unit);
+                  showAddChazaraSheet(context, ref, node: node, unit: unit);
                 },
               ),
               ListTile(

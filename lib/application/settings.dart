@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/calendar.dart';
 import '../core/preferences.dart';
+import '../domain/usecases/chazara_schedule.dart';
 import 'providers.dart';
 import 'sorting.dart';
 
@@ -14,6 +15,7 @@ class SettingsState {
     this.reminderEnabled = false,
     this.hebrewLayout = false,
     this.sort = const SortConfig(),
+    this.chazaraIntervals = ChazaraSchedule.defaultIntervals,
   });
 
   final CalendarMode calendar;
@@ -26,12 +28,16 @@ class SettingsState {
   /// How the catalog tree's children are ordered.
   final SortConfig sort;
 
+  /// Spaced-repetition intervals (days) for the chazara schedule, user-editable.
+  final List<int> chazaraIntervals;
+
   SettingsState copyWith({
     CalendarMode? calendar,
     ThemeMode? themeMode,
     bool? reminderEnabled,
     bool? hebrewLayout,
     SortConfig? sort,
+    List<int>? chazaraIntervals,
   }) =>
       SettingsState(
         calendar: calendar ?? this.calendar,
@@ -39,6 +45,7 @@ class SettingsState {
         reminderEnabled: reminderEnabled ?? this.reminderEnabled,
         hebrewLayout: hebrewLayout ?? this.hebrewLayout,
         sort: sort ?? this.sort,
+        chazaraIntervals: chazaraIntervals ?? this.chazaraIntervals,
       );
 }
 
@@ -61,7 +68,26 @@ class SettingsNotifier extends Notifier<SettingsState> {
         descending: prefs.getString(PrefKeys.sortDescending) == 'true',
         level: int.tryParse(prefs.getString(PrefKeys.sortLevel) ?? ''),
       ),
+      chazaraIntervals: _parseIntervals(prefs.getString(PrefKeys.chazaraIntervals)),
     );
+  }
+
+  static List<int> _parseIntervals(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return ChazaraSchedule.defaultIntervals;
+    final parsed = [
+      for (final part in raw.split(','))
+        if (int.tryParse(part.trim()) case final n?) if (n > 0) n,
+    ];
+    return parsed.isEmpty ? ChazaraSchedule.defaultIntervals : parsed;
+  }
+
+  Future<void> setChazaraIntervals(List<int> intervals) async {
+    final clean = intervals.where((n) => n > 0).toList();
+    final effective = clean.isEmpty ? ChazaraSchedule.defaultIntervals : clean;
+    await ref
+        .read(appPreferencesProvider)
+        .setString(PrefKeys.chazaraIntervals, effective.join(','));
+    state = state.copyWith(chazaraIntervals: effective);
   }
 
   Future<void> setSort(SortConfig config) async {

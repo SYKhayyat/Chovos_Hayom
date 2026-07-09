@@ -5,7 +5,10 @@ import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/catalog_node.dart';
+import '../../domain/entities/layer.dart';
+import '../../domain/entities/learning_event.dart';
 import '../../domain/usecases/unit_history.dart';
+import 'add_chazara_sheet.dart';
 import 'log_unit_sheet.dart';
 
 /// A bottom sheet showing everything recorded for one learned unit — when it was
@@ -77,11 +80,12 @@ class _UnitDetailsSheet extends ConsumerWidget {
                 if (history.reviews.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(left: 32, top: 2, bottom: 4),
-                    child: Text(
-                      history.reviews
-                          .map((r) => DateDisplay.format(r.occurredAt, mode))
-                          .join(' · '),
-                      style: theme.textTheme.bodySmall,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var i = 0; i < history.reviews.length; i++)
+                          _chazaraLine(context, ref, i + 1, history.reviews[i], mode),
+                      ],
                     ),
                   ),
                 _DetailRow(
@@ -111,9 +115,8 @@ class _UnitDetailsSheet extends ConsumerWidget {
                     FilledButton.tonalIcon(
                       icon: const Icon(Icons.refresh, size: 18),
                       label: const Text('Add chazara'),
-                      onPressed: () => ref
-                          .read(loggingServiceProvider)
-                          .markReview(node.id, unit),
+                      onPressed: () =>
+                          showAddChazaraSheet(context, ref, node: node, unit: unit),
                     ),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.undo, size: 18),
@@ -129,6 +132,38 @@ class _UnitDetailsSheet extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _chazaraLine(BuildContext context, WidgetRef ref, int n,
+      LearningEvent review, CalendarMode mode) {
+    final allLayers = ref.read(allLayersProvider);
+    String nameOf(String id) => allLayers
+        .firstWhere((l) => l.id == id, orElse: () => Layer(id: id, name: id))
+        .name;
+    final mefarshim =
+        review.layers.where((l) => l != mainLayerId).map(nameOf).toList();
+    final head = <String>[
+      'Pass $n',
+      DateDisplay.format(review.occurredAt, mode),
+      if (review.durationMin != null) '${review.durationMin}m',
+      if (mefarshim.isNotEmpty) mefarshim.join(', '),
+    ].join(' · ');
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(head, style: theme.textTheme.bodySmall),
+          if (review.haara != null && review.haara!.isNotEmpty)
+            Text('“${review.haara}”',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(fontStyle: FontStyle.italic)),
+          if (review.note != null && review.note!.isNotEmpty)
+            Text(review.note!, style: theme.textTheme.bodySmall),
+        ],
       ),
     );
   }

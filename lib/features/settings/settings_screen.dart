@@ -66,6 +66,15 @@ class SettingsScreen extends ConsumerWidget {
             onChanged: notifier.setReminderEnabled,
           ),
           const Divider(),
+          const _SectionHeader('Chazara'),
+          ListTile(
+            leading: const Icon(Icons.repeat),
+            title: const Text('Review intervals'),
+            subtitle: Text('${settings.chazaraIntervals.join(', ')} days '
+                'after each pass'),
+            onTap: () => _editIntervals(context, ref, settings.chazaraIntervals),
+          ),
+          const Divider(),
           const _SectionHeader('Profiles'),
           ListTile(
             leading: const Icon(Icons.people),
@@ -103,6 +112,46 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _editIntervals(
+      BuildContext context, WidgetRef ref, List<int> current) async {
+    final ctrl = TextEditingController(text: current.join(', '));
+    final text = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Chazara review intervals'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+                'Days after each pass before the next review is due, e.g. '
+                '"1, 3, 7, 16, 35, 70". The last value repeats after that.'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: ctrl,
+              keyboardType: TextInputType.text,
+              decoration: const InputDecoration(hintText: '1, 3, 7, 16, 35, 70'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, ctrl.text),
+              child: const Text('Save')),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (text == null) return;
+    final intervals = [
+      for (final part in text.split(','))
+        if (int.tryParse(part.trim()) case final n?) if (n > 0) n,
+    ];
+    await ref.read(settingsProvider.notifier).setChazaraIntervals(intervals);
   }
 
   Future<String> _buildExport(WidgetRef ref) async {

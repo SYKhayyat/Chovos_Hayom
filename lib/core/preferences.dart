@@ -26,4 +26,5 @@ class PrefKeys {
   static const sortMetric = 'sortMetric';
   static const sortDescending = 'sortDescending';
   static const sortLevel = 'sortLevel';
+  static const chazaraIntervals = 'chazaraIntervals';
 }

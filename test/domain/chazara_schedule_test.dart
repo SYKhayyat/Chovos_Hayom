@@ -22,7 +22,14 @@ void main() {
     test('intervalFor grows then plateaus at the last interval', () {
       expect(ChazaraSchedule.intervalFor(0), 1);
       expect(ChazaraSchedule.intervalFor(2), 7);
-      expect(ChazaraSchedule.intervalFor(99), ChazaraSchedule.intervals.last);
+      expect(
+          ChazaraSchedule.intervalFor(99), ChazaraSchedule.defaultIntervals.last);
+    });
+
+    test('intervalFor honours a custom interval list', () {
+      expect(ChazaraSchedule.intervalFor(0, [2, 4, 8]), 2);
+      expect(ChazaraSchedule.intervalFor(1, [2, 4, 8]), 4);
+      expect(ChazaraSchedule.intervalFor(9, [2, 4, 8]), 8); // plateaus at last
     });
 
     test('a freshly-learned unit is due after 1 day', () {

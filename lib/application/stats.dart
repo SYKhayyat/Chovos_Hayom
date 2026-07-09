@@ -7,6 +7,7 @@ import '../domain/usecases/progress_series.dart';
 import '../domain/usecases/siyum.dart';
 import '../domain/usecases/time_stats.dart';
 import 'providers.dart';
+import 'settings.dart';
 
 /// A derived snapshot of overall learning stats for the active profile.
 class StatsSummary {
@@ -81,7 +82,9 @@ final statsProvider = Provider<StatsSummary?>((ref) {
 /// Units currently due for a chazara (review) pass, most overdue first.
 final chazaraDueProvider = Provider<List<ChazaraItem>>((ref) {
   final events = ref.watch(eventsProvider).asData?.value ?? const [];
-  return ChazaraSchedule.due(events, ref.watch(clockProvider)());
+  final intervals = ref.watch(settingsProvider.select((s) => s.chazaraIntervals));
+  return ChazaraSchedule.due(events, ref.watch(clockProvider)(),
+      intervals: intervals);
 });
 
 /// Completed sefarim/mesechtos (siyumim), most-recently-finished first.
