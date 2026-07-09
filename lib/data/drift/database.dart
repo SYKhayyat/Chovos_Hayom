@@ -93,6 +93,11 @@ class CustomNodes extends Table {
   IntColumn get unitCount => integer().withDefault(const Constant(0))();
   IntColumn get unitOffset => integer().withDefault(const Constant(0))();
 
+  /// When a row's id matches a built-in node it *overrides* that node's fields;
+  /// [hidden] true means the node (built-in or custom) is removed from the tree.
+  /// This is the per-profile override layer that makes every node editable.
+  BoolColumn get hidden => boolean().withDefault(const Constant(false))();
+
   // Custom nodes are profile-scoped: two profiles may hold nodes with the same
   // id (e.g. the same backup imported into both). The primary key must include
   // profileId, or the second import throws a uniqueness violation.
@@ -114,7 +119,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'chovos_hayom'));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   /// Every schema change must extend [MigrationStrategy.onUpgrade]. Without this,
   /// bumping [schemaVersion] silently does nothing on existing installs and
@@ -141,6 +146,10 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(learningEvents, learningEvents.layersJson);
             await m.createTable(customLayers);
             await m.createTable(requiredLayerConfigs);
+          }
+          // v4 -> v5: the per-profile catalog override layer (edit/hide any node).
+          if (from < 5) {
+            await m.addColumn(customNodes, customNodes.hidden);
           }
         },
       );

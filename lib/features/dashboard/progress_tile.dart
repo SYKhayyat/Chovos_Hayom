@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../application/providers.dart';
+import '../../application/catalog_editor.dart';
 import '../../application/settings.dart';
 import '../../application/sorting.dart';
 import '../../domain/entities/progress_node.dart';
+import '../custom_node/add_custom_node_screen.dart';
 import '../unit_grid/unit_grid_screen.dart';
 
 /// Recursive expandable tree row with a progress bar. Leaves navigate to their
@@ -33,7 +34,6 @@ class ProgressTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final indent = 16.0 + depth * 16;
-    final isCustom = customIds.contains(node.node.id);
 
     if (node.node.isLeaf) {
       return ListTile(
@@ -43,7 +43,7 @@ class ProgressTile extends ConsumerWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (isCustom) _deleteButton(context, ref),
+            _nodeMenu(context, ref),
             node.isComplete
                 ? const Icon(Icons.check_circle, color: Colors.green)
                 : const Icon(Icons.chevron_right),
@@ -61,12 +61,10 @@ class ProgressTile extends ConsumerWidget {
       tilePadding: EdgeInsets.only(left: indent, right: 8),
       title: Text(node.name),
       subtitle: _ProgressBar(node: node),
-      trailing: isCustom
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [_deleteButton(context, ref), const Icon(Icons.expand_more)],
-            )
-          : null,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [_nodeMenu(context, ref), const Icon(Icons.expand_more)],
+      ),
       childrenPadding: EdgeInsets.zero,
       children: [
         for (final child in _orderedChildren(ref))
@@ -92,37 +90,70 @@ class ProgressTile extends ConsumerWidget {
     return sortChildren(node.children, config, ref.watch(nodeLastActivityProvider));
   }
 
-  Widget _deleteButton(BuildContext context, WidgetRef ref) {
-    return IconButton(
-      icon: const Icon(Icons.delete_outline, size: 20),
-      tooltip: 'Delete custom sefer',
-      onPressed: () => _confirmDelete(context, ref),
+  /// Per-node actions menu — click-based so it works with a mouse (no long-press
+  /// or touchscreen needed). Every node, built-in or custom, can be edited,
+  /// extended, cloned, hidden, or reset.
+  Widget _nodeMenu(BuildContext context, WidgetRef ref) {
+    final editor = CatalogEditor(ref);
+    final overridden = editor.isOverridden(node.node.id);
+    final builtIn = editor.isBuiltIn(node.node.id);
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert, size: 20),
+      tooltip: 'Edit / add / hide',
+      onSelected: (value) => _onMenu(context, ref, editor, value),
+      itemBuilder: (_) => [
+        const PopupMenuItem(value: 'edit', child: Text('Edit')),
+        const PopupMenuItem(value: 'add', child: Text('Add sub-item')),
+        const PopupMenuItem(value: 'clone', child: Text('Clone structure')),
+        const PopupMenuItem(value: 'hide', child: Text('Hide / delete')),
+        if (overridden)
+          PopupMenuItem(
+              value: 'reset',
+              child: Text(builtIn ? 'Reset to default' : 'Remove permanently')),
+      ],
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+  Future<void> _onMenu(BuildContext context, WidgetRef ref, CatalogEditor editor,
+      String action) async {
+    final navigator = Navigator.of(context);
+    switch (action) {
+      case 'edit':
+        navigator.push(MaterialPageRoute(
+            builder: (_) => AddCustomNodeScreen(existing: node.node)));
+      case 'add':
+        navigator.push(MaterialPageRoute(
+            builder: (_) => AddCustomNodeScreen(initialParentId: node.node.id)));
+      case 'clone':
+        await editor.cloneStructure(node.node);
+      case 'hide':
+        final ok = await _confirm(context,
+            'Hide "${node.name}"?',
+            'It is removed from the tree. Your logged progress stays intact, '
+                'and you can restore it with "Reset to default".');
+        if (ok) await editor.hide(node.node);
+      case 'reset':
+        await editor.reset(node.node.id);
+    }
+  }
+
+  Future<bool> _confirm(BuildContext context, String title, String body) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Delete "${node.name}"?'),
-        content: const Text(
-            'This removes the custom sefer. Your logged progress for it stays '
-            'in the history but will no longer be shown.'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(body),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Cancel')),
           FilledButton.tonal(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete')),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('OK')),
         ],
       ),
     );
-    if (ok != true) return;
-    final profileId = ref.read(activeProfileProvider);
-    await ref
-        .read(progressRepositoryProvider)
-        .removeCustomNode(profileId, node.node.id);
+    return ok ?? false;
   }
 }
 

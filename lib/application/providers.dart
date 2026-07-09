@@ -136,11 +136,37 @@ final mergedCatalogProvider = Provider<AsyncValue<Catalog>>((ref) {
     loading: () => const AsyncValue.loading(),
     error: AsyncValue.error,
     data: (c) => custom.whenData((nodes) {
-      // Drop custom nodes whose id collides with a base-catalog node: otherwise
-      // the node appears twice under its parent and is counted twice in roll-up.
-      final baseIds = {for (final n in c.all) n.id};
-      final safe = nodes.where((n) => !baseIds.contains(n.id));
-      return Catalog([...c.all, ...safe]);
+      // The per-profile override layer: a custom row whose id matches a built-in
+      // node *replaces* that node's fields; a new id *adds* a node; `hidden`
+      // removes a node (and its subtree). This makes every node editable and
+      // deletable without ever mutating the bundled catalog.
+      final byId = {for (final n in c.all) n.id: n};
+      for (final n in nodes) {
+        byId[n.id] = n;
+      }
+      final hiddenIds = {
+        for (final entry in byId.entries)
+          if (entry.value.hidden) entry.key
+      };
+      if (hiddenIds.isEmpty) return Catalog(byId.values.toList());
+
+      // Cascade: hiding a node hides its whole subtree.
+      final childIds = <String?, List<String>>{};
+      for (final n in byId.values) {
+        (childIds[n.parentId] ??= []).add(n.id);
+      }
+      final removed = <String>{};
+      void removeSubtree(String id) {
+        if (!removed.add(id)) return;
+        for (final child in childIds[id] ?? const <String>[]) {
+          removeSubtree(child);
+        }
+      }
+      for (final h in hiddenIds) {
+        removeSubtree(h);
+      }
+      return Catalog(
+          [for (final n in byId.values) if (!removed.contains(n.id)) n]);
     }),
   );
 });

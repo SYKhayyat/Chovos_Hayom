@@ -19,6 +19,7 @@ class CatalogNode {
     this.unitLabel,
     this.unitCount = 0,
     this.unitOffset = 0,
+    this.hidden = false,
   });
 
   final String id;
@@ -37,7 +38,39 @@ class CatalogNode {
   /// First unit index (e.g. 2 for a gemara starting at daf ב). 0 for non-leaves.
   final int unitOffset;
 
+  /// When true (only ever on a per-profile override row), this node — and its
+  /// subtree — is removed from the merged catalog. Built-in catalog data is
+  /// never itself hidden; an override row carries this.
+  final bool hidden;
+
   bool get isLeaf => kind == NodeKind.leaf;
+
+  /// A copy with selected fields changed (for building override rows / edits).
+  CatalogNode copyWith({
+    String? parentId,
+    String? name,
+    Object? nameHebrew = _keep,
+    int? sortOrder,
+    NodeKind? kind,
+    Object? unitLabel = _keep,
+    int? unitCount,
+    int? unitOffset,
+    bool? hidden,
+  }) =>
+      CatalogNode(
+        id: id,
+        parentId: parentId ?? this.parentId,
+        name: name ?? this.name,
+        nameHebrew: nameHebrew == _keep ? this.nameHebrew : nameHebrew as String?,
+        sortOrder: sortOrder ?? this.sortOrder,
+        kind: kind ?? this.kind,
+        unitLabel: unitLabel == _keep ? this.unitLabel : unitLabel as UnitLabel?,
+        unitCount: unitCount ?? this.unitCount,
+        unitOffset: unitOffset ?? this.unitOffset,
+        hidden: hidden ?? this.hidden,
+      );
+
+  static const _keep = Object();
 
   /// The valid unit indices for this leaf, `[unitOffset, unitOffset + unitCount)`.
   Iterable<int> get unitIndices =>
@@ -58,6 +91,7 @@ class CatalogNode {
             : UnitLabel.values.byName(json['unitLabel'] as String),
         unitCount: (json['unitCount'] as num?)?.toInt() ?? 0,
         unitOffset: (json['unitOffset'] as num?)?.toInt() ?? 0,
+        hidden: json['hidden'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -70,5 +104,6 @@ class CatalogNode {
         if (unitLabel != null) 'unitLabel': unitLabel!.name,
         'unitCount': unitCount,
         'unitOffset': unitOffset,
+        if (hidden) 'hidden': true,
       };
 }
