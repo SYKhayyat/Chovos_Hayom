@@ -54,7 +54,6 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
     final required = ref.watch(layerRequirementsProvider);
     final allLayers = ref.watch(allLayersProvider);
     final theme = Theme.of(context);
-    final label = widget.node.unitLabel?.name ?? 'unit';
 
     final completed = fold?.completedLayers(widget.node.id, widget.unit) ?? const {};
     final requiredSet = required.forUnit(widget.node.id, widget.unit);
@@ -82,7 +81,7 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Add chazara', style: theme.textTheme.titleLarge),
-            Text('${widget.node.name} · $label ${widget.unit}',
+            Text('${widget.node.name} · ${widget.node.unitHeading(widget.unit)}',
                 style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
             Text('Reviewed:', style: theme.textTheme.labelLarge),

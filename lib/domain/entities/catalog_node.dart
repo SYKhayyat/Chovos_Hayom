@@ -20,6 +20,7 @@ class CatalogNode {
     this.unitCount = 0,
     this.unitOffset = 0,
     this.hidden = false,
+    this.unitNames = const [],
   });
 
   final String id;
@@ -43,7 +44,28 @@ class CatalogNode {
   /// never itself hidden; an override row carries this.
   final bool hidden;
 
+  /// Optional real names for units, in unit order from [unitOffset] (e.g. parsha
+  /// or siman titles). Empty means units are just numbered.
+  final List<String> unitNames;
+
   bool get isLeaf => kind == NodeKind.leaf;
+
+  /// Compact label for a unit cell: its name if one is set, else its number.
+  String unitDisplay(int index) {
+    final i = index - unitOffset;
+    if (i >= 0 && i < unitNames.length && unitNames[i].trim().isNotEmpty) {
+      return unitNames[i];
+    }
+    return '$index';
+  }
+
+  /// Fuller heading for a unit (sheets/titles): its name if set, otherwise the
+  /// unit type plus number, e.g. "daf 5".
+  String unitHeading(int index) {
+    final display = unitDisplay(index);
+    if (display != '$index') return display;
+    return '${unitLabel?.name ?? 'unit'} $index';
+  }
 
   /// A copy with selected fields changed (for building override rows / edits).
   CatalogNode copyWith({
@@ -56,6 +78,7 @@ class CatalogNode {
     int? unitCount,
     int? unitOffset,
     bool? hidden,
+    List<String>? unitNames,
   }) =>
       CatalogNode(
         id: id,
@@ -68,6 +91,7 @@ class CatalogNode {
         unitCount: unitCount ?? this.unitCount,
         unitOffset: unitOffset ?? this.unitOffset,
         hidden: hidden ?? this.hidden,
+        unitNames: unitNames ?? this.unitNames,
       );
 
   static const _keep = Object();
@@ -92,6 +116,9 @@ class CatalogNode {
         unitCount: (json['unitCount'] as num?)?.toInt() ?? 0,
         unitOffset: (json['unitOffset'] as num?)?.toInt() ?? 0,
         hidden: json['hidden'] as bool? ?? false,
+        unitNames:
+            (json['unitNames'] as List?)?.map((e) => e as String).toList() ??
+                const [],
       );
 
   Map<String, dynamic> toJson() => {
@@ -105,5 +132,6 @@ class CatalogNode {
         'unitCount': unitCount,
         'unitOffset': unitOffset,
         if (hidden) 'hidden': true,
+        if (unitNames.isNotEmpty) 'unitNames': unitNames,
       };
 }

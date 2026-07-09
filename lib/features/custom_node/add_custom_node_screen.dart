@@ -27,6 +27,7 @@ class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
   late final TextEditingController _hebrew;
   late final TextEditingController _count;
   late final TextEditingController _offset;
+  late final TextEditingController _names;
   late bool _isLeaf;
   late UnitLabel _label;
   late String? _parentId;
@@ -41,6 +42,7 @@ class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
     _hebrew = TextEditingController(text: e?.nameHebrew ?? '');
     _count = TextEditingController(text: (e?.unitCount ?? 10).toString());
     _offset = TextEditingController(text: (e?.unitOffset ?? 1).toString());
+    _names = TextEditingController(text: (e?.unitNames ?? const []).join('\n'));
     _isLeaf = e?.isLeaf ?? true;
     _label = e?.unitLabel ?? UnitLabel.perek;
     _parentId = e?.parentId ?? widget.initialParentId;
@@ -52,6 +54,7 @@ class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
     _hebrew.dispose();
     _count.dispose();
     _offset.dispose();
+    _names.dispose();
     super.dispose();
   }
 
@@ -122,6 +125,18 @@ class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: 'First unit number'),
             ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _names,
+              minLines: 2,
+              maxLines: 8,
+              decoration: const InputDecoration(
+                labelText: 'Unit names (optional, one per line)',
+                helperText: 'e.g. parsha or siman titles — shown instead of '
+                    'numbers, in order from the first unit.',
+                alignLabelWithHint: true,
+              ),
+            ),
             if (_isEdit)
               const Padding(
                 padding: EdgeInsets.only(top: 8),
@@ -168,6 +183,13 @@ class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
       return;
     }
     final hebrew = _hebrew.text.trim();
+    // Trim trailing blank lines but keep interior blanks (they line up unnamed
+    // units with their index).
+    final names =
+        _isLeaf ? _names.text.split('\n').map((s) => s.trimRight()).toList() : <String>[];
+    while (names.isNotEmpty && names.last.trim().isEmpty) {
+      names.removeLast();
+    }
 
     final node = CatalogNode(
       id: widget.existing?.id ?? const Uuid().v4(),
@@ -179,6 +201,7 @@ class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
       unitLabel: _isLeaf ? _label : null,
       unitCount: _isLeaf ? count : 0,
       unitOffset: _isLeaf ? offset : 0,
+      unitNames: names,
     );
 
     final profileId = ref.read(activeProfileProvider);

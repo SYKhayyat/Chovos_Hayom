@@ -33,7 +33,6 @@ class _UnitLayersSheet extends ConsumerWidget {
     final required = ref.watch(layerRequirementsProvider);
     final allLayers = ref.watch(allLayersProvider);
     final theme = Theme.of(context);
-    final label = node.unitLabel?.name ?? 'unit';
 
     final completed = fold?.completedLayers(node.id, unit) ?? const {};
     final requiredSet = required.forUnit(node.id, unit);
@@ -63,7 +62,7 @@ class _UnitLayersSheet extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${node.name} · $label $unit',
+              Text('${node.name} · ${node.unitHeading(unit)}',
                   style: theme.textTheme.titleLarge),
               Text(
                 missing == 0

@@ -113,7 +113,7 @@ class UnitGridScreen extends ConsumerWidget {
           fraction = 0;
         }
         return _UnitCell(
-          label: '$unit',
+          label: node.unitDisplay(unit),
           isDone: isDone,
           fraction: fraction,
           reviewCount: fold.reviewCount(node.id, unit),
@@ -146,7 +146,6 @@ class UnitGridScreen extends ConsumerWidget {
   Future<void> _cellMenu(
       BuildContext context, WidgetRef ref, int unit, bool isDone) async {
     final logger = ref.read(loggingServiceProvider);
-    final label = node.unitLabel?.name ?? 'unit';
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -172,7 +171,7 @@ class UnitGridScreen extends ConsumerWidget {
               onTap: () async {
                 Navigator.pop(sheetContext);
                 final result = await showLogUnitSheet(context,
-                    title: '${node.name} · $label $unit');
+                    title: '${node.name} · ${node.unitHeading(unit)}');
                 if (result == null) return;
                 await logger.markDone(node.id, unit,
                     occurredAt: result.occurredAt,
@@ -320,11 +319,19 @@ class _UnitCell extends StatelessWidget {
                     ),
                   ),
                 ),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isDone ? scheme.onPrimary : scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    // Shrink long named-unit labels so they still fit the cell.
+                    fontSize: label.length > 3 ? 10 : 14,
+                    color: isDone ? scheme.onPrimary : scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             if (reviewCount > 0)

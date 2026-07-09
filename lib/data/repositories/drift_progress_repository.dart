@@ -168,6 +168,8 @@ class DriftProgressRepository implements ProgressRepository {
             unitCount: Value(node.unitCount),
             unitOffset: Value(node.unitOffset),
             hidden: Value(node.hidden),
+            unitNamesJson: Value(
+                node.unitNames.isEmpty ? null : jsonEncode(node.unitNames)),
           ),
         );
   }
@@ -190,6 +192,9 @@ class DriftProgressRepository implements ProgressRepository {
         unitCount: row.unitCount,
         unitOffset: row.unitOffset,
         hidden: row.hidden,
+        unitNames: row.unitNamesJson == null
+            ? const []
+            : (jsonDecode(row.unitNamesJson!) as List).cast<String>(),
       );
 
   // --- Mefarshim (custom layers) -------------------------------------------

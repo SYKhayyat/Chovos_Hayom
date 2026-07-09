@@ -1114,6 +1114,17 @@ class $CustomNodesTable extends CustomNodes
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _unitNamesJsonMeta = const VerificationMeta(
+    'unitNamesJson',
+  );
+  @override
+  late final GeneratedColumn<String> unitNamesJson = GeneratedColumn<String>(
+    'unit_names_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1127,6 +1138,7 @@ class $CustomNodesTable extends CustomNodes
     unitCount,
     unitOffset,
     hidden,
+    unitNamesJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1197,6 +1209,15 @@ class $CustomNodesTable extends CustomNodes
         hidden.isAcceptableOrUnknown(data['hidden']!, _hiddenMeta),
       );
     }
+    if (data.containsKey('unit_names_json')) {
+      context.handle(
+        _unitNamesJsonMeta,
+        unitNamesJson.isAcceptableOrUnknown(
+          data['unit_names_json']!,
+          _unitNamesJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1254,6 +1275,10 @@ class $CustomNodesTable extends CustomNodes
         DriftSqlType.bool,
         data['${effectivePrefix}hidden'],
       )!,
+      unitNamesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit_names_json'],
+      ),
     );
   }
 
@@ -1286,6 +1311,9 @@ class CustomNodeRow extends DataClass implements Insertable<CustomNodeRow> {
   /// [hidden] true means the node (built-in or custom) is removed from the tree.
   /// This is the per-profile override layer that makes every node editable.
   final bool hidden;
+
+  /// Optional JSON list of real unit names (parsha/siman titles), in unit order.
+  final String? unitNamesJson;
   const CustomNodeRow({
     required this.id,
     required this.profileId,
@@ -1298,6 +1326,7 @@ class CustomNodeRow extends DataClass implements Insertable<CustomNodeRow> {
     required this.unitCount,
     required this.unitOffset,
     required this.hidden,
+    this.unitNamesJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1323,6 +1352,9 @@ class CustomNodeRow extends DataClass implements Insertable<CustomNodeRow> {
     map['unit_count'] = Variable<int>(unitCount);
     map['unit_offset'] = Variable<int>(unitOffset);
     map['hidden'] = Variable<bool>(hidden);
+    if (!nullToAbsent || unitNamesJson != null) {
+      map['unit_names_json'] = Variable<String>(unitNamesJson);
+    }
     return map;
   }
 
@@ -1345,6 +1377,9 @@ class CustomNodeRow extends DataClass implements Insertable<CustomNodeRow> {
       unitCount: Value(unitCount),
       unitOffset: Value(unitOffset),
       hidden: Value(hidden),
+      unitNamesJson: unitNamesJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(unitNamesJson),
     );
   }
 
@@ -1369,6 +1404,7 @@ class CustomNodeRow extends DataClass implements Insertable<CustomNodeRow> {
       unitCount: serializer.fromJson<int>(json['unitCount']),
       unitOffset: serializer.fromJson<int>(json['unitOffset']),
       hidden: serializer.fromJson<bool>(json['hidden']),
+      unitNamesJson: serializer.fromJson<String?>(json['unitNamesJson']),
     );
   }
   @override
@@ -1390,6 +1426,7 @@ class CustomNodeRow extends DataClass implements Insertable<CustomNodeRow> {
       'unitCount': serializer.toJson<int>(unitCount),
       'unitOffset': serializer.toJson<int>(unitOffset),
       'hidden': serializer.toJson<bool>(hidden),
+      'unitNamesJson': serializer.toJson<String?>(unitNamesJson),
     };
   }
 
@@ -1405,6 +1442,7 @@ class CustomNodeRow extends DataClass implements Insertable<CustomNodeRow> {
     int? unitCount,
     int? unitOffset,
     bool? hidden,
+    Value<String?> unitNamesJson = const Value.absent(),
   }) => CustomNodeRow(
     id: id ?? this.id,
     profileId: profileId ?? this.profileId,
@@ -1417,6 +1455,9 @@ class CustomNodeRow extends DataClass implements Insertable<CustomNodeRow> {
     unitCount: unitCount ?? this.unitCount,
     unitOffset: unitOffset ?? this.unitOffset,
     hidden: hidden ?? this.hidden,
+    unitNamesJson: unitNamesJson.present
+        ? unitNamesJson.value
+        : this.unitNamesJson,
   );
   CustomNodeRow copyWithCompanion(CustomNodesCompanion data) {
     return CustomNodeRow(
@@ -1435,6 +1476,9 @@ class CustomNodeRow extends DataClass implements Insertable<CustomNodeRow> {
           ? data.unitOffset.value
           : this.unitOffset,
       hidden: data.hidden.present ? data.hidden.value : this.hidden,
+      unitNamesJson: data.unitNamesJson.present
+          ? data.unitNamesJson.value
+          : this.unitNamesJson,
     );
   }
 
@@ -1451,7 +1495,8 @@ class CustomNodeRow extends DataClass implements Insertable<CustomNodeRow> {
           ..write('unitLabel: $unitLabel, ')
           ..write('unitCount: $unitCount, ')
           ..write('unitOffset: $unitOffset, ')
-          ..write('hidden: $hidden')
+          ..write('hidden: $hidden, ')
+          ..write('unitNamesJson: $unitNamesJson')
           ..write(')'))
         .toString();
   }
@@ -1469,6 +1514,7 @@ class CustomNodeRow extends DataClass implements Insertable<CustomNodeRow> {
     unitCount,
     unitOffset,
     hidden,
+    unitNamesJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -1484,7 +1530,8 @@ class CustomNodeRow extends DataClass implements Insertable<CustomNodeRow> {
           other.unitLabel == this.unitLabel &&
           other.unitCount == this.unitCount &&
           other.unitOffset == this.unitOffset &&
-          other.hidden == this.hidden);
+          other.hidden == this.hidden &&
+          other.unitNamesJson == this.unitNamesJson);
 }
 
 class CustomNodesCompanion extends UpdateCompanion<CustomNodeRow> {
@@ -1499,6 +1546,7 @@ class CustomNodesCompanion extends UpdateCompanion<CustomNodeRow> {
   final Value<int> unitCount;
   final Value<int> unitOffset;
   final Value<bool> hidden;
+  final Value<String?> unitNamesJson;
   final Value<int> rowid;
   const CustomNodesCompanion({
     this.id = const Value.absent(),
@@ -1512,6 +1560,7 @@ class CustomNodesCompanion extends UpdateCompanion<CustomNodeRow> {
     this.unitCount = const Value.absent(),
     this.unitOffset = const Value.absent(),
     this.hidden = const Value.absent(),
+    this.unitNamesJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CustomNodesCompanion.insert({
@@ -1526,6 +1575,7 @@ class CustomNodesCompanion extends UpdateCompanion<CustomNodeRow> {
     this.unitCount = const Value.absent(),
     this.unitOffset = const Value.absent(),
     this.hidden = const Value.absent(),
+    this.unitNamesJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        profileId = Value(profileId),
@@ -1543,6 +1593,7 @@ class CustomNodesCompanion extends UpdateCompanion<CustomNodeRow> {
     Expression<int>? unitCount,
     Expression<int>? unitOffset,
     Expression<bool>? hidden,
+    Expression<String>? unitNamesJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1557,6 +1608,7 @@ class CustomNodesCompanion extends UpdateCompanion<CustomNodeRow> {
       if (unitCount != null) 'unit_count': unitCount,
       if (unitOffset != null) 'unit_offset': unitOffset,
       if (hidden != null) 'hidden': hidden,
+      if (unitNamesJson != null) 'unit_names_json': unitNamesJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1573,6 +1625,7 @@ class CustomNodesCompanion extends UpdateCompanion<CustomNodeRow> {
     Value<int>? unitCount,
     Value<int>? unitOffset,
     Value<bool>? hidden,
+    Value<String?>? unitNamesJson,
     Value<int>? rowid,
   }) {
     return CustomNodesCompanion(
@@ -1587,6 +1640,7 @@ class CustomNodesCompanion extends UpdateCompanion<CustomNodeRow> {
       unitCount: unitCount ?? this.unitCount,
       unitOffset: unitOffset ?? this.unitOffset,
       hidden: hidden ?? this.hidden,
+      unitNamesJson: unitNamesJson ?? this.unitNamesJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1631,6 +1685,9 @@ class CustomNodesCompanion extends UpdateCompanion<CustomNodeRow> {
     if (hidden.present) {
       map['hidden'] = Variable<bool>(hidden.value);
     }
+    if (unitNamesJson.present) {
+      map['unit_names_json'] = Variable<String>(unitNamesJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1651,6 +1708,7 @@ class CustomNodesCompanion extends UpdateCompanion<CustomNodeRow> {
           ..write('unitCount: $unitCount, ')
           ..write('unitOffset: $unitOffset, ')
           ..write('hidden: $hidden, ')
+          ..write('unitNamesJson: $unitNamesJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2885,6 +2943,7 @@ typedef $$CustomNodesTableCreateCompanionBuilder =
       Value<int> unitCount,
       Value<int> unitOffset,
       Value<bool> hidden,
+      Value<String?> unitNamesJson,
       Value<int> rowid,
     });
 typedef $$CustomNodesTableUpdateCompanionBuilder =
@@ -2900,6 +2959,7 @@ typedef $$CustomNodesTableUpdateCompanionBuilder =
       Value<int> unitCount,
       Value<int> unitOffset,
       Value<bool> hidden,
+      Value<String?> unitNamesJson,
       Value<int> rowid,
     });
 
@@ -2968,6 +3028,11 @@ class $$CustomNodesTableFilterComposer
     column: $table.hidden,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get unitNamesJson => $composableBuilder(
+    column: $table.unitNamesJson,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$CustomNodesTableOrderingComposer
@@ -3033,6 +3098,11 @@ class $$CustomNodesTableOrderingComposer
     column: $table.hidden,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get unitNamesJson => $composableBuilder(
+    column: $table.unitNamesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CustomNodesTableAnnotationComposer
@@ -3080,6 +3150,11 @@ class $$CustomNodesTableAnnotationComposer
 
   GeneratedColumn<bool> get hidden =>
       $composableBuilder(column: $table.hidden, builder: (column) => column);
+
+  GeneratedColumn<String> get unitNamesJson => $composableBuilder(
+    column: $table.unitNamesJson,
+    builder: (column) => column,
+  );
 }
 
 class $$CustomNodesTableTableManager
@@ -3124,6 +3199,7 @@ class $$CustomNodesTableTableManager
                 Value<int> unitCount = const Value.absent(),
                 Value<int> unitOffset = const Value.absent(),
                 Value<bool> hidden = const Value.absent(),
+                Value<String?> unitNamesJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CustomNodesCompanion(
                 id: id,
@@ -3137,6 +3213,7 @@ class $$CustomNodesTableTableManager
                 unitCount: unitCount,
                 unitOffset: unitOffset,
                 hidden: hidden,
+                unitNamesJson: unitNamesJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3152,6 +3229,7 @@ class $$CustomNodesTableTableManager
                 Value<int> unitCount = const Value.absent(),
                 Value<int> unitOffset = const Value.absent(),
                 Value<bool> hidden = const Value.absent(),
+                Value<String?> unitNamesJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CustomNodesCompanion.insert(
                 id: id,
@@ -3165,6 +3243,7 @@ class $$CustomNodesTableTableManager
                 unitCount: unitCount,
                 unitOffset: unitOffset,
                 hidden: hidden,
+                unitNamesJson: unitNamesJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -42,7 +42,6 @@ class _UnitDetailsSheet extends ConsumerWidget {
     final history = UnitHistoryFinder.forUnit(events, node.id, unit);
     final mode = ref.watch(settingsProvider).calendar;
     final theme = Theme.of(context);
-    final label = node.unitLabel?.name ?? 'unit';
     final done = history.done;
 
     return SafeArea(
@@ -53,7 +52,7 @@ class _UnitDetailsSheet extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${node.name} · $label $unit',
+              Text('${node.name} · ${node.unitHeading(unit)}',
                   style: theme.textTheme.titleLarge),
               const SizedBox(height: 12),
               if (done == null)
@@ -174,10 +173,9 @@ class _UnitDetailsSheet extends ConsumerWidget {
     if (done == null) return;
     final logger = ref.read(loggingServiceProvider);
     final messenger = ScaffoldMessenger.of(context);
-    final label = node.unitLabel?.name ?? 'unit';
     final result = await showLogUnitSheet(
       context,
-      title: 'Edit · ${node.name} · $label $unit',
+      title: 'Edit · ${node.name} · ${node.unitHeading(unit)}',
       initialOccurredAt: done.occurredAt,
       initialDurationMin: done.durationMin,
       initialNote: done.note,
