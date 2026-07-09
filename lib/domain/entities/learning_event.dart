@@ -13,6 +13,7 @@ class LearningEvent {
     required this.loggedAt,
     this.durationMin,
     this.note,
+    this.haara,
   });
 
   final String id;
@@ -30,9 +31,21 @@ class LearningEvent {
   final DateTime loggedAt;
 
   final int? durationMin;
+
+  /// A note *about the learning experience* (how it went, how long it took).
+  /// Stays with the item; not surfaced in the Notes Journal.
   final String? note;
 
-  LearningEvent copyWith({DateTime? occurredAt, int? durationMin, String? note}) =>
+  /// A **haara** — a note *on the material itself* (an insight on the daf). These
+  /// are what the Notes Journal collects.
+  final String? haara;
+
+  LearningEvent copyWith({
+    DateTime? occurredAt,
+    int? durationMin,
+    String? note,
+    String? haara,
+  }) =>
       LearningEvent(
         id: id,
         profileId: profileId,
@@ -43,6 +56,7 @@ class LearningEvent {
         loggedAt: loggedAt,
         durationMin: durationMin ?? this.durationMin,
         note: note ?? this.note,
+        haara: haara ?? this.haara,
       );
 
   /// Returns a copy with edited annotations, where passing null *clears* the
@@ -52,6 +66,7 @@ class LearningEvent {
     required DateTime occurredAt,
     required int? durationMin,
     required String? note,
+    required String? haara,
   }) =>
       LearningEvent(
         id: id,
@@ -63,6 +78,7 @@ class LearningEvent {
         loggedAt: loggedAt,
         durationMin: durationMin,
         note: note,
+        haara: haara,
       );
 
   Map<String, dynamic> toJson() => {
@@ -75,6 +91,7 @@ class LearningEvent {
         'loggedAt': loggedAt.toIso8601String(),
         if (durationMin != null) 'durationMin': durationMin,
         if (note != null) 'note': note,
+        if (haara != null) 'haara': haara,
       };
 
   factory LearningEvent.fromJson(Map<String, dynamic> json) => LearningEvent(
@@ -87,5 +104,6 @@ class LearningEvent {
         loggedAt: DateTime.parse(json['loggedAt'] as String),
         durationMin: (json['durationMin'] as num?)?.toInt(),
         note: json['note'] as String?,
+        haara: json['haara'] as String?,
       );
 }

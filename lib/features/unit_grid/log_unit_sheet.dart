@@ -5,10 +5,15 @@ import 'package:flutter/material.dart';
 /// Result of the logging sheet. [occurredAt] is null when the user did not set a
 /// date/time manually, so the caller auto-fills "now" (ARCHITECTURE.md §2.2).
 class LogUnitResult {
-  const LogUnitResult({this.occurredAt, this.durationMin, this.note});
+  const LogUnitResult({this.occurredAt, this.durationMin, this.note, this.haara});
   final DateTime? occurredAt;
   final int? durationMin;
+
+  /// A note about the learning experience (kept on the item).
   final String? note;
+
+  /// A haara — an insight on the material (surfaced in the Notes Journal).
+  final String? haara;
 }
 
 /// A modal sheet for logging a unit — or editing an already-logged one — with an
@@ -23,6 +28,7 @@ Future<LogUnitResult?> showLogUnitSheet(
   DateTime? initialOccurredAt,
   int? initialDurationMin,
   String? initialNote,
+  String? initialHaara,
   String saveLabel = 'Mark learned',
 }) {
   return showModalBottomSheet<LogUnitResult>(
@@ -34,6 +40,7 @@ Future<LogUnitResult?> showLogUnitSheet(
       initialOccurredAt: initialOccurredAt,
       initialDurationMin: initialDurationMin,
       initialNote: initialNote,
+      initialHaara: initialHaara,
       saveLabel: saveLabel,
     ),
   );
@@ -46,6 +53,7 @@ class _LogUnitSheet extends StatefulWidget {
     this.initialOccurredAt,
     this.initialDurationMin,
     this.initialNote,
+    this.initialHaara,
   });
 
   final String title;
@@ -53,6 +61,7 @@ class _LogUnitSheet extends StatefulWidget {
   final DateTime? initialOccurredAt;
   final int? initialDurationMin;
   final String? initialNote;
+  final String? initialHaara;
 
   @override
   State<_LogUnitSheet> createState() => _LogUnitSheetState();
@@ -63,6 +72,7 @@ class _LogUnitSheetState extends State<_LogUnitSheet> {
   late DateTime _date; // date + time of "finished learning"
   late final TextEditingController _durationCtrl;
   late final TextEditingController _noteCtrl;
+  late final TextEditingController _haaraCtrl;
 
   final _stopwatch = Stopwatch();
   Timer? _ticker;
@@ -77,6 +87,7 @@ class _LogUnitSheetState extends State<_LogUnitSheet> {
     _durationCtrl = TextEditingController(
         text: widget.initialDurationMin?.toString() ?? '');
     _noteCtrl = TextEditingController(text: widget.initialNote ?? '');
+    _haaraCtrl = TextEditingController(text: widget.initialHaara ?? '');
   }
 
   @override
@@ -84,6 +95,7 @@ class _LogUnitSheetState extends State<_LogUnitSheet> {
     _ticker?.cancel();
     _durationCtrl.dispose();
     _noteCtrl.dispose();
+    _haaraCtrl.dispose();
     super.dispose();
   }
 
@@ -143,10 +155,12 @@ class _LogUnitSheetState extends State<_LogUnitSheet> {
   void _save() {
     final duration = int.tryParse(_durationCtrl.text.trim());
     final note = _noteCtrl.text.trim();
+    final haara = _haaraCtrl.text.trim();
     Navigator.of(context).pop(LogUnitResult(
       occurredAt: _manualDate ? _date : null,
       durationMin: duration,
       note: note.isEmpty ? null : note,
+      haara: haara.isEmpty ? null : haara,
     ));
   }
 
@@ -207,10 +221,21 @@ class _LogUnitSheetState extends State<_LogUnitSheet> {
             ),
             const SizedBox(height: 8),
             TextField(
+              controller: _haaraCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Haara — insight on the daf (optional)',
+                hintText: 'A chiddush, a question, a maareh makom…',
+                helperText: 'Collected in your Notes Journal.',
+              ),
+              maxLines: 4,
+              minLines: 1,
+            ),
+            const SizedBox(height: 8),
+            TextField(
               controller: _noteCtrl,
               decoration: const InputDecoration(
-                labelText: 'Note (optional)',
-                hintText: 'A thought, a question, where you stopped…',
+                labelText: 'Learning note — how it went (optional)',
+                hintText: 'Found it hard, took a few days, where you stopped…',
               ),
               maxLines: 3,
               minLines: 1,

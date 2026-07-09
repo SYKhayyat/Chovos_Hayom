@@ -42,6 +42,7 @@ class DriftProgressRepository implements ProgressRepository {
             loggedAt: e.loggedAt,
             durationMin: Value(e.durationMin),
             note: Value(e.note),
+            haara: Value(e.haara),
           ),
         );
   }
@@ -54,6 +55,7 @@ class DriftProgressRepository implements ProgressRepository {
         occurredAt: Value(e.occurredAt),
         durationMin: Value(e.durationMin),
         note: Value(e.note),
+        haara: Value(e.haara),
       ),
     );
   }
@@ -112,6 +114,7 @@ class DriftProgressRepository implements ProgressRepository {
         loggedAt: row.loggedAt,
         durationMin: row.durationMin,
         note: row.note,
+        haara: row.haara,
       );
 
   Profile _toProfile(ProfileRow row) => Profile(

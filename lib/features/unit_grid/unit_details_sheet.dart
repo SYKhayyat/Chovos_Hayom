@@ -85,8 +85,15 @@ class _UnitDetailsSheet extends ConsumerWidget {
                     ),
                   ),
                 _DetailRow(
+                  icon: Icons.lightbulb_outline,
+                  label: 'Haara (insight on the daf)',
+                  value: (done.haara == null || done.haara!.isEmpty)
+                      ? 'No haara'
+                      : done.haara!,
+                ),
+                _DetailRow(
                   icon: Icons.notes,
-                  label: 'Note',
+                  label: 'Learning note',
                   value: (done.note == null || done.note!.isEmpty)
                       ? 'No note'
                       : done.note!,
@@ -139,6 +146,7 @@ class _UnitDetailsSheet extends ConsumerWidget {
       initialOccurredAt: done.occurredAt,
       initialDurationMin: done.durationMin,
       initialNote: done.note,
+      initialHaara: done.haara,
       saveLabel: 'Save changes',
     );
     if (result == null) return;
@@ -149,6 +157,7 @@ class _UnitDetailsSheet extends ConsumerWidget {
         occurredAt: result.occurredAt ?? done.occurredAt,
         durationMin: result.durationMin,
         note: result.note,
+        haara: result.haara,
       );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));

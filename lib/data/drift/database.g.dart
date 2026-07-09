@@ -411,6 +411,15 @@ class $LearningEventsTable extends LearningEvents
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _haaraMeta = const VerificationMeta('haara');
+  @override
+  late final GeneratedColumn<String> haara = GeneratedColumn<String>(
+    'haara',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -422,6 +431,7 @@ class $LearningEventsTable extends LearningEvents
     loggedAt,
     durationMin,
     note,
+    haara,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -495,6 +505,12 @@ class $LearningEventsTable extends LearningEvents
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('haara')) {
+      context.handle(
+        _haaraMeta,
+        haara.isAcceptableOrUnknown(data['haara']!, _haaraMeta),
+      );
+    }
     return context;
   }
 
@@ -542,6 +558,10 @@ class $LearningEventsTable extends LearningEvents
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      haara: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}haara'],
+      ),
     );
   }
 
@@ -564,7 +584,14 @@ class LearningEventRow extends DataClass
   final DateTime occurredAt;
   final DateTime loggedAt;
   final int? durationMin;
+
+  /// A note *about the learning experience* (how it went, how long, where you
+  /// stopped). Shown on the item but never in the Notes Journal.
   final String? note;
+
+  /// A **haara** — a note *on the material itself* (an insight on the daf). These
+  /// are what the Notes Journal collects.
+  final String? haara;
   const LearningEventRow({
     required this.id,
     required this.profileId,
@@ -575,6 +602,7 @@ class LearningEventRow extends DataClass
     required this.loggedAt,
     this.durationMin,
     this.note,
+    this.haara,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -596,6 +624,9 @@ class LearningEventRow extends DataClass
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    if (!nullToAbsent || haara != null) {
+      map['haara'] = Variable<String>(haara);
+    }
     return map;
   }
 
@@ -612,6 +643,9 @@ class LearningEventRow extends DataClass
           ? const Value.absent()
           : Value(durationMin),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      haara: haara == null && nullToAbsent
+          ? const Value.absent()
+          : Value(haara),
     );
   }
 
@@ -632,6 +666,7 @@ class LearningEventRow extends DataClass
       loggedAt: serializer.fromJson<DateTime>(json['loggedAt']),
       durationMin: serializer.fromJson<int?>(json['durationMin']),
       note: serializer.fromJson<String?>(json['note']),
+      haara: serializer.fromJson<String?>(json['haara']),
     );
   }
   @override
@@ -649,6 +684,7 @@ class LearningEventRow extends DataClass
       'loggedAt': serializer.toJson<DateTime>(loggedAt),
       'durationMin': serializer.toJson<int?>(durationMin),
       'note': serializer.toJson<String?>(note),
+      'haara': serializer.toJson<String?>(haara),
     };
   }
 
@@ -662,6 +698,7 @@ class LearningEventRow extends DataClass
     DateTime? loggedAt,
     Value<int?> durationMin = const Value.absent(),
     Value<String?> note = const Value.absent(),
+    Value<String?> haara = const Value.absent(),
   }) => LearningEventRow(
     id: id ?? this.id,
     profileId: profileId ?? this.profileId,
@@ -672,6 +709,7 @@ class LearningEventRow extends DataClass
     loggedAt: loggedAt ?? this.loggedAt,
     durationMin: durationMin.present ? durationMin.value : this.durationMin,
     note: note.present ? note.value : this.note,
+    haara: haara.present ? haara.value : this.haara,
   );
   LearningEventRow copyWithCompanion(LearningEventsCompanion data) {
     return LearningEventRow(
@@ -688,6 +726,7 @@ class LearningEventRow extends DataClass
           ? data.durationMin.value
           : this.durationMin,
       note: data.note.present ? data.note.value : this.note,
+      haara: data.haara.present ? data.haara.value : this.haara,
     );
   }
 
@@ -702,7 +741,8 @@ class LearningEventRow extends DataClass
           ..write('occurredAt: $occurredAt, ')
           ..write('loggedAt: $loggedAt, ')
           ..write('durationMin: $durationMin, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('haara: $haara')
           ..write(')'))
         .toString();
   }
@@ -718,6 +758,7 @@ class LearningEventRow extends DataClass
     loggedAt,
     durationMin,
     note,
+    haara,
   );
   @override
   bool operator ==(Object other) =>
@@ -731,7 +772,8 @@ class LearningEventRow extends DataClass
           other.occurredAt == this.occurredAt &&
           other.loggedAt == this.loggedAt &&
           other.durationMin == this.durationMin &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.haara == this.haara);
 }
 
 class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
@@ -744,6 +786,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
   final Value<DateTime> loggedAt;
   final Value<int?> durationMin;
   final Value<String?> note;
+  final Value<String?> haara;
   final Value<int> rowid;
   const LearningEventsCompanion({
     this.id = const Value.absent(),
@@ -755,6 +798,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     this.loggedAt = const Value.absent(),
     this.durationMin = const Value.absent(),
     this.note = const Value.absent(),
+    this.haara = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningEventsCompanion.insert({
@@ -767,6 +811,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     required DateTime loggedAt,
     this.durationMin = const Value.absent(),
     this.note = const Value.absent(),
+    this.haara = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        profileId = Value(profileId),
@@ -785,6 +830,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     Expression<DateTime>? loggedAt,
     Expression<int>? durationMin,
     Expression<String>? note,
+    Expression<String>? haara,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -797,6 +843,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
       if (loggedAt != null) 'logged_at': loggedAt,
       if (durationMin != null) 'duration_min': durationMin,
       if (note != null) 'note': note,
+      if (haara != null) 'haara': haara,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -811,6 +858,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     Value<DateTime>? loggedAt,
     Value<int?>? durationMin,
     Value<String?>? note,
+    Value<String?>? haara,
     Value<int>? rowid,
   }) {
     return LearningEventsCompanion(
@@ -823,6 +871,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
       loggedAt: loggedAt ?? this.loggedAt,
       durationMin: durationMin ?? this.durationMin,
       note: note ?? this.note,
+      haara: haara ?? this.haara,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -859,6 +908,9 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (haara.present) {
+      map['haara'] = Variable<String>(haara.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -877,6 +929,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
           ..write('loggedAt: $loggedAt, ')
           ..write('durationMin: $durationMin, ')
           ..write('note: $note, ')
+          ..write('haara: $haara, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1707,6 +1760,7 @@ typedef $$LearningEventsTableCreateCompanionBuilder =
       required DateTime loggedAt,
       Value<int?> durationMin,
       Value<String?> note,
+      Value<String?> haara,
       Value<int> rowid,
     });
 typedef $$LearningEventsTableUpdateCompanionBuilder =
@@ -1720,6 +1774,7 @@ typedef $$LearningEventsTableUpdateCompanionBuilder =
       Value<DateTime> loggedAt,
       Value<int?> durationMin,
       Value<String?> note,
+      Value<String?> haara,
       Value<int> rowid,
     });
 
@@ -1777,6 +1832,11 @@ class $$LearningEventsTableFilterComposer
     column: $table.note,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get haara => $composableBuilder(
+    column: $table.haara,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$LearningEventsTableOrderingComposer
@@ -1832,6 +1892,11 @@ class $$LearningEventsTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get haara => $composableBuilder(
+    column: $table.haara,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LearningEventsTableAnnotationComposer
@@ -1873,6 +1938,9 @@ class $$LearningEventsTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get haara =>
+      $composableBuilder(column: $table.haara, builder: (column) => column);
 }
 
 class $$LearningEventsTableTableManager
@@ -1921,6 +1989,7 @@ class $$LearningEventsTableTableManager
                 Value<DateTime> loggedAt = const Value.absent(),
                 Value<int?> durationMin = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String?> haara = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningEventsCompanion(
                 id: id,
@@ -1932,6 +2001,7 @@ class $$LearningEventsTableTableManager
                 loggedAt: loggedAt,
                 durationMin: durationMin,
                 note: note,
+                haara: haara,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1945,6 +2015,7 @@ class $$LearningEventsTableTableManager
                 required DateTime loggedAt,
                 Value<int?> durationMin = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String?> haara = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningEventsCompanion.insert(
                 id: id,
@@ -1956,6 +2027,7 @@ class $$LearningEventsTableTableManager
                 loggedAt: loggedAt,
                 durationMin: durationMin,
                 note: note,
+                haara: haara,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

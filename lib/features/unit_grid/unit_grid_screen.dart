@@ -73,7 +73,9 @@ class UnitGridScreen extends ConsumerWidget {
       for (final e in events)
         if (e.nodeId == node.id &&
             e.action == EventAction.done &&
-            ((e.note != null && e.note!.isNotEmpty) || e.durationMin != null))
+            ((e.note != null && e.note!.isNotEmpty) ||
+                (e.haara != null && e.haara!.isNotEmpty) ||
+                e.durationMin != null))
           e.unitIndex,
     };
     return GridView.builder(
@@ -148,7 +150,8 @@ class UnitGridScreen extends ConsumerWidget {
                 await logger.markDone(node.id, unit,
                     occurredAt: result.occurredAt,
                     durationMin: result.durationMin,
-                    note: result.note);
+                    note: result.note,
+                    haara: result.haara);
               },
             ),
             if (isDone) ...[

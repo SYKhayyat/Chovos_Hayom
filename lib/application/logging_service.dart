@@ -30,6 +30,7 @@ class LoggingService {
     DateTime? occurredAt,
     int? durationMin,
     String? note,
+    String? haara,
   }) async {
     final now = _now();
     final event = LearningEvent(
@@ -42,13 +43,14 @@ class LoggingService {
       loggedAt: now,
       durationMin: durationMin,
       note: note,
+      haara: haara,
     );
     await _repo.addEvent(event);
     return event;
   }
 
   Future<LearningEvent> markDone(String nodeId, int unitIndex,
-          {DateTime? occurredAt, int? durationMin, String? note}) =>
+          {DateTime? occurredAt, int? durationMin, String? note, String? haara}) =>
       log(
         nodeId: nodeId,
         unitIndex: unitIndex,
@@ -56,23 +58,27 @@ class LoggingService {
         occurredAt: occurredAt,
         durationMin: durationMin,
         note: note,
+        haara: haara,
       );
 
   Future<LearningEvent> markUndone(String nodeId, int unitIndex) =>
       log(nodeId: nodeId, unitIndex: unitIndex, action: EventAction.undone);
 
-  /// Edit the annotations (learned-at date/time, duration, note) of an existing
-  /// event. Null [durationMin]/[note] clear the field. The done-set is unchanged.
+  /// Edit the annotations (learned-at date/time, duration, note, haara) of an
+  /// existing event. Null [durationMin]/[note]/[haara] clear the field. The
+  /// done-set is unchanged.
   Future<LearningEvent> editDetails(
     LearningEvent event, {
     required DateTime occurredAt,
     required int? durationMin,
     required String? note,
+    required String? haara,
   }) async {
     final updated = event.withDetails(
       occurredAt: occurredAt,
       durationMin: durationMin,
       note: note,
+      haara: haara,
     );
     await _repo.updateEvent(updated);
     return updated;

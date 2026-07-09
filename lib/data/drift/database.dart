@@ -28,7 +28,14 @@ class LearningEvents extends Table {
   DateTimeColumn get occurredAt => dateTime()();
   DateTimeColumn get loggedAt => dateTime()();
   IntColumn get durationMin => integer().nullable()();
+
+  /// A note *about the learning experience* (how it went, how long, where you
+  /// stopped). Shown on the item but never in the Notes Journal.
   TextColumn get note => text().nullable()();
+
+  /// A **haara** — a note *on the material itself* (an insight on the daf). These
+  /// are what the Notes Journal collects.
+  TextColumn get haara => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -64,7 +71,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'chovos_hayom'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   /// Every schema change must extend [MigrationStrategy.onUpgrade]. Without this,
   /// bumping [schemaVersion] silently does nothing on existing installs and
@@ -78,6 +85,11 @@ class AppDatabase extends _$AppDatabase {
           // rows, so no custom sefarim are lost.
           if (from < 2) {
             await m.alterTable(TableMigration(customNodes));
+          }
+          // v2 -> v3: add the `haara` note column (additive; existing rows keep
+          // their `note` as the learning-note and get a null haara).
+          if (from < 3) {
+            await m.addColumn(learningEvents, learningEvents.haara);
           }
         },
       );

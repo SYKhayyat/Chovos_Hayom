@@ -11,6 +11,7 @@ import '../chazara/chazara_screen.dart';
 import '../cycles/cycles_screen.dart';
 import '../custom_node/add_custom_node_screen.dart';
 import '../goals/goals_screen.dart';
+import '../journal/notes_journal_screen.dart';
 import '../profiles/profiles_screen.dart';
 import '../search/catalog_search_delegate.dart';
 import '../settings/settings_screen.dart';
@@ -201,6 +202,11 @@ class _AppDrawer extends ConsumerWidget {
             leading: const Icon(Icons.emoji_events),
             title: const Text('Siyumim'),
             onTap: () => _go(context, const SiyumScreen()),
+          ),
+          ListTile(
+            leading: const Icon(Icons.menu_book_outlined),
+            title: const Text('Notes Journal'),
+            onTap: () => _go(context, const NotesJournalScreen()),
           ),
           ListTile(
             leading: const Icon(Icons.people),
