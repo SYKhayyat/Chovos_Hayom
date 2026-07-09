@@ -1074,7 +1074,7 @@ class $CustomNodesTable extends CustomNodes
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => {profileId, id};
   @override
   CustomNodeRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';

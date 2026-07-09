@@ -48,6 +48,16 @@ class InMemoryProgressRepository implements ProgressRepository {
   }
 
   @override
+  Future<void> updateEvent(LearningEvent event) async {
+    final list = _events[event.profileId];
+    if (list == null) return;
+    final i = list.indexWhere((e) => e.id == event.id);
+    if (i == -1) return;
+    list[i] = event;
+    _emit(event.profileId);
+  }
+
+  @override
   Future<void> removeEvent(String eventId) async {
     for (final entry in _events.entries) {
       final before = entry.value.length;
@@ -61,6 +71,24 @@ class InMemoryProgressRepository implements ProgressRepository {
 
   @override
   Future<void> addProfile(Profile profile) async => _profiles.add(profile);
+
+  @override
+  Future<void> renameProfile(String profileId, String name) async {
+    final i = _profiles.indexWhere((p) => p.id == profileId);
+    if (i == -1) return;
+    final p = _profiles[i];
+    _profiles[i] =
+        Profile(id: p.id, name: name, createdAt: p.createdAt, settings: p.settings);
+  }
+
+  @override
+  Future<void> deleteProfile(String profileId) async {
+    _profiles.removeWhere((p) => p.id == profileId);
+    _events.remove(profileId);
+    _customNodes.remove(profileId);
+    _emit(profileId);
+    _emitCustom(profileId);
+  }
 
   StreamController<List<CatalogNode>> _customControllerFor(String profileId) =>
       _customControllers.putIfAbsent(
@@ -85,16 +113,23 @@ class InMemoryProgressRepository implements ProgressRepository {
 
   @override
   Future<void> addCustomNode(String profileId, CatalogNode node) async {
-    (_customNodes[profileId] ??= []).add(node);
+    final list = _customNodes[profileId] ??= [];
+    // Idempotent by (profileId, id): replace in place if it already exists.
+    final i = list.indexWhere((n) => n.id == node.id);
+    if (i == -1) {
+      list.add(node);
+    } else {
+      list[i] = node;
+    }
     _emitCustom(profileId);
   }
 
   @override
-  Future<void> removeCustomNode(String nodeId) async {
-    for (final entry in _customNodes.entries) {
-      final before = entry.value.length;
-      entry.value.removeWhere((n) => n.id == nodeId);
-      if (entry.value.length != before) _emitCustom(entry.key);
-    }
+  Future<void> removeCustomNode(String profileId, String nodeId) async {
+    final list = _customNodes[profileId];
+    if (list == null) return;
+    final before = list.length;
+    list.removeWhere((n) => n.id == nodeId);
+    if (list.length != before) _emitCustom(profileId);
   }
 }

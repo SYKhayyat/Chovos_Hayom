@@ -45,6 +45,9 @@ class FoldLog {
           break;
         case EventAction.undone:
           done[e.nodeId]?.remove(e.unitIndex);
+          // Un-marking clears the unit's review history too, so a later re-mark
+          // starts fresh (matches ChazaraSchedule and the grid's ↻ badge).
+          reviews[e.nodeId]?.remove(e.unitIndex);
           break;
         case EventAction.reviewed:
           final byUnit = reviews[e.nodeId] ??= <int, int>{};

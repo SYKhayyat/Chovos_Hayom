@@ -47,6 +47,18 @@ class DriftProgressRepository implements ProgressRepository {
   }
 
   @override
+  Future<void> updateEvent(LearningEvent e) async {
+    // Only the annotation columns are mutable; identity/action are immutable.
+    await (_db.update(_db.learningEvents)..where((t) => t.id.equals(e.id))).write(
+      LearningEventsCompanion(
+        occurredAt: Value(e.occurredAt),
+        durationMin: Value(e.durationMin),
+        note: Value(e.note),
+      ),
+    );
+  }
+
+  @override
   Future<void> removeEvent(String eventId) async {
     await (_db.delete(_db.learningEvents)..where((t) => t.id.equals(eventId)))
         .go();
@@ -68,6 +80,26 @@ class DriftProgressRepository implements ProgressRepository {
             settingsJson: Value(jsonEncode(p.settings)),
           ),
         );
+  }
+
+  @override
+  Future<void> renameProfile(String profileId, String name) async {
+    await (_db.update(_db.profiles)..where((t) => t.id.equals(profileId)))
+        .write(ProfilesCompanion(name: Value(name)));
+  }
+
+  @override
+  Future<void> deleteProfile(String profileId) async {
+    await _db.transaction(() async {
+      await (_db.delete(_db.learningEvents)
+            ..where((t) => t.profileId.equals(profileId)))
+          .go();
+      await (_db.delete(_db.customNodes)
+            ..where((t) => t.profileId.equals(profileId)))
+          .go();
+      await (_db.delete(_db.profiles)..where((t) => t.id.equals(profileId)))
+          .go();
+    });
   }
 
   LearningEvent _toEvent(LearningEventRow row) => LearningEvent(
@@ -98,7 +130,9 @@ class DriftProgressRepository implements ProgressRepository {
 
   @override
   Future<void> addCustomNode(String profileId, CatalogNode node) async {
-    await _db.into(_db.customNodes).insert(
+    // Idempotent by (profileId, id): re-importing a backup updates in place
+    // rather than throwing or duplicating.
+    await _db.into(_db.customNodes).insertOnConflictUpdate(
           CustomNodesCompanion.insert(
             id: node.id,
             profileId: profileId,
@@ -115,8 +149,10 @@ class DriftProgressRepository implements ProgressRepository {
   }
 
   @override
-  Future<void> removeCustomNode(String nodeId) async {
-    await (_db.delete(_db.customNodes)..where((t) => t.id.equals(nodeId))).go();
+  Future<void> removeCustomNode(String profileId, String nodeId) async {
+    await (_db.delete(_db.customNodes)
+          ..where((t) => t.profileId.equals(profileId) & t.id.equals(nodeId)))
+        .go();
   }
 
   CatalogNode _toNode(CustomNodeRow row) => CatalogNode(

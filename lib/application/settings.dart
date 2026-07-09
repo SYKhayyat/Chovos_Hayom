@@ -11,21 +11,27 @@ class SettingsState {
     this.calendar = CalendarMode.gregorian,
     this.themeMode = ThemeMode.system,
     this.reminderEnabled = false,
+    this.hebrewLayout = false,
   });
 
   final CalendarMode calendar;
   final ThemeMode themeMode;
   final bool reminderEnabled;
 
+  /// When true, the whole app renders in Hebrew (right-to-left) layout. Optional.
+  final bool hebrewLayout;
+
   SettingsState copyWith({
     CalendarMode? calendar,
     ThemeMode? themeMode,
     bool? reminderEnabled,
+    bool? hebrewLayout,
   }) =>
       SettingsState(
         calendar: calendar ?? this.calendar,
         themeMode: themeMode ?? this.themeMode,
         reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+        hebrewLayout: hebrewLayout ?? this.hebrewLayout,
       );
 }
 
@@ -41,7 +47,15 @@ class SettingsNotifier extends Notifier<SettingsState> {
           ThemeMode.values, prefs.getString(PrefKeys.themeMode),
           fallback: ThemeMode.system),
       reminderEnabled: prefs.getString(PrefKeys.reminderEnabled) == 'true',
+      hebrewLayout: prefs.getString(PrefKeys.hebrewLayout) == 'true',
     );
+  }
+
+  Future<void> setHebrewLayout(bool enabled) async {
+    await ref
+        .read(appPreferencesProvider)
+        .setString(PrefKeys.hebrewLayout, enabled.toString());
+    state = state.copyWith(hebrewLayout: enabled);
   }
 
   Future<void> setReminderEnabled(bool enabled) async {

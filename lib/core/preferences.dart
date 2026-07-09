@@ -22,4 +22,5 @@ class PrefKeys {
   static const calendarMode = 'calendarMode';
   static const themeMode = 'themeMode';
   static const reminderEnabled = 'reminderEnabled';
+  static const hebrewLayout = 'hebrewLayout';
 }

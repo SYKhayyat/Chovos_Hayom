@@ -14,12 +14,33 @@ class NodeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // While the catalog/log load these are still loading; once loaded, a null
+    // node means the id genuinely doesn't exist — don't spin forever on it.
+    final catalogReady = ref.watch(mergedCatalogProvider).hasValue;
+    final eventsReady = ref.watch(eventsProvider).hasValue;
     final node = ref.watch(progressNodeProvider(nodeId));
+
+    final Widget body;
+    if (!catalogReady || !eventsReady) {
+      body = const Center(child: CircularProgressIndicator());
+    } else if (node == null) {
+      body = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'This item no longer exists.\nIt may have been removed or renamed.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        ),
+      );
+    } else {
+      body = ListView(children: [ProgressTile(node: node)]);
+    }
+
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: node == null
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(children: [ProgressTile(node: node)]),
+      body: body,
     );
   }
 }

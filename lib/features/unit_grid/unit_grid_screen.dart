@@ -6,9 +6,12 @@ import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/catalog_node.dart';
+import '../../domain/entities/enums.dart';
+import '../../domain/entities/learning_event.dart';
 import '../../domain/usecases/fold_log.dart';
 import '../../domain/usecases/goal_evaluator.dart';
 import 'log_unit_sheet.dart';
+import 'unit_details_sheet.dart';
 
 /// A grid of every unit (daf/perek/siman) in a leaf. Tap toggles done; long-press
 /// opens a menu to log details, add a chazara (review), or un-mark.
@@ -63,6 +66,16 @@ class UnitGridScreen extends ConsumerWidget {
 
   Widget _grid(BuildContext context, WidgetRef ref, LogFold fold) {
     final done = fold.doneUnits(node.id);
+    // Units carrying a recorded note or duration on a `done` event — surfaced as
+    // a small dot so details are discoverable at a glance.
+    final events = ref.watch(eventsProvider).asData?.value ?? const <LearningEvent>[];
+    final annotated = <int>{
+      for (final e in events)
+        if (e.nodeId == node.id &&
+            e.action == EventAction.done &&
+            ((e.note != null && e.note!.isNotEmpty) || e.durationMin != null))
+          e.unitIndex,
+    };
     return GridView.builder(
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -79,9 +92,21 @@ class UnitGridScreen extends ConsumerWidget {
           label: '$unit',
           isDone: isDone,
           reviewCount: fold.reviewCount(node.id, unit),
-          onTap: () {
+          hasDetails: isDone && annotated.contains(unit),
+          onTap: () async {
+            // markUndone appends an inverse event (non-destructive, reversible by
+            // tapping again), so no confirmation — but surface any save failure.
             final logger = ref.read(loggingServiceProvider);
-            isDone ? logger.markUndone(node.id, unit) : logger.markDone(node.id, unit);
+            final messenger = ScaffoldMessenger.of(context);
+            try {
+              if (isDone) {
+                await logger.markUndone(node.id, unit);
+              } else {
+                await logger.markDone(node.id, unit);
+              }
+            } catch (e) {
+              messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));
+            }
           },
           onLongPress: () => _cellMenu(context, ref, unit, isDone),
         );
@@ -100,9 +125,21 @@ class UnitGridScreen extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (isDone)
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('View / edit details'),
+                subtitle: const Text('When you finished, how long, your note'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  showUnitDetailsSheet(context, ref, node: node, unit: unit);
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.edit_calendar),
-              title: const Text('Log with date / duration / note'),
+              title: Text(isDone
+                  ? 'Re-log with date / duration / note'
+                  : 'Log with date / duration / note'),
               onTap: () async {
                 Navigator.pop(sheetContext);
                 final result = await showLogUnitSheet(context,
@@ -177,7 +214,20 @@ class _GoalBanner extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.close, size: 18),
             tooltip: 'Remove goal',
-            onPressed: () => ref.read(goalsProvider.notifier).removeGoal(nodeId),
+            onPressed: () async {
+              final previous = ref.read(goalsProvider)[nodeId];
+              final messenger = ScaffoldMessenger.of(context);
+              await ref.read(goalsProvider.notifier).removeGoal(nodeId);
+              if (previous == null) return;
+              messenger.showSnackBar(SnackBar(
+                content: const Text('Goal removed'),
+                action: SnackBarAction(
+                  label: 'Undo',
+                  onPressed: () =>
+                      ref.read(goalsProvider.notifier).setGoal(nodeId, previous),
+                ),
+              ));
+            },
           ),
         ],
       ),
@@ -190,6 +240,7 @@ class _UnitCell extends StatelessWidget {
     required this.label,
     required this.isDone,
     required this.reviewCount,
+    required this.hasDetails,
     required this.onTap,
     required this.onLongPress,
   });
@@ -197,6 +248,7 @@ class _UnitCell extends StatelessWidget {
   final String label;
   final bool isDone;
   final int reviewCount;
+  final bool hasDetails;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
@@ -231,6 +283,14 @@ class _UnitCell extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 10,
                         color: isDone ? scheme.onPrimary : scheme.primary)),
+              ),
+            if (hasDetails)
+              Positioned(
+                left: 5,
+                bottom: 4,
+                child: Icon(Icons.sticky_note_2,
+                    size: 11,
+                    color: isDone ? scheme.onPrimary : scheme.primary),
               ),
           ],
         ),

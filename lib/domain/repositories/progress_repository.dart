@@ -10,8 +10,16 @@ abstract interface class ProgressRepository {
 
   Future<List<LearningEvent>> getEvents(String profileId);
 
-  /// Append an event. Events are never updated in place.
+  /// Append an event. The done/undone/reviewed *actions* are never rewritten in
+  /// place — they are only ever appended (see [updateEvent] for the one exception).
   Future<void> addEvent(LearningEvent event);
+
+  /// Edit the *annotations* of an existing event in place — its [occurredAt]
+  /// (when it was learned), [durationMin], and [note]. The event's identity and
+  /// action are unchanged, so the folded done-set is unaffected; this lets the
+  /// user correct or fill in details of an item after the fact. No-op if the id
+  /// doesn't exist.
+  Future<void> updateEvent(LearningEvent event);
 
   /// Remove a single event by id (used by undo).
   Future<void> removeEvent(String eventId);
@@ -19,9 +27,17 @@ abstract interface class ProgressRepository {
   Future<List<Profile>> getProfiles();
   Future<void> addProfile(Profile profile);
 
+  /// Rename a profile. No-op if the id doesn't exist.
+  Future<void> renameProfile(String profileId, String name);
+
+  /// Delete a profile and all of its events and custom nodes.
+  Future<void> deleteProfile(String profileId);
+
   /// Reactive stream of the profile's custom nodes (as catalog nodes).
   Stream<List<CatalogNode>> watchCustomNodes(String profileId);
 
+  /// Add or replace a custom node. Idempotent by (profileId, id) so re-importing
+  /// a backup does not duplicate or throw.
   Future<void> addCustomNode(String profileId, CatalogNode node);
-  Future<void> removeCustomNode(String nodeId);
+  Future<void> removeCustomNode(String profileId, String nodeId);
 }

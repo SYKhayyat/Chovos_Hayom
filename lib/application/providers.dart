@@ -85,6 +85,30 @@ class ProfilesController extends AsyncNotifier<List<Profile>> {
     await future;
     await ref.read(activeProfileProvider.notifier).setProfile(id);
   }
+
+  /// Rename an existing profile.
+  Future<void> rename(String id, String name) async {
+    await ref.read(progressRepositoryProvider).renameProfile(id, name);
+    ref.invalidateSelf();
+    await future;
+  }
+
+  /// Delete a profile and all of its data. The last remaining profile cannot be
+  /// deleted. If the active profile is deleted, switches to another.
+  Future<void> delete(String id) async {
+    final repo = ref.read(progressRepositoryProvider);
+    final profiles = await repo.getProfiles();
+    if (profiles.length <= 1) {
+      throw StateError('Cannot delete the last profile.');
+    }
+    await repo.deleteProfile(id);
+    if (ref.read(activeProfileProvider) == id) {
+      final next = profiles.firstWhere((p) => p.id != id);
+      await ref.read(activeProfileProvider.notifier).setProfile(next.id);
+    }
+    ref.invalidateSelf();
+    await future;
+  }
 }
 
 final profilesProvider =
@@ -109,7 +133,13 @@ final mergedCatalogProvider = Provider<AsyncValue<Catalog>>((ref) {
   return base.when(
     loading: () => const AsyncValue.loading(),
     error: AsyncValue.error,
-    data: (c) => custom.whenData((nodes) => Catalog([...c.all, ...nodes])),
+    data: (c) => custom.whenData((nodes) {
+      // Drop custom nodes whose id collides with a base-catalog node: otherwise
+      // the node appears twice under its parent and is counted twice in roll-up.
+      final baseIds = {for (final n in c.all) n.id};
+      final safe = nodes.where((n) => !baseIds.contains(n.id));
+      return Catalog([...c.all, ...safe]);
+    }),
   );
 });
 
@@ -141,20 +171,24 @@ final foldProvider = Provider<AsyncValue<LogFold>>((ref) {
 });
 
 /// The derived progress forest: merged catalog + folded log, rolled up.
+///
+/// Reuses [foldProvider] rather than folding the log again, so the (potentially
+/// large) log is folded once per change and shared across the forest, per-node,
+/// stats, and goal providers instead of being recomputed by each.
 final progressForestProvider = Provider<AsyncValue<List<ProgressNode>>>((ref) {
   final catalog = ref.watch(mergedCatalogProvider);
-  final events = ref.watch(eventsProvider);
+  final fold = ref.watch(foldProvider);
   return catalog.when(
     loading: () => const AsyncValue.loading(),
     error: AsyncValue.error,
-    data: (c) => events.whenData((e) => RollUp.buildForest(c, FoldLog.fold(e))),
+    data: (c) => fold.whenData((f) => RollUp.buildForest(c, f)),
   );
 });
 
 /// The progress subtree rooted at [id] (null while loading or if not found).
 final progressNodeProvider = Provider.family<ProgressNode?, String>((ref, id) {
   final catalog = ref.watch(mergedCatalogProvider).asData?.value;
-  final events = ref.watch(eventsProvider).asData?.value;
-  if (catalog == null || events == null) return null;
-  return RollUp.buildNode(catalog, id, FoldLog.fold(events));
+  final fold = ref.watch(foldProvider).asData?.value;
+  if (catalog == null || fold == null) return null;
+  return RollUp.buildNode(catalog, id, fold);
 });

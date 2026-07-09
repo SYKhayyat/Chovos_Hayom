@@ -61,9 +61,18 @@ class _SummaryGrid extends StatelessWidget {
         _StatTile(label: 'Learned', value: '${stats.learned} / ${stats.total}'),
         _StatTile(label: 'Streak', value: '${stats.streak} day${stats.streak == 1 ? '' : 's'}'),
         _StatTile(label: 'Avg / day (30d)', value: stats.avgPerDay.toStringAsFixed(2)),
+        _StatTile(label: 'Time learned', value: _fmtMinutes(stats.totalMinutes)),
+        _StatTile(label: 'Time this month', value: _fmtMinutes(stats.minutesThisMonth)),
         _StatTile(label: 'Projected siyum', value: finish, wide: true),
       ],
     );
+  }
+
+  static String _fmtMinutes(int m) {
+    if (m <= 0) return '—';
+    final h = m ~/ 60;
+    final min = m % 60;
+    return h == 0 ? '${min}m' : '${h}h ${min}m';
   }
 }
 

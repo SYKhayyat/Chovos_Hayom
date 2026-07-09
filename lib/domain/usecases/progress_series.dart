@@ -32,26 +32,58 @@ class ProgressSeries {
     return map;
   }
 
-  /// Count of `done` events per calendar day (for an activity heatmap).
+  /// Distinct units marked done per calendar day (for an activity heatmap). A
+  /// unit re-marked the same day counts once, matching the set-based `learned`.
   static Map<DateTime, int> dailyDone(Iterable<LearningEvent> events) {
-    final map = <DateTime, int>{};
+    final byDay = <DateTime, Set<String>>{};
     for (final e in events) {
       if (e.action != EventAction.done) continue;
-      final key = _dayKey(e.occurredAt);
-      map[key] = (map[key] ?? 0) + 1;
+      (byDay[_dayKey(e.occurredAt)] ??= <String>{})
+          .add('${e.nodeId} ${e.unitIndex}');
     }
-    return map;
+    return {for (final entry in byDay.entries) entry.key: entry.value.length};
   }
 
-  /// Cumulative net-progress line, one point per active day in chronological
-  /// order. Empty if there is no activity.
+  /// Cumulative distinct-units-learned line: a monotonic running total of the
+  /// units *currently* learned, each placed on the day it was learned. Empty if
+  /// nothing is currently done.
+  ///
+  /// Membership is resolved in **append order** (`loggedAt`, then `id`) — exactly
+  /// how `FoldLog`/`RollUp` compute `learned` — so the line's final value always
+  /// equals the headline `learned` count, even after a unit is un-marked or a
+  /// `done` is re-logged with a backdated date. Each currently-done unit is
+  /// bucketed by its representative (latest) `done` date; un-marked units drop
+  /// out entirely rather than leaving a dip in an otherwise-cumulative line.
   static List<SeriesPoint> cumulative(Iterable<LearningEvent> events) {
-    final deltas = dailyDeltas(events);
-    if (deltas.isEmpty) return const [];
-    final days = deltas.keys.toList()..sort();
+    final ordered = events
+        .where((e) => e.action != EventAction.reviewed)
+        .toList()
+      ..sort((a, b) {
+        final byLogged = a.loggedAt.compareTo(b.loggedAt);
+        return byLogged != 0 ? byLogged : a.id.compareTo(b.id);
+      });
+    if (ordered.isEmpty) return const [];
+
+    // Representative learned-date per unit still done (later done wins; undone
+    // drops it) — the same fold as the authoritative `learned` count.
+    final doneAt = <String, DateTime>{};
+    for (final e in ordered) {
+      final unitKey = '${e.nodeId} ${e.unitIndex}';
+      if (e.action == EventAction.done) {
+        doneAt[unitKey] = e.occurredAt;
+      } else if (e.action == EventAction.undone) {
+        doneAt.remove(unitKey);
+      }
+    }
+    if (doneAt.isEmpty) return const [];
+
+    final perDay = <DateTime, int>{};
+    for (final occurred in doneAt.values) {
+      final key = _dayKey(occurred);
+      perDay[key] = (perDay[key] ?? 0) + 1;
+    }
+    final days = perDay.keys.toList()..sort();
     var running = 0;
-    return [
-      for (final day in days) SeriesPoint(day, running += deltas[day]!),
-    ];
+    return [for (final day in days) SeriesPoint(day, running += perDay[day]!)];
   }
 }

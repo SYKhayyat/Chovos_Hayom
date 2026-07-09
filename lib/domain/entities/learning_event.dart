@@ -45,6 +45,26 @@ class LearningEvent {
         note: note ?? this.note,
       );
 
+  /// Returns a copy with edited annotations, where passing null *clears* the
+  /// field (unlike [copyWith], whose null means "keep existing"). Used when the
+  /// user edits an item's details and, e.g., deletes its note or duration.
+  LearningEvent withDetails({
+    required DateTime occurredAt,
+    required int? durationMin,
+    required String? note,
+  }) =>
+      LearningEvent(
+        id: id,
+        profileId: profileId,
+        nodeId: nodeId,
+        unitIndex: unitIndex,
+        action: action,
+        occurredAt: occurredAt,
+        loggedAt: loggedAt,
+        durationMin: durationMin,
+        note: note,
+      );
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'profileId': profileId,

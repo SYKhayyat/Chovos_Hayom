@@ -49,8 +49,11 @@ class CustomNodes extends Table {
   IntColumn get unitCount => integer().withDefault(const Constant(0))();
   IntColumn get unitOffset => integer().withDefault(const Constant(0))();
 
+  // Custom nodes are profile-scoped: two profiles may hold nodes with the same
+  // id (e.g. the same backup imported into both). The primary key must include
+  // profileId, or the second import throws a uniqueness violation.
   @override
-  Set<Column> get primaryKey => {id};
+  Set<Column> get primaryKey => {profileId, id};
 }
 
 @DriftDatabase(tables: [Profiles, LearningEvents, CustomNodes])
@@ -61,5 +64,21 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'chovos_hayom'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  /// Every schema change must extend [MigrationStrategy.onUpgrade]. Without this,
+  /// bumping [schemaVersion] silently does nothing on existing installs and
+  /// derails into `no such column` crashes or data loss.
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          // v1 -> v2: CustomNodes primary key changed {id} -> {profileId, id}.
+          // TableMigration recreates the physical table, preserving existing
+          // rows, so no custom sefarim are lost.
+          if (from < 2) {
+            await m.alterTable(TableMigration(customNodes));
+          }
+        },
+      );
 }

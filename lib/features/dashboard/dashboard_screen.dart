@@ -7,23 +7,45 @@ import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../domain/usecases/reminders_policy.dart';
 import '../calculator/calculator_screen.dart';
+import '../chazara/chazara_screen.dart';
+import '../cycles/cycles_screen.dart';
 import '../custom_node/add_custom_node_screen.dart';
 import '../goals/goals_screen.dart';
 import '../profiles/profiles_screen.dart';
 import '../search/catalog_search_delegate.dart';
 import '../settings/settings_screen.dart';
+import '../siyum/siyum_screen.dart';
 import '../stats/stats_screen.dart';
 import 'progress_tile.dart';
 
 /// The main dashboard: an expandable tree of the whole catalog with per-node
 /// progress bars. Tapping a leaf opens its per-unit grid.
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  // The tree starts collapsed; expand/collapse-all bump [_epoch] to force every
+  // ExpansionTile to rebuild with the new [_expandAll] state.
+  bool _expandAll = false;
+  int _epoch = 0;
+
+  void _setExpanded(bool expand) => setState(() {
+        _expandAll = expand;
+        _epoch++;
+      });
+
+  @override
+  Widget build(BuildContext context) {
     final forest = ref.watch(progressForestProvider);
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+    final customIds = <String>{
+      for (final n in ref.watch(customNodesProvider).asData?.value ?? const [])
+        n.id,
+    };
 
     final reminderOn = ref.watch(settingsProvider).reminderEnabled;
     final events = ref.watch(eventsProvider).asData?.value ?? const [];
@@ -38,6 +60,11 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Chovos Hayom'),
         actions: [
+          IconButton(
+            icon: Icon(_expandAll ? Icons.unfold_less : Icons.unfold_more),
+            tooltip: _expandAll ? 'Collapse all' : 'Expand all',
+            onPressed: () => _setExpanded(!_expandAll),
+          ),
           IconButton(
             icon: const Icon(Icons.search),
             tooltip: 'Search',
@@ -72,7 +99,13 @@ class DashboardScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 88),
           children: [
             if (showNudge) const _NudgeBanner(),
-            for (final n in nodes) ProgressTile(node: n),
+            for (final n in nodes)
+              ProgressTile(
+                node: n,
+                initiallyExpanded: _expandAll,
+                epoch: _epoch,
+                customIds: customIds,
+              ),
           ],
         ),
       ),
@@ -144,9 +177,30 @@ class _AppDrawer extends ConsumerWidget {
             ),
           ),
           ListTile(
+            leading: const Icon(Icons.calendar_today),
+            title: const Text('Learning cycles'),
+            onTap: () => _go(context, const CyclesScreen()),
+          ),
+          ListTile(
             leading: const Icon(Icons.flag),
             title: const Text('Goals'),
             onTap: () => _go(context, const GoalsScreen()),
+          ),
+          Consumer(builder: (context, ref, _) {
+            final dueCount = ref.watch(chazaraDueProvider).length;
+            return ListTile(
+              leading: const Icon(Icons.refresh),
+              title: const Text('Chazara due'),
+              trailing: dueCount == 0
+                  ? null
+                  : Badge(label: Text('$dueCount')),
+              onTap: () => _go(context, const ChazaraScreen()),
+            );
+          }),
+          ListTile(
+            leading: const Icon(Icons.emoji_events),
+            title: const Text('Siyumim'),
+            onTap: () => _go(context, const SiyumScreen()),
           ),
           ListTile(
             leading: const Icon(Icons.people),

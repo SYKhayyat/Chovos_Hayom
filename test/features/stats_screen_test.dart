@@ -42,6 +42,13 @@ void main() {
 
     expect(find.text('Streak'), findsOneWidget);
     expect(find.text('2 days'), findsOneWidget);
+
+    // The chart sits below the (lazily-built) summary grid; scroll to it.
+    await tester.scrollUntilVisible(
+      find.text('Progress over time'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Progress over time'), findsOneWidget);
   });
 }

@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,6 +50,12 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
+          SwitchListTile(
+            title: const Text('Hebrew (right-to-left) layout'),
+            subtitle: const Text('Render the whole app in Hebrew RTL'),
+            value: settings.hebrewLayout,
+            onChanged: notifier.setHebrewLayout,
+          ),
           const Divider(),
           const _SectionHeader('Reminders'),
           SwitchListTile(
@@ -68,20 +77,82 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
           const _SectionHeader('Backup'),
           ListTile(
+            leading: const Icon(Icons.save_alt),
+            title: const Text('Export to file'),
+            subtitle: const Text('Save all progress as a JSON file'),
+            onTap: () => _exportToFile(context, ref),
+          ),
+          ListTile(
+            leading: const Icon(Icons.folder_open),
+            title: const Text('Import from file'),
+            subtitle: const Text('Restore/merge from a saved JSON file'),
+            onTap: () => _importFromFile(context, ref),
+          ),
+          ListTile(
             leading: const Icon(Icons.upload),
-            title: const Text('Export data'),
-            subtitle: const Text('Copy all progress to the clipboard as JSON'),
+            title: const Text('Export to clipboard'),
+            subtitle: const Text('Copy all progress as JSON'),
             onTap: () => _export(context, ref),
           ),
           ListTile(
             leading: const Icon(Icons.download),
-            title: const Text('Import data'),
+            title: const Text('Import from clipboard'),
             subtitle: const Text('Paste a previous export to restore/merge'),
             onTap: () => _import(context, ref),
           ),
         ],
       ),
     );
+  }
+
+  Future<String> _buildExport(WidgetRef ref) async {
+    final repo = ref.read(progressRepositoryProvider);
+    final profileId = ref.read(activeProfileProvider);
+    final custom = ref.read(customNodesProvider).asData?.value ?? const [];
+    return BackupService(repo).export(profileId, custom);
+  }
+
+  Future<void> _exportToFile(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final json = await _buildExport(ref);
+      final path = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save backup',
+        fileName: 'chovos_hayom_backup.json',
+        bytes: utf8.encode(json),
+      );
+      messenger.showSnackBar(SnackBar(
+        content: Text(path == null ? 'Export cancelled' : 'Saved backup'),
+      ));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Export failed: $e')));
+    }
+  }
+
+  Future<void> _importFromFile(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final repo = ref.read(progressRepositoryProvider);
+    final profileId = ref.read(activeProfileProvider);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        dialogTitle: 'Choose a backup file',
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        withData: true,
+      );
+      final bytes = result?.files.single.bytes;
+      if (bytes == null) {
+        messenger.showSnackBar(const SnackBar(content: Text('Import cancelled')));
+        return;
+      }
+      final added =
+          await BackupService(repo).importInto(profileId, utf8.decode(bytes));
+      messenger.showSnackBar(
+          SnackBar(content: Text('Imported $added new events')));
+    } catch (e) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Import failed: invalid data')));
+    }
   }
 
   Future<void> _export(BuildContext context, WidgetRef ref) async {

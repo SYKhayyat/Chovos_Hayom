@@ -1,9 +1,11 @@
-import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/usecases/chazara_schedule.dart';
 import '../domain/usecases/pace_engine.dart';
 import '../domain/usecases/predictor.dart';
 import '../domain/usecases/progress_series.dart';
+import '../domain/usecases/siyum.dart';
+import '../domain/usecases/time_stats.dart';
 import 'providers.dart';
 
 /// A derived snapshot of overall learning stats for the active profile.
@@ -16,6 +18,8 @@ class StatsSummary {
     required this.projectedFinish,
     required this.series,
     required this.dailyActivity,
+    required this.totalMinutes,
+    required this.minutesThisMonth,
   });
 
   final int learned;
@@ -25,6 +29,12 @@ class StatsSummary {
   final DateTime? projectedFinish;
   final List<SeriesPoint> series;
   final Map<DateTime, int> dailyActivity;
+
+  /// Total minutes ever logged (from sessions that recorded a duration).
+  final int totalMinutes;
+
+  /// Minutes logged since the start of the current month.
+  final int minutesThisMonth;
 
   double get percent => total <= 0 ? 0 : 100 * learned / total;
   int get remaining => total - learned;
@@ -40,9 +50,14 @@ final statsProvider = Provider<StatsSummary?>((ref) {
   final events = ref.watch(eventsProvider).asData?.value;
   if (forest == null || events == null) return null;
 
-  final root = forest.firstOrNull;
-  final learned = root?.learned ?? 0;
-  final total = root?.total ?? 0;
+  // Aggregate every root, not just the first — a top-level custom sefer is a
+  // second root and must be counted in the overall totals/projection.
+  var learned = 0;
+  var total = 0;
+  for (final root in forest) {
+    learned += root.learned;
+    total += root.total;
+  }
   final remaining = total - learned;
   final now = ref.watch(clockProvider)();
   final avg = PaceEngine.averagePerDay(events, now: now, windowDays: 30);
@@ -57,5 +72,22 @@ final statsProvider = Provider<StatsSummary?>((ref) {
         : null,
     series: ProgressSeries.cumulative(events),
     dailyActivity: ProgressSeries.dailyDone(events),
+    totalMinutes: TimeStats.totalMinutes(events),
+    minutesThisMonth:
+        TimeStats.minutesSince(events, DateTime(now.year, now.month, 1)),
   );
+});
+
+/// Units currently due for a chazara (review) pass, most overdue first.
+final chazaraDueProvider = Provider<List<ChazaraItem>>((ref) {
+  final events = ref.watch(eventsProvider).asData?.value ?? const [];
+  return ChazaraSchedule.due(events, ref.watch(clockProvider)());
+});
+
+/// Completed sefarim/mesechtos (siyumim), most-recently-finished first.
+final siyumimProvider = Provider<List<Siyum>>((ref) {
+  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+  final events = ref.watch(eventsProvider).asData?.value;
+  if (catalog == null || events == null) return const [];
+  return SiyumFinder.completed(catalog, events);
 });

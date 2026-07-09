@@ -100,11 +100,20 @@ class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
   }
 
   Future<void> _save() async {
+    final messenger = ScaffoldMessenger.of(context);
     final name = _name.text.trim();
-    if (name.isEmpty) return;
+    if (name.isEmpty) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Please enter a name.')));
+      return;
+    }
     final count = int.tryParse(_count.text.trim()) ?? 0;
     final offset = int.tryParse(_offset.text.trim()) ?? 1;
-    if (_isLeaf && count <= 0) return;
+    if (_isLeaf && count <= 0) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Number of units must be greater than 0.')));
+      return;
+    }
 
     final node = CatalogNode(
       id: const Uuid().v4(),

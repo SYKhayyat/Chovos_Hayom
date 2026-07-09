@@ -7,8 +7,11 @@ import 'pace_engine.dart';
 class RemindersPolicy {
   const RemindersPolicy._();
 
+  /// Keyed on `loggedAt` (when it was recorded), not `occurredAt`: the nudge
+  /// asks "did I *record* anything today?", so backdating a session to yesterday
+  /// still counts as activity today and won't trigger a false reminder.
   static bool learnedToday(Iterable<LearningEvent> events, DateTime now) =>
-      PaceEngine.unitsOn(events, now) > 0;
+      PaceEngine.recordedOn(events, now) > 0;
 
   static bool shouldRemind({
     required bool enabled,

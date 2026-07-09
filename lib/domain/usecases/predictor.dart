@@ -17,6 +17,11 @@ class Predictor {
   }
 
   /// Projected finish date at a flat [perDay] pace.
+  ///
+  /// [from] counts as the first learning day — the same convention as
+  /// [finishDateWithCycle] and [finishDateWithShabbos] — so a flat pace and an
+  /// equivalent length-1 cycle predict the *same* date (they previously differed
+  /// by a day, giving the Calculator and Dashboard two answers for one pace).
   static DateTime? finishDate({
     required int remaining,
     required double perDay,
@@ -24,7 +29,8 @@ class Predictor {
   }) {
     final days = daysToFinish(remaining: remaining, perDay: perDay);
     if (days < 0) return null;
-    return _dayKey(from).add(Duration(days: days));
+    if (days == 0) return _dayKey(from);
+    return _dayKey(from).add(Duration(days: days - 1));
   }
 
   /// Units/day required to finish [remaining] by [target] (recommendation).

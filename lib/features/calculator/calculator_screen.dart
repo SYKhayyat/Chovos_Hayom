@@ -41,13 +41,16 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     super.dispose();
   }
 
-  List<ProgressNode> _selectable(List<ProgressNode> forest) {
-    final out = <ProgressNode>[];
+  /// Every node worth targeting: roots, their categories, and individual leaves
+  /// (a single mesechta/sefer) so you can compute a siyum for one thing, not
+  /// only whole categories. Labels are indented by depth for readability.
+  List<_Selectable> _selectable(List<ProgressNode> forest) {
+    final out = <_Selectable>[];
     void walk(ProgressNode n, int depth) {
-      out.add(n);
-      if (depth < 2) {
+      out.add(_Selectable(n, depth));
+      if (depth < 3) {
         for (final c in n.children) {
-          if (!c.node.isLeaf) walk(c, depth + 1);
+          walk(c, depth + 1);
         }
       }
     }
@@ -72,19 +75,25 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     );
   }
 
-  Widget _body(BuildContext context, List<ProgressNode> nodes, CalendarMode mode,
+  Widget _body(BuildContext context, List<_Selectable> nodes, CalendarMode mode,
       DateTime now) {
-    final selected =
-        nodes.firstWhere((n) => n.id == _nodeId, orElse: () => nodes.first);
+    final selectedEntry = nodes.firstWhere((s) => s.node.id == _nodeId,
+        orElse: () => nodes.first);
+    final selected = selectedEntry.node;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         DropdownButtonFormField<String>(
           initialValue: selected.id,
+          isExpanded: true,
           decoration: const InputDecoration(labelText: 'What are you finishing?'),
           items: [
-            for (final n in nodes)
-              DropdownMenuItem(value: n.id, child: Text(n.name)),
+            for (final s in nodes)
+              DropdownMenuItem(
+                value: s.node.id,
+                child: Text('${'   ' * s.depth}${s.node.name}',
+                    overflow: TextOverflow.ellipsis),
+              ),
           ],
           onChanged: (v) => setState(() => _nodeId = v),
         ),
@@ -206,7 +215,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
           from: now,
         );
         if (date == null) return 'That cycle never finishes (all zeros).';
-        return _finishText(date, mode, today) +
+        return '${_finishText(date, mode, today)}'
             '\nCycle length: ${amounts.length} days.';
 
       case _CalcMode.target:
@@ -224,6 +233,13 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     return 'You will finish on ${DateDisplay.format(date, mode)}\n'
         '(about $days days from today).';
   }
+}
+
+/// A catalog node plus its tree depth, for indented dropdown display.
+class _Selectable {
+  const _Selectable(this.node, this.depth);
+  final ProgressNode node;
+  final int depth;
 }
 
 class _Result extends StatelessWidget {

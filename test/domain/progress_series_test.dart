@@ -36,11 +36,41 @@ void main() {
       expect(d[DateTime(2026, 1, 3)], 1);
     });
 
-    test('cumulative runs a chronological running total', () {
+    test('cumulative is a monotonic total of currently-held units by learn-date', () {
+      // unit 2 (Jan 1) was later un-marked, so it drops out entirely; the line
+      // reflects only units 3 (Jan 1) and 4 (Jan 3) that are still done.
       final series = ProgressSeries.cumulative(events);
-      expect(series.map((p) => p.cumulative).toList(), [2, 2]);
+      expect(series.map((p) => p.cumulative).toList(), [1, 2]);
       expect(series.first.day, DateTime(2026, 1, 1));
       expect(series.last.day, DateTime(2026, 1, 3));
+    });
+
+    test('final cumulative equals the current learned count after a backdated re-log', () {
+      // done (Jan 10) -> undone (Jan 11) -> re-logged done backdated to Jan 1.
+      // The unit is currently done, so the line must end at 1 (not 0).
+      final e = [
+        ev(DateTime(2026, 1, 10), EventAction.done, unit: 7),
+        LearningEvent(
+          id: 'z-undone',
+          profileId: 'p',
+          nodeId: 'a',
+          unitIndex: 7,
+          action: EventAction.undone,
+          occurredAt: DateTime(2026, 1, 11),
+          loggedAt: DateTime(2026, 1, 11),
+        ),
+        LearningEvent(
+          id: 'z-redone',
+          profileId: 'p',
+          nodeId: 'a',
+          unitIndex: 7,
+          action: EventAction.done,
+          occurredAt: DateTime(2026, 1, 1),
+          loggedAt: DateTime(2026, 1, 12),
+        ),
+      ];
+      final series = ProgressSeries.cumulative(e);
+      expect(series.last.cumulative, 1);
     });
 
     test('empty log yields empty series', () {

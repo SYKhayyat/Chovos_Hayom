@@ -9,13 +9,23 @@ void main() {
       expect(Predictor.daysToFinish(remaining: 10, perDay: 0), -1);
     });
 
-    test('finishDate projects forward', () {
+    test('finishDate projects forward, counting today as the first learning day', () {
       final from = DateTime(2026, 1, 1);
+      // 10 at 5/day: Jan1=5, Jan2=10 -> finishes Jan 2 (matches a [5] cycle).
       expect(
         Predictor.finishDate(remaining: 10, perDay: 5, from: from),
-        DateTime(2026, 1, 3),
+        DateTime(2026, 1, 2),
       );
       expect(Predictor.finishDate(remaining: 10, perDay: 0, from: from), isNull);
+    });
+
+    test('flat finishDate agrees with an equivalent length-1 cycle', () {
+      final from = DateTime(2026, 1, 1);
+      expect(
+        Predictor.finishDate(remaining: 10, perDay: 2, from: from),
+        Predictor.finishDateWithCycle(
+            remaining: 10, amounts: [2], startIndex: 0, from: from),
+      );
     });
   });
 

@@ -11,16 +11,15 @@ import '../domain/repositories/progress_repository.dart';
 class LoggingService {
   LoggingService({
     required ProgressRepository repository,
-    required String profileId,
+    required this.profileId,
     DateTime Function()? now,
     String Function()? idGen,
   })  : _repo = repository,
-        _profileId = profileId,
         _now = now ?? DateTime.now,
         _idGen = idGen ?? const Uuid().v4;
 
   final ProgressRepository _repo;
-  final String _profileId;
+  final String profileId;
   final DateTime Function() _now;
   final String Function() _idGen;
 
@@ -35,7 +34,7 @@ class LoggingService {
     final now = _now();
     final event = LearningEvent(
       id: _idGen(),
-      profileId: _profileId,
+      profileId: profileId,
       nodeId: nodeId,
       unitIndex: unitIndex,
       action: action,
@@ -61,6 +60,23 @@ class LoggingService {
 
   Future<LearningEvent> markUndone(String nodeId, int unitIndex) =>
       log(nodeId: nodeId, unitIndex: unitIndex, action: EventAction.undone);
+
+  /// Edit the annotations (learned-at date/time, duration, note) of an existing
+  /// event. Null [durationMin]/[note] clear the field. The done-set is unchanged.
+  Future<LearningEvent> editDetails(
+    LearningEvent event, {
+    required DateTime occurredAt,
+    required int? durationMin,
+    required String? note,
+  }) async {
+    final updated = event.withDetails(
+      occurredAt: occurredAt,
+      durationMin: durationMin,
+      note: note,
+    );
+    await _repo.updateEvent(updated);
+    return updated;
+  }
 
   /// Record a chazara (review) pass over an already-learned unit.
   Future<LearningEvent> markReview(String nodeId, int unitIndex,

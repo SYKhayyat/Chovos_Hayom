@@ -26,5 +26,10 @@ class DateDisplay {
     }
   }
 
+  /// Like [format] but with the clock time appended (24-hour `HH:mm`). Used where
+  /// the exact "time finished" matters, e.g. an item's recorded details.
+  static String formatWithTime(DateTime date, CalendarMode mode) =>
+      '${format(date, mode)} · ${_two(date.hour)}:${_two(date.minute)}';
+
   static String _two(int n) => n.toString().padLeft(2, '0');
 }

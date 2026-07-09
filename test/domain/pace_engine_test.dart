@@ -29,10 +29,24 @@ void main() {
       expect(PaceEngine.unitsOn(events, DateTime(2026, 1, 7)), 0);
     });
 
-    test('averagePerDay divides by window length', () {
-      // 4 done in a 30-day window.
+    test('averagePerDay divides by days active, not the full window, for new users', () {
+      // 4 done spanning Jan 8-10 (3 active days) — a 3-day-old profile learning
+      // ~1.3/day should not read as 0.13/day.
       expect(
         PaceEngine.averagePerDay(events, now: DateTime(2026, 1, 10), windowDays: 30),
+        closeTo(4 / 3, 1e-9),
+      );
+    });
+
+    test('averagePerDay divides by the full window once the profile is older than it', () {
+      // First event is >30 days before `now`, so the divisor is the full window.
+      final older = [
+        doneOn(DateTime(2025, 11, 1)),
+        ...events,
+      ];
+      expect(
+        PaceEngine.averagePerDay(older, now: DateTime(2026, 1, 10), windowDays: 30),
+        // Only the 4 in-window events count; divided by 30.
         closeTo(4 / 30, 1e-9),
       );
     });

@@ -10,8 +10,9 @@ void main() {
         remaining: 100, from: from, target: target, currentPace: 5);
     expect(s.requiredPerDay, closeTo(10, 0.001));
     expect(s.onTrack, isFalse);
-    expect(s.projectedFinish, DateTime(2026, 1, 21));
-    expect(s.daysOffTarget, 10);
+    // 100 at 5/day = 20 learning days, today inclusive -> Jan 1 + 19 = Jan 20.
+    expect(s.projectedFinish, DateTime(2026, 1, 20));
+    expect(s.daysOffTarget, 9);
   });
 
   test('on track when pace meets required', () {

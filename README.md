@@ -33,13 +33,17 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
 | **2 — Intelligence** | Charts, pace engine, predictions, Hebrew calendar | ✅ Done |
 | **3 — Power** | Profiles, custom sefarim, search, export/import | ✅ Done |
 | **4 — Polish** | Goals, chazara UI, session timer, in-app reminders | ✅ Done |
+| **5 — Hardening+** | Migration strategy, correctness fixes, cycles, chazara scheduling, siyumim, time analytics, RTL, file backup, full data management | ✅ Done |
 
 ### What works today
 - Expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur, Shulchan
   Aruch, Mishna Berura — with live progress bars that roll up from every daf/perek to the root.
 - Tap a sefer/mesechta to open its **per-unit grid**; tap a daf to mark it, tap again to undo.
-- **Long-press** a unit to log it with a specific date, duration, and note (otherwise the date
-  auto-fills to now). Review (chazara) passes are tracked per unit.
+- **Long-press** a unit to log it with a specific date **and time**, how long it took, and a note
+  (otherwise the date/time auto-fills to now). Long-press a *finished* unit for **View / edit
+  details** — see and change when you finished, the duration, the note, and its review history
+  after the fact. A small note glyph marks units that carry recorded details. Review (chazara)
+  passes are tracked per unit.
 - **Statistics**: overall %, current streak, 30-day pace, projected siyum date, a cumulative
   progress line chart, and a 12-week activity heatmap.
 - **Siyum calculator**, three modes, for the whole Torah or any category:
@@ -54,21 +58,35 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
   rate you need; a Goals screen lists them all. A **chazara menu** (long-press a unit) logs review
   passes or un-marks; a **session stopwatch** in the log sheet fills in the duration; an optional
   **daily nudge** reminds you in-app if you haven't learned today.
-- 50 tests covering the engine, catalog integrity, analytics, goals, reminders, backup, and UI.
+- **Built-in learning cycles**: today's **Daf Yomi** (Bavli) computed from the Hebrew calendar, with
+  one-tap logging when the daf maps to a mesechta in your catalog.
+- **Chazara scheduling**: a spaced-repetition list of units **due for review**, most-overdue first,
+  with a due-count badge; reviewing pushes the next date out.
+- **Siyumim**: a running, auto-derived list of every sefer/mesechta you've **completed**, dated by
+  its final unit.
+- **Time analytics**: total time learned and time-this-month, from logged session durations.
+- **Full data management**: **file** (and clipboard) export/import, **delete/rename profiles**,
+  **delete custom sefarim**, undo on goal removal, and expand-all / collapse-all for the tree
+  (which now starts collapsed).
+- **Optional Hebrew (RTL) layout** toggle, alongside the Hebrew/secular calendar and light/dark theme.
+- 64 tests covering the engine, catalog integrity, analytics, goals, reminders, backup, chazara
+  scheduling, siyumim, time analytics, and UI.
 
 ## Remaining device-only work
-Everything above is verified via `flutter test`. Two things need a real device/build to finish and
-were intentionally left for that: **OS push notifications** (the reminder logic + preference ship
-now; wiring `flutter_local_notifications` needs on-device testing) and **running on Android/desktop**
-(needs the platform toolchains from `flutter doctor`). The app targets Android + Windows; other
-desktop platforms are a `flutter create --platforms` away.
+Almost everything is verified via `flutter test`. A few things need a real device/build to finish:
+**file export/import** (logic is wired via `file_picker`, but the native file dialogs need an
+on-device/desktop run to verify — and Windows desktop builds require **Developer Mode** enabled for
+plugin symlinks), **OS push notifications** (intentionally left out per product decision; the app
+uses in-app nudges only), and **running on Android/desktop** (needs the platform toolchains from
+`flutter doctor`). The app targets Android + Windows; other desktop platforms are a
+`flutter create --platforms` away.
 
 ## Developing
 
 ```bash
 flutter pub get
 dart run build_runner build   # generates Drift code
-flutter test                  # 22 tests, all green
+flutter test                  # 64 tests, all green
 ```
 
 Running the app on a device/desktop needs the platform toolchains (`flutter doctor`):

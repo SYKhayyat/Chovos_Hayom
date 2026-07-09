@@ -66,7 +66,18 @@ class _GoalRow extends ConsumerWidget {
               '${ok ? 'on track' : 'behind'}'),
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline),
-        onPressed: () => ref.read(goalsProvider.notifier).removeGoal(nodeId),
+        onPressed: () async {
+          final messenger = ScaffoldMessenger.of(context);
+          await ref.read(goalsProvider.notifier).removeGoal(nodeId);
+          messenger.showSnackBar(SnackBar(
+            content: Text('Goal for "${node.name}" removed'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () =>
+                  ref.read(goalsProvider.notifier).setGoal(nodeId, target),
+            ),
+          ));
+        },
       ),
     );
   }
