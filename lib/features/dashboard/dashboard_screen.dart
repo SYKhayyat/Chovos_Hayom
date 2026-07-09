@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
 import '../../application/settings.dart';
+import '../../application/sorting.dart';
 import '../../application/stats.dart';
 import '../../domain/usecases/reminders_policy.dart';
 import '../calculator/calculator_screen.dart';
@@ -18,6 +19,7 @@ import '../settings/settings_screen.dart';
 import '../siyum/siyum_screen.dart';
 import '../stats/stats_screen.dart';
 import 'progress_tile.dart';
+import 'sort_sheet.dart';
 
 /// The main dashboard: an expandable tree of the whole catalog with per-node
 /// progress bars. Tapping a leaf opens its per-unit grid.
@@ -65,6 +67,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             icon: Icon(_expandAll ? Icons.unfold_less : Icons.unfold_more),
             tooltip: _expandAll ? 'Collapse all' : 'Expand all',
             onPressed: () => _setExpanded(!_expandAll),
+          ),
+          IconButton(
+            icon: const Icon(Icons.sort),
+            color: ref.watch(settingsProvider.select((s) => s.sort.active))
+                ? Theme.of(context).colorScheme.primary
+                : null,
+            tooltip: ref.watch(settingsProvider.select((s) => s.sort.active))
+                ? 'Sort: ${ref.watch(settingsProvider.select((s) => s.sort.metric)).label}'
+                : 'Sort',
+            onPressed: () => showSortSheet(context, ref),
           ),
           IconButton(
             icon: const Icon(Icons.search),

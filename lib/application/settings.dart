@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/calendar.dart';
 import '../core/preferences.dart';
 import 'providers.dart';
+import 'sorting.dart';
 
 /// App-wide, user-configurable settings, persisted via [AppPreferences].
 class SettingsState {
@@ -12,6 +13,7 @@ class SettingsState {
     this.themeMode = ThemeMode.system,
     this.reminderEnabled = false,
     this.hebrewLayout = false,
+    this.sort = const SortConfig(),
   });
 
   final CalendarMode calendar;
@@ -21,17 +23,22 @@ class SettingsState {
   /// When true, the whole app renders in Hebrew (right-to-left) layout. Optional.
   final bool hebrewLayout;
 
+  /// How the catalog tree's children are ordered.
+  final SortConfig sort;
+
   SettingsState copyWith({
     CalendarMode? calendar,
     ThemeMode? themeMode,
     bool? reminderEnabled,
     bool? hebrewLayout,
+    SortConfig? sort,
   }) =>
       SettingsState(
         calendar: calendar ?? this.calendar,
         themeMode: themeMode ?? this.themeMode,
         reminderEnabled: reminderEnabled ?? this.reminderEnabled,
         hebrewLayout: hebrewLayout ?? this.hebrewLayout,
+        sort: sort ?? this.sort,
       );
 }
 
@@ -48,7 +55,21 @@ class SettingsNotifier extends Notifier<SettingsState> {
           fallback: ThemeMode.system),
       reminderEnabled: prefs.getString(PrefKeys.reminderEnabled) == 'true',
       hebrewLayout: prefs.getString(PrefKeys.hebrewLayout) == 'true',
+      sort: SortConfig(
+        metric: _enumByName(SortMetric.values, prefs.getString(PrefKeys.sortMetric),
+            fallback: SortMetric.catalog),
+        descending: prefs.getString(PrefKeys.sortDescending) == 'true',
+        level: int.tryParse(prefs.getString(PrefKeys.sortLevel) ?? ''),
+      ),
     );
+  }
+
+  Future<void> setSort(SortConfig config) async {
+    final prefs = ref.read(appPreferencesProvider);
+    await prefs.setString(PrefKeys.sortMetric, config.metric.name);
+    await prefs.setString(PrefKeys.sortDescending, config.descending.toString());
+    await prefs.setString(PrefKeys.sortLevel, config.level?.toString() ?? '');
+    state = state.copyWith(sort: config);
   }
 
   Future<void> setHebrewLayout(bool enabled) async {

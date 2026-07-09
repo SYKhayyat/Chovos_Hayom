@@ -23,4 +23,7 @@ class PrefKeys {
   static const themeMode = 'themeMode';
   static const reminderEnabled = 'reminderEnabled';
   static const hebrewLayout = 'hebrewLayout';
+  static const sortMetric = 'sortMetric';
+  static const sortDescending = 'sortDescending';
+  static const sortLevel = 'sortLevel';
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
+import '../../application/settings.dart';
+import '../../application/sorting.dart';
 import '../../domain/entities/progress_node.dart';
 import '../unit_grid/unit_grid_screen.dart';
 
@@ -67,7 +69,7 @@ class ProgressTile extends ConsumerWidget {
           : null,
       childrenPadding: EdgeInsets.zero,
       children: [
-        for (final child in node.children)
+        for (final child in _orderedChildren(ref))
           ProgressTile(
             node: child,
             depth: depth + 1,
@@ -77,6 +79,17 @@ class ProgressTile extends ConsumerWidget {
           ),
       ],
     );
+  }
+
+  /// This node's children in display order. The sort applies only when the
+  /// configured [SortConfig.level] targets this generation (null = all levels).
+  List<ProgressNode> _orderedChildren(WidgetRef ref) {
+    final config = ref.watch(settingsProvider.select((s) => s.sort));
+    final childDepth = depth + 1;
+    if (!config.active || (config.level != null && config.level != childDepth)) {
+      return node.children;
+    }
+    return sortChildren(node.children, config, ref.watch(nodeLastActivityProvider));
   }
 
   Widget _deleteButton(BuildContext context, WidgetRef ref) {
