@@ -34,6 +34,7 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
 | **3 — Power** | Profiles, custom sefarim, search, export/import | ✅ Done |
 | **4 — Polish** | Goals, chazara UI, session timer, in-app reminders | ✅ Done |
 | **5 — Hardening+** | Migration strategy, correctness fixes, cycles, chazara scheduling, siyumim, time analytics, RTL, file backup, full data management | ✅ Done |
+| **6 — Depth** | Haaros vs learning-notes + Notes Journal, tree sorting, **mefarshim as per-daf layers** (custom + configurable required sets), chazara as first-class passes, full node editability (edit/hide/reset/clone **any** node, named units, attach-anywhere), settings export/import/clear | ✅ Done |
 
 ### What works today
 - Expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur, Shulchan
@@ -69,8 +70,22 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
   **delete custom sefarim**, undo on goal removal, and expand-all / collapse-all for the tree
   (which now starts collapsed).
 - **Optional Hebrew (RTL) layout** toggle, alongside the Hebrew/secular calendar and light/dark theme.
-- 64 tests covering the engine, catalog integrity, analytics, goals, reminders, backup, chazara
-  scheduling, siyumim, time analytics, and UI.
+- **Mefarshim as layers**: mark a daf done per-meforish (Gemara, Rashi, Tosafos, or your own
+  custom mefarshim); a unit is "done" only once its *required* mefarshim are learned. Required
+  sets are configured at any node and inherited down (default is text-only, so existing progress is
+  never invalidated). The grid shows a partial fill until a layered unit is complete.
+- **Two kinds of note** per learning/chazara: a **haara** (insight on the material, collected in a
+  searchable **Notes Journal**) and a **learning note** (how it went). Every finished unit's
+  details — when, how long, both notes, and its full chazara history — are viewable and editable
+  after the fact.
+- **Chazara as first-class passes**: each review records its own date/time, duration, mefarshim,
+  and notes, with user-configurable spaced-repetition intervals.
+- **Configurable tree sorting** by percent / amount / last-learned / name, at any chosen depth.
+- **Everything editable**: rename, re-count, re-type, re-parent (attach anywhere), hide/delete, or
+  reset **any** node — built-in or custom — via a per-profile override layer; clone a subtree's
+  structure; give units real names. A full backup and settings export/import/clear round-trip it all.
+- 96 tests covering the engine, layer fold + required-set resolution, catalog overrides, analytics,
+  goals, reminders, backup, chazara scheduling, siyumim, time analytics, and UI.
 
 ## Remaining device-only work
 Almost everything is verified via `flutter test`. A few things need a real device/build to finish:
