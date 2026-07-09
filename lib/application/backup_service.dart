@@ -1,39 +1,59 @@
 import 'dart:convert';
 
 import '../domain/entities/catalog_node.dart';
+import '../domain/entities/layer.dart';
 import '../domain/entities/learning_event.dart';
 import '../domain/repositories/progress_repository.dart';
+import '../domain/usecases/layer_requirements.dart';
 
-/// Parsed backup payload.
+/// Parsed backup payload. Newer fields ([customLayers], [requirements],
+/// [settings]) are absent in v1 backups and default to empty.
 class BackupData {
   const BackupData({
     required this.version,
     required this.events,
     required this.customNodes,
+    this.customLayers = const [],
+    this.requirements = const [],
+    this.settings = const {},
   });
 
   final int version;
   final List<LearningEvent> events;
   final List<CatalogNode> customNodes;
+  final List<Layer> customLayers;
+  final List<LayerRequirementEntry> requirements;
+  final Map<String, dynamic> settings;
 }
 
-/// Serialises and restores a profile's data (event log + custom nodes). The log
-/// is the source of truth, so a backup is simply the log plus any custom nodes.
+/// Serialises and restores everything a profile owns: the event log (the source
+/// of truth) plus all customization — custom sefarim, custom mefarshim, required
+/// -layer settings, and app preferences. A backup fully round-trips the app.
 class BackupService {
   const BackupService(this._repo);
 
   final ProgressRepository _repo;
 
-  static const currentVersion = 1;
+  /// v2 added customLayers, requirements, and settings. v1 backups still import.
+  static const currentVersion = 2;
 
   /// Build a portable JSON string for [profileId].
-  Future<String> export(String profileId, List<CatalogNode> customNodes) async {
+  Future<String> export(
+    String profileId, {
+    required List<CatalogNode> customNodes,
+    List<Layer> customLayers = const [],
+    List<LayerRequirementEntry> requirements = const [],
+    Map<String, dynamic> settings = const {},
+  }) async {
     final events = await _repo.getEvents(profileId);
     return jsonEncode({
       'version': currentVersion,
       'exportedFrom': profileId,
       'events': events.map((e) => e.toJson()).toList(),
       'customNodes': customNodes.map((n) => n.toJson()).toList(),
+      'customLayers': customLayers.map((l) => l.toJson()).toList(),
+      'requirements': requirements.map((r) => r.toJson()).toList(),
+      'settings': settings,
     });
   }
 
@@ -49,20 +69,32 @@ class BackupService {
         for (final n in (map['customNodes'] as List? ?? []))
           CatalogNode.fromJson((n as Map).cast<String, dynamic>()),
       ],
+      customLayers: [
+        for (final l in (map['customLayers'] as List? ?? []))
+          Layer.fromJson((l as Map).cast<String, dynamic>()),
+      ],
+      requirements: [
+        for (final r in (map['requirements'] as List? ?? []))
+          LayerRequirementEntry.fromJson((r as Map).cast<String, dynamic>()),
+      ],
+      settings: (map['settings'] as Map?)?.cast<String, dynamic>() ?? const {},
     );
   }
 
-  /// Import [jsonStr] into [targetProfileId]. Events are re-scoped to the target
-  /// profile and de-duplicated by id. Returns the number of new events added.
-  Future<int> importInto(String targetProfileId, String jsonStr) async {
+  /// Import [jsonStr] into [targetProfileId]: events are re-scoped and
+  /// de-duplicated by id; custom sefarim, mefarshim, and required-layer settings
+  /// are merged in. Returns the parsed data (so the caller can apply settings,
+  /// which live outside the repository) with [BackupData.events] holding only the
+  /// newly-added events.
+  Future<BackupData> importInto(String targetProfileId, String jsonStr) async {
     final data = parse(jsonStr);
     final existing =
         (await _repo.getEvents(targetProfileId)).map((e) => e.id).toSet();
 
-    var added = 0;
+    final added = <LearningEvent>[];
     for (final e in data.events) {
       if (existing.contains(e.id)) continue;
-      await _repo.addEvent(LearningEvent(
+      final scoped = LearningEvent(
         id: e.id,
         profileId: targetProfileId,
         nodeId: e.nodeId,
@@ -72,12 +104,29 @@ class BackupService {
         loggedAt: e.loggedAt,
         durationMin: e.durationMin,
         note: e.note,
-      ));
-      added++;
+        haara: e.haara,
+        layers: e.layers,
+      );
+      await _repo.addEvent(scoped);
+      added.add(scoped);
     }
     for (final n in data.customNodes) {
       await _repo.addCustomNode(targetProfileId, n);
     }
-    return added;
+    for (final l in data.customLayers) {
+      await _repo.addCustomLayer(targetProfileId, l);
+    }
+    for (final r in data.requirements) {
+      await _repo.setLayerRequirement(targetProfileId, r);
+    }
+
+    return BackupData(
+      version: data.version,
+      events: added,
+      customNodes: data.customNodes,
+      customLayers: data.customLayers,
+      requirements: data.requirements,
+      settings: data.settings,
+    );
   }
 }

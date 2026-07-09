@@ -51,8 +51,10 @@ class SettingsState {
 
 class SettingsNotifier extends Notifier<SettingsState> {
   @override
-  SettingsState build() {
-    final prefs = ref.watch(appPreferencesProvider);
+  SettingsState build() => _load();
+
+  SettingsState _load() {
+    final prefs = ref.read(appPreferencesProvider);
     return SettingsState(
       calendar: _enumByName(
           CalendarMode.values, prefs.getString(PrefKeys.calendarMode),
@@ -124,6 +126,45 @@ class SettingsNotifier extends Notifier<SettingsState> {
         .read(appPreferencesProvider)
         .setString(PrefKeys.themeMode, mode.name);
     state = state.copyWith(themeMode: mode);
+  }
+
+  /// Serialise all preferences (for a backup), keyed by their pref keys.
+  Map<String, dynamic> toBackup() => {
+        PrefKeys.calendarMode: state.calendar.name,
+        PrefKeys.themeMode: state.themeMode.name,
+        PrefKeys.reminderEnabled: state.reminderEnabled.toString(),
+        PrefKeys.hebrewLayout: state.hebrewLayout.toString(),
+        PrefKeys.sortMetric: state.sort.metric.name,
+        PrefKeys.sortDescending: state.sort.descending.toString(),
+        PrefKeys.sortLevel: state.sort.level?.toString() ?? '',
+        PrefKeys.chazaraIntervals: state.chazaraIntervals.join(','),
+      };
+
+  /// Apply a serialised preferences map (from an imported backup).
+  Future<void> applyBackup(Map<String, dynamic> settings) async {
+    if (settings.isEmpty) return;
+    final prefs = ref.read(appPreferencesProvider);
+    for (final entry in settings.entries) {
+      await prefs.setString(entry.key, entry.value.toString());
+    }
+    state = _load();
+  }
+
+  /// Reset every preference to its default.
+  Future<void> clearAll() async {
+    final prefs = ref.read(appPreferencesProvider);
+    const defaults = SettingsState();
+    await prefs.setString(PrefKeys.calendarMode, defaults.calendar.name);
+    await prefs.setString(PrefKeys.themeMode, defaults.themeMode.name);
+    await prefs.setString(
+        PrefKeys.reminderEnabled, defaults.reminderEnabled.toString());
+    await prefs.setString(PrefKeys.hebrewLayout, defaults.hebrewLayout.toString());
+    await prefs.setString(PrefKeys.sortMetric, defaults.sort.metric.name);
+    await prefs.setString(PrefKeys.sortDescending, 'false');
+    await prefs.setString(PrefKeys.sortLevel, '');
+    await prefs.setString(
+        PrefKeys.chazaraIntervals, defaults.chazaraIntervals.join(','));
+    state = defaults;
   }
 }
 

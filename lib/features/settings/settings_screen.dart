@@ -109,9 +109,55 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: const Text('Paste a previous export to restore/merge'),
             onTap: () => _import(context, ref),
           ),
+          const Divider(),
+          const _SectionHeader('Reset'),
+          ListTile(
+            leading: Icon(Icons.restart_alt,
+                color: Theme.of(context).colorScheme.error),
+            title: const Text('Clear settings'),
+            subtitle: const Text('Reset preferences, custom sefarim, mefarshim, '
+                'and required-set settings. Your learning log is kept.'),
+            onTap: () => _clearSettings(context, ref),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _clearSettings(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Clear all settings?'),
+        content: const Text(
+            'This resets preferences and removes your custom sefarim, custom '
+            'mefarshim, and required-mefarshim settings. Your learning log '
+            '(everything you marked done) is not touched.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel')),
+          FilledButton.tonal(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Clear')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final repo = ref.read(progressRepositoryProvider);
+    final profileId = ref.read(activeProfileProvider);
+    await ref.read(settingsProvider.notifier).clearAll();
+    for (final n in ref.read(customNodesProvider).asData?.value ?? const []) {
+      await repo.removeCustomNode(profileId, n.id);
+    }
+    for (final l in ref.read(customLayersProvider).asData?.value ?? const []) {
+      await repo.removeCustomLayer(profileId, l.id);
+    }
+    for (final r in ref.read(layerConfigProvider).asData?.value ?? const []) {
+      await repo.clearLayerRequirement(profileId, r.nodeId, r.unitIndex);
+    }
+    messenger.showSnackBar(const SnackBar(content: Text('Settings cleared')));
   }
 
   Future<void> _editIntervals(
@@ -157,8 +203,22 @@ class SettingsScreen extends ConsumerWidget {
   Future<String> _buildExport(WidgetRef ref) async {
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
-    final custom = ref.read(customNodesProvider).asData?.value ?? const [];
-    return BackupService(repo).export(profileId, custom);
+    return BackupService(repo).export(
+      profileId,
+      customNodes: ref.read(customNodesProvider).asData?.value ?? const [],
+      customLayers: ref.read(customLayersProvider).asData?.value ?? const [],
+      requirements: ref.read(layerConfigProvider).asData?.value ?? const [],
+      settings: ref.read(settingsProvider.notifier).toBackup(),
+    );
+  }
+
+  /// Import [jsonStr], applying repo data + settings. Returns events added.
+  Future<int> _applyImport(WidgetRef ref, String jsonStr) async {
+    final repo = ref.read(progressRepositoryProvider);
+    final profileId = ref.read(activeProfileProvider);
+    final data = await BackupService(repo).importInto(profileId, jsonStr);
+    await ref.read(settingsProvider.notifier).applyBackup(data.settings);
+    return data.events.length;
   }
 
   Future<void> _exportToFile(BuildContext context, WidgetRef ref) async {
@@ -180,8 +240,6 @@ class SettingsScreen extends ConsumerWidget {
 
   Future<void> _importFromFile(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
-    final repo = ref.read(progressRepositoryProvider);
-    final profileId = ref.read(activeProfileProvider);
     try {
       final result = await FilePicker.platform.pickFiles(
         dialogTitle: 'Choose a backup file',
@@ -194,8 +252,7 @@ class SettingsScreen extends ConsumerWidget {
         messenger.showSnackBar(const SnackBar(content: Text('Import cancelled')));
         return;
       }
-      final added =
-          await BackupService(repo).importInto(profileId, utf8.decode(bytes));
+      final added = await _applyImport(ref, utf8.decode(bytes));
       messenger.showSnackBar(
           SnackBar(content: Text('Imported $added new events')));
     } catch (e) {
@@ -205,10 +262,7 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _export(BuildContext context, WidgetRef ref) async {
-    final repo = ref.read(progressRepositoryProvider);
-    final profileId = ref.read(activeProfileProvider);
-    final custom = ref.read(customNodesProvider).asData?.value ?? const [];
-    final json = await BackupService(repo).export(profileId, custom);
+    final json = await _buildExport(ref);
     await Clipboard.setData(ClipboardData(text: json));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -240,10 +294,8 @@ class SettingsScreen extends ConsumerWidget {
     );
     if (text == null || text.isEmpty) return;
 
-    final repo = ref.read(progressRepositoryProvider);
-    final profileId = ref.read(activeProfileProvider);
     try {
-      final added = await BackupService(repo).importInto(profileId, text);
+      final added = await _applyImport(ref, text);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Imported $added new events')),
