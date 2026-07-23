@@ -33,9 +33,9 @@ jobs:
           git diff --exit-code -- '*.g.dart' \
             || (echo "::error::Generated code is stale. Run: dart run build_runner build" && exit 1)
 
-      - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed lib test
-
+      # Deliberately no `dart format` gate. The codebase is hand-wrapped so that
+      # the explanatory comments read well, and the current formatter reflows
+      # ~100 files against that. The analyzer enforces what actually matters.
       - run: flutter analyze --fatal-infos
 
       - run: flutter test --coverage

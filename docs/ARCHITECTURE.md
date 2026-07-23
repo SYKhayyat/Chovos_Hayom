@@ -59,7 +59,13 @@ Profile
   id           String  (PK)
   name         String
   createdAt    DateTime
-  settingsJson String   (calendar pref, sort pref, language, theme, ...)
+
+  -- No settings column. A profile's preferences (calendar, theme, RTL, sort,
+  -- chazara intervals, meforish bars, cycles) live in AppPreferences under
+  -- profile-scoped keys, because the theme must be readable synchronously
+  -- before the first frame — long before this database is open. The schema
+  -- did carry a `settingsJson` column that nothing ever read; it was dropped
+  -- in schema v10 rather than left as a false affordance.
 
 LearningEvent            -- append-only; NEVER updated or deleted in normal use
   id           String  (PK, uuid)
@@ -105,7 +111,12 @@ lib/
                         - RollUp         (leaf progress -> parent aggregates over the tree)
                         - PaceEngine     (events + window -> units/day, rolling averages, streaks)
                         - Predictor      (bidirectional: pace->date  AND  targetDate->required rate)
-                        - CycleSchedule  (Daf Yomi etc. -> "today's unit")
+                        - SequentialCycle / CycleMapper
+                                         (a user-defined cycle -> "today's unit",
+                                          plus name -> catalog node resolution)
+                        - BatchHistory   (log -> the undoable bulk actions in it)
+                        - SiyumFinder    (progress forest -> completed nodes at
+                                          every level, not just leaves)
   data/            depends on domain.
     drift/            database.dart, tables, DAOs
     catalog/          JSON asset loader + version reconciler (pluggable source)
@@ -226,8 +237,12 @@ companion:
 - **Streaks & consistency.** Daily learning streak + activity heatmap, straight from the log.
 - **Per-node goals + on-track status.** Set a target date on any node; `Predictor` flags
   ahead/behind and the required rate. This is the "recommendation engine" made concrete and personal.
-- **Known learning cycles as first-class.** Daf Yomi, Amud Yomi, Mishnah Yomi, Nach Yomi, Rambam
-  Yomi as bundled schedules (`assets/cycles/`), with a **"Today" view** ("today's daf is X"). Opt-in.
+- **Learning cycles as first-class.** Shipped as an *engine*, not a bundled list: Daf Yomi Bavli
+  and Yerushalmi are built in because `kosher_dart` computes them authoritatively from the Hebrew
+  calendar, and everything else (Amud Yomi, Mishna Yomi, Rambam Yomi, a personal seder) is a
+  `SequentialCycle` the user defines — sefarim in order, units per day, a start date. Inventing a
+  start date for a cycle in a religious-practice app would be worse than not shipping it, and with
+  the engine there, not shipping it costs the user nothing. Each has a **"Today" view**.
 - **Full Hebrew / RTL support + UI language toggle.** Hebrew node names, RTL layout, English/Hebrew
   UI — important for this audience, and cheap if designed in from the start (hence `nameHebrew`).
 - **Siyum tracking & celebration.** Detect completions, list past siyumim and upcoming ones

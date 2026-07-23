@@ -294,7 +294,7 @@ class SettingsScreen extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
     try {
       final json = await _buildExport(ref);
-      final path = await FilePicker.platform.saveFile(
+      final path = await FilePicker.saveFile(
         dialogTitle: 'Save backup',
         fileName: 'chovos_hayom_backup.json',
         bytes: utf8.encode(json),
@@ -310,7 +310,7 @@ class SettingsScreen extends ConsumerWidget {
   Future<void> _importFromFile(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         dialogTitle: 'Choose a backup file',
         type: FileType.custom,
         allowedExtensions: ['json'],
