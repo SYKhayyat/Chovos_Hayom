@@ -102,6 +102,24 @@ void main() {
       expect(deep.last.settings.name, Routes.sefer('shas'));
     });
 
+    test('a deep-link URI resolves to the same screen as the in-app path', () {
+      // `chovoshayom://sefer/<id>` puts "sefer" in the URI's authority, not its
+      // path — one table has to serve both shapes.
+      final deep = AppRouter.screenFor('chovoshayom://sefer/shas.moed.shabbos');
+      expect((deep! as UnitGridScreen).nodeId, 'shas.moed.shabbos');
+
+      expect(AppRouter.screenFor('chovoshayom://settings/crash-log'),
+          isA<CrashLogScreen>());
+      expect(
+        (AppRouter.screenFor('chovoshayom://add-item?parent=shas')!
+                as AddCustomNodeScreen)
+            .parentId,
+        'shas',
+      );
+      expect(AppRouter.screenFor('chovoshayom://'), isA<DashboardScreen>());
+      expect(AppRouter.screenFor('chovoshayom://nope'), isNull);
+    });
+
     test('a deep link to a name we do not serve still lands somewhere', () {
       final routes = AppRouter.onGenerateInitialRoutes('/gone');
       expect(routes, hasLength(2));

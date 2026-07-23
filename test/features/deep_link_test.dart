@@ -51,6 +51,13 @@ void main() {
     expect(find.text('Chovos Hayom'), findsOneWidget);
   });
 
+  testWidgets('the same link as a chovoshayom:// URI opens the same screen',
+      (tester) async {
+    // The shape Android actually delivers from the manifest's intent filter.
+    await pumpApp(tester, initialRoute: 'chovoshayom://sefer/shas.moed.shabbos');
+    expect(find.text('Shabbos'), findsOneWidget);
+  });
+
   testWidgets('a link we do not serve lands on a page that says so',
       (tester) async {
     await pumpApp(tester, initialRoute: '/sefer-of-the-month');

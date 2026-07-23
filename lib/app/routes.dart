@@ -83,9 +83,7 @@ abstract final class AppRouter {
   /// what makes [onUnknownRoute] fire rather than the app showing a blank page.
   static Widget? screenFor(String? name) {
     final uri = Uri.parse(name ?? Routes.dashboard);
-    // `pathSegments` percent-decodes, so an id survives the round trip.
-    final path = uri.pathSegments;
-    return switch (path) {
+    return switch (_segments(uri)) {
       [] => const DashboardScreen(),
       ['stats'] => const StatsScreen(),
       ['calculator'] => const CalculatorScreen(),
@@ -108,6 +106,19 @@ abstract final class AppRouter {
       _ => null,
     };
   }
+
+  /// One route as a list of segments, whether it arrived from inside the app or
+  /// from the outside world.
+  ///
+  /// An in-app push is a bare path (`/sefer/<id>`). A deep link is a full URI
+  /// (`chovoshayom://sefer/<id>`), where "sefer" is the URI's *authority*, not a
+  /// path segment — parse that as a path and every deep link misses the table.
+  /// Folding the authority in as a leading segment lets one table serve both.
+  /// `pathSegments` percent-decodes, so an id survives the round trip.
+  static List<String> _segments(Uri uri) => [
+        if (uri.host.isNotEmpty) uri.host,
+        ...uri.pathSegments,
+      ];
 
   static Route<void>? onGenerateRoute(RouteSettings settings) {
     final screen = screenFor(settings.name);

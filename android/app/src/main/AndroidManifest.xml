@@ -1,8 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="chovos_hayom"
+        android:label="Chovos Hayom"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -24,6 +26,26 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- Deep links, e.g. chovoshayom://sefer/shas.moed.shabbos.
+                 The route table (lib/app/routes.dart) is what makes an incoming
+                 path resolvable at all; this is what lets one arrive. A private
+                 scheme rather than an https App Link because there is no domain
+                 to claim, and claiming one you do not own is how a link ends up
+                 opening someone else's app. A path we don't serve lands on the
+                 route table's "not found" screen, never a blank one. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="chovoshayom"/>
+            </intent-filter>
+
+            <!-- Hand the incoming URI to Flutter's navigator rather than only
+                 launching the app at its home screen. -->
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="true" />
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

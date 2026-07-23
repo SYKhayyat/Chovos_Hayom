@@ -134,7 +134,11 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
 - **Every screen has an address.** Screens are named routes that carry ids (`/sefer/<id>`), never
   widget objects — which is what makes deep links, notification taps and Android's state
   restoration possible at all, and what makes a rename show up on a screen that is already open.
-- 250 tests covering the engine, layer fold + required/offered-set resolution, per-meforish roll-up,
+  On Android those addresses are reachable from outside: `chovoshayom://sefer/<id>` opens that
+  sefer's grid with the dashboard behind it, and a path the app doesn't serve says so rather than
+  showing a blank screen. (A private scheme, not an `https` App Link — claiming a domain you don't
+  own is how a link ends up opening someone else's app.)
+- 252 tests covering the engine, layer fold + required/offered-set resolution, per-meforish roll-up,
   bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
   reminders, backup validation, chazara scheduling, siyumim, learning cycles, the session timer,
   per-profile settings, schema migrations, derive-engine cost, the write guard + route table, and UI.
@@ -144,8 +148,10 @@ Almost everything is verified via `flutter test`. A few things need a real devic
 **file export/import** (logic is wired via `file_picker`, but the native file dialogs need an
 on-device/desktop run to verify — and Windows desktop builds require **Developer Mode** enabled for
 plugin symlinks), the **generated launcher icons** (correct by construction, but worth an eyeball
-on a real launcher), **OS push notifications** (intentionally left out per product decision; the app
-uses in-app nudges only), and **running on Android/desktop** (needs the platform toolchains from
+on a real launcher), the **`chovoshayom://` deep-link intent filter** (the route table it feeds is
+covered by tests, including the URI shape Android delivers, but only a real device proves the
+manifest hands it over), **OS push notifications** (intentionally left out per product decision; the
+app uses in-app nudges only), and **running on Android/desktop** (needs the platform toolchains from
 `flutter doctor`). The app targets Android + Windows; other desktop platforms are a
 `flutter create --platforms` away.
 
@@ -155,7 +161,7 @@ uses in-app nudges only), and **running on Android/desktop** (needs the platform
 flutter pub get
 dart run build_runner build   # generates Drift code
 flutter analyze               # clean
-flutter test                  # 250 tests, all green
+flutter test                  # 252 tests, all green
 ```
 
 CI runs all of the above on every push and pull request, plus a release APK build, and fails if the
