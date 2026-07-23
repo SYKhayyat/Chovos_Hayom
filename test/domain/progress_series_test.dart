@@ -1,5 +1,6 @@
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
+import 'package:chovos_hayom/domain/usecases/fold_log.dart';
 import 'package:chovos_hayom/domain/usecases/progress_series.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -39,7 +40,7 @@ void main() {
     test('cumulative is a monotonic total of currently-held units by learn-date', () {
       // unit 2 (Jan 1) was later un-marked, so it drops out entirely; the line
       // reflects only units 3 (Jan 1) and 4 (Jan 3) that are still done.
-      final series = ProgressSeries.cumulative(events);
+      final series = ProgressSeries.cumulative(FoldLog.fold(events));
       expect(series.map((p) => p.cumulative).toList(), [1, 2]);
       expect(series.first.day, DateTime(2026, 1, 1));
       expect(series.last.day, DateTime(2026, 1, 3));
@@ -69,12 +70,12 @@ void main() {
           loggedAt: DateTime(2026, 1, 12),
         ),
       ];
-      final series = ProgressSeries.cumulative(e);
+      final series = ProgressSeries.cumulative(FoldLog.fold(e));
       expect(series.last.cumulative, 1);
     });
 
     test('empty log yields empty series', () {
-      expect(ProgressSeries.cumulative(const []), isEmpty);
+      expect(ProgressSeries.cumulative(FoldLog.fold(const [])), isEmpty);
     });
   });
 }

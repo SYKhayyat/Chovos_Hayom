@@ -34,12 +34,17 @@ class RollUp {
         if (node.containsUnit(unit)) learned++;
       }
       // Per-layer coverage: count in-range units that have each layer learned.
+      //
+      // Walks the units the fold actually has marks for, not every unit of the
+      // node. The difference is the whole catalog — 12,000 units of Torah, most
+      // of them untouched — versus what the user has learned, on every rebuild.
       final byLayer = <String, int>{};
-      for (final unit in node.unitIndices) {
-        for (final layerId in fold.completedLayers(node.id, unit)) {
+      fold.completedByNode[node.id]?.forEach((unit, layers) {
+        if (!node.containsUnit(unit)) return;
+        for (final layerId in layers) {
           byLayer[layerId] = (byLayer[layerId] ?? 0) + 1;
         }
-      }
+      });
       return ProgressNode(
         node: node,
         learned: learned,

@@ -1,65 +1,94 @@
-import '../entities/catalog.dart';
 import '../entities/catalog_node.dart';
-import '../entities/enums.dart';
-import '../entities/learning_event.dart';
+import '../entities/progress_node.dart';
 import 'fold_log.dart';
-import 'layer_requirements.dart';
 
-/// A completed sefer/mesechta and when its final unit was learned.
+/// A completed node — a mesechta, a sefer, a seder, or the whole of Shas — and
+/// when its final unit was learned.
 class Siyum {
   const Siyum({
     required this.node,
     required this.completedOn,
     required this.units,
+    required this.depth,
   });
 
   final CatalogNode node;
 
-  /// The date the last-learned unit of this leaf was learned (`occurredAt`).
+  /// The date the last-learned unit under this node was learned (`occurredAt`).
   final DateTime completedOn;
 
-  /// Number of units (== node.unitCount for a full siyum).
+  /// Number of units it covers (== the node's rolled-up total).
   final int units;
+
+  /// How deep in the tree it sits (0 = a root). Lets the UI lead with the
+  /// bigger simcha: finishing Seder Moed outranks finishing Beitza.
+  final int depth;
+
+  /// A siyum on a category is a siyum on everything under it.
+  bool get isCategory => !node.isLeaf;
 }
 
-/// Derives siyumim — leaves that are fully complete — straight from the log.
-/// Nothing is stored: a siyum exists iff every unit of a leaf is currently done.
+/// Derives siyumim — nodes that are fully complete — from the rolled-up progress
+/// forest.
+///
+/// Nothing is stored: a siyum exists iff every unit under a node is currently
+/// done. It reads the forest [RollUp] already built and the shared [LogFold],
+/// rather than folding the log a second time.
+///
+/// Every level counts. Finishing a mesechta is a siyum; so is finishing a seder,
+/// or Nach, or Shas — and an app whose emotional payoff is the siyum should not
+/// stay silent for the biggest ones.
 class SiyumFinder {
   const SiyumFinder._();
 
-  /// All completed leaves, most-recently-finished first.
-  static List<Siyum> completed(Catalog catalog, Iterable<LearningEvent> events,
-      [LayerRequirements? required]) {
-    final fold = FoldLog.fold(events);
-
-    // Latest `done` date per (node, unit), for dating the siyum.
-    final lastDone = <String, DateTime>{};
-    for (final e in events) {
-      if (e.action != EventAction.done) continue;
-      final key = '${e.nodeId} ${e.unitIndex}';
-      final cur = lastDone[key];
-      if (cur == null || e.occurredAt.isAfter(cur)) lastDone[key] = e.occurredAt;
-    }
-
+  /// All completed nodes, most-recently-finished first; ties break with the
+  /// larger siyum (more units) first.
+  static List<Siyum> completed(List<ProgressNode> forest, LogFold fold) {
     final out = <Siyum>[];
-    for (final node in catalog.all) {
-      if (!node.isLeaf || node.unitCount <= 0) continue;
-      final done = fold.doneUnits(node.id, required);
 
-      var count = 0;
+    /// Returns the latest learned-date anywhere under [n], recording a siyum on
+    /// the way back up if [n] is complete.
+    DateTime? visit(ProgressNode n, int depth) {
       DateTime? last;
-      for (final unit in node.unitIndices) {
-        if (!done.contains(unit)) continue;
-        count++;
-        final d = lastDone['${node.id} $unit'];
-        if (d != null && (last == null || d.isAfter(last))) last = d;
+      void consider(DateTime? d) {
+        if (d != null && (last == null || d.isAfter(last!))) last = d;
       }
 
-      if (count == node.unitCount && last != null) {
-        out.add(Siyum(node: node, completedOn: last, units: count));
+      if (n.children.isEmpty) {
+        // A complete leaf has every in-range unit done, so the latest date over
+        // its marked units is the date it was finished.
+        final byUnit = fold.doneAtByNode[n.id];
+        if (byUnit != null) {
+          byUnit.forEach((unit, at) {
+            if (n.node.containsUnit(unit)) consider(at);
+          });
+        }
+      } else {
+        for (final child in n.children) {
+          consider(visit(child, depth + 1));
+        }
       }
+
+      final finishedOn = last;
+      if (n.isComplete && finishedOn != null) {
+        out.add(Siyum(
+          node: n.node,
+          completedOn: finishedOn,
+          units: n.total,
+          depth: depth,
+        ));
+      }
+      return finishedOn;
     }
-    out.sort((a, b) => b.completedOn.compareTo(a.completedOn));
+
+    for (final root in forest) {
+      visit(root, 0);
+    }
+
+    out.sort((a, b) {
+      final byDate = b.completedOn.compareTo(a.completedOn);
+      return byDate != 0 ? byDate : b.units.compareTo(a.units);
+    });
     return out;
   }
 }

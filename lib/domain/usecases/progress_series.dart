@@ -1,5 +1,6 @@
 import '../entities/enums.dart';
 import '../entities/learning_event.dart';
+import 'fold_log.dart';
 
 /// A point on the cumulative-progress line: [day] and the running total of net
 /// units learned up to and including that day.
@@ -48,40 +49,24 @@ class ProgressSeries {
   /// units *currently* learned, each placed on the day it was learned. Empty if
   /// nothing is currently done.
   ///
-  /// Membership is resolved in **append order** (`loggedAt`, then `id`) — exactly
-  /// how `FoldLog`/`RollUp` compute `learned` — so the line's final value always
-  /// equals the headline `learned` count, even after a unit is un-marked or a
-  /// `done` is re-logged with a backdated date. Each currently-done unit is
-  /// bucketed by its representative (latest) `done` date; un-marked units drop
-  /// out entirely rather than leaving a dip in an otherwise-cumulative line.
-  static List<SeriesPoint> cumulative(Iterable<LearningEvent> events) {
-    final ordered = events
-        .where((e) => e.action != EventAction.reviewed)
-        .toList()
-      ..sort((a, b) {
-        final byLogged = a.loggedAt.compareTo(b.loggedAt);
-        return byLogged != 0 ? byLogged : a.id.compareTo(b.id);
-      });
-    if (ordered.isEmpty) return const [];
-
-    // Representative learned-date per unit still done (later done wins; undone
-    // drops it) — the same fold as the authoritative `learned` count.
-    final doneAt = <String, DateTime>{};
-    for (final e in ordered) {
-      final unitKey = '${e.nodeId} ${e.unitIndex}';
-      if (e.action == EventAction.done) {
-        doneAt[unitKey] = e.occurredAt;
-      } else if (e.action == EventAction.undone) {
-        doneAt.remove(unitKey);
+  /// Reads the shared [LogFold], which already resolved membership in **append
+  /// order** (`loggedAt`, then `id`) — exactly how `RollUp` computes `learned` —
+  /// so the line's final value always equals the headline `learned` count, even
+  /// after a unit is un-marked or a `done` is re-logged with a backdated date.
+  /// Each currently-done unit is bucketed by its representative (latest) `done`
+  /// date; un-marked units drop out entirely rather than leaving a dip in an
+  /// otherwise-cumulative line. Folding once and reading it here replaces a
+  /// second sort of the whole log.
+  static List<SeriesPoint> cumulative(LogFold fold) {
+    final perDay = <DateTime, int>{};
+    for (final byUnit in fold.doneAtByNode.values) {
+      for (final occurred in byUnit.values) {
+        final key = _dayKey(occurred);
+        perDay[key] = (perDay[key] ?? 0) + 1;
       }
     }
-    if (doneAt.isEmpty) return const [];
+    if (perDay.isEmpty) return const [];
 
-    final perDay = <DateTime, int>{};
-    for (final occurred in doneAt.values) {
-      final key = _dayKey(occurred);
-      perDay[key] = (perDay[key] ?? 0) + 1;
-    }
     final days = perDay.keys.toList()..sort();
     var running = 0;
     return [for (final day in days) SeriesPoint(day, running += perDay[day]!)];

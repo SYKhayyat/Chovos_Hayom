@@ -1,6 +1,7 @@
 import 'package:chovos_hayom/domain/entities/catalog.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
+import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
 import 'package:chovos_hayom/domain/usecases/roll_up.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,16 +26,37 @@ Catalog _catalog() => Catalog(const [
           unitOffset: 1), // valid units: 1,2
     ]);
 
-/// Builds a text-only (`{main}`) completed-layer map from done unit sets.
-Map<String, Map<int, Set<String>>> _completed(Map<String, Set<int>> done) => {
+/// Folds a `node -> unit -> layers` description through the real [FoldLog], so
+/// these tests exercise the fold the app actually runs rather than a hand-built
+/// stand-in that can drift from it.
+LogFold _fold(Map<String, Map<int, Set<String>>> marks) {
+  var seq = 0;
+  return FoldLog.fold([
+    for (final node in marks.entries)
+      for (final unit in node.value.entries)
+        LearningEvent(
+          id: 'e${seq++}',
+          profileId: 'p',
+          nodeId: node.key,
+          unitIndex: unit.key,
+          action: EventAction.done,
+          occurredAt: DateTime(2026, 1, 1),
+          loggedAt: DateTime(2026, 1, 1),
+          layers: unit.value.toList(),
+        ),
+  ]);
+}
+
+/// Text-only (`{main}`) marks from plain done-unit sets.
+LogFold _doneOnly(Map<String, Set<int>> done) => _fold({
       for (final e in done.entries)
         e.key: {for (final u in e.value) u: {'main'}}
-    };
+    });
 
 void main() {
   group('RollUp', () {
     test('leaf learned counts done units in range', () {
-      final fold = LogFold(_completed({'a': {2, 3}}), {});
+      final fold = _doneOnly({'a': {2, 3}});
       final root = RollUp.buildForest(_catalog(), fold).single;
       final a = root.children.firstWhere((n) => n.id == 'a');
       expect(a.learned, 2);
@@ -42,7 +64,7 @@ void main() {
     });
 
     test('out-of-range done units are ignored (learned never exceeds total)', () {
-      final fold = LogFold(_completed({'a': {2, 3, 4, 99}}), {});
+      final fold = _doneOnly({'a': {2, 3, 4, 99}});
       final root = RollUp.buildForest(_catalog(), fold).single;
       final a = root.children.firstWhere((n) => n.id == 'a');
       expect(a.learned, 3);
@@ -51,7 +73,7 @@ void main() {
     });
 
     test('parent aggregates children', () {
-      final fold = LogFold(_completed({'a': {2, 3}, 'b': {1}}), {});
+      final fold = _doneOnly({'a': {2, 3}, 'b': {1}});
       final root = RollUp.buildForest(_catalog(), fold).single;
       expect(root.learned, 3);
       expect(root.total, 5);
@@ -60,7 +82,7 @@ void main() {
     });
 
     test('per-layer coverage is counted per leaf and rolled up, in range', () {
-      final fold = LogFold({
+      final fold = _fold({
         'a': {
           2: {'main', 'rashi'},
           3: {'main', 'rashi'},
@@ -70,7 +92,7 @@ void main() {
         'b': {
           1: {'main', 'rashi'},
         },
-      }, {});
+      });
       final root = RollUp.buildForest(_catalog(), fold).single;
       final a = root.children.firstWhere((n) => n.id == 'a');
 

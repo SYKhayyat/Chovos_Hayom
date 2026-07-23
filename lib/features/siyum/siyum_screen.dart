@@ -5,8 +5,12 @@ import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
 
-/// The list of completed sefarim/mesechtos (siyumim), most recent first — a
-/// running record of what you've been maslim.
+/// The list of siyumim, most recent first — a running record of what you've
+/// been maslim.
+///
+/// Every level counts: a mesechta, a seder, and Shas itself are all siyumim, and
+/// the bigger ones are marked as such rather than sitting in the list looking
+/// like any other line.
 class SiyumScreen extends ConsumerWidget {
   const SiyumScreen({super.key});
 
@@ -23,7 +27,8 @@ class SiyumScreen extends ConsumerWidget {
                 padding: EdgeInsets.all(32),
                 child: Text(
                   'No siyumim yet.\n'
-                  'Finish every unit of a sefer and it will appear here. חזק!',
+                  'Finish every unit of a sefer — or of a whole seder — and it '
+                  'will appear here. חזק!',
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -39,11 +44,23 @@ class SiyumScreen extends ConsumerWidget {
                 ),
                 for (final s in siyumim)
                   ListTile(
-                    leading: const Icon(Icons.emoji_events, color: Colors.amber),
-                    title: Text(s.node.name),
+                    leading: Icon(
+                      s.isCategory ? Icons.workspace_premium : Icons.emoji_events,
+                      color: Colors.amber,
+                      // A siyum on a whole seder deserves to look bigger than a
+                      // siyum on one mesechta.
+                      size: s.isCategory ? 30 : 24,
+                    ),
+                    title: Text(
+                      s.node.name,
+                      style: s.isCategory
+                          ? const TextStyle(fontWeight: FontWeight.bold)
+                          : null,
+                    ),
                     subtitle: Text(
                         'Completed ${DateDisplay.format(s.completedOn, mode)} · '
-                        '${s.units} ${s.node.unitLabel?.name ?? 'unit'}s'),
+                        '${s.units} ${s.node.unitLabel?.name ?? 'unit'}s'
+                        '${s.isCategory ? ' · everything underneath' : ''}'),
                   ),
               ],
             ),

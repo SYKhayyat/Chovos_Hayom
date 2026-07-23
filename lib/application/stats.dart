@@ -49,7 +49,8 @@ final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 final statsProvider = Provider<StatsSummary?>((ref) {
   final forest = ref.watch(progressForestProvider).asData?.value;
   final events = ref.watch(eventsProvider).asData?.value;
-  if (forest == null || events == null) return null;
+  final fold = ref.watch(foldProvider).asData?.value;
+  if (forest == null || events == null || fold == null) return null;
 
   // Aggregate every root, not just the first — a top-level custom sefer is a
   // second root and must be counted in the overall totals/projection.
@@ -71,7 +72,7 @@ final statsProvider = Provider<StatsSummary?>((ref) {
     projectedFinish: avg > 0
         ? Predictor.finishDate(remaining: remaining, perDay: avg, from: now)
         : null,
-    series: ProgressSeries.cumulative(events),
+    series: ProgressSeries.cumulative(fold),
     dailyActivity: ProgressSeries.dailyDone(events),
     totalMinutes: TimeStats.totalMinutes(events),
     minutesThisMonth:
@@ -81,16 +82,17 @@ final statsProvider = Provider<StatsSummary?>((ref) {
 
 /// Units currently due for a chazara (review) pass, most overdue first.
 final chazaraDueProvider = Provider<List<ChazaraItem>>((ref) {
-  final events = ref.watch(eventsProvider).asData?.value ?? const [];
+  final fold = ref.watch(foldProvider).asData?.value;
+  if (fold == null) return const [];
   final intervals = ref.watch(settingsProvider.select((s) => s.chazaraIntervals));
-  return ChazaraSchedule.due(events, ref.watch(clockProvider)(),
+  return ChazaraSchedule.due(fold, ref.watch(clockProvider)(),
       intervals: intervals);
 });
 
-/// Completed sefarim/mesechtos (siyumim), most-recently-finished first.
+/// Completed nodes at every level (siyumim), most-recently-finished first.
 final siyumimProvider = Provider<List<Siyum>>((ref) {
-  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
-  final events = ref.watch(eventsProvider).asData?.value;
-  if (catalog == null || events == null) return const [];
-  return SiyumFinder.completed(catalog, events, ref.watch(layerRequirementsProvider));
+  final forest = ref.watch(progressForestProvider).asData?.value;
+  final fold = ref.watch(foldProvider).asData?.value;
+  if (forest == null || fold == null) return const [];
+  return SiyumFinder.completed(forest, fold);
 });

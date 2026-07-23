@@ -342,10 +342,29 @@ final mefarshimStatsProvider = Provider<List<MefarshimStat>>((ref) {
   return MefarshimStats.compute(catalog, fold);
 });
 
-/// The progress subtree rooted at [id] (null while loading or if not found).
-final progressNodeProvider = Provider.family<ProgressNode?, String>((ref, id) {
-  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
-  final fold = ref.watch(foldProvider).asData?.value;
-  if (catalog == null || fold == null) return null;
-  return RollUp.buildNode(catalog, id, fold, ref.watch(layerRequirementsProvider));
+/// Every node of the forest by id — built by walking the one forest that
+/// [progressForestProvider] already produced.
+///
+/// Without this, asking for a subtree rebuilt it from the catalog and the fold,
+/// so opening a node re-derived progress the forest had just derived, and two
+/// screens watching overlapping subtrees paid for the overlap twice.
+final progressIndexProvider = Provider<Map<String, ProgressNode>>((ref) {
+  final forest = ref.watch(progressForestProvider).asData?.value;
+  if (forest == null) return const {};
+  final index = <String, ProgressNode>{};
+  void walk(ProgressNode n) {
+    index[n.id] = n;
+    for (final child in n.children) {
+      walk(child);
+    }
+  }
+
+  for (final root in forest) {
+    walk(root);
+  }
+  return index;
 });
+
+/// The progress subtree rooted at [id] (null while loading or if not found).
+final progressNodeProvider = Provider.family<ProgressNode?, String>(
+    (ref, id) => ref.watch(progressIndexProvider)[id]);

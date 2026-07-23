@@ -6,8 +6,6 @@ import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/catalog_node.dart';
-import '../../domain/entities/enums.dart';
-import '../../domain/entities/learning_event.dart';
 import '../../domain/usecases/fold_log.dart';
 import '../../domain/usecases/goal_evaluator.dart';
 import 'add_chazara_sheet.dart';
@@ -82,16 +80,6 @@ class UnitGridScreen extends ConsumerWidget {
     final required = ref.watch(layerRequirementsProvider);
     final view = ref.watch(unitLayerViewProvider);
     final done = fold.doneUnits(node.id, required);
-    // Units carrying a recorded note or duration on a `done` event — surfaced as
-    // a small dot so details are discoverable at a glance.
-    final events = ref.watch(eventsProvider).asData?.value ?? const <LearningEvent>[];
-    final annotated = <int>{
-      for (final e in events)
-        if (e.nodeId == node.id &&
-            e.action == EventAction.done &&
-            ((e.note != null && e.note!.isNotEmpty) || e.durationMin != null))
-          e.unitIndex,
-    };
     return GridView.builder(
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -116,7 +104,9 @@ class UnitGridScreen extends ConsumerWidget {
           isDone: isDone,
           fraction: fraction,
           reviewCount: fold.reviewCount(node.id, unit),
-          hasDetails: isDone && annotated.contains(unit),
+          // The "there are details here" dot. Comes off the shared fold rather
+          // than a scan of the whole log on every grid rebuild.
+          hasDetails: isDone && fold.isAnnotated(node.id, unit),
           onTap: () async {
             // Layered units open a per-meforish checklist; text-only units
             // toggle with a single tap (reversible — tapping again undoes).

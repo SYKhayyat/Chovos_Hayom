@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../domain/entities/enums.dart';
 import '../domain/entities/progress_node.dart';
 import 'providers.dart';
 
@@ -53,19 +52,25 @@ class SortConfig {
 
 /// Most-recent activity (a `done` event's `occurredAt`) rolled up to *every*
 /// node id in the forest — a leaf's own last-learned, propagated up to the max
-/// across each ancestor's subtree. Computed in a single O(nodes + events) pass
-/// and memoized, so sorting by "last learned" is an O(1) lookup per node.
+/// across each ancestor's subtree. Memoized, so sorting by "last learned" is an
+/// O(1) lookup per node.
+///
+/// Reads the shared fold rather than re-scanning the log: `doneAtByNode` is
+/// already the learned-date of every unit currently done, so this costs only a
+/// walk of what the user has actually learned.
 final nodeLastActivityProvider = Provider<Map<String, DateTime>>((ref) {
-  final events = ref.watch(eventsProvider).asData?.value ?? const [];
+  final fold = ref.watch(foldProvider).asData?.value;
   final forest = ref.watch(progressForestProvider).asData?.value;
-  if (forest == null) return const {};
+  if (forest == null || fold == null) return const {};
 
   final leafLast = <String, DateTime>{};
-  for (final e in events) {
-    if (e.action != EventAction.done) continue;
-    final cur = leafLast[e.nodeId];
-    if (cur == null || e.occurredAt.isAfter(cur)) leafLast[e.nodeId] = e.occurredAt;
-  }
+  fold.doneAtByNode.forEach((nodeId, byUnit) {
+    DateTime? best;
+    for (final at in byUnit.values) {
+      if (best == null || at.isAfter(best)) best = at;
+    }
+    if (best != null) leafLast[nodeId] = best;
+  });
 
   final out = <String, DateTime>{};
   DateTime? visit(ProgressNode n) {
