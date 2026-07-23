@@ -182,7 +182,7 @@ class InMemoryProgressRepository implements ProgressRepository {
     if (i == -1) return;
     final p = _profiles[i];
     _profiles[i] =
-        Profile(id: p.id, name: name, createdAt: p.createdAt, settings: p.settings);
+        Profile(id: p.id, name: name, createdAt: p.createdAt);
   }
 
   @override

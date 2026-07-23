@@ -121,7 +121,7 @@ void main() {
 
     expect(columns, isNot(contains('haara')));
     expect(columns, contains('note'));
-    expect(version, 9);
+    expect(version, 10);
   });
 
   test('a half-migrated database still opens instead of bricking', () async {
@@ -175,7 +175,7 @@ void main() {
     db.close();
 
     expect(nodes.map((r) => r['id']), ['n1']);
-    expect(version, 9);
+    expect(version, 10);
   });
 
   test('v8 -> v9 adds batch_id and its index without touching existing rows',
@@ -257,6 +257,38 @@ void main() {
     expect(columns, isNot(contains('haara')));
     expect(indexes, contains('learning_events_batch'),
         reason: 'the index must outlive the v8 table rebuild');
-    expect(version, 9);
+    expect(version, 10);
+  });
+
+  test('v9 -> v10 drops the dead settings_json column, keeping profiles',
+      () async {
+    seed([
+      '''
+      CREATE TABLE profiles (
+        id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        settings_json TEXT NOT NULL DEFAULT '{}',
+        PRIMARY KEY (id)
+      )
+      ''',
+      "INSERT INTO profiles (id, name, created_at, settings_json) "
+          "VALUES ('p1', 'Yaakov', 1750000000, '{\"theme\":\"dark\"}')",
+    ], userVersion: 9);
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    await db.customSelect('SELECT id FROM profiles').get(); // force migration
+    await db.close();
+
+    final raw_ = raw.sqlite3.open(path);
+    final columns = raw_
+        .select('PRAGMA table_info(profiles)')
+        .map((r) => r['name'] as String)
+        .toSet();
+    final rows = raw_.select('SELECT id, name FROM profiles');
+    raw_.close();
+
+    expect(columns, isNot(contains('settings_json')));
+    expect(rows.single['name'], 'Yaakov', reason: 'the profile itself survives');
   });
 }

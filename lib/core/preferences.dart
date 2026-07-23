@@ -24,6 +24,11 @@ class InMemoryPreferences implements AppPreferences {
 }
 
 /// Well-known preference keys.
+///
+/// Most settings are **per-profile**: two people sharing a device get their own
+/// calendar, theme, sort, chazara intervals and meforish bars, the same way they
+/// already get their own learning. [scoped] builds those keys; only
+/// [activeProfileId] and [settingsScopedMigrated] are genuinely app-wide.
 class PrefKeys {
   static const activeProfileId = 'activeProfileId';
   static const calendarMode = 'calendarMode';
@@ -42,6 +47,26 @@ class PrefKeys {
   /// The in-flight learning session (JSON). Persisted so a timer survives the
   /// sheet being dismissed, the app being backgrounded, and the process dying.
   static const sessionTimer = 'sessionTimer';
+
+  /// Set once the one-time move of the old device-wide settings into the active
+  /// profile has run. See `SettingsNotifier`.
+  static const settingsScopedMigrated = 'settingsScopedMigrated';
+
+  /// Every setting that belongs to a profile rather than the device.
+  static const perProfile = [
+    calendarMode,
+    themeMode,
+    reminderEnabled,
+    hebrewLayout,
+    sortMetric,
+    sortDescending,
+    sortLevel,
+    chazaraIntervals,
+    hiddenMeforishBars,
+  ];
+
+  /// The profile-scoped form of [key].
+  static String scoped(String profileId, String key) => '$profileId/$key';
 
   /// Where one profile's target finish dates live. Profile-scoped rather than a
   /// fixed key, so goals follow the profile they belong to — and so deleting a

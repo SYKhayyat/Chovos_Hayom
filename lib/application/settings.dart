@@ -60,29 +60,61 @@ class SettingsState {
 }
 
 class SettingsNotifier extends Notifier<SettingsState> {
+  /// The profile whose settings these are. Watched, so switching profiles
+  /// re-reads that profile's settings instead of carrying the previous user's
+  /// calendar, theme and RTL over to them.
+  late String _profileId;
+
   @override
-  SettingsState build() => _load();
+  SettingsState build() {
+    _profileId = ref.watch(activeProfileProvider);
+    _migrateDeviceWideSettings();
+    return _load();
+  }
+
+  /// Reads a per-profile setting.
+  String? _get(String key) =>
+      ref.read(appPreferencesProvider).getString(PrefKeys.scoped(_profileId, key));
+
+  Future<void> _set(String key, String value) => ref
+      .read(appPreferencesProvider)
+      .setString(PrefKeys.scoped(_profileId, key), value);
+
+  /// One-time move of the old device-wide settings onto whichever profile was
+  /// active when the app upgraded.
+  ///
+  /// Settings used to be global while the data they described was per-profile.
+  /// The person those settings belong to keeps them; every other profile starts
+  /// from the defaults rather than inheriting a stranger's. The legacy keys are
+  /// removed so this can only happen once.
+  void _migrateDeviceWideSettings() {
+    final prefs = ref.read(appPreferencesProvider);
+    if (prefs.getString(PrefKeys.settingsScopedMigrated) == 'true') return;
+    for (final key in PrefKeys.perProfile) {
+      final legacy = prefs.getString(key);
+      if (legacy == null) continue;
+      prefs.setString(PrefKeys.scoped(_profileId, key), legacy);
+      prefs.remove(key);
+    }
+    prefs.setString(PrefKeys.settingsScopedMigrated, 'true');
+  }
 
   SettingsState _load() {
-    final prefs = ref.read(appPreferencesProvider);
     return SettingsState(
-      calendar: _enumByName(
-          CalendarMode.values, prefs.getString(PrefKeys.calendarMode),
+      calendar: _enumByName(CalendarMode.values, _get(PrefKeys.calendarMode),
           fallback: CalendarMode.gregorian),
-      themeMode: _enumByName(
-          ThemeMode.values, prefs.getString(PrefKeys.themeMode),
+      themeMode: _enumByName(ThemeMode.values, _get(PrefKeys.themeMode),
           fallback: ThemeMode.system),
-      reminderEnabled: prefs.getString(PrefKeys.reminderEnabled) == 'true',
-      hebrewLayout: prefs.getString(PrefKeys.hebrewLayout) == 'true',
+      reminderEnabled: _get(PrefKeys.reminderEnabled) == 'true',
+      hebrewLayout: _get(PrefKeys.hebrewLayout) == 'true',
       sort: SortConfig(
-        metric: _enumByName(SortMetric.values, prefs.getString(PrefKeys.sortMetric),
+        metric: _enumByName(SortMetric.values, _get(PrefKeys.sortMetric),
             fallback: SortMetric.catalog),
-        descending: prefs.getString(PrefKeys.sortDescending) == 'true',
-        level: int.tryParse(prefs.getString(PrefKeys.sortLevel) ?? ''),
+        descending: _get(PrefKeys.sortDescending) == 'true',
+        level: int.tryParse(_get(PrefKeys.sortLevel) ?? ''),
       ),
-      chazaraIntervals: _parseIntervals(prefs.getString(PrefKeys.chazaraIntervals)),
-      hiddenMeforishBars:
-          _parseIdSet(prefs.getString(PrefKeys.hiddenMeforishBars)),
+      chazaraIntervals: _parseIntervals(_get(PrefKeys.chazaraIntervals)),
+      hiddenMeforishBars: _parseIdSet(_get(PrefKeys.hiddenMeforishBars)),
     );
   }
 
@@ -106,9 +138,7 @@ class SettingsNotifier extends Notifier<SettingsState> {
   Future<void> setChazaraIntervals(List<int> intervals) async {
     final clean = intervals.where((n) => n > 0).toList();
     final effective = clean.isEmpty ? ChazaraSchedule.defaultIntervals : clean;
-    await ref
-        .read(appPreferencesProvider)
-        .setString(PrefKeys.chazaraIntervals, effective.join(','));
+    await _set(PrefKeys.chazaraIntervals, effective.join(','));
     state = state.copyWith(chazaraIntervals: effective);
   }
 
@@ -120,45 +150,34 @@ class SettingsNotifier extends Notifier<SettingsState> {
     } else {
       next.add(layerId);
     }
-    await ref
-        .read(appPreferencesProvider)
-        .setString(PrefKeys.hiddenMeforishBars, next.join(','));
+    await _set(PrefKeys.hiddenMeforishBars, next.join(','));
     state = state.copyWith(hiddenMeforishBars: next);
   }
 
   Future<void> setSort(SortConfig config) async {
-    final prefs = ref.read(appPreferencesProvider);
-    await prefs.setString(PrefKeys.sortMetric, config.metric.name);
-    await prefs.setString(PrefKeys.sortDescending, config.descending.toString());
-    await prefs.setString(PrefKeys.sortLevel, config.level?.toString() ?? '');
+    await _set(PrefKeys.sortMetric, config.metric.name);
+    await _set(PrefKeys.sortDescending, config.descending.toString());
+    await _set(PrefKeys.sortLevel, config.level?.toString() ?? '');
     state = state.copyWith(sort: config);
   }
 
   Future<void> setHebrewLayout(bool enabled) async {
-    await ref
-        .read(appPreferencesProvider)
-        .setString(PrefKeys.hebrewLayout, enabled.toString());
+    await _set(PrefKeys.hebrewLayout, enabled.toString());
     state = state.copyWith(hebrewLayout: enabled);
   }
 
   Future<void> setReminderEnabled(bool enabled) async {
-    await ref
-        .read(appPreferencesProvider)
-        .setString(PrefKeys.reminderEnabled, enabled.toString());
+    await _set(PrefKeys.reminderEnabled, enabled.toString());
     state = state.copyWith(reminderEnabled: enabled);
   }
 
   Future<void> setCalendar(CalendarMode mode) async {
-    await ref
-        .read(appPreferencesProvider)
-        .setString(PrefKeys.calendarMode, mode.name);
+    await _set(PrefKeys.calendarMode, mode.name);
     state = state.copyWith(calendar: mode);
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
-    await ref
-        .read(appPreferencesProvider)
-        .setString(PrefKeys.themeMode, mode.name);
+    await _set(PrefKeys.themeMode, mode.name);
     state = state.copyWith(themeMode: mode);
   }
 
@@ -175,33 +194,26 @@ class SettingsNotifier extends Notifier<SettingsState> {
         PrefKeys.hiddenMeforishBars: state.hiddenMeforishBars.join(','),
       };
 
-  /// Apply a serialised preferences map (from an imported backup).
+  /// Apply a serialised preferences map (from an imported backup) to the active
+  /// profile. Backups store bare keys, so importing one into a different profile
+  /// lands on that profile rather than on the device.
   Future<void> applyBackup(Map<String, dynamic> settings) async {
     if (settings.isEmpty) return;
-    final prefs = ref.read(appPreferencesProvider);
     for (final entry in settings.entries) {
-      await prefs.setString(entry.key, entry.value.toString());
+      await _set(entry.key, entry.value.toString());
     }
     state = _load();
   }
 
-  /// Reset every preference to its default.
+  /// Reset this profile's preferences to their defaults, leaving other profiles
+  /// alone. Removing the keys rather than writing default *values* means a later
+  /// change to a default is actually picked up.
   Future<void> clearAll() async {
     final prefs = ref.read(appPreferencesProvider);
-    const defaults = SettingsState();
-    await prefs.setString(PrefKeys.calendarMode, defaults.calendar.name);
-    await prefs.setString(PrefKeys.themeMode, defaults.themeMode.name);
-    await prefs.setString(
-        PrefKeys.reminderEnabled, defaults.reminderEnabled.toString());
-    await prefs.setString(PrefKeys.hebrewLayout, defaults.hebrewLayout.toString());
-    await prefs.setString(PrefKeys.sortMetric, defaults.sort.metric.name);
-    await prefs.setString(PrefKeys.sortDescending, 'false');
-    await prefs.setString(PrefKeys.sortLevel, '');
-    await prefs.setString(
-        PrefKeys.chazaraIntervals, defaults.chazaraIntervals.join(','));
-    await prefs.setString(PrefKeys.hiddenMeforishBars,
-        defaults.hiddenMeforishBars.join(','));
-    state = defaults;
+    for (final key in PrefKeys.perProfile) {
+      await prefs.remove(PrefKeys.scoped(_profileId, key));
+    }
+    state = const SettingsState();
   }
 }
 

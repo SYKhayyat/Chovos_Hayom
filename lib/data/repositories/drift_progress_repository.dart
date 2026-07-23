@@ -107,7 +107,6 @@ class DriftProgressRepository implements ProgressRepository {
             id: p.id,
             name: p.name,
             createdAt: p.createdAt,
-            settingsJson: Value(jsonEncode(p.settings)),
           ),
         );
   }
@@ -169,7 +168,6 @@ class DriftProgressRepository implements ProgressRepository {
         id: row.id,
         name: row.name,
         createdAt: row.createdAt,
-        settings: (jsonDecode(row.settingsJson) as Map).cast<String, dynamic>(),
       );
 
   @override

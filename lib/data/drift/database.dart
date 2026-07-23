@@ -11,7 +11,6 @@ class Profiles extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
   DateTimeColumn get createdAt => dateTime()();
-  TextColumn get settingsJson => text().withDefault(const Constant('{}'))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -147,7 +146,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'chovos_hayom'));
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   /// Every schema change must extend [MigrationStrategy.onUpgrade]. Without this,
   /// bumping [schemaVersion] silently does nothing on existing installs and
@@ -246,6 +245,15 @@ class AppDatabase extends _$AppDatabase {
             await _createIndexIfMissing('learning_events_batch',
                 'CREATE INDEX learning_events_batch '
                     'ON learning_events (profile_id, batch_id)');
+          }
+          // v9 -> v10: drop `profiles.settings_json`. It was written on create
+          // and never read once — the shape of a per-profile settings store that
+          // was never built. Settings are now per-profile in preferences (where
+          // the theme can be read before the first frame), so the column is dead
+          // weight and goes rather than lingering as a false affordance.
+          if (from < 10 &&
+              (await _columnsOf('profiles')).contains('settings_json')) {
+            await m.alterTable(TableMigration(profiles));
           }
         },
       );

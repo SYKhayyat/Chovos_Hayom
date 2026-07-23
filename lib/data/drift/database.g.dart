@@ -38,20 +38,8 @@ class $ProfilesTable extends Profiles
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _settingsJsonMeta = const VerificationMeta(
-    'settingsJson',
-  );
   @override
-  late final GeneratedColumn<String> settingsJson = GeneratedColumn<String>(
-    'settings_json',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('{}'),
-  );
-  @override
-  List<GeneratedColumn> get $columns => [id, name, createdAt, settingsJson];
+  List<GeneratedColumn> get $columns => [id, name, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -85,15 +73,6 @@ class $ProfilesTable extends Profiles
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
-    if (data.containsKey('settings_json')) {
-      context.handle(
-        _settingsJsonMeta,
-        settingsJson.isAcceptableOrUnknown(
-          data['settings_json']!,
-          _settingsJsonMeta,
-        ),
-      );
-    }
     return context;
   }
 
@@ -115,10 +94,6 @@ class $ProfilesTable extends Profiles
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
-      settingsJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}settings_json'],
-      )!,
     );
   }
 
@@ -132,12 +107,10 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
   final String id;
   final String name;
   final DateTime createdAt;
-  final String settingsJson;
   const ProfileRow({
     required this.id,
     required this.name,
     required this.createdAt,
-    required this.settingsJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -145,7 +118,6 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
     map['created_at'] = Variable<DateTime>(createdAt);
-    map['settings_json'] = Variable<String>(settingsJson);
     return map;
   }
 
@@ -154,7 +126,6 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       id: Value(id),
       name: Value(name),
       createdAt: Value(createdAt),
-      settingsJson: Value(settingsJson),
     );
   }
 
@@ -167,7 +138,6 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      settingsJson: serializer.fromJson<String>(json['settingsJson']),
     );
   }
   @override
@@ -177,29 +147,20 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
       'createdAt': serializer.toJson<DateTime>(createdAt),
-      'settingsJson': serializer.toJson<String>(settingsJson),
     };
   }
 
-  ProfileRow copyWith({
-    String? id,
-    String? name,
-    DateTime? createdAt,
-    String? settingsJson,
-  }) => ProfileRow(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    createdAt: createdAt ?? this.createdAt,
-    settingsJson: settingsJson ?? this.settingsJson,
-  );
+  ProfileRow copyWith({String? id, String? name, DateTime? createdAt}) =>
+      ProfileRow(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        createdAt: createdAt ?? this.createdAt,
+      );
   ProfileRow copyWithCompanion(ProfilesCompanion data) {
     return ProfileRow(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      settingsJson: data.settingsJson.present
-          ? data.settingsJson.value
-          : this.settingsJson,
     );
   }
 
@@ -208,42 +169,37 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     return (StringBuffer('ProfileRow(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('settingsJson: $settingsJson')
+          ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, createdAt, settingsJson);
+  int get hashCode => Object.hash(id, name, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ProfileRow &&
           other.id == this.id &&
           other.name == this.name &&
-          other.createdAt == this.createdAt &&
-          other.settingsJson == this.settingsJson);
+          other.createdAt == this.createdAt);
 }
 
 class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
   final Value<String> id;
   final Value<String> name;
   final Value<DateTime> createdAt;
-  final Value<String> settingsJson;
   final Value<int> rowid;
   const ProfilesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.createdAt = const Value.absent(),
-    this.settingsJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProfilesCompanion.insert({
     required String id,
     required String name,
     required DateTime createdAt,
-    this.settingsJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -252,14 +208,12 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     Expression<String>? id,
     Expression<String>? name,
     Expression<DateTime>? createdAt,
-    Expression<String>? settingsJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (createdAt != null) 'created_at': createdAt,
-      if (settingsJson != null) 'settings_json': settingsJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -268,14 +222,12 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     Value<String>? id,
     Value<String>? name,
     Value<DateTime>? createdAt,
-    Value<String>? settingsJson,
     Value<int>? rowid,
   }) {
     return ProfilesCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       createdAt: createdAt ?? this.createdAt,
-      settingsJson: settingsJson ?? this.settingsJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -292,9 +244,6 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
-    if (settingsJson.present) {
-      map['settings_json'] = Variable<String>(settingsJson.value);
-    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -307,7 +256,6 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('createdAt: $createdAt, ')
-          ..write('settingsJson: $settingsJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2764,7 +2712,6 @@ typedef $$ProfilesTableCreateCompanionBuilder =
       required String id,
       required String name,
       required DateTime createdAt,
-      Value<String> settingsJson,
       Value<int> rowid,
     });
 typedef $$ProfilesTableUpdateCompanionBuilder =
@@ -2772,7 +2719,6 @@ typedef $$ProfilesTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> name,
       Value<DateTime> createdAt,
-      Value<String> settingsJson,
       Value<int> rowid,
     });
 
@@ -2797,11 +2743,6 @@ class $$ProfilesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get settingsJson => $composableBuilder(
-    column: $table.settingsJson,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2829,11 +2770,6 @@ class $$ProfilesTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
-
-  ColumnOrderings<String> get settingsJson => $composableBuilder(
-    column: $table.settingsJson,
-    builder: (column) => ColumnOrderings(column),
-  );
 }
 
 class $$ProfilesTableAnnotationComposer
@@ -2853,11 +2789,6 @@ class $$ProfilesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<String> get settingsJson => $composableBuilder(
-    column: $table.settingsJson,
-    builder: (column) => column,
-  );
 }
 
 class $$ProfilesTableTableManager
@@ -2894,13 +2825,11 @@ class $$ProfilesTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
-                Value<String> settingsJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProfilesCompanion(
                 id: id,
                 name: name,
                 createdAt: createdAt,
-                settingsJson: settingsJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2908,13 +2837,11 @@ class $$ProfilesTableTableManager
                 required String id,
                 required String name,
                 required DateTime createdAt,
-                Value<String> settingsJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProfilesCompanion.insert(
                 id: id,
                 name: name,
                 createdAt: createdAt,
-                settingsJson: settingsJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
