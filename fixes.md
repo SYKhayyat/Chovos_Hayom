@@ -32,7 +32,7 @@ Where the README currently overclaims (backup completeness, node-level mefarshim
 
 ## Status — worked through 2026-07-23
 
-Commits `a6c6cde` … `2ab099a`. Analyzer clean under `--fatal-infos`; **254 tests** pass (was 122).
+Commits `a6c6cde` … `91fd750`. Analyzer clean under `--fatal-infos`; **254 tests** pass (was 122).
 
 Everything in this document is now done. The two items §5 left open — one error-handling policy for
 writes, and a routing abstraction — landed together, because they turned out to need each other: a
