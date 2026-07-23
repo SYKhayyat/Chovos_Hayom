@@ -8,6 +8,7 @@ import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/entities/learning_event.dart';
 import '../../domain/usecases/unit_history.dart';
+import '../common/guarded.dart';
 import 'add_chazara_sheet.dart';
 import 'log_unit_sheet.dart';
 
@@ -113,10 +114,7 @@ class _UnitDetailsSheet extends ConsumerWidget {
                     OutlinedButton.icon(
                       icon: const Icon(Icons.undo, size: 18),
                       label: const Text('Un-mark'),
-                      onPressed: () {
-                        ref.read(loggingServiceProvider).markUndone(node.id, unit);
-                        Navigator.of(context).pop();
-                      },
+                      onPressed: () => _unmark(context, ref),
                     ),
                   ],
                 ),
@@ -126,6 +124,16 @@ class _UnitDetailsSheet extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// The sheet closes first — the write is guarded, so its outcome is reported
+  /// on the messenger regardless of this sheet still being there.
+  Future<void> _unmark(BuildContext context, WidgetRef ref) async {
+    final logger = ref.read(loggingServiceProvider);
+    final guard = WriteGuard.of(context, ref);
+    Navigator.of(context).pop();
+    await guard.run(() => logger.markUndone(node.id, unit),
+        what: 'Un-marking ${node.name} · ${node.unitHeading(unit)}');
   }
 
   Widget _chazaraLine(BuildContext context, WidgetRef ref, int n,
@@ -163,7 +171,7 @@ class _UnitDetailsSheet extends ConsumerWidget {
     final done = history.done;
     if (done == null) return;
     final logger = ref.read(loggingServiceProvider);
-    final messenger = ScaffoldMessenger.of(context);
+    final guard = WriteGuard.of(context, ref);
     final result = await showLogUnitSheet(
       context,
       title: 'Edit · ${node.name} · ${node.unitHeading(unit)}',
@@ -173,17 +181,16 @@ class _UnitDetailsSheet extends ConsumerWidget {
       saveLabel: 'Save changes',
     );
     if (result == null) return;
-    try {
-      await logger.editDetails(
+    await guard.run(
+      () => logger.editDetails(
         done,
         // Null occurredAt means the user turned manual off; keep the stored date.
         occurredAt: result.occurredAt ?? done.occurredAt,
         durationMin: result.durationMin,
         note: result.note,
-      );
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));
-    }
+      ),
+      what: 'Saving the details for ${node.name} · ${node.unitHeading(unit)}',
+    );
   }
 
   static String _fmtMinutes(int minutes) {

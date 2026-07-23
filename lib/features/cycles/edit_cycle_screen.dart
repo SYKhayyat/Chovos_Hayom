@@ -8,6 +8,8 @@ import '../../application/settings.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/usecases/learning_cycle.dart';
+import '../common/guarded.dart';
+import '../common/missing_item.dart';
 
 /// Build a learning cycle: pick the sefarim, in order, set the pace and the day
 /// it started.
@@ -15,16 +17,41 @@ import '../../domain/usecases/learning_cycle.dart';
 /// This is what makes "learning cycles" plural. Mishna Yomi, Rambam Yomi, Amud
 /// Yomi, a yeshiva's seder, a personal chazara programme — all of them are this
 /// screen, rather than something the app either ships or doesn't.
-class EditCycleScreen extends ConsumerStatefulWidget {
-  const EditCycleScreen({super.key, this.existing});
+///
+/// [cycleId] rather than the cycle itself, so `/cycles/<id>` is a route and the
+/// screen reads the cycle as it is now, not as it was when it was opened.
+class EditCycleScreen extends ConsumerWidget {
+  const EditCycleScreen({super.key, this.cycleId});
+
+  final String? cycleId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (cycleId == null) return const _CycleForm();
+
+    final matches =
+        ref.watch(cyclesConfigProvider).custom.where((c) => c.id == cycleId);
+    if (matches.isEmpty) {
+      return const MissingItemScreen(
+        loading: false,
+        message: 'This cycle no longer exists.\n'
+            'It may have been deleted, or it belongs to another profile.',
+      );
+    }
+    return _CycleForm(key: ValueKey(cycleId), existing: matches.first);
+  }
+}
+
+class _CycleForm extends ConsumerStatefulWidget {
+  const _CycleForm({super.key, this.existing});
 
   final SequentialCycle? existing;
 
   @override
-  ConsumerState<EditCycleScreen> createState() => _EditCycleScreenState();
+  ConsumerState<_CycleForm> createState() => _CycleFormState();
 }
 
-class _EditCycleScreenState extends ConsumerState<EditCycleScreen> {
+class _CycleFormState extends ConsumerState<_CycleForm> {
   late final TextEditingController _name;
   late final TextEditingController _perDay;
   late DateTime _startDate;
@@ -123,8 +150,7 @@ class _EditCycleScreenState extends ConsumerState<EditCycleScreen> {
             onReorderItem: (from, to) => setState(
                 () => _segments.insert(to, _segments.removeAt(from))),
             children: [
-              for (var i = 0; i < _segments.length; i++)
-                _segmentTile(catalog, i),
+              for (var i = 0; i < _segments.length; i++) _segmentTile(i),
             ],
           ),
           TextButton.icon(
@@ -142,7 +168,7 @@ class _EditCycleScreenState extends ConsumerState<EditCycleScreen> {
     );
   }
 
-  Widget _segmentTile(dynamic catalog, int i) {
+  Widget _segmentTile(int i) {
     final segment = _segments[i];
     final node = ref.read(catalogNodeProvider(segment.nodeId));
     return ListTile(
@@ -239,33 +265,35 @@ class _EditCycleScreenState extends ConsumerState<EditCycleScreen> {
   }
 
   Future<void> _save() async {
-    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final guard = WriteGuard.of(context, ref);
     final name = _name.text.trim();
     if (name.isEmpty) {
-      messenger.showSnackBar(
-          const SnackBar(content: Text('Give the cycle a name.')));
+      guard.report('Give the cycle a name.');
       return;
     }
     final perDay = int.tryParse(_perDay.text.trim()) ?? 0;
     if (perDay <= 0) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Units per day must be at least 1.')));
+      guard.report('Units per day must be at least 1.');
       return;
     }
     if (_segments.isEmpty) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Add at least one sefer for the cycle to walk.')));
+      guard.report('Add at least one sefer for the cycle to walk.');
       return;
     }
 
-    await ref.read(cyclesConfigProvider.notifier).save(SequentialCycle(
-          id: widget.existing?.id ?? const Uuid().v4(),
-          name: name,
-          startDate: _startDate,
-          unitsPerDay: perDay,
-          repeats: _repeats,
-          segments: _segments,
-        ));
-    if (mounted) Navigator.of(context).pop();
+    final cycles = ref.read(cyclesConfigProvider.notifier);
+    final saved = await guard.run(
+      () => cycles.save(SequentialCycle(
+        id: widget.existing?.id ?? const Uuid().v4(),
+        name: name,
+        startDate: _startDate,
+        unitsPerDay: perDay,
+        repeats: _repeats,
+        segments: _segments,
+      )),
+      what: 'Saving the cycle "$name"',
+    );
+    if (saved) navigator.pop();
   }
 }

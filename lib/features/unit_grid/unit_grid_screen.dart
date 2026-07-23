@@ -9,6 +9,8 @@ import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/usecases/fold_log.dart';
 import '../../domain/usecases/goal_evaluator.dart';
+import '../common/guarded.dart';
+import '../common/missing_item.dart';
 import 'add_chazara_sheet.dart';
 import 'bulk_actions_sheet.dart';
 import 'log_unit_sheet.dart';
@@ -35,7 +37,7 @@ Future<void> logWithDetails(
   final fold = ref.read(foldProvider).asData?.value;
   final allLayers = ref.read(allLayersProvider);
   final logger = ref.read(loggingServiceProvider);
-  final messenger = ScaffoldMessenger.of(context);
+  final guard = WriteGuard.of(context, ref);
 
   final layered = view.isLayered(node.id, unit);
   final checkable = layered ? view.checkableFor(node.id, unit) : const <String>{};
@@ -58,21 +60,44 @@ Future<void> logWithDetails(
         : const {mainLayerId},
   );
   if (result == null) return;
-  try {
-    await logger.markDone(node.id, unit,
+  await guard.run(
+    () => logger.markDone(node.id, unit,
         occurredAt: result.occurredAt,
         durationMin: result.durationMin,
         note: result.note,
-        layers: result.layers);
-  } catch (e) {
-    messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));
-  }
+        layers: result.layers),
+    what: 'Logging ${node.name} · ${node.unitHeading(unit)}',
+  );
 }
 
 /// A grid of every unit (daf/perek/siman) in a leaf. Tap toggles done; long-press
 /// opens a menu to log details, add a chazara (review), or un-mark.
+///
+/// Addressed by **id**, not by a `CatalogNode`: holding the node meant the screen
+/// froze it at push time, so renaming a sefer (or changing its unit count) while
+/// its grid was open left the old name in the app bar. Resolving the id against
+/// the live catalog on every build is also what lets `/sefer/<id>` be a route.
 class UnitGridScreen extends ConsumerWidget {
-  const UnitGridScreen({super.key, required this.node});
+  const UnitGridScreen({super.key, required this.nodeId});
+
+  final String nodeId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final node = ref.watch(catalogNodeProvider(nodeId));
+    if (node == null) {
+      return MissingItemScreen(
+        loading: !ref.watch(mergedCatalogProvider).hasValue,
+        message: 'This sefer no longer exists.\n'
+            'It may have been hidden, deleted, or replaced.',
+      );
+    }
+    return _UnitGrid(node: node);
+  }
+}
+
+class _UnitGrid extends ConsumerWidget {
+  const _UnitGrid({required this.node});
 
   final CatalogNode node;
 
@@ -104,7 +129,7 @@ class UnitGridScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          if (goal != null) _GoalBanner(goal: goal, nodeId: node.id),
+          if (goal != null) _GoalBanner(goal: goal, nodeId: node.id, name: node.name),
           Expanded(
             child: foldAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -119,15 +144,18 @@ class UnitGridScreen extends ConsumerWidget {
 
   Future<void> _setGoal(BuildContext context, WidgetRef ref) async {
     final now = DateTime.now();
+    final guard = WriteGuard.of(context, ref);
     final picked = await showDatePicker(
       context: context,
       initialDate: now.add(const Duration(days: 180)),
       firstDate: now,
       lastDate: DateTime(2100),
     );
-    if (picked != null) {
-      await ref.read(goalsProvider.notifier).setGoal(node.id, picked);
-    }
+    if (picked == null) return;
+    await guard.run(
+      () => ref.read(goalsProvider.notifier).setGoal(node.id, picked),
+      what: 'Setting a goal for ${node.name}',
+    );
   }
 
   Widget _grid(BuildContext context, WidgetRef ref, LogFold fold) {
@@ -169,16 +197,15 @@ class UnitGridScreen extends ConsumerWidget {
               return;
             }
             final logger = ref.read(loggingServiceProvider);
-            final messenger = ScaffoldMessenger.of(context);
-            try {
-              if (isDone) {
-                await logger.markUndone(node.id, unit);
-              } else {
-                await logger.markDone(node.id, unit);
-              }
-            } catch (e) {
-              messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));
-            }
+            final heading = '${node.name} · ${node.unitHeading(unit)}';
+            await guarded(
+              context,
+              ref,
+              () => isDone
+                  ? logger.markUndone(node.id, unit)
+                  : logger.markDone(node.id, unit),
+              what: isDone ? 'Un-marking $heading' : 'Marking $heading learned',
+            );
           },
           onLongPress: () => _cellMenu(context, ref, unit, isDone),
         );
@@ -189,6 +216,7 @@ class UnitGridScreen extends ConsumerWidget {
   Future<void> _cellMenu(
       BuildContext context, WidgetRef ref, int unit, bool isDone) async {
     final logger = ref.read(loggingServiceProvider);
+    final heading = '${node.name} · ${node.unitHeading(unit)}';
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -230,7 +258,8 @@ class UnitGridScreen extends ConsumerWidget {
                 title: const Text('Un-mark'),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  logger.markUndone(node.id, unit);
+                  guarded(context, ref, () => logger.markUndone(node.id, unit),
+                      what: 'Un-marking $heading');
                 },
               ),
             ] else
@@ -239,7 +268,8 @@ class UnitGridScreen extends ConsumerWidget {
                 title: const Text('Mark learned'),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  logger.markDone(node.id, unit);
+                  guarded(context, ref, () => logger.markDone(node.id, unit),
+                      what: 'Marking $heading learned');
                 },
               ),
           ],
@@ -250,9 +280,11 @@ class UnitGridScreen extends ConsumerWidget {
 }
 
 class _GoalBanner extends ConsumerWidget {
-  const _GoalBanner({required this.goal, required this.nodeId});
+  const _GoalBanner(
+      {required this.goal, required this.nodeId, required this.name});
   final GoalStatus goal;
   final String nodeId;
+  final String name;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -279,23 +311,30 @@ class _GoalBanner extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.close, size: 18),
             tooltip: 'Remove goal',
-            onPressed: () async {
-              final previous = ref.read(goalsProvider)[nodeId];
-              final messenger = ScaffoldMessenger.of(context);
-              await ref.read(goalsProvider.notifier).removeGoal(nodeId);
-              if (previous == null) return;
-              messenger.showSnackBar(SnackBar(
-                content: const Text('Goal removed'),
-                action: SnackBarAction(
-                  label: 'Undo',
-                  onPressed: () =>
-                      ref.read(goalsProvider.notifier).setGoal(nodeId, previous),
-                ),
-              ));
-            },
+            onPressed: () => _remove(context, ref),
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _remove(BuildContext context, WidgetRef ref) async {
+    final previous = ref.read(goalsProvider)[nodeId];
+    final goals = ref.read(goalsProvider.notifier);
+    final guard = WriteGuard.of(context, ref);
+    await guard.run(
+      () => goals.removeGoal(nodeId),
+      what: 'Removing the goal for $name',
+      success: previous == null ? null : 'Goal removed',
+      undo: previous == null
+          ? null
+          : SnackBarAction(
+              label: 'Undo',
+              // Restoring is itself a write, so it reports like one rather than
+              // silently doing nothing if it fails.
+              onPressed: () => guard.run(() => goals.setGoal(nodeId, previous),
+                  what: 'Restoring the goal for $name'),
+            ),
     );
   }
 }

@@ -6,6 +6,7 @@ import '../../application/providers.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/usecases/layer_requirements.dart';
+import '../common/guarded.dart';
 
 /// Editor for a node's mefarshim, with two independent dimensions per meforish:
 ///
@@ -128,34 +129,50 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
   Future<void> _save() async {
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
+    final navigator = Navigator.of(context);
+    final guard = WriteGuard.of(context, ref);
     final requiredSet = _required!;
     // Available always subsumes required; an empty required falls back to text.
     final availableSet = {..._available!, ...requiredSet};
-    await repo.setLayerRequirement(
-      profileId,
-      LayerConfigEntry(
-        nodeId: widget.node.id,
-        unitIndex: -1,
-        layers: requiredSet.isEmpty ? {mainLayerId} : requiredSet,
-      ),
+    // Required and offered are two halves of one answer; writing one without the
+    // other leaves a node requiring a meforish it does not offer.
+    final saved = await guard.run(
+      () => repo.transaction(() async {
+        await repo.setLayerRequirement(
+          profileId,
+          LayerConfigEntry(
+            nodeId: widget.node.id,
+            unitIndex: -1,
+            layers: requiredSet.isEmpty ? {mainLayerId} : requiredSet,
+          ),
+        );
+        await repo.setOfferedLayers(
+          profileId,
+          LayerConfigEntry(
+            nodeId: widget.node.id,
+            unitIndex: -1,
+            layers: availableSet.isEmpty ? {mainLayerId} : availableSet,
+          ),
+        );
+      }),
+      what: 'Saving the mefarshim for ${widget.node.name}',
     );
-    await repo.setOfferedLayers(
-      profileId,
-      LayerConfigEntry(
-        nodeId: widget.node.id,
-        unitIndex: -1,
-        layers: availableSet.isEmpty ? {mainLayerId} : availableSet,
-      ),
-    );
-    if (mounted) Navigator.pop(context);
+    if (saved) navigator.pop();
   }
 
   Future<void> _resetToInherited() async {
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
-    await repo.clearLayerRequirement(profileId, widget.node.id, -1);
-    await repo.clearOfferedLayers(profileId, widget.node.id, -1);
-    if (mounted) Navigator.pop(context);
+    final navigator = Navigator.of(context);
+    final guard = WriteGuard.of(context, ref);
+    final reset = await guard.run(
+      () => repo.transaction(() async {
+        await repo.clearLayerRequirement(profileId, widget.node.id, -1);
+        await repo.clearOfferedLayers(profileId, widget.node.id, -1);
+      }),
+      what: 'Resetting the mefarshim for ${widget.node.name}',
+    );
+    if (reset) navigator.pop();
   }
 
   /// Delete a custom meforish, taking every reference to it with it.
@@ -171,6 +188,7 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
   /// gone, so nothing is gated on or offers a meforish that no longer exists.
   Future<void> _deleteLayer(Layer layer) async {
     final profileId = ref.read(activeProfileProvider);
+    final guard = WriteGuard.of(context, ref);
     final requirements = ref.read(layerConfigProvider).asData?.value ?? const [];
     final offered = ref.read(offeredConfigProvider).asData?.value ?? const [];
 
@@ -220,21 +238,27 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
     if (ok != true) return;
 
     final repo = ref.read(progressRepositoryProvider);
-    await repo.transaction(() async {
-      for (final e in affectedRequired) {
-        await _rewriteWithout(
-            e, layer.id, (v) => repo.setLayerRequirement(profileId, v),
-            clear: () =>
-                repo.clearLayerRequirement(profileId, e.nodeId, e.unitIndex));
-      }
-      for (final e in affectedOffered) {
-        await _rewriteWithout(
-            e, layer.id, (v) => repo.setOfferedLayers(profileId, v),
-            clear: () =>
-                repo.clearOfferedLayers(profileId, e.nodeId, e.unitIndex));
-      }
-      await repo.removeCustomLayer(profileId, layer.id);
-    });
+    final deleted = await guard.run(
+      () => repo.transaction(() async {
+        for (final e in affectedRequired) {
+          await _rewriteWithout(
+              e, layer.id, (v) => repo.setLayerRequirement(profileId, v),
+              clear: () =>
+                  repo.clearLayerRequirement(profileId, e.nodeId, e.unitIndex));
+        }
+        for (final e in affectedOffered) {
+          await _rewriteWithout(
+              e, layer.id, (v) => repo.setOfferedLayers(profileId, v),
+              clear: () =>
+                  repo.clearOfferedLayers(profileId, e.nodeId, e.unitIndex));
+        }
+        await repo.removeCustomLayer(profileId, layer.id);
+      }),
+      what: 'Deleting “${layer.name}”',
+    );
+    // Nothing was written, so nothing may leave the in-progress edit either —
+    // dropping it here on a failure would hide a meforish that still exists.
+    if (!deleted) return;
 
     // Drop it from the in-progress edit too, so the sheet doesn't re-save it.
     if (mounted) {
@@ -261,6 +285,7 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
   }
 
   Future<void> _addCustomLayer() async {
+    final guard = WriteGuard.of(context, ref);
     final nameCtrl = TextEditingController();
     final hebrewCtrl = TextEditingController();
     final ok = await showDialog<bool>(
@@ -297,10 +322,16 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
     hebrewCtrl.dispose();
     if (ok != true || name.isEmpty) return;
     final id = const Uuid().v4();
-    await ref.read(progressRepositoryProvider).addCustomLayer(
-          ref.read(activeProfileProvider),
-          Layer(id: id, name: name, nameHebrew: hebrew.isEmpty ? null : hebrew),
-        );
+    final repo = ref.read(progressRepositoryProvider);
+    final profileId = ref.read(activeProfileProvider);
+    final added = await guard.run(
+      () => repo.addCustomLayer(
+        profileId,
+        Layer(id: id, name: name, nameHebrew: hebrew.isEmpty ? null : hebrew),
+      ),
+      what: 'Adding the meforish “$name”',
+    );
+    if (!added) return;
     // A freshly-added meforish starts Available (checkable) but not Required —
     // exactly the "offer without mandating" case.
     if (mounted) setState(() => _available!.add(id));

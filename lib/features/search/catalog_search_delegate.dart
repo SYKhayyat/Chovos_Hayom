@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/routes.dart';
 import '../../domain/entities/catalog_node.dart';
-import '../node/node_screen.dart';
-import '../unit_grid/unit_grid_screen.dart';
 
 /// Global search across every catalog + custom node by name.
 class CatalogSearchDelegate extends SearchDelegate<void> {
@@ -57,14 +56,10 @@ class CatalogSearchDelegate extends SearchDelegate<void> {
           subtitle: node.isLeaf
               ? Text('${node.unitCount} ${node.unitLabel?.name ?? 'units'}')
               : null,
-          onTap: () {
-            final route = MaterialPageRoute<void>(
-              builder: (_) => node.isLeaf
-                  ? UnitGridScreen(node: node)
-                  : NodeScreen(nodeId: node.id, title: node.name),
-            );
-            Navigator.of(context).push(route);
-          },
+          onTap: () => Navigator.pushNamed(
+            context,
+            node.isLeaf ? Routes.sefer(node.id) : Routes.category(node.id),
+          ),
         );
       },
     );

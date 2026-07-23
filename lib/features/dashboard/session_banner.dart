@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/session_timer.dart';
 import '../../application/stats.dart';
+import '../common/guarded.dart';
 
 /// The running-session strip: shows a live learning session wherever you are,
 /// and lets you pause or discard it without hunting for the sheet you started
@@ -72,14 +73,23 @@ class _SessionBannerState extends ConsumerState<SessionBanner> {
             icon: Icon(session.isRunning ? Icons.pause : Icons.play_arrow),
             tooltip: session.isRunning ? 'Pause session' : 'Resume session',
             color: scheme.onPrimaryContainer,
-            onPressed: () =>
-                ref.read(sessionTimerProvider.notifier).toggle(now),
+            onPressed: () => guarded(
+              context,
+              ref,
+              () => ref.read(sessionTimerProvider.notifier).toggle(now),
+              what: '${session.isRunning ? 'Pausing' : 'Resuming'} the session',
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.close),
             tooltip: 'Discard session',
             color: scheme.onPrimaryContainer,
-            onPressed: () => ref.read(sessionTimerProvider.notifier).reset(),
+            onPressed: () => guarded(
+              context,
+              ref,
+              () => ref.read(sessionTimerProvider.notifier).reset(),
+              what: 'Discarding the session',
+            ),
           ),
         ],
       ),

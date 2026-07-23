@@ -6,6 +6,7 @@ import '../../application/settings.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/catalog.dart';
 import '../../domain/usecases/batch_history.dart';
+import '../common/guarded.dart';
 
 /// The durable undo list for bulk actions.
 ///
@@ -125,7 +126,9 @@ class _BatchTile extends ConsumerWidget {
   }
 
   Future<void> _undo(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final guard = WriteGuard.of(context, ref);
+    final repo = ref.read(progressRepositoryProvider);
+    final profileId = ref.read(activeProfileProvider);
     final units = batch.unitsAffected;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -149,10 +152,13 @@ class _BatchTile extends ConsumerWidget {
       ),
     );
     if (confirmed != true) return;
-    final removed = await ref
-        .read(progressRepositoryProvider)
-        .removeBatch(ref.read(activeProfileProvider), batch.id);
-    messenger.showSnackBar(
-        SnackBar(content: Text('Undone — $removed ${removed == 1 ? 'event' : 'events'} removed')));
+    var removed = 0;
+    final ok = await guard.run(
+      () async => removed = await repo.removeBatch(profileId, batch.id),
+      what: 'Undoing this bulk action',
+    );
+    if (!ok) return;
+    guard.report(
+        'Undone — $removed ${removed == 1 ? 'event' : 'events'} removed');
   }
 }

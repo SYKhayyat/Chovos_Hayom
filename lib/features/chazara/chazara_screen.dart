@@ -5,6 +5,7 @@ import '../../application/providers.dart';
 import '../../application/stats.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/usecases/chazara_schedule.dart';
+import '../common/guarded.dart';
 import '../unit_grid/add_chazara_sheet.dart';
 
 /// Units due for a chazara (review) pass, on a spaced-repetition schedule.
@@ -88,15 +89,20 @@ class _ChazaraRow extends ConsumerWidget {
   /// depending on where you tapped it.
   Future<void> _quickReview(
       BuildContext context, WidgetRef ref, String name, String unit) async {
-    final messenger = ScaffoldMessenger.of(context);
     final fold = ref.read(foldProvider).asData?.value;
     final learned =
         fold?.completedLayers(item.nodeId, item.unitIndex) ?? const <String>{};
-    await ref.read(loggingServiceProvider).markReview(
-          item.nodeId,
-          item.unitIndex,
-          layers: learned.isEmpty ? const [mainLayerId] : learned.toList(),
-        );
-    messenger.showSnackBar(SnackBar(content: Text('Reviewed $name · $unit')));
+    final logger = ref.read(loggingServiceProvider);
+    await guarded(
+      context,
+      ref,
+      () => logger.markReview(
+        item.nodeId,
+        item.unitIndex,
+        layers: learned.isEmpty ? const [mainLayerId] : learned.toList(),
+      ),
+      what: 'Logging a chazara on $name · $unit',
+      success: 'Reviewed $name · $unit',
+    );
   }
 }

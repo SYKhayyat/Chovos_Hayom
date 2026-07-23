@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/routes.dart';
 import '../../application/catalog_editor.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/sorting.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/entities/progress_node.dart';
-import '../custom_node/add_custom_node_screen.dart';
+import '../common/guarded.dart';
 import '../unit_grid/bulk_actions_sheet.dart';
 import '../unit_grid/mefarshim_config_sheet.dart';
-import '../unit_grid/unit_grid_screen.dart';
 
 /// Recursive expandable tree row with a progress bar. Leaves navigate to their
 /// per-unit grid; categories expand to reveal children.
@@ -53,9 +53,7 @@ class ProgressTile extends ConsumerWidget {
                 : const Icon(Icons.chevron_right),
           ],
         ),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => UnitGridScreen(node: node.node)),
-        ),
+        onTap: () => Navigator.pushNamed(context, Routes.sefer(node.node.id)),
       );
     }
 
@@ -127,27 +125,34 @@ class ProgressTile extends ConsumerWidget {
   Future<void> _onMenu(BuildContext context, WidgetRef ref, CatalogEditor editor,
       String action) async {
     final navigator = Navigator.of(context);
+    // Captured up front: 'hide' confirms first, so by the time it writes there
+    // has already been an async gap.
+    final guard = WriteGuard.of(context, ref);
     switch (action) {
       case 'mefarshim':
         await showMefarshimConfigSheet(context, ref, node: node.node);
       case 'bulk':
         await showBulkActionsSheet(context, ref, node: node.node);
       case 'edit':
-        await navigator.push(MaterialPageRoute<void>(
-            builder: (_) => AddCustomNodeScreen(existing: node.node)));
+        await navigator.pushNamed(Routes.editItem(node.node.id));
       case 'add':
-        await navigator.push(MaterialPageRoute<void>(
-            builder: (_) => AddCustomNodeScreen(initialParentId: node.node.id)));
+        await navigator.pushNamed(Routes.addItemUnder(node.node.id));
       case 'clone':
-        await editor.cloneStructure(node.node);
+        await guard.run(() => editor.cloneStructure(node.node),
+            what: 'Cloning "${node.name}"',
+            success: 'Cloned "${node.name}"');
       case 'hide':
         final ok = await _confirm(context,
             'Hide "${node.name}"?',
             'It is removed from the tree. Your logged progress stays intact, '
                 'and you can restore it with "Reset to default".');
-        if (ok) await editor.hide(node.node);
+        if (ok) {
+          await guard.run(() => editor.hide(node.node),
+              what: 'Hiding "${node.name}"');
+        }
       case 'reset':
-        await editor.reset(node.node.id);
+        await guard.run(() => editor.reset(node.node.id),
+            what: 'Resetting "${node.name}"');
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/routes.dart';
 import '../../application/cycles.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
@@ -8,7 +9,7 @@ import '../../application/stats.dart';
 import '../../core/calendar.dart';
 import '../../core/daf_yomi.dart';
 import '../../domain/entities/catalog_node.dart';
-import 'edit_cycle_screen.dart';
+import '../common/guarded.dart';
 
 /// Learning cycles: what each of your cycles calls for today, with one tap to
 /// log it.
@@ -43,9 +44,7 @@ class CyclesScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
         label: const Text('New cycle'),
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const EditCycleScreen()),
-        ),
+        onPressed: () => Navigator.pushNamed(context, Routes.newCycle),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
@@ -94,7 +93,12 @@ class CyclesScreen extends ConsumerWidget {
                     title: Text(c.name),
                     subtitle: Text(c.description),
                     value: !hidden.contains(c.id),
-                    onChanged: (v) => notifier.setBuiltInVisible(c.id, v),
+                    onChanged: (v) => guarded(
+                      context,
+                      ref,
+                      () => notifier.setBuiltInVisible(c.id, v),
+                      what: '${v ? 'Showing' : 'Hiding'} ${c.name}',
+                    ),
                   ),
                 const SizedBox(height: 8),
               ],
@@ -162,13 +166,10 @@ class _CycleCard extends ConsumerWidget {
 
   Future<void> _onMenu(BuildContext context, WidgetRef ref, String action) async {
     final notifier = ref.read(cyclesConfigProvider.notifier);
-    final existing =
-        ref.read(cyclesConfigProvider).custom.where((c) => c.id == cycle.id);
+    final guard = WriteGuard.of(context, ref);
     switch (action) {
       case 'edit':
-        if (existing.isEmpty) return;
-        await Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => EditCycleScreen(existing: existing.first)));
+        await Navigator.pushNamed(context, Routes.editCycle(cycle.id));
       case 'delete':
         final ok = await showDialog<bool>(
           context: context,
@@ -187,7 +188,10 @@ class _CycleCard extends ConsumerWidget {
             ],
           ),
         );
-        if (ok == true) await notifier.remove(cycle.id);
+        if (ok == true) {
+          await guard.run(() => notifier.remove(cycle.id),
+              what: 'Deleting the cycle "${cycle.name}"');
+        }
     }
   }
 }
@@ -247,11 +251,18 @@ class _UnitRow extends ConsumerWidget {
             FilledButton.icon(
               icon: const Icon(Icons.check),
               label: Text('Log ${node.unitHeading(day.unit)}'),
-              onPressed: () {
-                final messenger = ScaffoldMessenger.of(context);
-                ref.read(loggingServiceProvider).markDone(node.id, day.unit);
-                messenger.showSnackBar(SnackBar(content: Text('Logged $title')));
-              },
+              // This button used to fire the write off unawaited and then say
+              // "Logged ✓" whatever happened — the one place in the app where a
+              // failed write was reported to the user as a success. The guard
+              // awaits it, and the message is now the *consequence* of the write
+              // rather than something shown alongside it.
+              onPressed: () => guarded(
+                context,
+                ref,
+                () => ref.read(loggingServiceProvider).markDone(node.id, day.unit),
+                what: 'Logging $title',
+                success: 'Logged $title',
+              ),
             ),
         ],
       ),
@@ -285,6 +296,7 @@ class _LinkPrompt extends ConsumerWidget {
   Future<void> _pick(BuildContext context, WidgetRef ref) async {
     final catalog = ref.read(mergedCatalogProvider).asData?.value;
     if (catalog == null) return;
+    final guard = WriteGuard.of(context, ref);
     final leaves = [
       for (final n in catalog.all)
         if (n.isLeaf) n,
@@ -313,6 +325,11 @@ class _LinkPrompt extends ConsumerWidget {
       ),
     );
     if (chosen == null) return;
-    await ref.read(cyclesConfigProvider.notifier).mapSefer(seferName, chosen.id);
+    final cycles = ref.read(cyclesConfigProvider.notifier);
+    await guard.run(
+      () => cycles.mapSefer(seferName, chosen.id),
+      what: 'Linking “$seferName” to ${chosen.name}',
+      success: 'Linked “$seferName” to ${chosen.name}',
+    );
   }
 }

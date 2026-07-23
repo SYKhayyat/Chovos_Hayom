@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
+import '../common/missing_item.dart';
 import '../dashboard/progress_tile.dart';
 
 /// Shows the progress subtree rooted at a single node (used by search results
 /// for categories).
+///
+/// The title comes from the catalog rather than from whoever pushed this screen,
+/// so renaming the category while it is open renames the screen too.
 class NodeScreen extends ConsumerWidget {
-  const NodeScreen({super.key, required this.nodeId, required this.title});
+  const NodeScreen({super.key, required this.nodeId});
 
   final String nodeId;
-  final String title;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,27 +23,17 @@ class NodeScreen extends ConsumerWidget {
     final eventsReady = ref.watch(eventsProvider).hasValue;
     final node = ref.watch(progressNodeProvider(nodeId));
 
-    final Widget body;
-    if (!catalogReady || !eventsReady) {
-      body = const Center(child: CircularProgressIndicator());
-    } else if (node == null) {
-      body = Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            'This item no longer exists.\nIt may have been removed or renamed.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-        ),
+    if (node == null) {
+      return MissingItemScreen(
+        loading: !catalogReady || !eventsReady,
+        message: 'This item no longer exists.\n'
+            'It may have been removed or renamed.',
       );
-    } else {
-      body = ListView(children: [ProgressTile(node: node)]);
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: body,
+      appBar: AppBar(title: Text(node.name)),
+      body: ListView(children: [ProgressTile(node: node)]),
     );
   }
 }

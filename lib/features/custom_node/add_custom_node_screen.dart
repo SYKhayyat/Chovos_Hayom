@@ -7,23 +7,52 @@ import '../../application/providers.dart';
 import '../../domain/entities/catalog.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/enums.dart';
+import '../common/guarded.dart';
+import '../common/missing_item.dart';
 
-/// Create or edit a node. In edit mode ([existing] set) it writes a per-profile
+/// Create or edit a node. In edit mode ([nodeId] set) it writes a per-profile
 /// override keyed by that node's id — so *any* node, built-in included, can be
-/// renamed, re-counted, re-typed, or re-parented. [initialParentId] pre-selects
-/// a parent (used by "add sub-item"). Everything is editable; nothing is locked.
-class AddCustomNodeScreen extends ConsumerStatefulWidget {
-  const AddCustomNodeScreen({super.key, this.existing, this.initialParentId});
+/// renamed, re-counted, re-typed, or re-parented. [parentId] pre-selects a
+/// parent (used by "add sub-item"). Everything is editable; nothing is locked.
+///
+/// Both are ids rather than a `CatalogNode`, so this screen is reachable by name
+/// (`/edit-item/<id>`) and survives a cold start — the form waits for the
+/// catalog instead of opening empty against a node that hasn't loaded yet.
+class AddCustomNodeScreen extends ConsumerWidget {
+  const AddCustomNodeScreen({super.key, this.nodeId, this.parentId});
+
+  final String? nodeId;
+  final String? parentId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (nodeId == null) return _NodeForm(initialParentId: parentId);
+
+    final existing = ref.watch(catalogNodeProvider(nodeId!));
+    if (existing == null) {
+      return MissingItemScreen(
+        loading: !ref.watch(mergedCatalogProvider).hasValue,
+        message: 'This item no longer exists.\n'
+            'It may have been hidden or deleted.',
+      );
+    }
+    // Keyed by id so the form seeds itself once per node, and re-seeds if the
+    // route is replaced with a different one — but never mid-edit.
+    return _NodeForm(key: ValueKey(existing.id), existing: existing);
+  }
+}
+
+class _NodeForm extends ConsumerStatefulWidget {
+  const _NodeForm({super.key, this.existing, this.initialParentId});
 
   final CatalogNode? existing;
   final String? initialParentId;
 
   @override
-  ConsumerState<AddCustomNodeScreen> createState() =>
-      _AddCustomNodeScreenState();
+  ConsumerState<_NodeForm> createState() => _NodeFormState();
 }
 
-class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
+class _NodeFormState extends ConsumerState<_NodeForm> {
   late final TextEditingController _name;
   late final TextEditingController _hebrew;
   late final TextEditingController _count;
@@ -170,29 +199,27 @@ class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
   }
 
   Future<void> _save() async {
-    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final guard = WriteGuard.of(context, ref);
     final name = _name.text.trim();
     if (name.isEmpty) {
-      messenger.showSnackBar(const SnackBar(content: Text('Please enter a name.')));
+      guard.report('Please enter a name.');
       return;
     }
     final count = int.tryParse(_count.text.trim()) ?? 0;
     final offset = int.tryParse(_offset.text.trim()) ?? 1;
     if (_isLeaf && count <= 0) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Number of units must be greater than 0.')));
+      guard.report('Number of units must be greater than 0.');
       return;
     }
     // Same bounds the backup importer enforces, so a node can't be created here
     // that a backup of it would then be rejected for.
     if (_isLeaf && count > BackupValidator.maxUnitCount) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('That is more units than any sefer has.')));
+      guard.report('That is more units than any sefer has.');
       return;
     }
     if (_isLeaf && offset < 0) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('The first unit number cannot be negative.')));
+      guard.report('The first unit number cannot be negative.');
       return;
     }
     final hebrew = _hebrew.text.trim();
@@ -204,9 +231,8 @@ class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
       names.removeLast();
     }
     if (names.length > count) {
-      messenger.showSnackBar(SnackBar(
-          content: Text('You listed ${names.length} unit names but only have '
-              '$count units.')));
+      guard.report('You listed ${names.length} unit names but only have '
+          '$count units.');
       return;
     }
 
@@ -223,8 +249,14 @@ class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
       unitNames: names,
     );
 
+    final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
-    await ref.read(progressRepositoryProvider).addCustomNode(profileId, node);
-    if (mounted) Navigator.of(context).pop();
+    final saved = await guard.run(
+      () => repo.addCustomNode(profileId, node),
+      what: _isEdit ? 'Saving "$name"' : 'Adding "$name"',
+    );
+    // The form stays open on failure, with everything the user typed still in
+    // it — closing it would throw away work that was never written.
+    if (saved) navigator.pop();
   }
 }

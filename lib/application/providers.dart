@@ -21,6 +21,7 @@ import '../domain/usecases/offered_layers.dart';
 import '../domain/usecases/roll_up.dart';
 import '../domain/usecases/unit_layer_view.dart';
 import 'bulk_marker.dart';
+import 'crash_log.dart';
 import 'logging_service.dart';
 
 /// App-level key-value preferences. Overridden in `main` with a shared_preferences
@@ -34,6 +35,14 @@ final databaseProvider = Provider<AppDatabase>((ref) {
   ref.onDispose(db.close);
   return db;
 });
+
+/// The on-device crash log.
+///
+/// One instance, shared: the write guard appends to it, and the Settings screen
+/// reads the same file back. It is a provider rather than a constructor call so
+/// a test can point it at a temp directory instead of the platform's app-support
+/// path — which also keeps the test off a platform channel.
+final crashLogProvider = Provider<CrashLog>((ref) => CrashLog());
 
 /// Pluggable catalog source (bundled JSON for now).
 final catalogRepositoryProvider =

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/routes.dart';
 import '../../application/backup_service.dart';
 import '../../application/goals.dart';
 import '../../application/providers.dart';
@@ -13,9 +14,7 @@ import '../../core/calendar.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/usecases/layer_requirements.dart';
-import '../history/bulk_history_screen.dart';
-import '../profiles/profiles_screen.dart';
-import 'crash_log_screen.dart';
+import '../common/guarded.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -32,7 +31,9 @@ class SettingsScreen extends ConsumerWidget {
           const _SectionHeader('Calendar'),
           RadioGroup<CalendarMode>(
             groupValue: settings.calendar,
-            onChanged: (v) => notifier.setCalendar(v ?? CalendarMode.gregorian),
+            onChanged: (v) => guarded(context, ref,
+                () => notifier.setCalendar(v ?? CalendarMode.gregorian),
+                what: 'Changing the calendar'),
             child: const Column(
               children: [
                 RadioListTile(
@@ -47,7 +48,9 @@ class SettingsScreen extends ConsumerWidget {
           const _SectionHeader('Appearance'),
           RadioGroup<ThemeMode>(
             groupValue: settings.themeMode,
-            onChanged: (v) => notifier.setThemeMode(v ?? ThemeMode.system),
+            onChanged: (v) => guarded(context, ref,
+                () => notifier.setThemeMode(v ?? ThemeMode.system),
+                what: 'Changing the theme'),
             child: const Column(
               children: [
                 RadioListTile(value: ThemeMode.system, title: Text('Follow system')),
@@ -60,7 +63,9 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Hebrew (right-to-left) layout'),
             subtitle: const Text('Render the whole app in Hebrew RTL'),
             value: settings.hebrewLayout,
-            onChanged: notifier.setHebrewLayout,
+            onChanged: (v) => guarded(
+                context, ref, () => notifier.setHebrewLayout(v),
+                what: 'Changing the layout direction'),
           ),
           const Divider(),
           const _SectionHeader('Reminders'),
@@ -69,7 +74,9 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: const Text(
                 'Show a reminder in the app if you have not learned today'),
             value: settings.reminderEnabled,
-            onChanged: notifier.setReminderEnabled,
+            onChanged: (v) => guarded(
+                context, ref, () => notifier.setReminderEnabled(v),
+                what: 'Changing the daily nudge'),
           ),
           const Divider(),
           const _SectionHeader('Chazara'),
@@ -94,16 +101,16 @@ class SettingsScreen extends ConsumerWidget {
                 subtitle:
                     layer.nameHebrew != null ? Text(layer.nameHebrew!) : null,
                 value: settings.showsMeforishBar(layer.id),
-                onChanged: (v) => notifier.setMeforishBarVisible(layer.id, v),
+                onChanged: (v) => guarded(context, ref,
+                    () => notifier.setMeforishBarVisible(layer.id, v),
+                    what: '${v ? 'Showing' : 'Hiding'} the ${layer.name} bar'),
               ),
           const Divider(),
           const _SectionHeader('Profiles'),
           ListTile(
             leading: const Icon(Icons.people),
             title: const Text('Manage profiles'),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ProfilesScreen()),
-            ),
+            onTap: () => Navigator.pushNamed(context, Routes.profiles),
           ),
           const Divider(),
           const _SectionHeader('History'),
@@ -116,9 +123,7 @@ class SettingsScreen extends ConsumerWidget {
                   ? 'Undo a finish-all or clear-all, any time'
                   : '$n undoable ${n == 1 ? 'action' : 'actions'}';
             }()),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const BulkHistoryScreen()),
-            ),
+            onTap: () => Navigator.pushNamed(context, Routes.bulkHistory),
           ),
           const Divider(),
           const _SectionHeader('Backup'),
@@ -151,9 +156,7 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Crash log'),
             subtitle: const Text(
                 'Kept on this device only — copy it into a bug report'),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const CrashLogScreen()),
-            ),
+            onTap: () => Navigator.pushNamed(context, Routes.crashLog),
           ),
           const Divider(),
           const _SectionHeader('Reset'),
@@ -171,7 +174,7 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _clearSettings(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final guard = WriteGuard.of(context, ref);
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -193,28 +196,45 @@ class SettingsScreen extends ConsumerWidget {
     if (ok != true) return;
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
-    await ref.read(settingsProvider.notifier).clearAll();
-    for (final n
-        in ref.read(customNodesProvider).asData?.value ?? const <CatalogNode>[]) {
-      await repo.removeCustomNode(profileId, n.id);
-    }
-    for (final l
-        in ref.read(customLayersProvider).asData?.value ?? const <Layer>[]) {
-      await repo.removeCustomLayer(profileId, l.id);
-    }
-    for (final r in ref.read(layerConfigProvider).asData?.value ??
-        const <LayerConfigEntry>[]) {
-      await repo.clearLayerRequirement(profileId, r.nodeId, r.unitIndex);
-    }
-    for (final o in ref.read(offeredConfigProvider).asData?.value ??
-        const <LayerConfigEntry>[]) {
-      await repo.clearOfferedLayers(profileId, o.nodeId, o.unitIndex);
-    }
-    messenger.showSnackBar(const SnackBar(content: Text('Settings cleared')));
+    final settings = ref.read(settingsProvider.notifier);
+    final customNodes =
+        ref.read(customNodesProvider).asData?.value ?? const <CatalogNode>[];
+    final customLayers =
+        ref.read(customLayersProvider).asData?.value ?? const <Layer>[];
+    final requirements =
+        ref.read(layerConfigProvider).asData?.value ?? const <LayerConfigEntry>[];
+    final offered = ref.read(offeredConfigProvider).asData?.value ??
+        const <LayerConfigEntry>[];
+
+    await guard.run(
+      () async {
+        await settings.clearAll();
+        // One transaction for the repository half: a clear that dies partway
+        // used to leave some custom sefarim gone and others still there, with
+        // nothing to tell the user which.
+        await repo.transaction(() async {
+          for (final n in customNodes) {
+            await repo.removeCustomNode(profileId, n.id);
+          }
+          for (final l in customLayers) {
+            await repo.removeCustomLayer(profileId, l.id);
+          }
+          for (final r in requirements) {
+            await repo.clearLayerRequirement(profileId, r.nodeId, r.unitIndex);
+          }
+          for (final o in offered) {
+            await repo.clearOfferedLayers(profileId, o.nodeId, o.unitIndex);
+          }
+        });
+      },
+      what: 'Clearing your settings',
+      success: 'Settings cleared',
+    );
   }
 
   Future<void> _editIntervals(
       BuildContext context, WidgetRef ref, List<int> current) async {
+    final guard = WriteGuard.of(context, ref);
     final ctrl = TextEditingController(text: current.join(', '));
     final text = await showDialog<String>(
       context: context,
@@ -250,7 +270,9 @@ class SettingsScreen extends ConsumerWidget {
       for (final part in text.split(','))
         if (int.tryParse(part.trim()) case final n?) if (n > 0) n,
     ];
-    await ref.read(settingsProvider.notifier).setChazaraIntervals(intervals);
+    final settings = ref.read(settingsProvider.notifier);
+    await guard.run(() => settings.setChazaraIntervals(intervals),
+        what: 'Saving your chazara intervals');
   }
 
   Future<String> _buildExport(WidgetRef ref) async {
@@ -296,64 +318,72 @@ class SettingsScreen extends ConsumerWidget {
       ? 'Import failed: ${e.message}'
       : 'Import failed: the file could not be read.';
 
+  /// Backup and restore report through the same guard as every other write.
+  /// They keep their own *success* wording only because "cancelled" is neither a
+  /// success nor a failure — the file dialog closing without a choice is not
+  /// something to apologise for.
   Future<void> _exportToFile(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      final json = await _buildExport(ref);
-      final path = await FilePicker.saveFile(
-        dialogTitle: 'Save backup',
-        fileName: 'chovos_hayom_backup.json',
-        bytes: utf8.encode(json),
-      );
-      messenger.showSnackBar(SnackBar(
-        content: Text(path == null ? 'Export cancelled' : 'Saved backup'),
-      ));
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Export failed: $e')));
-    }
+    final guard = WriteGuard.of(context, ref);
+    var cancelled = false;
+    final ok = await guard.run(
+      () async {
+        final json = await _buildExport(ref);
+        final path = await FilePicker.saveFile(
+          dialogTitle: 'Save backup',
+          fileName: 'chovos_hayom_backup.json',
+          bytes: utf8.encode(json),
+        );
+        cancelled = path == null;
+      },
+      what: 'Exporting your backup',
+    );
+    if (!ok) return;
+    guard.report(cancelled ? 'Export cancelled' : 'Saved backup');
   }
 
   Future<void> _importFromFile(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      final result = await FilePicker.pickFiles(
-        dialogTitle: 'Choose a backup file',
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-        withData: true,
-      );
-      final bytes = result?.files.single.bytes;
-      if (bytes == null) {
-        messenger.showSnackBar(const SnackBar(content: Text('Import cancelled')));
-        return;
-      }
-      final added = await _applyImport(ref, utf8.decode(bytes));
-      messenger.showSnackBar(
-          SnackBar(content: Text('Imported $added new events')));
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(
-          content: Text(_importError(e)), duration: const Duration(seconds: 8)));
-    }
+    final guard = WriteGuard.of(context, ref);
+    String? outcome;
+    await guard.run(
+      () async {
+        final result = await FilePicker.pickFiles(
+          dialogTitle: 'Choose a backup file',
+          type: FileType.custom,
+          allowedExtensions: ['json'],
+          withData: true,
+        );
+        final bytes = result?.files.single.bytes;
+        if (bytes == null) {
+          outcome = 'Import cancelled';
+          return;
+        }
+        outcome = 'Imported ${await _applyImport(ref, utf8.decode(bytes))} '
+            'new events';
+      },
+      what: 'Importing your backup',
+      describe: _importError,
+    );
+    final message = outcome;
+    if (message != null) guard.report(message);
   }
 
   Future<void> _export(BuildContext context, WidgetRef ref) async {
-    final json = await _buildExport(ref);
-    await Clipboard.setData(ClipboardData(text: json));
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Exported to clipboard')),
-      );
-    }
+    final guard = WriteGuard.of(context, ref);
+    await guard.run(
+      () async => Clipboard.setData(ClipboardData(text: await _buildExport(ref))),
+      what: 'Exporting to the clipboard',
+      success: 'Exported to clipboard',
+    );
   }
 
   Future<void> _import(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final guard = WriteGuard.of(context, ref);
     final ctrl = TextEditingController();
     final String? text;
     try {
       text = await showDialog<String>(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: const Text('Import data'),
           content: TextField(
             controller: ctrl,
@@ -363,10 +393,10 @@ class SettingsScreen extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('Cancel')),
             FilledButton(
-                onPressed: () => Navigator.pop(context, ctrl.text.trim()),
+                onPressed: () => Navigator.pop(dialogContext, ctrl.text.trim()),
                 child: const Text('Import')),
           ],
         ),
@@ -374,17 +404,17 @@ class SettingsScreen extends ConsumerWidget {
     } finally {
       ctrl.dispose();
     }
-    if (text == null || text.isEmpty) return;
+    final payload = text ?? '';
+    if (payload.isEmpty) return;
 
-    try {
-      final added = await _applyImport(ref, text);
-      messenger.showSnackBar(
-        SnackBar(content: Text('Imported $added new events')),
-      );
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(
-          content: Text(_importError(e)), duration: const Duration(seconds: 8)));
-    }
+    var added = 0;
+    final ok = await guard.run(
+      () async => added = await _applyImport(ref, payload),
+      what: 'Importing your backup',
+      describe: _importError,
+    );
+    if (!ok) return;
+    guard.report('Imported $added new events');
   }
 }
 

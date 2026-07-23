@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/providers.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
+import '../common/guarded.dart';
 import 'unit_grid_screen.dart';
 
 /// Per-unit meforish checklist: toggle each required (and any already-learned)
@@ -54,6 +55,10 @@ class _UnitLayersSheet extends ConsumerWidget {
 
     final missing = requiredSet.where((l) => !completed.contains(l)).length;
     final logger = ref.read(loggingServiceProvider);
+    // Captured here rather than per-callback: "Clear this unit" pops the sheet
+    // and then writes, so by then this context is gone.
+    final guard = WriteGuard.of(context, ref);
+    final heading = '${node.name} · ${node.unitHeading(unit)}';
 
     // An id with no matching meforish means one was deleted after this unit was
     // marked. Name it as such — a raw UUID in a checkbox is unreadable.
@@ -88,13 +93,13 @@ class _UnitLayersSheet extends ConsumerWidget {
                   subtitle: requiredSet.contains(id)
                       ? const Text('Required')
                       : const Text('Optional'),
-                  onChanged: (v) {
-                    if (v == true) {
-                      logger.markDone(node.id, unit, layers: [id]);
-                    } else {
-                      logger.markUndone(node.id, unit, layers: [id]);
-                    }
-                  },
+                  onChanged: (v) => guard.run(
+                    () => v == true
+                        ? logger.markDone(node.id, unit, layers: [id])
+                        : logger.markUndone(node.id, unit, layers: [id]),
+                    what: '${v == true ? 'Marking' : 'Un-marking'} '
+                        '${layerOf(id).name} on $heading',
+                  ),
                 ),
               const Divider(),
               Align(
@@ -106,9 +111,11 @@ class _UnitLayersSheet extends ConsumerWidget {
                     final toAdd = requiredSet
                         .where((l) => !completed.contains(l))
                         .toList();
-                    if (toAdd.isNotEmpty) {
-                      logger.markDone(node.id, unit, layers: toAdd);
-                    }
+                    if (toAdd.isEmpty) return;
+                    guard.run(
+                      () => logger.markDone(node.id, unit, layers: toAdd),
+                      what: 'Marking every required meforish on $heading',
+                    );
                   },
                 ),
               ),
@@ -134,8 +141,12 @@ class _UnitLayersSheet extends ConsumerWidget {
                     icon: const Icon(Icons.undo, size: 18),
                     label: const Text('Clear this unit'),
                     onPressed: () {
-                      logger.markUndone(node.id, unit, layers: completed.toList());
                       Navigator.pop(context);
+                      guard.run(
+                        () => logger.markUndone(node.id, unit,
+                            layers: completed.toList()),
+                        what: 'Clearing $heading',
+                      );
                     },
                   ),
                 ),

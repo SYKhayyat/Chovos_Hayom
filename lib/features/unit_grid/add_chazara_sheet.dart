@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/providers.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
+import '../common/guarded.dart';
 
 /// Logs one chazara (review) pass: which mefarshim were reviewed, when, how long,
 /// and any notes. Each pass is independent of the main learning and of other
@@ -184,17 +185,27 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
     }
   }
 
-  void _save() {
+  /// Closes the sheet, then writes. The guard already holds the messenger, so a
+  /// chazara that fails to save still says so — it used to be fired off unawaited
+  /// as the sheet disappeared, which meant a failure left no trace anywhere.
+  Future<void> _save() async {
     final duration = int.tryParse(_durationCtrl.text.trim());
     final note = _noteCtrl.text.trim();
-    ref.read(loggingServiceProvider).markReview(
-          widget.node.id,
-          widget.unit,
-          occurredAt: _manualDate ? _date : null,
-          durationMin: duration,
-          note: note.isEmpty ? null : note,
-          layers: _selected.toList(),
-        );
+    final logger = ref.read(loggingServiceProvider);
+    final guard = WriteGuard.of(context, ref);
+    final heading =
+        '${widget.node.name} · ${widget.node.unitHeading(widget.unit)}';
     Navigator.pop(context);
+    await guard.run(
+      () => logger.markReview(
+        widget.node.id,
+        widget.unit,
+        occurredAt: _manualDate ? _date : null,
+        durationMin: duration,
+        note: note.isEmpty ? null : note,
+        layers: _selected.toList(),
+      ),
+      what: 'Logging a chazara on $heading',
+    );
   }
 }

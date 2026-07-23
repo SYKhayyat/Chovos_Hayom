@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'app/routes.dart';
 import 'application/crash_log.dart';
 import 'application/providers.dart';
 import 'application/settings.dart';
 import 'application/stats.dart';
 import 'data/preferences/shared_prefs_preferences.dart';
-import 'features/dashboard/dashboard_screen.dart';
 
 Future<void> main() async {
   // Everything runs inside the crash guard, so a failure during startup — the
@@ -57,6 +57,15 @@ class _ChovosHayomAppState extends ConsumerState<ChovosHayomApp> {
     return MaterialApp(
       title: 'Chovos Hayom',
       themeMode: themeMode,
+      // Named routes, not `home:` — see lib/app/routes.dart. The restoration
+      // scope is what lets Android rebuild this stack after killing the process
+      // in the background, which it can only do because every route's arguments
+      // live in its name.
+      restorationScopeId: 'chovos_hayom',
+      initialRoute: Routes.dashboard,
+      onGenerateRoute: AppRouter.onGenerateRoute,
+      onGenerateInitialRoutes: AppRouter.onGenerateInitialRoutes,
+      onUnknownRoute: AppRouter.onUnknownRoute,
       // Optional Hebrew (RTL) layout: a 'he' locale flips direction app-wide and
       // localizes the Material date pickers/dialogs. Null = system default (LTR).
       locale: hebrewLayout ? const Locale('he') : null,
@@ -75,7 +84,6 @@ class _ChovosHayomAppState extends ConsumerState<ChovosHayomApp> {
         brightness: Brightness.dark,
         useMaterial3: true,
       ),
-      home: const DashboardScreen(),
     );
   }
 }

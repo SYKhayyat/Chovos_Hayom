@@ -5,6 +5,7 @@ import '../../application/goals.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
+import '../common/guarded.dart';
 
 class GoalsScreen extends ConsumerWidget {
   const GoalsScreen({super.key});
@@ -66,18 +67,23 @@ class _GoalRow extends ConsumerWidget {
               '${ok ? 'on track' : 'behind'}'),
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline),
-        onPressed: () async {
-          final messenger = ScaffoldMessenger.of(context);
-          await ref.read(goalsProvider.notifier).removeGoal(nodeId);
-          messenger.showSnackBar(SnackBar(
-            content: Text('Goal for "${node.name}" removed'),
-            action: SnackBarAction(
-              label: 'Undo',
-              onPressed: () =>
-                  ref.read(goalsProvider.notifier).setGoal(nodeId, target),
-            ),
-          ));
-        },
+        onPressed: () => _remove(context, ref, node.name, target),
+      ),
+    );
+  }
+
+  Future<void> _remove(
+      BuildContext context, WidgetRef ref, String name, DateTime target) async {
+    final goals = ref.read(goalsProvider.notifier);
+    final guard = WriteGuard.of(context, ref);
+    await guard.run(
+      () => goals.removeGoal(nodeId),
+      what: 'Removing the goal for "$name"',
+      success: 'Goal for "$name" removed',
+      undo: SnackBarAction(
+        label: 'Undo',
+        onPressed: () => guard.run(() => goals.setGoal(nodeId, target),
+            what: 'Restoring the goal for "$name"'),
       ),
     );
   }

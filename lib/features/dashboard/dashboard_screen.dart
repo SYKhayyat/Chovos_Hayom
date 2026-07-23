@@ -2,24 +2,14 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/routes.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/sorting.dart';
 import '../../application/stats.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/usecases/reminders_policy.dart';
-import '../calculator/calculator_screen.dart';
-import '../chazara/chazara_screen.dart';
-import '../cycles/cycles_screen.dart';
-import '../custom_node/add_custom_node_screen.dart';
-import '../goals/goals_screen.dart';
-import '../journal/notes_journal_screen.dart';
-import '../mefarshim/mefarshim_progress_screen.dart';
-import '../profiles/profiles_screen.dart';
 import '../search/catalog_search_delegate.dart';
-import '../settings/settings_screen.dart';
-import '../siyum/siyum_screen.dart';
-import '../stats/stats_screen.dart';
 import 'progress_tile.dart';
 import 'session_banner.dart';
 import 'sort_sheet.dart';
@@ -95,18 +85,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           IconButton(
             icon: const Icon(Icons.insights),
             tooltip: 'Statistics',
-            onPressed: () => _push(context, const StatsScreen()),
+            onPressed: () => Navigator.pushNamed(context, Routes.stats),
           ),
           IconButton(
             icon: const Icon(Icons.calculate),
             tooltip: 'Siyum calculator',
-            onPressed: () => _push(context, const CalculatorScreen()),
+            onPressed: () => Navigator.pushNamed(context, Routes.calculator),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Add custom sefer',
-        onPressed: () => _push(context, const AddCustomNodeScreen()),
+        onPressed: () => Navigator.pushNamed(context, Routes.addItem),
         child: const Icon(Icons.add),
       ),
       body: forest.when(
@@ -128,10 +118,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
     );
-  }
-
-  static void _push(BuildContext context, Widget screen) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
 }
 
@@ -197,12 +183,12 @@ class _AppDrawer extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.calendar_today),
             title: const Text('Learning cycles'),
-            onTap: () => _go(context, const CyclesScreen()),
+            onTap: () => _go(context, Routes.cycles),
           ),
           ListTile(
             leading: const Icon(Icons.flag),
             title: const Text('Goals'),
-            onTap: () => _go(context, const GoalsScreen()),
+            onTap: () => _go(context, Routes.goals),
           ),
           Consumer(builder: (context, ref, _) {
             final dueCount = ref.watch(chazaraDueProvider).length;
@@ -212,47 +198,48 @@ class _AppDrawer extends ConsumerWidget {
               trailing: dueCount == 0
                   ? null
                   : Badge(label: Text('$dueCount')),
-              onTap: () => _go(context, const ChazaraScreen()),
+              onTap: () => _go(context, Routes.chazara),
             );
           }),
           ListTile(
             leading: const Icon(Icons.emoji_events),
             title: const Text('Siyumim'),
-            onTap: () => _go(context, const SiyumScreen()),
+            onTap: () => _go(context, Routes.siyumim),
           ),
           ListTile(
             leading: const Icon(Icons.menu_book_outlined),
             title: const Text('Notes Journal'),
-            onTap: () => _go(context, const NotesJournalScreen()),
+            onTap: () => _go(context, Routes.journal),
           ),
           ListTile(
             leading: const Icon(Icons.layers_outlined),
             title: const Text('Mefarshim progress'),
-            onTap: () => _go(context, const MefarshimProgressScreen()),
+            onTap: () => _go(context, Routes.mefarshim),
           ),
           ListTile(
             leading: const Icon(Icons.people),
             title: const Text('Profiles'),
-            onTap: () => _go(context, const ProfilesScreen()),
+            onTap: () => _go(context, Routes.profiles),
           ),
           ListTile(
             leading: const Icon(Icons.add_box_outlined),
             title: const Text('Add custom sefer'),
-            onTap: () => _go(context, const AddCustomNodeScreen()),
+            onTap: () => _go(context, Routes.addItem),
           ),
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('Settings'),
-            onTap: () => _go(context, const SettingsScreen()),
+            onTap: () => _go(context, Routes.settings),
           ),
         ],
       ),
     );
   }
 
-  void _go(BuildContext context, Widget screen) {
+  /// Close the drawer, then go. Two calls on the same navigator, so the drawer
+  /// is never left open behind the screen it opened.
+  void _go(BuildContext context, String route) {
     Navigator.of(context).pop();
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => screen));
+    Navigator.pushNamed(context, route);
   }
 }

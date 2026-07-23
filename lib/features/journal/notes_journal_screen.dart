@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/routes.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/catalog.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/learning_event.dart';
-import '../unit_grid/unit_grid_screen.dart';
 
 /// A single haara paired with where it was written.
 class _JournalEntry {
@@ -122,11 +122,8 @@ class _NotesJournalScreenState extends ConsumerState<NotesJournalScreen> {
                           '${DateDisplay.format(entry.event.occurredAt, mode)}',
                         ),
                         onTap: node != null && node.isLeaf
-                            ? () => Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => UnitGridScreen(node: node),
-                                  ),
-                                )
+                            ? () => Navigator.pushNamed(
+                                context, Routes.sefer(node.id))
                             : null,
                       );
                     },

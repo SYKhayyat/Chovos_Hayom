@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/settings.dart';
 import '../../application/sorting.dart';
+import '../common/guarded.dart';
 
 /// Bottom sheet to choose how the tree's children are ordered: a metric, a
 /// direction, and which generation the sort applies to.
@@ -37,7 +38,10 @@ class _SortSheet extends ConsumerWidget {
               RadioGroup<SortMetric>(
                 groupValue: config.metric,
                 onChanged: (v) {
-                  if (v != null) notifier.setSort(config.copyWith(metric: v));
+                  if (v == null) return;
+                  guarded(context, ref,
+                      () => notifier.setSort(config.copyWith(metric: v)),
+                      what: 'Saving the sort order');
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -59,7 +63,9 @@ class _SortSheet extends ConsumerWidget {
                 subtitle: const Text('Highest / latest first'),
                 value: config.descending,
                 onChanged: config.active
-                    ? (v) => notifier.setSort(config.copyWith(descending: v))
+                    ? (v) => guarded(context, ref,
+                        () => notifier.setSort(config.copyWith(descending: v)),
+                        what: 'Saving the sort order')
                     : null,
               ),
               const SizedBox(height: 4),
@@ -87,9 +93,13 @@ class _SortSheet extends ConsumerWidget {
       label: Text(label),
       selected: config.level == level,
       onSelected: config.active
-          ? (_) => ref
-              .read(settingsProvider.notifier)
-              .setSort(config.copyWith(level: level))
+          ? (_) => guarded(
+              context,
+              ref,
+              () => ref
+                  .read(settingsProvider.notifier)
+                  .setSort(config.copyWith(level: level)),
+              what: 'Saving the sort order')
           : null,
     );
   }

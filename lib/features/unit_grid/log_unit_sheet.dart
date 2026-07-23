@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/session_timer.dart';
 import '../../application/stats.dart';
 import '../../domain/entities/layer.dart';
+import '../common/guarded.dart';
 
 /// Result of the logging sheet. [occurredAt] is null when the user did not set a
 /// date/time manually, so the caller auto-fills "now" (ARCHITECTURE.md §2.2).
@@ -137,8 +138,17 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
 
   Future<void> _toggleTimer() async {
     final timer = ref.read(sessionTimerProvider.notifier);
-    await timer.toggle(_now,
-        label: widget.title, nodeId: widget.nodeId, unitIndex: widget.unitIndex);
+    final running = ref.read(sessionTimerProvider).isRunning;
+    final ok = await guarded(
+      context,
+      ref,
+      () => timer.toggle(_now,
+          label: widget.title,
+          nodeId: widget.nodeId,
+          unitIndex: widget.unitIndex),
+      what: '${running ? 'Pausing' : 'Starting'} the session timer',
+    );
+    if (!ok) return;
     // Pausing offers the time it measured as the duration, without overwriting
     // a number the user typed themselves.
     final session = ref.read(sessionTimerProvider);
@@ -191,9 +201,13 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
     final duration = int.tryParse(_durationCtrl.text.trim());
     final note = _noteCtrl.text.trim();
     // The session ends when it is recorded; leaving it running would let it
-    // bleed into whatever is logged next.
+    // bleed into whatever is logged next. A failure here is worth saying — the
+    // banner would otherwise keep counting a session the user thinks is over —
+    // but it must not block the log itself, which is the point of the sheet.
     if (ref.read(sessionTimerProvider).isActive) {
-      await ref.read(sessionTimerProvider.notifier).reset();
+      await guarded(context, ref,
+          () => ref.read(sessionTimerProvider.notifier).reset(),
+          what: 'Ending the session timer');
     }
     if (!mounted) return;
     Navigator.of(context).pop(LogUnitResult(
@@ -267,8 +281,9 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
                 const Spacer(),
                 if (session.isActive && !session.isRunning)
                   TextButton(
-                    onPressed: () =>
-                        ref.read(sessionTimerProvider.notifier).reset(),
+                    onPressed: () => guarded(context, ref,
+                        () => ref.read(sessionTimerProvider.notifier).reset(),
+                        what: 'Resetting the session timer'),
                     child: const Text('Reset'),
                   ),
                 FilledButton.tonalIcon(

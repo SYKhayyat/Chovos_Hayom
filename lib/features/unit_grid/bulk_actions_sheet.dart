@@ -5,6 +5,7 @@ import '../../application/bulk_marker.dart';
 import '../../application/providers.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
+import '../common/guarded.dart';
 
 /// Bulk finish/clear for a whole node — one leaf, or a category cascading to
 /// every descendant leaf. Offers:
@@ -86,6 +87,7 @@ class _BulkActionsSheet extends ConsumerWidget {
               subtitle: const Text('Mark every unit’s required mefarshim done'),
               onTap: () => _run(
                 title: 'Finish all of “${node.name}”?',
+                what: 'Finishing all of “${node.name}”',
                 verb: 'Finished',
                 confirmLabel: 'Finish',
                 plan: (m) => m.planFinish(
@@ -101,6 +103,7 @@ class _BulkActionsSheet extends ConsumerWidget {
                     : null,
                 onTap: () => _run(
                   title: 'Mark ${layer.name} on all of “${node.name}”?',
+                  what: 'Marking ${layer.name} on all of “${node.name}”',
                   verb: 'Marked ${layer.name} on',
                   confirmLabel: 'Mark',
                   plan: (m) => m.planFinish(
@@ -135,11 +138,20 @@ class _BulkActionsSheet extends ConsumerWidget {
   // outlives the sheet), never the sheet's own ref — the sheet is popped first.
   ProviderContainer get _container => ProviderScope.containerOf(host);
 
+  /// The same guard every other write in the app uses, built from the host
+  /// rather than from a `WidgetRef` — this sheet is gone by the time it writes.
+  WriteGuard _guard(ProviderContainer container) => WriteGuard(
+        ScaffoldMessenger.of(host),
+        Navigator.of(host, rootNavigator: true),
+        container.read(crashLogProvider),
+      );
+
   /// Closes the sheet, plans the action, confirms it with the real unit count,
   /// then commits and reports with undo. [destructive] colours the confirm
   /// button as a warning (clearing) rather than a normal action (marking).
   Future<void> _run({
     required String title,
+    required String what,
     required String verb,
     required String confirmLabel,
     required BulkPlan Function(BulkMarker) plan,
@@ -147,14 +159,14 @@ class _BulkActionsSheet extends ConsumerWidget {
     bool destructive = false,
   }) async {
     final container = _container;
-    final messenger = ScaffoldMessenger.of(host);
+    final guard = _guard(container);
     if (Navigator.canPop(host)) Navigator.pop(host);
     final marker = container.read(bulkMarkerProvider);
     if (marker == null) return;
 
     final planned = plan(marker);
     if (planned.isEmpty) {
-      messenger.showSnackBar(const SnackBar(content: Text('Nothing to change')));
+      guard.report('Nothing to change');
       return;
     }
     final ok = await _confirm(
@@ -165,7 +177,16 @@ class _BulkActionsSheet extends ConsumerWidget {
       destructive: destructive,
     );
     if (ok != true) return;
-    _report(container, messenger, verb, await marker.commit(planned));
+    // A bulk write is the largest thing the app does; it is also the one whose
+    // failure a user would most easily miss, because the sheet is already gone
+    // and the tree redraws either way.
+    BulkResult? result;
+    final committed = await guard.run(
+      () async => result = await marker.commit(planned),
+      what: what,
+    );
+    final done = result;
+    if (committed && done != null) _report(container, guard, verb, done);
   }
 
   /// The one gate every bulk write goes through. Always states the exact number
@@ -229,6 +250,7 @@ class _BulkActionsSheet extends ConsumerWidget {
     if (range == null) return;
     await _run(
       title: 'Finish units ${range.start}–${range.end} of “${node.name}”?',
+      what: 'Finishing units ${range.start}–${range.end} of “${node.name}”',
       verb: 'Finished units ${range.start}–${range.end} of',
       confirmLabel: 'Finish',
       plan: (m) => m.planFinish(
@@ -241,6 +263,7 @@ class _BulkActionsSheet extends ConsumerWidget {
 
   Future<void> _clearAll() => _run(
         title: 'Clear all of “${node.name}”?',
+        what: 'Clearing all of “${node.name}”',
         verb: 'Cleared',
         confirmLabel: 'Clear',
         destructive: true,
@@ -251,28 +274,30 @@ class _BulkActionsSheet extends ConsumerWidget {
             m.planClear(nodeId: node.id, selection: const AllLayersSelection()),
       );
 
-  void _report(ProviderContainer container, ScaffoldMessengerState messenger,
-      String verb, BulkResult result) {
+  void _report(ProviderContainer container, WriteGuard guard, String verb,
+      BulkResult result) {
     if (result.isEmpty) {
-      messenger.showSnackBar(
-          const SnackBar(content: Text('Nothing to change')));
+      guard.report('Nothing to change');
       return;
     }
     final batchId = result.batchId;
-    messenger.showSnackBar(SnackBar(
-      content: Text('$verb ${_thousands(result.unitsAffected)} '
-          '${result.unitsAffected == 1 ? 'unit' : 'units'}'),
+    guard.report(
+      '$verb ${_thousands(result.unitsAffected)} '
+      '${result.unitsAffected == 1 ? 'unit' : 'units'}',
       action: batchId == null
           ? null
           // Undo by batch, not by the ids held in this closure — the same call
           // the history screen makes, so the two paths can't disagree.
           : SnackBarAction(
               label: 'Undo',
-              onPressed: () => container
-                  .read(progressRepositoryProvider)
-                  .removeBatch(container.read(activeProfileProvider), batchId),
+              onPressed: () => guard.run(
+                () => container
+                    .read(progressRepositoryProvider)
+                    .removeBatch(container.read(activeProfileProvider), batchId),
+                what: 'Undoing that bulk action',
+              ),
             ),
-    ));
+    );
   }
 }
 

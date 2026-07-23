@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../application/crash_log.dart';
+import '../../application/providers.dart';
 
 /// Reads back the on-device crash log.
 ///
 /// The point is that a bug which only reproduces on the user's device stops
 /// being unreportable. Nothing is sent anywhere: the log lives on the device,
 /// and copying it out is the user's decision.
-class CrashLogScreen extends StatefulWidget {
+///
+/// It reads the log through [crashLogProvider] rather than constructing its own,
+/// so it is guaranteed to be the same file the write guard appends failures to —
+/// the *Details* action on a failed write lands here and finds the entry.
+class CrashLogScreen extends ConsumerStatefulWidget {
   const CrashLogScreen({super.key});
 
   @override
-  State<CrashLogScreen> createState() => _CrashLogScreenState();
+  ConsumerState<CrashLogScreen> createState() => _CrashLogScreenState();
 }
 
-class _CrashLogScreenState extends State<CrashLogScreen> {
-  final _log = CrashLog();
+class _CrashLogScreenState extends ConsumerState<CrashLogScreen> {
   String? _contents;
 
   @override
@@ -26,7 +30,7 @@ class _CrashLogScreenState extends State<CrashLogScreen> {
   }
 
   Future<void> _load() async {
-    final text = await _log.read();
+    final text = await ref.read(crashLogProvider).read();
     if (mounted) setState(() => _contents = text);
   }
 
@@ -54,7 +58,7 @@ class _CrashLogScreenState extends State<CrashLogScreen> {
               icon: const Icon(Icons.delete_outline),
               tooltip: 'Clear log',
               onPressed: () async {
-                await _log.clear();
+                await ref.read(crashLogProvider).clear();
                 await _load();
               },
             ),
