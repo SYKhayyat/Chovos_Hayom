@@ -32,7 +32,7 @@ Where the README currently overclaims (backup completeness, node-level mefarshim
 
 ## Status — worked through 2026-07-23
 
-Commits `a6c6cde` … `30dca14`. Analyzer clean; **224 tests** pass (was 122).
+Commits `a6c6cde` … `e534441`. Analyzer clean under `--fatal-infos`; **227 tests** pass (was 122).
 
 **Done**
 
@@ -59,6 +59,9 @@ Commits `a6c6cde` … `30dca14`. Analyzer clean; **224 tests** pass (was 122).
 | §4 Siyumim fire at every level, not just leaves | `8b171fb` |
 | §4 Learning cycles — a configurable engine + the two the calendar computes | `1bcc29d` |
 | §6 README/ARCHITECTURE brought back in line (built up to the claims, not softened) | `30dca14` |
+| §5 Lints past the `flutter_lints` defaults — and the four real type holes they found | `8c2364a` |
+| §5 `InMemoryProgressRepository` moved out of `lib/` into `test/support/` | `e534441` |
+| §5 `LearningEvent.copyWith` deleted; `withDetails` is the one copier, now tested | `e534441` |
 
 **Deliberately not done, with reasons**
 
@@ -70,20 +73,31 @@ Commits `a6c6cde` … `30dca14`. Analyzer clean; **224 tests** pass (was 122).
   well; the current formatter reflows ~100 files against that. The analyzer (`--fatal-infos`)
   enforces what actually matters.
 
-**Left to do — §5 code quality**
+**What §5 turned up on the way**
 
-None of these are correctness or data-safety issues; they are the tidying the review listed last.
+The lint pass was expected to be cosmetic. `strict-casts` instead found four `?? const []`
+fallbacks that widen a typed list to `List<dynamic>` — the settings *Clear all* loop and the
+dashboard's custom-id set were both calling `.id` on a `dynamic`. They happened to work; the
+compiler had simply been told not to look. `use_build_context_synchronously` is now an **error**
+rather than a hint, which is the right severity for an app where every async gap sits between a
+user's tap and their learning being written.
 
-- Custom lint rules beyond `flutter_lints` defaults (`always_declare_return_types`,
-  `prefer_const_constructors`, stricter `use_build_context_synchronously`).
-- `InMemoryProgressRepository` still ships in `lib/` though only tests use it — it belongs in
-  `test/support/`.
-- `LearningEvent.copyWith` (null = keep) beside `withDetails` (null = clear) is still a footgun
-  mitigated only by a comment.
-- Error handling is still inconsistent — some writes are wrapped with a snackbar, the identical
-  write elsewhere is fire-and-forget. Worth one consistent policy.
-- No routing abstraction (raw `MaterialPageRoute`), which will hurt the day deep links or state
-  restoration are wanted.
+**Left to do — the last two of §5**
+
+Neither is a correctness or data-safety defect today, but the first is closer to one than its
+position in this list suggests.
+
+- **One error-handling policy for writes.** Still inconsistent, and worse than "inconsistent" in
+  one place: `cycles_screen.dart`'s *Log today's daf* is fire-and-forget **and** shows
+  "Logged ✓" unconditionally, so a failed write is reported to the user as a success. Roughly
+  twenty write sites across the features need routing through one guard that awaits the write,
+  records a failure to the existing `CrashLog`, and reports it in one consistent sentence.
+  `unawaited_futures` (now on) marks the fire-and-forget ones, so the list is mechanical to find.
+- **No routing abstraction.** Raw `MaterialPageRoute` at twelve call sites, each constructing its
+  destination widget directly. That blocks deep links, notification taps, and state restoration —
+  none of which can call a builder closure. The fix is a named-route table plus screens that take
+  an id rather than a `CatalogNode`; `UnitGridScreen` holding a node *object* is also a live
+  staleness bug (rename a sefer while its grid is open and the title does not follow).
 
 ---
 

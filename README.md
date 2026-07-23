@@ -124,7 +124,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   backup, and deleting a profile takes its goals with it.
 - **A crash log**, on the device only, readable and copyable from Settings — so a bug that only
   happens on your phone is something you can actually report. Nothing is sent anywhere.
-- 224 tests covering the engine, layer fold + required/offered-set resolution, per-meforish roll-up,
+- 227 tests covering the engine, layer fold + required/offered-set resolution, per-meforish roll-up,
   bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
   reminders, backup validation, chazara scheduling, siyumim, learning cycles, the session timer,
   per-profile settings, schema migrations, derive-engine cost, and UI.
@@ -145,7 +145,7 @@ uses in-app nudges only), and **running on Android/desktop** (needs the platform
 flutter pub get
 dart run build_runner build   # generates Drift code
 flutter analyze               # clean
-flutter test                  # 224 tests, all green
+flutter test                  # 227 tests, all green
 ```
 
 CI runs all of the above on every push and pull request, plus a release APK build, and fails if the
