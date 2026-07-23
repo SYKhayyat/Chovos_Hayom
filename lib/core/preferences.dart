@@ -48,6 +48,10 @@ class PrefKeys {
   /// sheet being dismissed, the app being backgrounded, and the process dying.
   static const sessionTimer = 'sessionTimer';
 
+  /// The profile's learning cycles: which built-ins are hidden, their own
+  /// cycles, and any sefer-name mappings (JSON).
+  static const cycles = 'cycles';
+
   /// Set once the one-time move of the old device-wide settings into the active
   /// profile has run. See `SettingsNotifier`.
   static const settingsScopedMigrated = 'settingsScopedMigrated';
@@ -63,6 +67,7 @@ class PrefKeys {
     sortLevel,
     chazaraIntervals,
     hiddenMeforishBars,
+    cycles,
   ];
 
   /// The profile-scoped form of [key].
