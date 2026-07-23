@@ -32,7 +32,12 @@ Where the README currently overclaims (backup completeness, node-level mefarshim
 
 ## Status — worked through 2026-07-23
 
-Commits `a6c6cde` … `e534441`. Analyzer clean under `--fatal-infos`; **227 tests** pass (was 122).
+Commits `a6c6cde` … `2ab099a`. Analyzer clean under `--fatal-infos`; **250 tests** pass (was 122).
+
+Everything in this document is now done. The two items §5 left open — one error-handling policy for
+writes, and a routing abstraction — landed together, because they turned out to need each other: a
+failure message worth showing is one that can offer *Details*, and offering it means being able to
+name a screen.
 
 **Done**
 
@@ -62,6 +67,9 @@ Commits `a6c6cde` … `e534441`. Analyzer clean under `--fatal-infos`; **227 tes
 | §5 Lints past the `flutter_lints` defaults — and the four real type holes they found | `8c2364a` |
 | §5 `InMemoryProgressRepository` moved out of `lib/` into `test/support/` | `e534441` |
 | §5 `LearningEvent.copyWith` deleted; `withDetails` is the one copier, now tested | `e534441` |
+| §5 One write-error policy — `WriteGuard`, every write in `features/` through it | `2ab099a` |
+| §5 A route table — named routes, ids in the path, deep links, state restoration | `2ab099a` |
+| §5 `UnitGridScreen`'s staleness bug (held a `CatalogNode`) — screens take ids | `2ab099a` |
 
 **Deliberately not done, with reasons**
 
@@ -82,26 +90,45 @@ compiler had simply been told not to look. `use_build_context_synchronously` is 
 rather than a hint, which is the right severity for an app where every async gap sits between a
 user's tap and their learning being written.
 
-**Left to do — the last two of §5**
+**What the last two of §5 turned up**
 
-Neither is a correctness or data-safety defect today, but the first is closer to one than its
-position in this list suggests.
+The write-site count was low. The estimate was "roughly twenty"; there are **fifty-six**, because
+`unawaited_futures` only fires inside `async` bodies and most of the dropped writes were in
+synchronous callbacks (`onChanged: (v) { notifier.setX(v); }`) where the lint cannot see them. They
+had to be found by hand. All fifty-six now go through `WriteGuard`.
 
-- **One error-handling policy for writes.** Still inconsistent, and worse than "inconsistent" in
-  one place: `cycles_screen.dart`'s *Log today's daf* is fire-and-forget **and** shows
-  "Logged ✓" unconditionally, so a failed write is reported to the user as a success. Roughly
-  twenty write sites across the features need routing through one guard that awaits the write,
-  records a failure to the existing `CrashLog`, and reports it in one consistent sentence.
-  `unawaited_futures` (now on) marks the fire-and-forget ones, so the list is mechanical to find.
-- **No routing abstraction.** Raw `MaterialPageRoute` at twelve call sites, each constructing its
-  destination widget directly. That blocks deep links, notification taps, and state restoration —
-  none of which can call a builder closure. The fix is a named-route table plus screens that take
-  an id rather than a `CatalogNode`; `UnitGridScreen` holding a node *object* is also a live
-  staleness bug (rename a sefer while its grid is open and the title does not follow).
+Two things were worse than "inconsistent", and both are fixed:
+
+- *Log today's daf* was fire-and-forget **and** printed "Logged ✓" unconditionally — a failed write
+  reported as a success. There is now a test that fails on exactly that.
+- `profiles_screen.dart`'s delete caught **every** exception and reported all of them as
+  "Could not delete the last remaining profile." A database error came out as a confident wrong
+  answer. The guard's `describe` hook keeps the specific message for the specific cause
+  (`StateError`) and reports everything else as what it is.
+
+Three things came along with the fix rather than being asked for, because leaving them would have
+made the policy a half-policy:
+
+- **Forms stay open when a save fails.** Every `_save` used to `Navigator.pop()` unconditionally,
+  so a failed save closed the form over work that was never written.
+- **Two writes that are one answer became transactions.** The mefarshim sheet wrote *required* and
+  *offered* as separate calls (a node could end up requiring a meforish it did not offer), and
+  *Clear settings* looped over four tables uncommitted.
+- **The crash log has one owner.** It was constructed at each use site; it is now
+  `crashLogProvider`, so the guard writes the file the Settings screen reads — which is what makes
+  the *Details* action land on the entry it is talking about.
+
+On the routing side, `/cycles/<id>` would have collided with `/cycles/new` for a cycle whose id was
+literally `new`. Ids are UUIDs, so it could not have happened — but a route table that is only
+correct because of what ids look like is a trap for whoever changes them, so editing is
+`/cycles/edit/<id>`.
 
 ---
 
 ## Verdict
+
+> Everything below is the **original assessment**, kept as written so the list above can be read
+> against what it was answering. Every item in it has since been fixed; see *Status* for where.
 
 I read the whole codebase, ran `flutter analyze` (clean) and `flutter test` (122 pass), validated the catalog JSON, and benchmarked the derive engine. Here's the honest assessment.
 

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
+import '../common/guarded.dart';
 
 /// Reads back the on-device crash log.
 ///
@@ -47,12 +48,16 @@ class _CrashLogScreenState extends ConsumerState<CrashLogScreen> {
             IconButton(
               icon: const Icon(Icons.copy),
               tooltip: 'Copy to clipboard',
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                await Clipboard.setData(ClipboardData(text: contents));
-                messenger.showSnackBar(
-                    const SnackBar(content: Text('Crash log copied')));
-              },
+              // Through the guard like everything else — a clipboard write can
+              // fail on its platform channel, and "copied" when nothing was is
+              // exactly the class of lie the guard exists to stop.
+              onPressed: () => guarded(
+                context,
+                ref,
+                () => Clipboard.setData(ClipboardData(text: contents)),
+                what: 'Copying the crash log',
+                success: 'Crash log copied',
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline),

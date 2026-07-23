@@ -102,6 +102,7 @@ Rules:
 
 ```
 lib/
+  app/             the route table: every screen addressable by name, ids in the path
   core/            cross-cutting: settings registry, DI, result/error types, date/calendar utils
   domain/          pure Dart. NO Flutter, NO Drift imports.
     entities/         CatalogNode, LearningEvent, Profile, UnitState, Progress, Goal, Cycle
@@ -124,6 +125,7 @@ lib/
     mappers/          row <-> entity
   features/        self-contained feature modules (see §10); each owns its
                    presentation + application (Riverpod notifiers/providers).
+    common/           the one write guard + the "this id no longer exists" screen
     dashboard/  tree/  logging/  stats/  goals/  cycles/  profiles/  search/  settings/
   main.dart
 assets/
@@ -270,3 +272,15 @@ Explicit product requirements, enforced architecturally:
   risk of desync — the whole reason the rewrite exists.
 - **Catalog & cycles as data, not code.** New sefarim, corpus fixes, and new limud cycles ship as
   JSON assets (or user input) — no Dart changes, no release for content updates.
+- **Screens are addressed by name, and take ids.** `lib/app/routes.dart` is the one route table.
+  A destination that is a builder closure cannot be *asked for* from outside the widget tree, which
+  rules out deep links, notification taps and OS state restoration — all three arrive as a string.
+  So a route carries ids rather than objects, and everything a screen needs lives in its path
+  (no `arguments`, so nothing is un-restorable because of what was passed to it). Screens resolve
+  their id against the live catalog on every build, which also means a rename or a re-count made
+  while a screen is open is visible on that screen rather than waiting for it to be reopened.
+- **One policy for every write.** `features/common/guarded.dart` is the only place a
+  user-initiated write is awaited, reported, and recorded. Success is reported *after* the write
+  succeeds — never alongside it — a failure is recorded to the on-device `CrashLog` labelled with
+  what the user was doing, and every failure reads the same way, with a *Details* action that opens
+  the log. `unawaited_futures` is on precisely so nothing drifts back out of this.

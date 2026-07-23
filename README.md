@@ -20,7 +20,8 @@ prediction-from-actual-pace for free.
   log, never stored.
 
 Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Drift + JSON) ·
-`application/` (Riverpod) · `features/` (UI). Full design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+`application/` (Riverpod) · `features/` (UI) · `app/` (the route table). Full design in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 **Stack:** Flutter · Riverpod · Drift (SQLite) · `fl_chart` (charts) · `kosher_dart` (Hebrew
 calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_provider` (crash log).
@@ -36,7 +37,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
 | **4 — Polish** | Goals, chazara UI, session timer, in-app reminders | ✅ Done |
 | **5 — Hardening+** | Migration strategy, correctness fixes, cycles, chazara scheduling, siyumim, time analytics, RTL, file backup, full data management | ✅ Done |
 | **6 — Depth** | Haaros + Notes Journal, tree sorting, **mefarshim as per-daf layers** (custom + configurable required sets), chazara as first-class passes, full node editability (edit/hide/reset/clone **any** node, named units, attach-anywhere), settings export/import/clear | ✅ Done |
-| **7 — Production readiness** | Durable bulk undo, validated + atomic import, one-pass derive engine, per-profile settings, configurable learning cycles, release signing + icon + CI + crash log | ✅ Done |
+| **7 — Production readiness** | Durable bulk undo, validated + atomic import, one-pass derive engine, per-profile settings, configurable learning cycles, release signing + icon + CI + crash log, one write-error policy, named routes + deep links | ✅ Done |
 
 ### What works today
 - Expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur, Shulchan
@@ -124,10 +125,19 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   backup, and deleting a profile takes its goals with it.
 - **A crash log**, on the device only, readable and copyable from Settings — so a bug that only
   happens on your phone is something you can actually report. Nothing is sent anywhere.
-- 227 tests covering the engine, layer fold + required/offered-set resolution, per-meforish roll-up,
+- **A write either happens or it says so.** Every write the app makes goes through one guard: it is
+  awaited, it is reported *after* it succeeds rather than alongside it, and if it fails you get one
+  consistent sentence naming what failed and a **Details** button that opens the crash log — where
+  the failure is already recorded under what you were doing ("Marking Shabbos daf 2 learned").
+  Nothing is fire-and-forget, so nothing can fail in silence, and a form whose save failed stays
+  open with your work still in it rather than closing over something that was never written.
+- **Every screen has an address.** Screens are named routes that carry ids (`/sefer/<id>`), never
+  widget objects — which is what makes deep links, notification taps and Android's state
+  restoration possible at all, and what makes a rename show up on a screen that is already open.
+- 250 tests covering the engine, layer fold + required/offered-set resolution, per-meforish roll-up,
   bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
   reminders, backup validation, chazara scheduling, siyumim, learning cycles, the session timer,
-  per-profile settings, schema migrations, derive-engine cost, and UI.
+  per-profile settings, schema migrations, derive-engine cost, the write guard + route table, and UI.
 
 ## Remaining device-only work
 Almost everything is verified via `flutter test`. A few things need a real device/build to finish:
@@ -145,7 +155,7 @@ uses in-app nudges only), and **running on Android/desktop** (needs the platform
 flutter pub get
 dart run build_runner build   # generates Drift code
 flutter analyze               # clean
-flutter test                  # 227 tests, all green
+flutter test                  # 250 tests, all green
 ```
 
 CI runs all of the above on every push and pull request, plus a release APK build, and fails if the
@@ -158,6 +168,11 @@ dashboard's tile tree can skip rebuilding), `avoid_dynamic_calls`, `unawaited_fu
 `use_build_context_synchronously` promoted from a hint to an **error**. Since CI runs
 `--fatal-infos`, all of it is enforced. There is deliberately no formatting rule — the source is
 hand-wrapped so its explanatory comments read as prose.
+
+`unawaited_futures` is the one with teeth: a dropped Future is a write nobody is waiting on and
+nobody will hear fail, which is exactly what `lib/features/common/guarded.dart` exists to end. Every
+write in `features/` goes through that guard, and the lint is what keeps new ones from drifting back
+out of it.
 
 ### Releasing
 
