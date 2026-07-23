@@ -6,6 +6,7 @@ import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/catalog_node.dart';
+import '../../domain/entities/layer.dart';
 import '../../domain/usecases/fold_log.dart';
 import '../../domain/usecases/goal_evaluator.dart';
 import 'add_chazara_sheet.dart';
@@ -14,6 +15,59 @@ import 'log_unit_sheet.dart';
 import 'mefarshim_config_sheet.dart';
 import 'unit_details_sheet.dart';
 import 'unit_layers_sheet.dart';
+
+/// Log one unit with a date, a duration, a haara — **and**, on a layered unit,
+/// which mefarshim it covers.
+///
+/// Those two features used to be mutually exclusive: the checklist marked a
+/// meforish with no date, duration or haara, and this sheet always wrote
+/// `layers: [main]`, so on a layered unit it only marked the text. There was no
+/// way to record "I learned Rashi on this daf for 40 minutes and here's my
+/// chiddush". One sheet now does both, and the layer checklist is seeded with
+/// whatever the unit still needs.
+Future<void> logWithDetails(
+  BuildContext context,
+  WidgetRef ref, {
+  required CatalogNode node,
+  required int unit,
+}) async {
+  final view = ref.read(unitLayerViewProvider);
+  final fold = ref.read(foldProvider).asData?.value;
+  final allLayers = ref.read(allLayersProvider);
+  final logger = ref.read(loggingServiceProvider);
+  final messenger = ScaffoldMessenger.of(context);
+
+  final layered = view.isLayered(node.id, unit);
+  final checkable = layered ? view.checkableFor(node.id, unit) : const <String>{};
+  final learned = fold?.completedLayers(node.id, unit) ?? const <String>{};
+  final required = layered ? view.requiredFor(node.id, unit) : const <String>{};
+  // Default to what's still outstanding; if nothing is, to everything required.
+  final outstanding = required.where((l) => !learned.contains(l)).toSet();
+
+  final result = await showLogUnitSheet(
+    context,
+    title: '${node.name} · ${node.unitHeading(unit)}',
+    nodeId: node.id,
+    unitIndex: unit,
+    layerOptions: [
+      for (final l in allLayers)
+        if (checkable.contains(l.id)) l,
+    ],
+    initialLayers: layered
+        ? (outstanding.isNotEmpty ? outstanding : required)
+        : const {mainLayerId},
+  );
+  if (result == null) return;
+  try {
+    await logger.markDone(node.id, unit,
+        occurredAt: result.occurredAt,
+        durationMin: result.durationMin,
+        note: result.note,
+        layers: result.layers);
+  } catch (e) {
+    messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));
+  }
+}
 
 /// A grid of every unit (daf/perek/siman) in a leaf. Tap toggles done; long-press
 /// opens a menu to log details, add a chazara (review), or un-mark.
@@ -159,13 +213,7 @@ class UnitGridScreen extends ConsumerWidget {
                   : 'Log with date / duration / note'),
               onTap: () async {
                 Navigator.pop(sheetContext);
-                final result = await showLogUnitSheet(context,
-                    title: '${node.name} · ${node.unitHeading(unit)}');
-                if (result == null) return;
-                await logger.markDone(node.id, unit,
-                    occurredAt: result.occurredAt,
-                    durationMin: result.durationMin,
-                    note: result.note);
+                await logWithDetails(context, ref, node: node, unit: unit);
               },
             ),
             if (isDone) ...[

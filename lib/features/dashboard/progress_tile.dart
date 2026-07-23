@@ -9,6 +9,7 @@ import '../../domain/entities/layer.dart';
 import '../../domain/entities/progress_node.dart';
 import '../custom_node/add_custom_node_screen.dart';
 import '../unit_grid/bulk_actions_sheet.dart';
+import '../unit_grid/mefarshim_config_sheet.dart';
 import '../unit_grid/unit_grid_screen.dart';
 
 /// Recursive expandable tree row with a progress bar. Leaves navigate to their
@@ -95,16 +96,21 @@ class ProgressTile extends ConsumerWidget {
 
   /// Per-node actions menu — click-based so it works with a mouse (no long-press
   /// or touchscreen needed). Every node, built-in or custom, can be edited,
-  /// extended, cloned, hidden, or reset.
+  /// extended, cloned, hidden, reset, or given its own mefarshim.
   Widget _nodeMenu(BuildContext context, WidgetRef ref) {
     final editor = CatalogEditor(ref);
     final overridden = editor.isOverridden(node.node.id);
     final builtIn = editor.isBuiltIn(node.node.id);
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert, size: 20),
-      tooltip: 'Edit / add / hide',
+      tooltip: 'Mefarshim / edit / add / hide',
       onSelected: (value) => _onMenu(context, ref, editor, value),
       itemBuilder: (_) => [
+        // The whole InheritedLayerSet engine is built around pinning a set at a
+        // *high* node and letting it inherit down. Until this entry existed the
+        // only way in was a leaf's app bar, so "require Rashi across all of
+        // Shas" meant opening thirty-seven mesechtos one at a time.
+        const PopupMenuItem(value: 'mefarshim', child: Text('Mefarshim…')),
         const PopupMenuItem(value: 'bulk', child: Text('Finish all / clear all')),
         const PopupMenuItem(value: 'edit', child: Text('Edit')),
         const PopupMenuItem(value: 'add', child: Text('Add sub-item')),
@@ -122,6 +128,8 @@ class ProgressTile extends ConsumerWidget {
       String action) async {
     final navigator = Navigator.of(context);
     switch (action) {
+      case 'mefarshim':
+        await showMefarshimConfigSheet(context, ref, node: node.node);
       case 'bulk':
         await showBulkActionsSheet(context, ref, node: node.node);
       case 'edit':

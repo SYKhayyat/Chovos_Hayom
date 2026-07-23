@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../application/backup_service.dart';
 import '../../application/providers.dart';
 import '../../domain/entities/catalog.dart';
 import '../../domain/entities/catalog_node.dart';
@@ -182,6 +183,18 @@ class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
           content: Text('Number of units must be greater than 0.')));
       return;
     }
+    // Same bounds the backup importer enforces, so a node can't be created here
+    // that a backup of it would then be rejected for.
+    if (_isLeaf && count > BackupValidator.maxUnitCount) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('That is more units than any sefer has.')));
+      return;
+    }
+    if (_isLeaf && offset < 0) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('The first unit number cannot be negative.')));
+      return;
+    }
     final hebrew = _hebrew.text.trim();
     // Trim trailing blank lines but keep interior blanks (they line up unnamed
     // units with their index).
@@ -189,6 +202,12 @@ class _AddCustomNodeScreenState extends ConsumerState<AddCustomNodeScreen> {
         _isLeaf ? _names.text.split('\n').map((s) => s.trimRight()).toList() : <String>[];
     while (names.isNotEmpty && names.last.trim().isEmpty) {
       names.removeLast();
+    }
+    if (names.length > count) {
+      messenger.showSnackBar(SnackBar(
+          content: Text('You listed ${names.length} unit names but only have '
+              '$count units.')));
+      return;
     }
 
     final node = CatalogNode(

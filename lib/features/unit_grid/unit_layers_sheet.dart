@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/providers.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
+import 'unit_grid_screen.dart';
 
 /// Per-unit meforish checklist: toggle each required (and any already-learned)
 /// layer for one daf. The unit is complete only once every required layer is
@@ -108,6 +109,21 @@ class _UnitLayersSheet extends ConsumerWidget {
                     if (toAdd.isNotEmpty) {
                       logger.markDone(node.id, unit, layers: toAdd);
                     }
+                  },
+                ),
+              ),
+              // The checkboxes above record *that* you learned it. This records
+              // when, for how long, and what you thought — for the mefarshim you
+              // pick. Same sheet the grid's long-press opens, so the two ways in
+              // write the same thing.
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  icon: const Icon(Icons.edit_calendar, size: 18),
+                  label: const Text('Log with date / duration / haara…'),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    logWithDetails(context, ref, node: node, unit: unit);
                   },
                 ),
               ),

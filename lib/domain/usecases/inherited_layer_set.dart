@@ -34,20 +34,54 @@ class InheritedLayerSet {
   final Map<String, Set<String>> _nodeCache = {};
 
   /// The set that applies to [nodeId] at node level (inherited from ancestors).
+  ///
+  /// Walks upward iteratively and refuses to visit a node twice. A parent cycle
+  /// would otherwise recurse forever — an unrecoverable hang on every rebuild,
+  /// from data that is merely wrong. Import validation and the node editor both
+  /// stop a cycle from being created; this makes the resolver safe regardless of
+  /// where its `parentOf` map came from.
   Set<String> forNode(String nodeId) {
     final cached = _nodeCache[nodeId];
     if (cached != null) return cached;
 
-    Set<String> resolved;
-    final own = nodeConfig[nodeId];
-    if (own != null) {
-      // An explicitly-empty pin means "reset to the default here", not "nothing".
-      resolved = own.isEmpty ? defaultSet : own;
-    } else {
-      final parent = parentOf[nodeId];
-      resolved = parent != null ? forNode(parent) : defaultSet;
+    // The chain from nodeId up to whatever answers, so each link can be
+    // memoized with the same answer on the way back down.
+    final chain = <String>[];
+    final seen = <String>{};
+    var current = nodeId;
+    Set<String>? resolved;
+
+    while (true) {
+      final memo = _nodeCache[current];
+      if (memo != null) {
+        resolved = memo;
+        break;
+      }
+      if (!seen.add(current)) {
+        // A cycle: nothing above it can answer, so fall back to the default.
+        resolved = defaultSet;
+        break;
+      }
+      chain.add(current);
+
+      final own = nodeConfig[current];
+      if (own != null) {
+        // An explicitly-empty pin means "reset to the default here", not
+        // "nothing".
+        resolved = own.isEmpty ? defaultSet : own;
+        break;
+      }
+      final parent = parentOf[current];
+      if (parent == null) {
+        resolved = defaultSet;
+        break;
+      }
+      current = parent;
     }
-    _nodeCache[nodeId] = resolved;
+
+    for (final id in chain) {
+      _nodeCache[id] = resolved;
+    }
     return resolved;
   }
 

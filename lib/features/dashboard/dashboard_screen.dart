@@ -20,6 +20,7 @@ import '../settings/settings_screen.dart';
 import '../siyum/siyum_screen.dart';
 import '../stats/stats_screen.dart';
 import 'progress_tile.dart';
+import 'session_banner.dart';
 import 'sort_sheet.dart';
 
 /// The main dashboard: an expandable tree of the whole catalog with per-node
@@ -112,6 +113,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         data: (nodes) => ListView(
           padding: const EdgeInsets.only(bottom: 88),
           children: [
+            const SessionBanner(),
             if (showNudge) const _NudgeBanner(),
             for (final n in nodes)
               ProgressTile(

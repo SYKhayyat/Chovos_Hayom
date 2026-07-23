@@ -39,6 +39,10 @@ class PrefKeys {
   /// tree. Absent/empty means every enabled meforish shows its bar.
   static const hiddenMeforishBars = 'hiddenMeforishBars';
 
+  /// The in-flight learning session (JSON). Persisted so a timer survives the
+  /// sheet being dismissed, the app being backgrounded, and the process dying.
+  static const sessionTimer = 'sessionTimer';
+
   /// Where one profile's target finish dates live. Profile-scoped rather than a
   /// fixed key, so goals follow the profile they belong to — and so deleting a
   /// profile has a single key to remove.
