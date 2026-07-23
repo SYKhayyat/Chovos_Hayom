@@ -13,6 +13,7 @@ import '../../core/calendar.dart';
 import '../../domain/entities/layer.dart';
 import '../history/bulk_history_screen.dart';
 import '../profiles/profiles_screen.dart';
+import 'crash_log_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -142,6 +143,15 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Import from clipboard'),
             subtitle: const Text('Paste a previous export to restore/merge'),
             onTap: () => _import(context, ref),
+          ),
+          ListTile(
+            leading: const Icon(Icons.bug_report_outlined),
+            title: const Text('Crash log'),
+            subtitle: const Text(
+                'Kept on this device only — copy it into a bug report'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CrashLogScreen()),
+            ),
           ),
           const Divider(),
           const _SectionHeader('Reset'),

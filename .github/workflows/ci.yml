@@ -1,0 +1,67 @@
+name: CI
+
+# The suite and the analyzer were green, but nothing enforced that — so a
+# regression could land and stay landed. This runs on every push and PR.
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Generated files are committed, so a mismatch means someone edited a
+      # schema or provider without regenerating — which fails at runtime, not
+      # at compile time, and is exactly what CI should catch.
+      - name: Check generated code is up to date
+        run: |
+          dart run build_runner build
+          git diff --exit-code -- '*.g.dart' \
+            || (echo "::error::Generated code is stale. Run: dart run build_runner build" && exit 1)
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - run: flutter analyze --fatal-infos
+
+      - run: flutter test --coverage
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+
+  build-android:
+    # A release build is where signing, R8 and the manifest actually get
+    # exercised; the analyzer never touches any of them.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # No keystore in CI, so this is debug-signed on purpose — it proves the
+      # build works, not that the artifact is shippable.
+      - run: flutter build apk --release

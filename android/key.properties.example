@@ -1,0 +1,17 @@
+# Copy to `android/key.properties` and fill in. That file is git-ignored — a
+# keystore password in version control is a keystore you have to replace.
+#
+# Create the keystore once, and keep it somewhere you will still have it in five
+# years: losing it means you can never publish an update to this app again,
+# because Play Store requires the same signing identity.
+#
+#   keytool -genkey -v -keystore chovos-hayom-release.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias chovos-hayom
+#
+# storeFile is resolved relative to `android/app/`, so an absolute path outside
+# the repository is the safest choice.
+
+storeFile=/absolute/path/to/chovos-hayom-release.jks
+storePassword=
+keyAlias=chovos-hayom
+keyPassword=

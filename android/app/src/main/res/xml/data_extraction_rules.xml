@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Excludes everything from Android's cloud backup and device-to-device transfer.
+
+  Without this, `android:allowBackup`'s default would ship the SQLite database —
+  every daf, every haara — to the user's Google account without them being
+  asked. A learning log is personal; the only way it should leave the device is
+  the app's own explicit export (Settings -> Backup), where the user chooses
+  where it goes.
+
+  Device-to-device transfer is excluded too: a new phone should restore from a
+  backup file the user deliberately made, not silently inherit a copy.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="file" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="file" />
+    </device-transfer>
+</data-extraction-rules>

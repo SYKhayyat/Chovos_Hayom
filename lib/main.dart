@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'application/crash_log.dart';
 import 'application/providers.dart';
 import 'application/settings.dart';
 import 'application/stats.dart';
@@ -9,14 +10,18 @@ import 'data/preferences/shared_prefs_preferences.dart';
 import 'features/dashboard/dashboard_screen.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPrefsPreferences.load();
-  runApp(
-    ProviderScope(
-      overrides: [appPreferencesProvider.overrideWithValue(prefs)],
-      child: const ChovosHayomApp(),
-    ),
-  );
+  // Everything runs inside the crash guard, so a failure during startup — the
+  // hardest kind to diagnose from a user's description — is recorded too.
+  await CrashLog().guard(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    final prefs = await SharedPrefsPreferences.load();
+    runApp(
+      ProviderScope(
+        overrides: [appPreferencesProvider.overrideWithValue(prefs)],
+        child: const ChovosHayomApp(),
+      ),
+    );
+  });
 }
 
 class ChovosHayomApp extends ConsumerStatefulWidget {
