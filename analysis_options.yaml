@@ -1,28 +1,48 @@
-# This file configures the analyzer, which statically analyzes Dart code to
-# check for errors, warnings, and lints.
+# Static analysis for Chovos Hayom.
 #
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
-
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
+# `flutter_lints` is the floor, not the ceiling. The rules added below are the
+# ones that catch a class of mistake this codebase actually cares about:
+# unannotated returns hiding a `dynamic`, rebuilt widgets that never needed to
+# be rebuilt, and a `BuildContext` used after an await. CI runs
+# `flutter analyze --fatal-infos`, so everything here is enforced, not advisory.
+#
+# What is deliberately *not* here: any rule that would reflow the source.
+# The code is hand-wrapped so its explanatory comments read as prose, and a
+# formatting rule would fight that for no correctness gain.
 include: package:flutter_lints/flutter.yaml
 
-linter:
-  # The lint rules applied to this project can be customized in the
-  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
-  # included above or to enable additional rules. A list of all available lints
-  # and their documentation is published at https://dart.dev/lints.
-  #
-  # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
-  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
-  # producing the lint.
-  rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+analyzer:
+  # Drift's codegen is not ours to lint, and it is regenerated wholesale.
+  exclude:
+    - "**/*.g.dart"
+  language:
+    # An implicit downcast from `dynamic` is how a JSON field of the wrong type
+    # becomes a crash three layers away from the file that contained it. The
+    # backup importer is the trust boundary; this makes the compiler help guard
+    # it everywhere else too.
+    strict-casts: true
+    strict-raw-types: true
+  errors:
+    # Every async gap in this app sits between a user's action and their data
+    # being written. Using a context across one is a bug, not a style note.
+    use_build_context_synchronously: error
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+linter:
+  rules:
+    # A missing return type is an implicit `dynamic` — the one hole
+    # `strict-casts` cannot see through.
+    - always_declare_return_types
+    # The dashboard rebuilds a tree of hundreds of tiles. A const widget is one
+    # the framework can skip entirely, which is the cheapest performance win
+    # available and the easiest to lose track of by hand.
+    - prefer_const_constructors
+    - prefer_const_constructors_in_immutables
+    - prefer_const_declarations
+    - prefer_const_literals_to_create_immutables
+    # `dynamic.foo()` compiles and then throws at runtime. There is no call in
+    # this codebase that needs it.
+    - avoid_dynamic_calls
+    # A dropped Future is a write nobody is waiting on and nobody will hear fail
+    # — exactly the fire-and-forget pattern the error policy exists to end.
+    # See lib/features/common/guarded.dart.
+    - unawaited_futures

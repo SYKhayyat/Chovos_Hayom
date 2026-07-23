@@ -6,6 +6,7 @@ import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/sorting.dart';
 import '../../application/stats.dart';
+import '../../domain/entities/catalog_node.dart';
 import '../../domain/usecases/reminders_policy.dart';
 import '../calculator/calculator_screen.dart';
 import '../chazara/chazara_screen.dart';
@@ -48,7 +49,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final forest = ref.watch(progressForestProvider);
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
     final customIds = <String>{
-      for (final n in ref.watch(customNodesProvider).asData?.value ?? const [])
+      for (final n in ref.watch(customNodesProvider).asData?.value ??
+          const <CatalogNode>[])
         n.id,
     };
 

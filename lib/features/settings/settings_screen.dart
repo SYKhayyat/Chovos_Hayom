@@ -10,7 +10,9 @@ import '../../application/goals.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
+import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
+import '../../domain/usecases/layer_requirements.dart';
 import '../history/bulk_history_screen.dart';
 import '../profiles/profiles_screen.dart';
 import 'crash_log_screen.dart';
@@ -192,16 +194,20 @@ class SettingsScreen extends ConsumerWidget {
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
     await ref.read(settingsProvider.notifier).clearAll();
-    for (final n in ref.read(customNodesProvider).asData?.value ?? const []) {
+    for (final n
+        in ref.read(customNodesProvider).asData?.value ?? const <CatalogNode>[]) {
       await repo.removeCustomNode(profileId, n.id);
     }
-    for (final l in ref.read(customLayersProvider).asData?.value ?? const []) {
+    for (final l
+        in ref.read(customLayersProvider).asData?.value ?? const <Layer>[]) {
       await repo.removeCustomLayer(profileId, l.id);
     }
-    for (final r in ref.read(layerConfigProvider).asData?.value ?? const []) {
+    for (final r in ref.read(layerConfigProvider).asData?.value ??
+        const <LayerConfigEntry>[]) {
       await repo.clearLayerRequirement(profileId, r.nodeId, r.unitIndex);
     }
-    for (final o in ref.read(offeredConfigProvider).asData?.value ?? const []) {
+    for (final o in ref.read(offeredConfigProvider).asData?.value ??
+        const <LayerConfigEntry>[]) {
       await repo.clearOfferedLayers(profileId, o.nodeId, o.unitIndex);
     }
     messenger.showSnackBar(const SnackBar(content: Text('Settings cleared')));

@@ -32,7 +32,7 @@ class CalendarCycle {
   static const yerushalmiId = 'daf-yomi-yerushalmi';
 
   /// Every calendar-computed cycle, in the order they're shown.
-  static final all = <CalendarCycle>[
+  static const all = <CalendarCycle>[
     CalendarCycle(
       id: bavliId,
       name: 'Daf Yomi (Bavli)',

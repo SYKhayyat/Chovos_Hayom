@@ -282,7 +282,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> _addColumnIfMissing(
     Migrator m,
-    TableInfo table,
+    TableInfo<Table, dynamic> table,
     GeneratedColumn column,
   ) async {
     final existing = await _columnsOf(table.actualTableName);
@@ -302,7 +302,8 @@ class AppDatabase extends _$AppDatabase {
     if (!existing.contains(column)) await customStatement(sql);
   }
 
-  Future<void> _createTableIfMissing(Migrator m, TableInfo table) async {
+  Future<void> _createTableIfMissing(
+      Migrator m, TableInfo<Table, dynamic> table) async {
     if (!await _tableExists(table.actualTableName)) {
       await m.createTable(table);
     }

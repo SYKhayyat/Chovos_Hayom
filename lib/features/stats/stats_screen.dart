@@ -159,8 +159,8 @@ class _Heatmap extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final today = DateTime(now.year, now.month, now.day);
     const weeks = 12;
-    final days = weeks * 7;
-    final start = today.subtract(Duration(days: days - 1));
+    const days = weeks * 7;
+    final start = today.subtract(const Duration(days: days - 1));
     final maxCount =
         activity.values.isEmpty ? 1 : activity.values.reduce((a, b) => a > b ? a : b);
 

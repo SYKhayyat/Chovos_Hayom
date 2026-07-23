@@ -103,7 +103,7 @@ void main() {
 
   test('out-of-range marks still cannot inflate learned', () {
     // The clamp has to survive the switch from walking units to walking marks.
-    final small = CatalogNode(
+    const small = CatalogNode(
         id: 'small',
         parentId: 'root',
         name: 'Small',

@@ -151,6 +151,14 @@ flutter test                  # 224 tests, all green
 CI runs all of the above on every push and pull request, plus a release APK build, and fails if the
 generated Drift/Riverpod code is stale.
 
+`analysis_options.yaml` goes past the `flutter_lints` defaults: `strict-casts` and
+`strict-raw-types` (an implicit `dynamic` is how a wrong-typed field becomes a crash three layers
+away), `always_declare_return_types`, the `prefer_const_*` family (a const widget is one the
+dashboard's tile tree can skip rebuilding), `avoid_dynamic_calls`, `unawaited_futures`, and
+`use_build_context_synchronously` promoted from a hint to an **error**. Since CI runs
+`--fatal-infos`, all of it is enforced. There is deliberately no formatting rule — the source is
+hand-wrapped so its explanatory comments read as prose.
+
 ### Releasing
 
 Release builds are signed from `android/key.properties`, which is git-ignored. Copy

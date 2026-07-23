@@ -133,10 +133,10 @@ class ProgressTile extends ConsumerWidget {
       case 'bulk':
         await showBulkActionsSheet(context, ref, node: node.node);
       case 'edit':
-        navigator.push(MaterialPageRoute(
+        await navigator.push(MaterialPageRoute<void>(
             builder: (_) => AddCustomNodeScreen(existing: node.node)));
       case 'add':
-        navigator.push(MaterialPageRoute(
+        await navigator.push(MaterialPageRoute<void>(
             builder: (_) => AddCustomNodeScreen(initialParentId: node.node.id)));
       case 'clone':
         await editor.cloneStructure(node.node);
