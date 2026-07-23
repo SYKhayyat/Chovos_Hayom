@@ -1,14 +1,24 @@
 import 'dart:async';
 
-import '../../domain/entities/catalog_node.dart';
-import '../../domain/entities/layer.dart';
-import '../../domain/entities/learning_event.dart';
-import '../../domain/entities/profile.dart';
-import '../../domain/repositories/progress_repository.dart';
-import '../../domain/usecases/layer_requirements.dart';
+import 'package:chovos_hayom/domain/entities/catalog_node.dart';
+import 'package:chovos_hayom/domain/entities/layer.dart';
+import 'package:chovos_hayom/domain/entities/learning_event.dart';
+import 'package:chovos_hayom/domain/entities/profile.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
+import 'package:chovos_hayom/domain/usecases/layer_requirements.dart';
 
-/// In-memory [ProgressRepository] with no native dependencies. Used by tests and
-/// as a reference implementation; the app uses the Drift-backed repository.
+/// In-memory [ProgressRepository] with no native dependencies — the double every
+/// test overrides `progressRepositoryProvider` with.
+///
+/// It used to live in `lib/`, which meant it shipped inside the app: dead weight
+/// in every release build, and an implementation of a core interface that looked
+/// like production code while nothing in production could reach it. It is test
+/// scaffolding, so it lives with the tests.
+///
+/// It is still a faithful implementation rather than a stub — [transaction] gives
+/// the same all-or-nothing guarantee SQLite does, and the streams emit on the
+/// same writes — because a test double that is easier to satisfy than the real
+/// repository proves nothing about the real repository.
 class InMemoryProgressRepository implements ProgressRepository {
   final Map<String, List<LearningEvent>> _events = {};
   final List<Profile> _profiles = [];

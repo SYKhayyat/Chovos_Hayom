@@ -1,8 +1,9 @@
 import 'package:chovos_hayom/application/logging_service.dart';
-import 'package:chovos_hayom/data/repositories/in_memory_progress_repository.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
 import 'package:chovos_hayom/domain/usecases/unit_history.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/in_memory_progress_repository.dart';
 
 void main() {
   group('editDetails', () {

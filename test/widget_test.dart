@@ -1,10 +1,10 @@
 import 'package:chovos_hayom/application/providers.dart';
-import 'package:chovos_hayom/data/repositories/in_memory_progress_repository.dart';
 import 'package:chovos_hayom/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/fake_catalog.dart';
+import 'support/in_memory_progress_repository.dart';
 
 void main() {
   testWidgets('drill into a leaf, mark a daf in the grid, see it roll up',

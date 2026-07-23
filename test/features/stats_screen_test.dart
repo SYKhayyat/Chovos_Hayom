@@ -1,6 +1,5 @@
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/stats.dart';
-import 'package:chovos_hayom/data/repositories/in_memory_progress_repository.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/features/stats/stats_screen.dart';
@@ -9,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
+import '../support/in_memory_progress_repository.dart';
 
 LearningEvent done(int unit, DateTime day) => LearningEvent(
       id: 'e$unit-${day.toIso8601String()}',

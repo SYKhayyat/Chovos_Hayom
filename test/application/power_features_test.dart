@@ -1,5 +1,4 @@
 import 'package:chovos_hayom/application/providers.dart';
-import 'package:chovos_hayom/data/repositories/in_memory_progress_repository.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/progress_node.dart';
@@ -7,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
+import '../support/in_memory_progress_repository.dart';
 
 ProviderContainer makeContainer(InMemoryProgressRepository repo) {
   final c = ProviderContainer(overrides: [

@@ -55,29 +55,17 @@ class LearningEvent {
   /// how the event was written, not derived state, so the log stays the truth.
   final String? batchId;
 
-  LearningEvent copyWith({
-    DateTime? occurredAt,
-    int? durationMin,
-    String? note,
-    List<String>? layers,
-  }) =>
-      LearningEvent(
-        id: id,
-        profileId: profileId,
-        nodeId: nodeId,
-        unitIndex: unitIndex,
-        action: action,
-        occurredAt: occurredAt ?? this.occurredAt,
-        loggedAt: loggedAt,
-        durationMin: durationMin ?? this.durationMin,
-        note: note ?? this.note,
-        layers: layers ?? this.layers,
-        batchId: batchId,
-      );
-
-  /// Returns a copy with edited annotations, where passing null *clears* the
-  /// field (unlike [copyWith], whose null means "keep existing"). Used when the
-  /// user edits an item's details and, e.g., deletes its note or duration.
+  /// Returns a copy with edited annotations. **Null clears the field** — it is
+  /// how the user deletes a duration or a haara they had recorded, so it cannot
+  /// also mean "leave this one alone".
+  ///
+  /// Every parameter is `required` for that reason: there is no defaulting, so a
+  /// caller cannot omit `note` and quietly erase it. This class used to carry a
+  /// `copyWith` alongside, whose null meant the opposite ("keep existing"); two
+  /// near-identical methods with inverted null semantics is a bug waiting for
+  /// whoever reaches for the familiar name. Nothing called it, so it is gone —
+  /// editing an event's annotations is the only reason to copy one, and this is
+  /// the method that does it.
   LearningEvent withDetails({
     required DateTime occurredAt,
     required int? durationMin,

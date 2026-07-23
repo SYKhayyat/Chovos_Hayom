@@ -1,11 +1,11 @@
-import 'dart:convert';
-
 import 'package:chovos_hayom/application/backup_service.dart';
-import 'package:chovos_hayom/data/repositories/in_memory_progress_repository.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/in_memory_progress_repository.dart';
+import 'dart:convert';
 
 /// A valid backup body, so each test can corrupt exactly one thing.
 Map<String, dynamic> backup({

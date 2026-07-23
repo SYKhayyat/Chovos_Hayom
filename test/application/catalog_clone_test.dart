@@ -1,9 +1,10 @@
-import 'package:chovos_hayom/data/repositories/in_memory_progress_repository.dart';
 import 'package:chovos_hayom/domain/entities/catalog.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
+
+import '../support/in_memory_progress_repository.dart';
 
 /// The clone itself, lifted out of `CatalogEditor` (which needs a `WidgetRef`)
 /// so the structural rules can be asserted directly.

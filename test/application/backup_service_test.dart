@@ -1,11 +1,12 @@
 import 'package:chovos_hayom/application/backup_service.dart';
-import 'package:chovos_hayom/data/repositories/in_memory_progress_repository.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/layer.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/usecases/layer_requirements.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/in_memory_progress_repository.dart';
 
 LearningEvent ev(String id, {String profile = 'a'}) => LearningEvent(
       id: id,

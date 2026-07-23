@@ -1,6 +1,5 @@
 import 'package:chovos_hayom/application/bulk_marker.dart';
 import 'package:chovos_hayom/application/logging_service.dart';
-import 'package:chovos_hayom/data/repositories/in_memory_progress_repository.dart';
 import 'package:chovos_hayom/domain/entities/catalog.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
@@ -8,6 +7,8 @@ import 'package:chovos_hayom/domain/usecases/fold_log.dart';
 import 'package:chovos_hayom/domain/usecases/layer_requirements.dart';
 import 'package:chovos_hayom/domain/usecases/offered_layers.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/in_memory_progress_repository.dart';
 
 /// cat ─┬─ a (units 2,3,4)
 ///      └─ b (units 1,2)
