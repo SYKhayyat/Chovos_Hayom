@@ -67,8 +67,8 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
       _seeded = true;
     }
 
-    Layer layerOf(String id) =>
-        allLayers.firstWhere((l) => l.id == id, orElse: () => Layer(id: id, name: id));
+    Layer layerOf(String id) => allLayers.firstWhere((l) => l.id == id,
+        orElse: () => Layer(id: id, name: 'Deleted meforish'));
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Padding(

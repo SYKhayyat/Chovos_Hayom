@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/usecases/chazara_schedule.dart';
@@ -41,8 +43,52 @@ class StatsSummary {
   int get remaining => total - learned;
 }
 
-/// Injectable clock so stats are testable; overridden in tests.
-final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+/// Fires once at every local midnight, and whenever [invalidateClock] is called
+/// (on app resume). Everything date-dependent hangs off this.
+///
+/// Without it nothing in the app is time-reactive: the streak, the "you haven't
+/// learned today" nudge, the chazara due badge and today's Daf Yomi all stay on
+/// yesterday's answer until some unrelated event happens to force a rebuild. On
+/// desktop, where the app stays open for days, that is plainly visible.
+///
+/// The timer targets the next midnight rather than polling, so an idle app does
+/// no work, and it is cancelled with the provider so it can't outlive a test.
+final _dayTickProvider = StreamProvider<DateTime>((ref) {
+  final controller = StreamController<DateTime>();
+  Timer? timer;
+
+  void scheduleNextMidnight() {
+    final now = DateTime.now();
+    // A second past midnight, so the new day is unambiguously the current one.
+    final next = DateTime(now.year, now.month, now.day + 1)
+        .add(const Duration(seconds: 1));
+    timer = Timer(next.difference(now), () {
+      if (!controller.isClosed) controller.add(DateTime.now());
+      scheduleNextMidnight();
+    });
+  }
+
+  scheduleNextMidnight();
+  ref.onDispose(() {
+    timer?.cancel();
+    controller.close();
+  });
+  return controller.stream;
+});
+
+/// Injectable clock. Overridden wholesale in tests, which is why it stays a
+/// plain `DateTime Function()` — watching the tick here means every dependent
+/// provider re-derives when the day rolls over, without any of them knowing
+/// that time is what changed.
+final clockProvider = Provider<DateTime Function()>((ref) {
+  ref.watch(_dayTickProvider);
+  return DateTime.now;
+});
+
+/// Force everything date-dependent to re-derive. Called when the app returns to
+/// the foreground: a suspended process gets no timers, so coming back after a
+/// day (or after the device slept through midnight) must not show stale dates.
+void invalidateClock(WidgetRef ref) => ref.invalidate(_dayTickProvider);
 
 /// Overall stats for the active profile, derived from the log. Null while the
 /// catalog or event log is still loading.

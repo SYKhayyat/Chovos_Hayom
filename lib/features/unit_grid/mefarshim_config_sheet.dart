@@ -97,12 +97,7 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
                       requiredSet.remove(layer.id);
                     }
                   }),
-                  onDelete: layer.builtIn
-                      ? null
-                      : () => ref
-                          .read(progressRepositoryProvider)
-                          .removeCustomLayer(
-                              ref.read(activeProfileProvider), layer.id),
+                  onDelete: layer.builtIn ? null : () => _deleteLayer(layer),
                 ),
               TextButton.icon(
                 icon: const Icon(Icons.add),
@@ -161,6 +156,108 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
     await repo.clearLayerRequirement(profileId, widget.node.id, -1);
     await repo.clearOfferedLayers(profileId, widget.node.id, -1);
     if (mounted) Navigator.pop(context);
+  }
+
+  /// Delete a custom meforish, taking every reference to it with it.
+  ///
+  /// Deleting used to remove only the row, leaving the id behind in required-
+  /// and offered-layer settings all over the tree. Anything that *required* it
+  /// then became uncompletable — the unit checklist could only offer a checkbox
+  /// labelled with a raw UUID. So the settings are rewritten in the same
+  /// transaction, and the user is told how many will change before it happens.
+  ///
+  /// Past events keep their record: the log is history, and a chazara you did on
+  /// a meforish still happened. Nothing reads those ids once the settings are
+  /// gone, so nothing is gated on or offers a meforish that no longer exists.
+  Future<void> _deleteLayer(Layer layer) async {
+    final profileId = ref.read(activeProfileProvider);
+    final requirements = ref.read(layerConfigProvider).asData?.value ?? const [];
+    final offered = ref.read(offeredConfigProvider).asData?.value ?? const [];
+
+    final affectedRequired = [
+      for (final e in requirements)
+        if (e.layers.contains(layer.id)) e,
+    ];
+    final affectedOffered = [
+      for (final e in offered)
+        if (e.layers.contains(layer.id)) e,
+    ];
+    final requiredCount = affectedRequired.length;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Delete “${layer.name}”?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (requiredCount > 0)
+              Text('It is currently *required* in $requiredCount '
+                  '${requiredCount == 1 ? 'place' : 'places'}. Those units will '
+                  'go back to not needing it, so anything they were waiting on '
+                  'it for becomes complete.'),
+            if (requiredCount > 0) const SizedBox(height: 8),
+            const Text('Chazaras and learning you already recorded against it '
+                'stay in your log.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+              foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+
+    final repo = ref.read(progressRepositoryProvider);
+    await repo.transaction(() async {
+      for (final e in affectedRequired) {
+        await _rewriteWithout(
+            e, layer.id, (v) => repo.setLayerRequirement(profileId, v),
+            clear: () =>
+                repo.clearLayerRequirement(profileId, e.nodeId, e.unitIndex));
+      }
+      for (final e in affectedOffered) {
+        await _rewriteWithout(
+            e, layer.id, (v) => repo.setOfferedLayers(profileId, v),
+            clear: () =>
+                repo.clearOfferedLayers(profileId, e.nodeId, e.unitIndex));
+      }
+      await repo.removeCustomLayer(profileId, layer.id);
+    });
+
+    // Drop it from the in-progress edit too, so the sheet doesn't re-save it.
+    if (mounted) {
+      setState(() {
+        _available?.remove(layer.id);
+        _required?.remove(layer.id);
+      });
+    }
+  }
+
+  /// Writes [entry] back without [layerId] — or clears the setting entirely when
+  /// nothing would be left, so the node falls back to inheritance rather than
+  /// being pinned to an empty set.
+  static Future<void> _rewriteWithout(
+    LayerConfigEntry entry,
+    String layerId,
+    Future<void> Function(LayerConfigEntry) write, {
+    required Future<void> Function() clear,
+  }) async {
+    final remaining = {...entry.layers}..remove(layerId);
+    if (remaining.isEmpty) return clear();
+    return write(LayerConfigEntry(
+        nodeId: entry.nodeId, unitIndex: entry.unitIndex, layers: remaining));
   }
 
   Future<void> _addCustomLayer() async {

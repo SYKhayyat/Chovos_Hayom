@@ -54,8 +54,10 @@ class _UnitLayersSheet extends ConsumerWidget {
     final missing = requiredSet.where((l) => !completed.contains(l)).length;
     final logger = ref.read(loggingServiceProvider);
 
+    // An id with no matching meforish means one was deleted after this unit was
+    // marked. Name it as such — a raw UUID in a checkbox is unreadable.
     Layer layerOf(String id) => allLayers.firstWhere((l) => l.id == id,
-        orElse: () => Layer(id: id, name: id));
+        orElse: () => Layer(id: id, name: 'Deleted meforish'));
 
     return SafeArea(
       child: Padding(

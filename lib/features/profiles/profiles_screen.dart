@@ -55,26 +55,8 @@ class ProfilesScreen extends ConsumerWidget {
 
   Future<void> _renameDialog(
       BuildContext context, WidgetRef ref, String id, String current) async {
-    final ctrl = TextEditingController(text: current);
-    final name = await showDialog<String>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Rename profile'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Name'),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          FilledButton(
-              onPressed: () => Navigator.pop(context, ctrl.text.trim()),
-              child: const Text('Save')),
-        ],
-      ),
-    );
+    final name = await _promptForName(context,
+        title: 'Rename profile', action: 'Save', initial: current);
     if (name != null && name.isNotEmpty) {
       await ref.read(profilesProvider.notifier).rename(id, name);
     }
@@ -114,28 +96,46 @@ class ProfilesScreen extends ConsumerWidget {
   }
 
   Future<void> _createDialog(BuildContext context, WidgetRef ref) async {
-    final ctrl = TextEditingController();
-    final name = await showDialog<String>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('New profile'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Name'),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          FilledButton(
-              onPressed: () => Navigator.pop(context, ctrl.text.trim()),
-              child: const Text('Create')),
-        ],
-      ),
-    );
+    final name = await _promptForName(context,
+        title: 'New profile', action: 'Create');
     if (name != null && name.isNotEmpty) {
       await ref.read(profilesProvider.notifier).create(name);
+    }
+  }
+
+  /// One name prompt for both create and rename. Shared so the controller has a
+  /// single owner that always disposes it — both dialogs used to build their own
+  /// and leak it on every open.
+  static Future<String?> _promptForName(
+    BuildContext context, {
+    required String title,
+    required String action,
+    String initial = '',
+  }) async {
+    final ctrl = TextEditingController(text: initial);
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(title),
+          content: TextField(
+            controller: ctrl,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Name'),
+            onSubmitted: (v) => Navigator.pop(dialogContext, v.trim()),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel')),
+            FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, ctrl.text.trim()),
+                child: Text(action)),
+          ],
+        ),
+      );
+    } finally {
+      ctrl.dispose();
     }
   }
 }

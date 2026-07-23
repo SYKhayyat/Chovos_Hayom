@@ -52,22 +52,29 @@ class CatalogEditor {
 
     const uuid = Uuid();
     final newIds = {for (final n in all) n.id: uuid.v4()};
-    for (final n in all) {
-      final isRoot = n.id == root.id;
-      await repo.addCustomNode(
-        _profileId,
-        CatalogNode(
-          id: newIds[n.id]!,
-          parentId: isRoot ? root.parentId : newIds[n.parentId],
-          name: isRoot ? '${n.name} (copy)' : n.name,
-          nameHebrew: n.nameHebrew,
-          sortOrder: n.sortOrder,
-          kind: n.kind,
-          unitLabel: n.unitLabel,
-          unitCount: n.unitCount,
-          unitOffset: n.unitOffset,
-        ),
-      );
-    }
+    // One transaction: a clone is either the whole subtree or nothing. Half a
+    // cloned tree is worse than no clone — it leaves orphaned nodes behind.
+    await repo.transaction(() async {
+      for (final n in all) {
+        final isRoot = n.id == root.id;
+        await repo.addCustomNode(
+          _profileId,
+          CatalogNode(
+            id: newIds[n.id]!,
+            parentId: isRoot ? root.parentId : newIds[n.parentId],
+            name: isRoot ? '${n.name} (copy)' : n.name,
+            nameHebrew: n.nameHebrew,
+            sortOrder: n.sortOrder,
+            kind: n.kind,
+            unitLabel: n.unitLabel,
+            unitCount: n.unitCount,
+            unitOffset: n.unitOffset,
+            // Named units are part of the structure, not the progress. Dropping
+            // them turned a clone of Chumash into a list of numbers.
+            unitNames: n.unitNames,
+          ),
+        );
+      }
+    });
   }
 }

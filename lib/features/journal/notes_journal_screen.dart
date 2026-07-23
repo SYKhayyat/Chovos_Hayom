@@ -18,8 +18,9 @@ class _JournalEntry {
   String get location {
     final n = node;
     if (n == null) return 'Unknown item';
-    final label = n.unitLabel?.name ?? 'unit';
-    return '${n.name} · $label ${event.unitIndex}';
+    // `unitHeading` so a named unit reads as its name (Parshas Noach) rather
+    // than its index — the same thing the grid and the sheets show.
+    return '${n.name} · ${n.unitHeading(event.unitIndex)}';
   }
 }
 
