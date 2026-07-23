@@ -58,5 +58,28 @@ void main() {
       expect(root.remaining, 2);
       expect(root.percent, closeTo(60.0, 0.001));
     });
+
+    test('per-layer coverage is counted per leaf and rolled up, in range', () {
+      final fold = LogFold({
+        'a': {
+          2: {'main', 'rashi'},
+          3: {'main', 'rashi'},
+          4: {'main'},
+          99: {'rashi'}, // out of range — ignored
+        },
+        'b': {
+          1: {'main', 'rashi'},
+        },
+      }, {});
+      final root = RollUp.buildForest(_catalog(), fold).single;
+      final a = root.children.firstWhere((n) => n.id == 'a');
+
+      expect(a.learnedFor('rashi'), 2); // units 2,3 (99 ignored)
+      expect(a.learnedFor('main'), 3);
+      // Root sums Rashi across A (2) and B (1).
+      expect(root.learnedFor('rashi'), 3);
+      expect(root.learnedFor('main'), 4);
+      expect(root.learnedFor('tosafos'), 0);
+    });
   });
 }

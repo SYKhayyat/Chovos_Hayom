@@ -23,9 +23,9 @@ class _JournalEntry {
   }
 }
 
-/// The **Notes Journal**: every *haara* (insight on the material) you've written,
-/// newest first, each showing where it belongs and tapping through to that unit.
-/// Learning notes (about the experience) deliberately never appear here.
+/// The **Notes Journal**: every haara you've written, newest first, each showing
+/// where it belongs and tapping through to that unit. There is one note field per
+/// event, so everything you write is collected here — no classifying up front.
 class NotesJournalScreen extends ConsumerStatefulWidget {
   const NotesJournalScreen({super.key});
 
@@ -46,7 +46,7 @@ class _NotesJournalScreenState extends ConsumerState<NotesJournalScreen> {
   List<_JournalEntry> _entries(List<LearningEvent> events, Catalog? catalog) {
     final entries = <_JournalEntry>[
       for (final e in events)
-        if (e.haara != null && e.haara!.trim().isNotEmpty)
+        if (e.note != null && e.note!.trim().isNotEmpty)
           _JournalEntry(e, catalog?.byId(e.nodeId)),
     ]..sort((a, b) => b.event.occurredAt.compareTo(a.event.occurredAt));
 
@@ -54,7 +54,7 @@ class _NotesJournalScreenState extends ConsumerState<NotesJournalScreen> {
     if (q.isEmpty) return entries;
     return entries
         .where((e) =>
-            e.event.haara!.toLowerCase().contains(q) ||
+            e.event.note!.toLowerCase().contains(q) ||
             e.location.toLowerCase().contains(q))
         .toList();
   }
@@ -100,7 +100,7 @@ class _NotesJournalScreenState extends ConsumerState<NotesJournalScreen> {
                       child: Text(
                         _query.isEmpty
                             ? 'No haaros yet.\nAdd one when you log or edit a daf — '
-                                'the "Haara" field is collected here.'
+                                'the "Haara" field lands here.'
                             : 'No haaros match “$_query”.',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyLarge,
@@ -115,7 +115,7 @@ class _NotesJournalScreenState extends ConsumerState<NotesJournalScreen> {
                       final node = entry.node;
                       return ListTile(
                         leading: const Icon(Icons.lightbulb_outline),
-                        title: Text(entry.event.haara!.trim()),
+                        title: Text(entry.event.note!.trim()),
                         subtitle: Text(
                           '${entry.location} · '
                           '${DateDisplay.format(entry.event.occurredAt, mode)}',

@@ -15,7 +15,11 @@ import '../domain/repositories/catalog_repository.dart';
 import '../domain/repositories/progress_repository.dart';
 import '../domain/usecases/fold_log.dart';
 import '../domain/usecases/layer_requirements.dart';
+import '../domain/usecases/mefarshim_stats.dart';
+import '../domain/usecases/offered_layers.dart';
 import '../domain/usecases/roll_up.dart';
+import '../domain/usecases/unit_layer_view.dart';
+import 'bulk_marker.dart';
 import 'logging_service.dart';
 
 /// App-level key-value preferences. Overridden in `main` with a shared_preferences
@@ -193,9 +197,15 @@ final allLayersProvider = Provider<List<Layer>>((ref) {
 });
 
 /// The active profile's required-layer settings (node + unit level).
-final layerConfigProvider = StreamProvider<List<LayerRequirementEntry>>((ref) {
+final layerConfigProvider = StreamProvider<List<LayerConfigEntry>>((ref) {
   final repo = ref.watch(progressRepositoryProvider);
   return repo.watchLayerRequirements(ref.watch(activeProfileProvider));
+});
+
+/// The active profile's offered- (checkable-) layer settings (node + unit level).
+final offeredConfigProvider = StreamProvider<List<LayerConfigEntry>>((ref) {
+  final repo = ref.watch(progressRepositoryProvider);
+  return repo.watchOfferedLayers(ref.watch(activeProfileProvider));
 });
 
 /// The resolver that answers "which layers must this unit have to be complete?"
@@ -223,6 +233,39 @@ final layerRequirementsProvider = Provider<LayerRequirements>((ref) {
       nodeConfig: nodeConfig, unitConfig: unitConfig, parentOf: parentOf);
 });
 
+/// The resolver that answers "which mefarshim may this unit check off?" — the
+/// *offered* set, independent of what gates completion. Built the same way as
+/// [layerRequirementsProvider] from the catalog + the offered config.
+final offeredLayersProvider = Provider<OfferedLayers>((ref) {
+  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+  final entries = ref.watch(offeredConfigProvider).asData?.value ?? const [];
+
+  final parentOf = <String, String?>{};
+  if (catalog != null) {
+    for (final n in catalog.all) {
+      parentOf[n.id] = n.parentId;
+    }
+  }
+  final nodeConfig = <String, Set<String>>{};
+  final unitConfig = <String, Map<int, Set<String>>>{};
+  for (final e in entries) {
+    if (e.isNodeLevel) {
+      nodeConfig[e.nodeId] = e.layers;
+    } else {
+      (unitConfig[e.nodeId] ??= {})[e.unitIndex] = e.layers;
+    }
+  }
+  return OfferedLayers(
+      nodeConfig: nodeConfig, unitConfig: unitConfig, parentOf: parentOf);
+});
+
+/// Reconciles required + offered into per-unit answers (checkable set, layered?,
+/// fraction). The one place the UI and bulk logic consult for layer questions.
+final unitLayerViewProvider = Provider<UnitLayerView>((ref) => UnitLayerView(
+      required: ref.watch(layerRequirementsProvider),
+      offered: ref.watch(offeredLayersProvider),
+    ));
+
 // ---------------------------------------------------------------------------
 // Log + derived progress
 // ---------------------------------------------------------------------------
@@ -245,6 +288,21 @@ final foldProvider = Provider<AsyncValue<LogFold>>((ref) {
   return ref.watch(eventsProvider).whenData(FoldLog.fold);
 });
 
+/// A ready-to-use bulk finish/clear engine, or null while the catalog/log are
+/// still loading. Rebuilt whenever the catalog, log, or layer config changes.
+final bulkMarkerProvider = Provider<BulkMarker?>((ref) {
+  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+  final fold = ref.watch(foldProvider).asData?.value;
+  if (catalog == null || fold == null) return null;
+  return BulkMarker(
+    catalog: catalog,
+    fold: fold,
+    required: ref.watch(layerRequirementsProvider),
+    offered: ref.watch(offeredLayersProvider),
+    logger: ref.watch(loggingServiceProvider),
+  );
+});
+
 /// The derived progress forest: merged catalog + folded log, rolled up.
 ///
 /// Reuses [foldProvider] rather than folding the log again, so the (potentially
@@ -259,6 +317,15 @@ final progressForestProvider = Provider<AsyncValue<List<ProgressNode>>>((ref) {
     error: AsyncValue.error,
     data: (c) => fold.whenData((f) => RollUp.buildForest(c, f, required)),
   );
+});
+
+/// Per-meforish totals across the whole catalog (how many units carry each
+/// layer as learned), most-learned first. Reuses the shared fold.
+final mefarshimStatsProvider = Provider<List<MefarshimStat>>((ref) {
+  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+  final fold = ref.watch(foldProvider).asData?.value;
+  if (catalog == null || fold == null) return const [];
+  return MefarshimStats.compute(catalog, fold);
 });
 
 /// The progress subtree rooted at [id] (null while loading or if not found).

@@ -30,21 +30,24 @@ class _UnitLayersSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fold = ref.watch(foldProvider).asData?.value;
-    final required = ref.watch(layerRequirementsProvider);
+    final view = ref.watch(unitLayerViewProvider);
     final allLayers = ref.watch(allLayersProvider);
     final theme = Theme.of(context);
 
     final completed = fold?.completedLayers(node.id, unit) ?? const {};
-    final requiredSet = required.forUnit(node.id, unit);
+    final requiredSet = view.requiredFor(node.id, unit);
+    // Everything checkable here: offered ∪ required. Optional (offered-only)
+    // mefarshim appear too, but only required ones gate completion.
+    final checkableSet = view.checkableFor(node.id, unit);
 
-    // Show required layers first, then any extra learned layers, in a stable
-    // order that follows the mefarshim list.
+    // Show checkable layers first, then any extra already-learned ones, in a
+    // stable order that follows the mefarshim list.
     final shown = <String>[
       for (final l in allLayers)
-        if (requiredSet.contains(l.id) || completed.contains(l.id)) l.id,
+        if (checkableSet.contains(l.id) || completed.contains(l.id)) l.id,
     ];
-    // Include anything required/completed that isn't in the known list (safety).
-    for (final id in {...requiredSet, ...completed}) {
+    // Include anything checkable/completed that isn't in the known list (safety).
+    for (final id in {...checkableSet, ...completed}) {
       if (!shown.contains(id)) shown.add(id);
     }
 
@@ -81,7 +84,7 @@ class _UnitLayersSheet extends ConsumerWidget {
                   title: Text(layerOf(id).name),
                   subtitle: requiredSet.contains(id)
                       ? const Text('Required')
-                      : const Text('Extra'),
+                      : const Text('Optional'),
                   onChanged: (v) {
                     if (v == true) {
                       logger.markDone(node.id, unit, layers: [id]);

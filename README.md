@@ -22,7 +22,8 @@ prediction-from-actual-pace for free.
 Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Drift + JSON) ·
 `application/` (Riverpod) · `features/` (UI). Full design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-**Stack:** Flutter · Riverpod · Drift (SQLite) · `fl_chart` (later) · `kosher_dart` (later).
+**Stack:** Flutter · Riverpod · Drift (SQLite) · `fl_chart` (charts) · `kosher_dart` (Hebrew
+calendar) · `file_picker` (backup) · `shared_preferences` (settings).
 
 ## Status
 
@@ -34,15 +35,15 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
 | **3 — Power** | Profiles, custom sefarim, search, export/import | ✅ Done |
 | **4 — Polish** | Goals, chazara UI, session timer, in-app reminders | ✅ Done |
 | **5 — Hardening+** | Migration strategy, correctness fixes, cycles, chazara scheduling, siyumim, time analytics, RTL, file backup, full data management | ✅ Done |
-| **6 — Depth** | Haaros vs learning-notes + Notes Journal, tree sorting, **mefarshim as per-daf layers** (custom + configurable required sets), chazara as first-class passes, full node editability (edit/hide/reset/clone **any** node, named units, attach-anywhere), settings export/import/clear | ✅ Done |
+| **6 — Depth** | Haaros + Notes Journal, tree sorting, **mefarshim as per-daf layers** (custom + configurable required sets), chazara as first-class passes, full node editability (edit/hide/reset/clone **any** node, named units, attach-anywhere), settings export/import/clear | ✅ Done |
 
 ### What works today
 - Expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur, Shulchan
   Aruch, Mishna Berura — with live progress bars that roll up from every daf/perek to the root.
 - Tap a sefer/mesechta to open its **per-unit grid**; tap a daf to mark it, tap again to undo.
-- **Long-press** a unit to log it with a specific date **and time**, how long it took, and a note
+- **Long-press** a unit to log it with a specific date **and time**, how long it took, and a haara
   (otherwise the date/time auto-fills to now). Long-press a *finished* unit for **View / edit
-  details** — see and change when you finished, the duration, the note, and its review history
+  details** — see and change when you finished, the duration, the haara, and its review history
   after the fact. A small note glyph marks units that carry recorded details. Review (chazara)
   passes are tracked per unit.
 - **Statistics**: overall %, current streak, 30-day pace, projected siyum date, a cumulative
@@ -74,18 +75,35 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
   custom mefarshim); a unit is "done" only once its *required* mefarshim are learned. Required
   sets are configured at any node and inherited down (default is text-only, so existing progress is
   never invalidated). The grid shows a partial fill until a layered unit is complete.
-- **Two kinds of note** per learning/chazara: a **haara** (insight on the material, collected in a
-  searchable **Notes Journal**) and a **learning note** (how it went). Every finished unit's
-  details — when, how long, both notes, and its full chazara history — are viewable and editable
+- **Offered vs. required mefarshim**: each meforish has two independent switches — *Available*
+  (you can check it off here) and *Required* (it gates completion). So you can **track a meforish
+  without mandating it for "done"** — the checkable set is not the same as the definition of done.
+  Both inherit down a node and default to text-only.
+- **Bulk finish / clear** on any node — a whole category cascades to every daf underneath, or a
+  single sefer at a time: *Finish all* (each unit's required set), *Mark all — Text* or *— any
+  meforish*, and *Clear all*. Everything is one batched write with a one-tap **Undo**; destructive
+  clears confirm first. On a leaf you can also **finish an arbitrary range** — pick any start and
+  end unit.
+- **Mefarshim progress**: a running breakdown of how much of each meforish (and the text) you've
+  learned across everything — meaningful now that optional mefarshim are tracked separately from
+  progress bars. In the **tree**, each node also shows a thin per-meforish coverage line under its
+  main bar (e.g. a Gemara's main progress plus a little Rashi / Tosafos bar) wherever mefarshim are
+  enabled — rolled up from every daf underneath. Each meforish's line can be switched on/off
+  individually in **Settings → Mefarshim bars**.
+- **A haara** per learning/chazara: one free-text field, used however you like — a chiddush, a
+  question, a maareh makom, or how the seder went. Every non-empty one is collected in a searchable
+  **Notes Journal**, so nothing needs classifying before you write it. Every finished unit's
+  details — when, how long, the haara, and its full chazara history — are viewable and editable
   after the fact.
 - **Chazara as first-class passes**: each review records its own date/time, duration, mefarshim,
-  and notes, with user-configurable spaced-repetition intervals.
+  and haara, with user-configurable spaced-repetition intervals.
 - **Configurable tree sorting** by percent / amount / last-learned / name, at any chosen depth.
 - **Everything editable**: rename, re-count, re-type, re-parent (attach anywhere), hide/delete, or
   reset **any** node — built-in or custom — via a per-profile override layer; clone a subtree's
   structure; give units real names. A full backup and settings export/import/clear round-trip it all.
-- 96 tests covering the engine, layer fold + required-set resolution, catalog overrides, analytics,
-  goals, reminders, backup, chazara scheduling, siyumim, time analytics, and UI.
+- 113 tests covering the engine, layer fold + required/offered-set resolution, per-meforish roll-up,
+  bulk finish/clear + ranges, per-meforish stats, catalog overrides, analytics, goals, reminders,
+  backup, chazara scheduling, siyumim, time analytics, and UI.
 
 ## Remaining device-only work
 Almost everything is verified via `flutter test`. A few things need a real device/build to finish:
@@ -101,7 +119,7 @@ uses in-app nudges only), and **running on Android/desktop** (needs the platform
 ```bash
 flutter pub get
 dart run build_runner build   # generates Drift code
-flutter test                  # 64 tests, all green
+flutter test                  # 113 tests, all green
 ```
 
 Running the app on a device/desktop needs the platform toolchains (`flutter doctor`):

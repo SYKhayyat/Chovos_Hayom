@@ -7,10 +7,15 @@ import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/usecases/layer_requirements.dart';
 
-/// Editor for a node's *required mefarshim* — the layers a unit needs before it
-/// counts as complete. Pinning here applies to every unit under [node] unless a
-/// nearer node or a single unit overrides it. Fully user-driven: add your own
-/// mefarshim, require any subset, and reset back to the inherited default.
+/// Editor for a node's mefarshim, with two independent dimensions per meforish:
+///
+/// - **Available** — you can check it off on any unit here (it appears in the
+///   per-unit checklist), without it affecting completion.
+/// - **Required** — it must be learned for a unit to count as done.
+///
+/// Required implies Available. Both pin at [node] and inherit down unless a
+/// nearer node or a single unit overrides them. Fully user-driven: add your own
+/// mefarshim, offer any subset, require any subset, and reset to inherited.
 Future<void> showMefarshimConfigSheet(
   BuildContext context,
   WidgetRef ref, {
@@ -34,17 +39,24 @@ class _MefarshimConfigSheet extends ConsumerStatefulWidget {
 }
 
 class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
-  Set<String>? _selected; // null until seeded from the effective set
+  Set<String>? _available; // null until seeded from the effective sets
+  Set<String>? _required;
 
   @override
   Widget build(BuildContext context) {
     final layers = ref.watch(allLayersProvider);
     final required = ref.watch(layerRequirementsProvider);
+    final offered = ref.watch(offeredLayersProvider);
     final theme = Theme.of(context);
 
-    // Seed the selection from the currently-effective set the first time.
-    _selected ??= {...required.forNode(widget.node.id)};
-    final selected = _selected!;
+    // Seed once from the currently-effective sets. Available always includes
+    // required (required ⇒ available), matching how they resolve at a unit.
+    if (_required == null) {
+      _required = {...required.forNode(widget.node.id)};
+      _available = {...offered.forNode(widget.node.id), ..._required!};
+    }
+    final requiredSet = _required!;
+    final availableSet = _available!;
 
     return SafeArea(
       child: Padding(
@@ -54,39 +66,43 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Required mefarshim', style: theme.textTheme.titleLarge),
+              Text('Mefarshim', style: theme.textTheme.titleLarge),
               Text(widget.node.name, style: theme.textTheme.titleSmall),
               const SizedBox(height: 4),
               Text(
-                'A unit here counts as done once these are all learned. '
-                'Applies to everything under it unless overridden.',
+                '“Available” = you can check it off here. “Required” = a unit is '
+                'done only once it’s learned. Applies to everything under this '
+                'item unless overridden.',
                 style: theme.textTheme.bodySmall,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               for (final layer in layers)
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  value: selected.contains(layer.id),
-                  title: Text(layer.name),
-                  subtitle: layer.nameHebrew != null ? Text(layer.nameHebrew!) : null,
-                  secondary: layer.builtIn
-                      ? null
-                      : IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 20),
-                          tooltip: 'Delete meforish',
-                          onPressed: () => ref
-                              .read(progressRepositoryProvider)
-                              .removeCustomLayer(
-                                  ref.read(activeProfileProvider), layer.id),
-                        ),
-                  onChanged: (v) => setState(() {
-                    if (v == true) {
-                      selected.add(layer.id);
+                _MeforishRow(
+                  layer: layer,
+                  available: availableSet.contains(layer.id),
+                  required: requiredSet.contains(layer.id),
+                  onAvailable: (v) => setState(() {
+                    if (v) {
+                      availableSet.add(layer.id);
                     } else {
-                      selected.remove(layer.id);
+                      availableSet.remove(layer.id);
+                      requiredSet.remove(layer.id); // required ⇒ available
                     }
                   }),
+                  onRequired: (v) => setState(() {
+                    if (v) {
+                      requiredSet.add(layer.id);
+                      availableSet.add(layer.id); // required ⇒ available
+                    } else {
+                      requiredSet.remove(layer.id);
+                    }
+                  }),
+                  onDelete: layer.builtIn
+                      ? null
+                      : () => ref
+                          .read(progressRepositoryProvider)
+                          .removeCustomLayer(
+                              ref.read(activeProfileProvider), layer.id),
                 ),
               TextButton.icon(
                 icon: const Icon(Icons.add),
@@ -97,28 +113,12 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
               Row(
                 children: [
                   TextButton(
-                    onPressed: () async {
-                      await ref
-                          .read(progressRepositoryProvider)
-                          .clearLayerRequirement(
-                              ref.read(activeProfileProvider), widget.node.id, -1);
-                      if (context.mounted) Navigator.pop(context);
-                    },
+                    onPressed: _resetToInherited,
                     child: const Text('Reset to inherited'),
                   ),
                   const Spacer(),
                   FilledButton(
-                    onPressed: () async {
-                      await ref.read(progressRepositoryProvider).setLayerRequirement(
-                            ref.read(activeProfileProvider),
-                            LayerRequirementEntry(
-                              nodeId: widget.node.id,
-                              unitIndex: -1,
-                              layers: selected.isEmpty ? {mainLayerId} : selected,
-                            ),
-                          );
-                      if (context.mounted) Navigator.pop(context);
-                    },
+                    onPressed: _save,
                     child: const Text('Save'),
                   ),
                 ],
@@ -128,6 +128,39 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
         ),
       ),
     );
+  }
+
+  Future<void> _save() async {
+    final repo = ref.read(progressRepositoryProvider);
+    final profileId = ref.read(activeProfileProvider);
+    final requiredSet = _required!;
+    // Available always subsumes required; an empty required falls back to text.
+    final availableSet = {..._available!, ...requiredSet};
+    await repo.setLayerRequirement(
+      profileId,
+      LayerConfigEntry(
+        nodeId: widget.node.id,
+        unitIndex: -1,
+        layers: requiredSet.isEmpty ? {mainLayerId} : requiredSet,
+      ),
+    );
+    await repo.setOfferedLayers(
+      profileId,
+      LayerConfigEntry(
+        nodeId: widget.node.id,
+        unitIndex: -1,
+        layers: availableSet.isEmpty ? {mainLayerId} : availableSet,
+      ),
+    );
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _resetToInherited() async {
+    final repo = ref.read(progressRepositoryProvider);
+    final profileId = ref.read(activeProfileProvider);
+    await repo.clearLayerRequirement(profileId, widget.node.id, -1);
+    await repo.clearOfferedLayers(profileId, widget.node.id, -1);
+    if (mounted) Navigator.pop(context);
   }
 
   Future<void> _addCustomLayer() async {
@@ -171,6 +204,70 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
           ref.read(activeProfileProvider),
           Layer(id: id, name: name, nameHebrew: hebrew.isEmpty ? null : hebrew),
         );
-    if (mounted) setState(() => _selected!.add(id));
+    // A freshly-added meforish starts Available (checkable) but not Required —
+    // exactly the "offer without mandating" case.
+    if (mounted) setState(() => _available!.add(id));
+  }
+}
+
+/// One meforish row: its name plus two independent toggles (Available, Required)
+/// and an optional delete for custom mefarshim. Chips are mouse-friendly and
+/// read clearly on desktop — no touchscreen assumed.
+class _MeforishRow extends StatelessWidget {
+  const _MeforishRow({
+    required this.layer,
+    required this.available,
+    required this.required,
+    required this.onAvailable,
+    required this.onRequired,
+    this.onDelete,
+  });
+
+  final Layer layer;
+  final bool available;
+  final bool required;
+  final ValueChanged<bool> onAvailable;
+  final ValueChanged<bool> onRequired;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(layer.name),
+                if (layer.nameHebrew != null)
+                  Text(layer.nameHebrew!,
+                      style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+          FilterChip(
+            label: const Text('Available'),
+            selected: available,
+            onSelected: onAvailable,
+            visualDensity: VisualDensity.compact,
+          ),
+          const SizedBox(width: 6),
+          FilterChip(
+            label: const Text('Required'),
+            selected: required,
+            onSelected: onRequired,
+            visualDensity: VisualDensity.compact,
+          ),
+          if (onDelete != null)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              tooltip: 'Delete meforish',
+              onPressed: onDelete,
+            ),
+        ],
+      ),
+    );
   }
 }

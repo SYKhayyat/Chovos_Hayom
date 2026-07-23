@@ -86,7 +86,7 @@ void main() {
       action: EventAction.done,
       occurredAt: DateTime(2026, 1, 1),
       loggedAt: DateTime(2026, 1, 1),
-      haara: 'nice chiddush',
+      note: 'nice chiddush',
       layers: const ['main', 'rashi'],
     ));
     await source.addCustomLayer(
@@ -100,6 +100,10 @@ void main() {
         LayerRequirementEntry(
             nodeId: 'shas', unitIndex: -1, layers: {'main', 'rashi'})
       ],
+      offered: const [
+        LayerConfigEntry(
+            nodeId: 'shas', unitIndex: -1, layers: {'main', 'rashi', 'maharsha'})
+      ],
       settings: const {'chazaraIntervals': '2,4,8'},
     );
 
@@ -108,13 +112,16 @@ void main() {
 
     // Event keeps its haara + layers.
     final events = await target.getEvents('b');
-    expect(events.single.haara, 'nice chiddush');
+    expect(events.single.note, 'nice chiddush');
     expect(events.single.layers, ['main', 'rashi']);
     // Custom meforish, requirement, and settings all came across.
     expect((await target.watchCustomLayers('b').first).map((l) => l.id),
         contains('my-meforish'));
     final reqs = await target.watchLayerRequirements('b').first;
     expect(reqs.single.layers, {'main', 'rashi'});
+    // Offered (checkable) config round-trips independently of required.
+    final offered = await target.watchOfferedLayers('b').first;
+    expect(offered.single.layers, {'main', 'rashi', 'maharsha'});
     expect(result.settings['chazaraIntervals'], '2,4,8');
   });
 }

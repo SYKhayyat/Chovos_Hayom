@@ -7,11 +7,11 @@ import '../../application/settings.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/enums.dart';
-import '../../domain/entities/layer.dart';
 import '../../domain/entities/learning_event.dart';
 import '../../domain/usecases/fold_log.dart';
 import '../../domain/usecases/goal_evaluator.dart';
 import 'add_chazara_sheet.dart';
+import 'bulk_actions_sheet.dart';
 import 'log_unit_sheet.dart';
 import 'mefarshim_config_sheet.dart';
 import 'unit_details_sheet.dart';
@@ -34,8 +34,13 @@ class UnitGridScreen extends ConsumerWidget {
         title: Text(node.name),
         actions: [
           IconButton(
+            icon: const Icon(Icons.checklist),
+            tooltip: 'Finish all / clear all',
+            onPressed: () => showBulkActionsSheet(context, ref, node: node),
+          ),
+          IconButton(
             icon: const Icon(Icons.auto_stories_outlined),
-            tooltip: 'Required mefarshim',
+            tooltip: 'Mefarshim',
             onPressed: () => showMefarshimConfigSheet(context, ref, node: node),
           ),
           IconButton(
@@ -75,6 +80,7 @@ class UnitGridScreen extends ConsumerWidget {
 
   Widget _grid(BuildContext context, WidgetRef ref, LogFold fold) {
     final required = ref.watch(layerRequirementsProvider);
+    final view = ref.watch(unitLayerViewProvider);
     final done = fold.doneUnits(node.id, required);
     // Units carrying a recorded note or duration on a `done` event — surfaced as
     // a small dot so details are discoverable at a glance.
@@ -83,9 +89,7 @@ class UnitGridScreen extends ConsumerWidget {
       for (final e in events)
         if (e.nodeId == node.id &&
             e.action == EventAction.done &&
-            ((e.note != null && e.note!.isNotEmpty) ||
-                (e.haara != null && e.haara!.isNotEmpty) ||
-                e.durationMin != null))
+            ((e.note != null && e.note!.isNotEmpty) || e.durationMin != null))
           e.unitIndex,
     };
     return GridView.builder(
@@ -100,18 +104,13 @@ class UnitGridScreen extends ConsumerWidget {
       itemBuilder: (context, i) {
         final unit = node.unitOffset + i;
         final isDone = done.contains(unit);
-        final req = required.forUnit(node.id, unit);
-        final layered = req.length > 1 || !req.contains(mainLayerId);
-        // Fraction of required layers done — drives the partial fill.
-        double fraction;
-        if (isDone) {
-          fraction = 1;
-        } else if (layered && req.isNotEmpty) {
-          final have = fold.completedLayers(node.id, unit);
-          fraction = req.where(have.contains).length / req.length;
-        } else {
-          fraction = 0;
-        }
+        // A unit shows the per-layer checklist when it *offers* more than the
+        // text (offered ∪ required); its fill fraction tracks only the *required*
+        // layers, so optional mefarshim never inflate progress.
+        final layered = view.isLayered(node.id, unit);
+        final fraction = isDone
+            ? 1.0
+            : (layered ? view.fraction(node.id, unit, fold) : 0.0);
         return _UnitCell(
           label: node.unitDisplay(unit),
           isDone: isDone,
@@ -176,8 +175,7 @@ class UnitGridScreen extends ConsumerWidget {
                 await logger.markDone(node.id, unit,
                     occurredAt: result.occurredAt,
                     durationMin: result.durationMin,
-                    note: result.note,
-                    haara: result.haara);
+                    note: result.note);
               },
             ),
             if (isDone) ...[

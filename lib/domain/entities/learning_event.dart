@@ -14,7 +14,6 @@ class LearningEvent {
     required this.loggedAt,
     this.durationMin,
     this.note,
-    this.haara,
     this.layers = const [mainLayerId],
   });
 
@@ -38,19 +37,18 @@ class LearningEvent {
 
   final int? durationMin;
 
-  /// A note *about the learning experience* (how it went, how long it took).
-  /// Stays with the item; not surfaced in the Notes Journal.
+  /// A **haara** — whatever you wanted to record about this unit: an insight on
+  /// the daf, a question, or how the seder went. One field, yours to use however
+  /// you like. Every non-empty one is collected in the Notes Journal.
+  ///
+  /// This was once split into `note` (the experience) and `haara` (the material);
+  /// the two were merged, and [mergeNotes] is how legacy pairs are folded in.
   final String? note;
-
-  /// A **haara** — a note *on the material itself* (an insight on the daf). These
-  /// are what the Notes Journal collects.
-  final String? haara;
 
   LearningEvent copyWith({
     DateTime? occurredAt,
     int? durationMin,
     String? note,
-    String? haara,
     List<String>? layers,
   }) =>
       LearningEvent(
@@ -63,7 +61,6 @@ class LearningEvent {
         loggedAt: loggedAt,
         durationMin: durationMin ?? this.durationMin,
         note: note ?? this.note,
-        haara: haara ?? this.haara,
         layers: layers ?? this.layers,
       );
 
@@ -74,7 +71,6 @@ class LearningEvent {
     required DateTime occurredAt,
     required int? durationMin,
     required String? note,
-    required String? haara,
   }) =>
       LearningEvent(
         id: id,
@@ -86,7 +82,6 @@ class LearningEvent {
         loggedAt: loggedAt,
         durationMin: durationMin,
         note: note,
-        haara: haara,
         layers: layers,
       );
 
@@ -100,7 +95,6 @@ class LearningEvent {
         'loggedAt': loggedAt.toIso8601String(),
         if (durationMin != null) 'durationMin': durationMin,
         if (note != null) 'note': note,
-        if (haara != null) 'haara': haara,
         // Omit the default single-'main' list to keep old backups byte-identical.
         if (!(layers.length == 1 && layers.first == mainLayerId)) 'layers': layers,
       };
@@ -114,9 +108,23 @@ class LearningEvent {
         occurredAt: DateTime.parse(json['occurredAt'] as String),
         loggedAt: DateTime.parse(json['loggedAt'] as String),
         durationMin: (json['durationMin'] as num?)?.toInt(),
-        note: json['note'] as String?,
-        haara: json['haara'] as String?,
+        // Backups written before the merge carry a separate `haara`. Fold it in
+        // rather than dropping it — importing an old backup must not lose text.
+        note: mergeNotes(json['note'] as String?, json['haara'] as String?),
         layers: (json['layers'] as List?)?.cast<String>() ??
             const [mainLayerId],
       );
+
+  /// Folds a legacy (note, haara) pair into the single note field. Keeps both
+  /// when both exist — separated by a blank line, learning-note first, matching
+  /// the order the two fields were shown in — and returns null when neither has
+  /// content. Used by both the v7 -> v8 migration and legacy backup import.
+  static String? mergeNotes(String? note, String? haara) {
+    final a = note?.trim() ?? '';
+    final b = haara?.trim() ?? '';
+    if (a.isEmpty && b.isEmpty) return null;
+    if (a.isEmpty) return b;
+    if (b.isEmpty) return a;
+    return '$a\n\n$b';
+  }
 }

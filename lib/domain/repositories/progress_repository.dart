@@ -16,6 +16,13 @@ abstract interface class ProgressRepository {
   /// place — they are only ever appended (see [updateEvent] for the one exception).
   Future<void> addEvent(LearningEvent event);
 
+  /// Append many events in one transaction — the backing store for bulk actions
+  /// (finish-all / clear-all). No-op on an empty list.
+  Future<void> addEvents(List<LearningEvent> events);
+
+  /// Remove many events by id in one transaction — used to undo a bulk action.
+  Future<void> removeEvents(List<String> eventIds);
+
   /// Edit the *annotations* of an existing event in place — its [occurredAt]
   /// (when it was learned), [durationMin], and [note]. The event's identity and
   /// action are unchanged, so the folded done-set is unaffected; this lets the
@@ -53,12 +60,21 @@ abstract interface class ProgressRepository {
   Future<void> removeCustomLayer(String profileId, String layerId);
 
   /// Reactive stream of the profile's required-layer settings (node + unit).
-  Stream<List<LayerRequirementEntry>> watchLayerRequirements(String profileId);
+  Stream<List<LayerConfigEntry>> watchLayerRequirements(String profileId);
 
   /// Pin a required-layer set at a node (unitIndex -1) or a single unit.
-  Future<void> setLayerRequirement(String profileId, LayerRequirementEntry entry);
+  Future<void> setLayerRequirement(String profileId, LayerConfigEntry entry);
 
   /// Remove a required-layer setting, reverting to inheritance/default.
   Future<void> clearLayerRequirement(
       String profileId, String nodeId, int unitIndex);
+
+  /// Reactive stream of the profile's *offered* (checkable) layer settings.
+  Stream<List<LayerConfigEntry>> watchOfferedLayers(String profileId);
+
+  /// Pin an offered-layer set at a node (unitIndex -1) or a single unit.
+  Future<void> setOfferedLayers(String profileId, LayerConfigEntry entry);
+
+  /// Remove an offered-layer setting, reverting to inheritance/default.
+  Future<void> clearOfferedLayers(String profileId, String nodeId, int unitIndex);
 }

@@ -9,6 +9,7 @@ import '../../application/backup_service.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
+import '../../domain/entities/layer.dart';
 import '../profiles/profiles_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -74,6 +75,22 @@ class SettingsScreen extends ConsumerWidget {
                 'after each pass'),
             onTap: () => _editIntervals(context, ref, settings.chazaraIntervals),
           ),
+          const Divider(),
+          const _SectionHeader('Mefarshim bars'),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: Text('Show or hide each meforish’s coverage line under the '
+                'tree’s progress bars.'),
+          ),
+          for (final layer in ref.watch(allLayersProvider))
+            if (layer.id != mainLayerId)
+              SwitchListTile(
+                title: Text(layer.name),
+                subtitle:
+                    layer.nameHebrew != null ? Text(layer.nameHebrew!) : null,
+                value: settings.showsMeforishBar(layer.id),
+                onChanged: (v) => notifier.setMeforishBarVisible(layer.id, v),
+              ),
           const Divider(),
           const _SectionHeader('Profiles'),
           ListTile(
@@ -157,6 +174,9 @@ class SettingsScreen extends ConsumerWidget {
     for (final r in ref.read(layerConfigProvider).asData?.value ?? const []) {
       await repo.clearLayerRequirement(profileId, r.nodeId, r.unitIndex);
     }
+    for (final o in ref.read(offeredConfigProvider).asData?.value ?? const []) {
+      await repo.clearOfferedLayers(profileId, o.nodeId, o.unitIndex);
+    }
     messenger.showSnackBar(const SnackBar(content: Text('Settings cleared')));
   }
 
@@ -208,6 +228,7 @@ class SettingsScreen extends ConsumerWidget {
       customNodes: ref.read(customNodesProvider).asData?.value ?? const [],
       customLayers: ref.read(customLayersProvider).asData?.value ?? const [],
       requirements: ref.read(layerConfigProvider).asData?.value ?? const [],
+      offered: ref.read(offeredConfigProvider).asData?.value ?? const [],
       settings: ref.read(settingsProvider.notifier).toBackup(),
     );
   }

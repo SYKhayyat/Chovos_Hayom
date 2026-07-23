@@ -16,6 +16,7 @@ class SettingsState {
     this.hebrewLayout = false,
     this.sort = const SortConfig(),
     this.chazaraIntervals = ChazaraSchedule.defaultIntervals,
+    this.hiddenMeforishBars = const {},
   });
 
   final CalendarMode calendar;
@@ -31,6 +32,13 @@ class SettingsState {
   /// Spaced-repetition intervals (days) for the chazara schedule, user-editable.
   final List<int> chazaraIntervals;
 
+  /// Layer ids whose per-meforish coverage line is hidden in the tree. Empty
+  /// means every enabled meforish shows its bar.
+  final Set<String> hiddenMeforishBars;
+
+  /// Whether [layerId]'s tree coverage line should render.
+  bool showsMeforishBar(String layerId) => !hiddenMeforishBars.contains(layerId);
+
   SettingsState copyWith({
     CalendarMode? calendar,
     ThemeMode? themeMode,
@@ -38,6 +46,7 @@ class SettingsState {
     bool? hebrewLayout,
     SortConfig? sort,
     List<int>? chazaraIntervals,
+    Set<String>? hiddenMeforishBars,
   }) =>
       SettingsState(
         calendar: calendar ?? this.calendar,
@@ -46,6 +55,7 @@ class SettingsState {
         hebrewLayout: hebrewLayout ?? this.hebrewLayout,
         sort: sort ?? this.sort,
         chazaraIntervals: chazaraIntervals ?? this.chazaraIntervals,
+        hiddenMeforishBars: hiddenMeforishBars ?? this.hiddenMeforishBars,
       );
 }
 
@@ -71,7 +81,17 @@ class SettingsNotifier extends Notifier<SettingsState> {
         level: int.tryParse(prefs.getString(PrefKeys.sortLevel) ?? ''),
       ),
       chazaraIntervals: _parseIntervals(prefs.getString(PrefKeys.chazaraIntervals)),
+      hiddenMeforishBars:
+          _parseIdSet(prefs.getString(PrefKeys.hiddenMeforishBars)),
     );
+  }
+
+  static Set<String> _parseIdSet(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return const {};
+    return {
+      for (final part in raw.split(','))
+        if (part.trim().isNotEmpty) part.trim(),
+    };
   }
 
   static List<int> _parseIntervals(String? raw) {
@@ -90,6 +110,20 @@ class SettingsNotifier extends Notifier<SettingsState> {
         .read(appPreferencesProvider)
         .setString(PrefKeys.chazaraIntervals, effective.join(','));
     state = state.copyWith(chazaraIntervals: effective);
+  }
+
+  /// Show or hide a single meforish's coverage line in the tree.
+  Future<void> setMeforishBarVisible(String layerId, bool visible) async {
+    final next = {...state.hiddenMeforishBars};
+    if (visible) {
+      next.remove(layerId);
+    } else {
+      next.add(layerId);
+    }
+    await ref
+        .read(appPreferencesProvider)
+        .setString(PrefKeys.hiddenMeforishBars, next.join(','));
+    state = state.copyWith(hiddenMeforishBars: next);
   }
 
   Future<void> setSort(SortConfig config) async {
@@ -138,6 +172,7 @@ class SettingsNotifier extends Notifier<SettingsState> {
         PrefKeys.sortDescending: state.sort.descending.toString(),
         PrefKeys.sortLevel: state.sort.level?.toString() ?? '',
         PrefKeys.chazaraIntervals: state.chazaraIntervals.join(','),
+        PrefKeys.hiddenMeforishBars: state.hiddenMeforishBars.join(','),
       };
 
   /// Apply a serialised preferences map (from an imported backup).
@@ -164,6 +199,8 @@ class SettingsNotifier extends Notifier<SettingsState> {
     await prefs.setString(PrefKeys.sortLevel, '');
     await prefs.setString(
         PrefKeys.chazaraIntervals, defaults.chazaraIntervals.join(','));
+    await prefs.setString(PrefKeys.hiddenMeforishBars,
+        defaults.hiddenMeforishBars.join(','));
     state = defaults;
   }
 }

@@ -33,11 +33,19 @@ class RollUp {
       for (final unit in done) {
         if (node.containsUnit(unit)) learned++;
       }
+      // Per-layer coverage: count in-range units that have each layer learned.
+      final byLayer = <String, int>{};
+      for (final unit in node.unitIndices) {
+        for (final layerId in fold.completedLayers(node.id, unit)) {
+          byLayer[layerId] = (byLayer[layerId] ?? 0) + 1;
+        }
+      }
       return ProgressNode(
         node: node,
         learned: learned,
         total: node.unitCount,
         children: const [],
+        learnedByLayer: byLayer,
       );
     }
 
@@ -47,15 +55,20 @@ class RollUp {
     ];
     var learned = 0;
     var total = 0;
+    final byLayer = <String, int>{};
     for (final c in children) {
       learned += c.learned;
       total += c.total;
+      c.learnedByLayer.forEach((layerId, count) {
+        byLayer[layerId] = (byLayer[layerId] ?? 0) + count;
+      });
     }
     return ProgressNode(
       node: node,
       learned: learned,
       total: total,
       children: children,
+      learnedByLayer: byLayer,
     );
   }
 }

@@ -50,6 +50,30 @@ class InMemoryProgressRepository implements ProgressRepository {
   }
 
   @override
+  Future<void> addEvents(List<LearningEvent> events) async {
+    if (events.isEmpty) return;
+    final touched = <String>{};
+    for (final event in events) {
+      (_events[event.profileId] ??= []).add(event);
+      touched.add(event.profileId);
+    }
+    for (final p in touched) {
+      _emit(p);
+    }
+  }
+
+  @override
+  Future<void> removeEvents(List<String> eventIds) async {
+    if (eventIds.isEmpty) return;
+    final ids = eventIds.toSet();
+    for (final entry in _events.entries) {
+      final before = entry.value.length;
+      entry.value.removeWhere((e) => ids.contains(e.id));
+      if (entry.value.length != before) _emit(entry.key);
+    }
+  }
+
+  @override
   Future<void> updateEvent(LearningEvent event) async {
     final list = _events[event.profileId];
     if (list == null) return;
@@ -90,10 +114,12 @@ class InMemoryProgressRepository implements ProgressRepository {
     _customNodes.remove(profileId);
     _customLayers.remove(profileId);
     _requirements.remove(profileId);
+    _offered.remove(profileId);
     _emit(profileId);
     _emitCustom(profileId);
     _emitLayers(profileId);
     _emitReqs(profileId);
+    _emitOffered(profileId);
   }
 
   StreamController<List<CatalogNode>> _customControllerFor(String profileId) =>
@@ -224,5 +250,49 @@ class InMemoryProgressRepository implements ProgressRepository {
     final before = list.length;
     list.removeWhere((e) => e.nodeId == nodeId && e.unitIndex == unitIndex);
     if (list.length != before) _emitReqs(profileId);
+  }
+
+  // --- Offered (checkable) layers ------------------------------------------
+
+  final Map<String, List<LayerConfigEntry>> _offered = {};
+  final Map<String, StreamController<List<LayerConfigEntry>>> _offeredControllers =
+      {};
+
+  StreamController<List<LayerConfigEntry>> _offeredControllerFor(
+          String profileId) =>
+      _offeredControllers.putIfAbsent(
+          profileId, () => StreamController<List<LayerConfigEntry>>.broadcast());
+
+  void _emitOffered(String profileId) {
+    final c = _offeredControllers[profileId];
+    if (c != null && c.hasListener) {
+      c.add(List.unmodifiable(_offered[profileId] ?? const []));
+    }
+  }
+
+  @override
+  Stream<List<LayerConfigEntry>> watchOfferedLayers(String profileId) async* {
+    final controller = _offeredControllerFor(profileId);
+    yield List.unmodifiable(_offered[profileId] ?? const []);
+    yield* controller.stream;
+  }
+
+  @override
+  Future<void> setOfferedLayers(String profileId, LayerConfigEntry entry) async {
+    final list = _offered[profileId] ??= [];
+    list.removeWhere(
+        (e) => e.nodeId == entry.nodeId && e.unitIndex == entry.unitIndex);
+    list.add(entry);
+    _emitOffered(profileId);
+  }
+
+  @override
+  Future<void> clearOfferedLayers(
+      String profileId, String nodeId, int unitIndex) async {
+    final list = _offered[profileId];
+    if (list == null) return;
+    final before = list.length;
+    list.removeWhere((e) => e.nodeId == nodeId && e.unitIndex == unitIndex);
+    if (list.length != before) _emitOffered(profileId);
   }
 }

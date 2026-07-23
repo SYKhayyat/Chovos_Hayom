@@ -7,7 +7,7 @@ import '../domain/repositories/progress_repository.dart';
 import '../domain/usecases/layer_requirements.dart';
 
 /// Parsed backup payload. Newer fields ([customLayers], [requirements],
-/// [settings]) are absent in v1 backups and default to empty.
+/// [offered], [settings]) are absent in older backups and default to empty.
 class BackupData {
   const BackupData({
     required this.version,
@@ -15,6 +15,7 @@ class BackupData {
     required this.customNodes,
     this.customLayers = const [],
     this.requirements = const [],
+    this.offered = const [],
     this.settings = const {},
   });
 
@@ -22,7 +23,8 @@ class BackupData {
   final List<LearningEvent> events;
   final List<CatalogNode> customNodes;
   final List<Layer> customLayers;
-  final List<LayerRequirementEntry> requirements;
+  final List<LayerConfigEntry> requirements;
+  final List<LayerConfigEntry> offered;
   final Map<String, dynamic> settings;
 }
 
@@ -34,15 +36,18 @@ class BackupService {
 
   final ProgressRepository _repo;
 
-  /// v2 added customLayers, requirements, and settings. v1 backups still import.
-  static const currentVersion = 2;
+  /// v2 added customLayers, requirements, and settings. v3 added offered
+  /// (checkable) layer configs. Older backups still import (missing fields
+  /// default to empty).
+  static const currentVersion = 3;
 
   /// Build a portable JSON string for [profileId].
   Future<String> export(
     String profileId, {
     required List<CatalogNode> customNodes,
     List<Layer> customLayers = const [],
-    List<LayerRequirementEntry> requirements = const [],
+    List<LayerConfigEntry> requirements = const [],
+    List<LayerConfigEntry> offered = const [],
     Map<String, dynamic> settings = const {},
   }) async {
     final events = await _repo.getEvents(profileId);
@@ -53,6 +58,7 @@ class BackupService {
       'customNodes': customNodes.map((n) => n.toJson()).toList(),
       'customLayers': customLayers.map((l) => l.toJson()).toList(),
       'requirements': requirements.map((r) => r.toJson()).toList(),
+      'offered': offered.map((r) => r.toJson()).toList(),
       'settings': settings,
     });
   }
@@ -75,7 +81,11 @@ class BackupService {
       ],
       requirements: [
         for (final r in (map['requirements'] as List? ?? []))
-          LayerRequirementEntry.fromJson((r as Map).cast<String, dynamic>()),
+          LayerConfigEntry.fromJson((r as Map).cast<String, dynamic>()),
+      ],
+      offered: [
+        for (final r in (map['offered'] as List? ?? []))
+          LayerConfigEntry.fromJson((r as Map).cast<String, dynamic>()),
       ],
       settings: (map['settings'] as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -104,7 +114,6 @@ class BackupService {
         loggedAt: e.loggedAt,
         durationMin: e.durationMin,
         note: e.note,
-        haara: e.haara,
         layers: e.layers,
       );
       await _repo.addEvent(scoped);
@@ -119,6 +128,9 @@ class BackupService {
     for (final r in data.requirements) {
       await _repo.setLayerRequirement(targetProfileId, r);
     }
+    for (final o in data.offered) {
+      await _repo.setOfferedLayers(targetProfileId, o);
+    }
 
     return BackupData(
       version: data.version,
@@ -126,6 +138,7 @@ class BackupService {
       customNodes: data.customNodes,
       customLayers: data.customLayers,
       requirements: data.requirements,
+      offered: data.offered,
       settings: data.settings,
     );
   }

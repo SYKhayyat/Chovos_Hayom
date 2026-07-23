@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/catalog_editor.dart';
+import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/sorting.dart';
+import '../../domain/entities/layer.dart';
 import '../../domain/entities/progress_node.dart';
 import '../custom_node/add_custom_node_screen.dart';
+import '../unit_grid/bulk_actions_sheet.dart';
 import '../unit_grid/unit_grid_screen.dart';
 
 /// Recursive expandable tree row with a progress bar. Leaves navigate to their
@@ -102,6 +105,7 @@ class ProgressTile extends ConsumerWidget {
       tooltip: 'Edit / add / hide',
       onSelected: (value) => _onMenu(context, ref, editor, value),
       itemBuilder: (_) => [
+        const PopupMenuItem(value: 'bulk', child: Text('Finish all / clear all')),
         const PopupMenuItem(value: 'edit', child: Text('Edit')),
         const PopupMenuItem(value: 'add', child: Text('Add sub-item')),
         const PopupMenuItem(value: 'clone', child: Text('Clone structure')),
@@ -118,6 +122,8 @@ class ProgressTile extends ConsumerWidget {
       String action) async {
     final navigator = Navigator.of(context);
     switch (action) {
+      case 'bulk':
+        await showBulkActionsSheet(context, ref, node: node.node);
       case 'edit':
         navigator.push(MaterialPageRoute(
             builder: (_) => AddCustomNodeScreen(existing: node.node)));
@@ -157,12 +163,12 @@ class ProgressTile extends ConsumerWidget {
   }
 }
 
-class _ProgressBar extends StatelessWidget {
+class _ProgressBar extends ConsumerWidget {
   const _ProgressBar({required this.node});
   final ProgressNode node;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Column(
@@ -180,6 +186,99 @@ class _ProgressBar extends StatelessWidget {
             '${node.learned} / ${node.total}  (${node.percent.toStringAsFixed(1)}%)',
             style: Theme.of(context).textTheme.bodySmall,
           ),
+          ..._meforishBars(context, ref),
+        ],
+      ),
+    );
+  }
+
+  /// A thin line per enabled meforish (Rashi, Tosafos, …) showing its coverage
+  /// across this node — the mefarshim offered/required here, plus any that
+  /// already carry progress underneath (so an aggregating parent reflects them).
+  /// The primary text is excluded; it maps to the main bar above.
+  List<Widget> _meforishBars(BuildContext context, WidgetRef ref) {
+    if (node.total == 0) return const [];
+    final offered = ref.watch(offeredLayersProvider).forNode(node.id);
+    final required = ref.watch(layerRequirementsProvider).forNode(node.id);
+    final layers = ref.watch(allLayersProvider);
+    final hidden = ref.watch(settingsProvider.select((s) => s.hiddenMeforishBars));
+
+    final show = <String>{
+      ...offered,
+      ...required,
+      ...node.learnedByLayer.keys,
+    }
+      ..remove(mainLayerId)
+      ..removeWhere(hidden.contains); // per-meforish toggle in Settings
+    if (show.isEmpty) return const [];
+
+    // Stable order following the mefarshim list; unknown ids fall to the end.
+    final ordered = [
+      for (final l in layers)
+        if (show.contains(l.id)) l.id,
+      for (final id in show)
+        if (layers.every((l) => l.id != id)) id,
+    ];
+
+    Layer layerOf(String id) =>
+        layers.firstWhere((l) => l.id == id, orElse: () => Layer(id: id, name: id));
+
+    return [
+      const SizedBox(height: 4),
+      for (final id in ordered)
+        _MeforishBar(
+          name: layerOf(id).name,
+          learned: node.learnedFor(id),
+          total: node.total,
+        ),
+    ];
+  }
+}
+
+/// One compact meforish coverage line: name · thin bar · count.
+class _MeforishBar extends StatelessWidget {
+  const _MeforishBar(
+      {required this.name, required this.learned, required this.total});
+  final String name;
+  final int learned;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 3),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 68,
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                minHeight: 3,
+                value: total == 0 ? 0 : learned / total,
+                backgroundColor: scheme.surfaceContainerHighest,
+                color: scheme.secondary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text('$learned/$total',
+              style: Theme.of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.copyWith(color: scheme.onSurfaceVariant)),
         ],
       ),
     );

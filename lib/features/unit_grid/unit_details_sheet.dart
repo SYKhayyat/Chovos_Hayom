@@ -89,16 +89,9 @@ class _UnitDetailsSheet extends ConsumerWidget {
                   ),
                 _DetailRow(
                   icon: Icons.lightbulb_outline,
-                  label: 'Haara (insight on the daf)',
-                  value: (done.haara == null || done.haara!.isEmpty)
-                      ? 'No haara'
-                      : done.haara!,
-                ),
-                _DetailRow(
-                  icon: Icons.notes,
-                  label: 'Learning note',
+                  label: 'Haara',
                   value: (done.note == null || done.note!.isEmpty)
-                      ? 'No note'
+                      ? 'No haara'
                       : done.note!,
                 ),
                 const SizedBox(height: 16),
@@ -156,12 +149,10 @@ class _UnitDetailsSheet extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(head, style: theme.textTheme.bodySmall),
-          if (review.haara != null && review.haara!.isNotEmpty)
-            Text('“${review.haara}”',
+          if (review.note != null && review.note!.isNotEmpty)
+            Text('“${review.note}”',
                 style: theme.textTheme.bodySmall
                     ?.copyWith(fontStyle: FontStyle.italic)),
-          if (review.note != null && review.note!.isNotEmpty)
-            Text(review.note!, style: theme.textTheme.bodySmall),
         ],
       ),
     );
@@ -179,7 +170,6 @@ class _UnitDetailsSheet extends ConsumerWidget {
       initialOccurredAt: done.occurredAt,
       initialDurationMin: done.durationMin,
       initialNote: done.note,
-      initialHaara: done.haara,
       saveLabel: 'Save changes',
     );
     if (result == null) return;
@@ -190,7 +180,6 @@ class _UnitDetailsSheet extends ConsumerWidget {
         occurredAt: result.occurredAt ?? done.occurredAt,
         durationMin: result.durationMin,
         note: result.note,
-        haara: result.haara,
       );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));

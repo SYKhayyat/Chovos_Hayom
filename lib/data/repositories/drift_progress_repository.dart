@@ -33,22 +33,36 @@ class DriftProgressRepository implements ProgressRepository {
 
   @override
   Future<void> addEvent(LearningEvent e) async {
-    await _db.into(_db.learningEvents).insert(
-          LearningEventsCompanion.insert(
-            id: e.id,
-            profileId: e.profileId,
-            nodeId: e.nodeId,
-            unitIndex: e.unitIndex,
-            action: e.action,
-            occurredAt: e.occurredAt,
-            loggedAt: e.loggedAt,
-            durationMin: Value(e.durationMin),
-            note: Value(e.note),
-            haara: Value(e.haara),
-            layersJson: Value(_encodeLayers(e.layers)),
-          ),
-        );
+    await _db.into(_db.learningEvents).insert(_eventCompanion(e));
   }
+
+  @override
+  Future<void> addEvents(List<LearningEvent> events) async {
+    if (events.isEmpty) return;
+    await _db.batch((b) {
+      b.insertAll(_db.learningEvents, events.map(_eventCompanion).toList());
+    });
+  }
+
+  @override
+  Future<void> removeEvents(List<String> eventIds) async {
+    if (eventIds.isEmpty) return;
+    await (_db.delete(_db.learningEvents)..where((t) => t.id.isIn(eventIds))).go();
+  }
+
+  LearningEventsCompanion _eventCompanion(LearningEvent e) =>
+      LearningEventsCompanion.insert(
+        id: e.id,
+        profileId: e.profileId,
+        nodeId: e.nodeId,
+        unitIndex: e.unitIndex,
+        action: e.action,
+        occurredAt: e.occurredAt,
+        loggedAt: e.loggedAt,
+        durationMin: Value(e.durationMin),
+        note: Value(e.note),
+        layersJson: Value(_encodeLayers(e.layers)),
+      );
 
   @override
   Future<void> updateEvent(LearningEvent e) async {
@@ -58,7 +72,6 @@ class DriftProgressRepository implements ProgressRepository {
         occurredAt: Value(e.occurredAt),
         durationMin: Value(e.durationMin),
         note: Value(e.note),
-        haara: Value(e.haara),
       ),
     );
   }
@@ -108,6 +121,9 @@ class DriftProgressRepository implements ProgressRepository {
       await (_db.delete(_db.requiredLayerConfigs)
             ..where((t) => t.profileId.equals(profileId)))
           .go();
+      await (_db.delete(_db.offeredLayerConfigs)
+            ..where((t) => t.profileId.equals(profileId)))
+          .go();
       await (_db.delete(_db.profiles)..where((t) => t.id.equals(profileId)))
           .go();
     });
@@ -123,7 +139,6 @@ class DriftProgressRepository implements ProgressRepository {
         loggedAt: row.loggedAt,
         durationMin: row.durationMin,
         note: row.note,
-        haara: row.haara,
         layers: _decodeLayers(row.layersJson),
       );
 
@@ -261,6 +276,44 @@ class DriftProgressRepository implements ProgressRepository {
   Future<void> clearLayerRequirement(
       String profileId, String nodeId, int unitIndex) async {
     await (_db.delete(_db.requiredLayerConfigs)
+          ..where((t) =>
+              t.profileId.equals(profileId) &
+              t.nodeId.equals(nodeId) &
+              t.unitIndex.equals(unitIndex)))
+        .go();
+  }
+
+  // --- Offered (checkable) layer settings ----------------------------------
+
+  @override
+  Stream<List<LayerConfigEntry>> watchOfferedLayers(String profileId) {
+    final query = _db.select(_db.offeredLayerConfigs)
+      ..where((t) => t.profileId.equals(profileId));
+    return query.watch().map((rows) => rows
+        .map((r) => LayerConfigEntry(
+              nodeId: r.nodeId,
+              unitIndex: r.unitIndex,
+              layers: (jsonDecode(r.layersJson) as List).cast<String>().toSet(),
+            ))
+        .toList());
+  }
+
+  @override
+  Future<void> setOfferedLayers(String profileId, LayerConfigEntry entry) async {
+    await _db.into(_db.offeredLayerConfigs).insertOnConflictUpdate(
+          OfferedLayerConfigsCompanion.insert(
+            profileId: profileId,
+            nodeId: entry.nodeId,
+            unitIndex: Value(entry.unitIndex),
+            layersJson: jsonEncode(entry.layers.toList()),
+          ),
+        );
+  }
+
+  @override
+  Future<void> clearOfferedLayers(
+      String profileId, String nodeId, int unitIndex) async {
+    await (_db.delete(_db.offeredLayerConfigs)
           ..where((t) =>
               t.profileId.equals(profileId) &
               t.nodeId.equals(nodeId) &

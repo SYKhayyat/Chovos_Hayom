@@ -38,13 +38,11 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
   DateTime _date = DateTime.now();
   final _durationCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
-  final _haaraCtrl = TextEditingController();
 
   @override
   void dispose() {
     _durationCtrl.dispose();
     _noteCtrl.dispose();
-    _haaraCtrl.dispose();
     super.dispose();
   }
 
@@ -127,20 +125,12 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
             ),
             const SizedBox(height: 8),
             TextField(
-              controller: _haaraCtrl,
+              controller: _noteCtrl,
               decoration: const InputDecoration(
-                labelText: 'Haara — insight (optional)',
+                labelText: 'Haara (optional)',
                 helperText: 'Collected in your Notes Journal.',
               ),
-              maxLines: 3,
-              minLines: 1,
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _noteCtrl,
-              decoration:
-                  const InputDecoration(labelText: 'Learning note (optional)'),
-              maxLines: 2,
+              maxLines: 4,
               minLines: 1,
             ),
             const SizedBox(height: 16),
@@ -197,14 +187,12 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
   void _save() {
     final duration = int.tryParse(_durationCtrl.text.trim());
     final note = _noteCtrl.text.trim();
-    final haara = _haaraCtrl.text.trim();
     ref.read(loggingServiceProvider).markReview(
           widget.node.id,
           widget.unit,
           occurredAt: _manualDate ? _date : null,
           durationMin: duration,
           note: note.isEmpty ? null : note,
-          haara: haara.isEmpty ? null : haara,
           layers: _selected.toList(),
         );
     Navigator.pop(context);
