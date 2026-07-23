@@ -282,15 +282,24 @@ class SettingsScreen extends ConsumerWidget {
         what: 'Saving your chazara intervals');
   }
 
+  /// Everything the backup carries, read from where it lives.
+  ///
+  /// The four repository-backed lists used to come off their providers as
+  /// `.asData?.value ?? const []`. A provider still in flight — or one nothing
+  /// on this screen keeps alive — reads as an **empty list**, which means a
+  /// backup that silently leaves out your custom sefarim, your custom mefarshim
+  /// and every required/offered set, and says "Saved backup" about it. That is
+  /// the same defect goals had before they were added here, and a backup you
+  /// only discover is incomplete when you restore it is the worst kind.
   Future<String> _buildExport(WidgetRef ref) async {
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
     return BackupService(repo).export(
       profileId,
-      customNodes: ref.read(customNodesProvider).asData?.value ?? const [],
-      customLayers: ref.read(customLayersProvider).asData?.value ?? const [],
-      requirements: ref.read(layerConfigProvider).asData?.value ?? const [],
-      offered: ref.read(offeredConfigProvider).asData?.value ?? const [],
+      customNodes: await repo.watchCustomNodes(profileId).first,
+      customLayers: await repo.watchCustomLayers(profileId).first,
+      requirements: await repo.watchLayerRequirements(profileId).first,
+      offered: await repo.watchOfferedLayers(profileId).first,
       settings: ref.read(settingsProvider.notifier).toBackup(),
       goals: ref.read(goalsProvider),
     );

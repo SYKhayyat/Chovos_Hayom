@@ -140,7 +140,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   sefer's grid with the dashboard behind it, and a path the app doesn't serve says so rather than
   showing a blank screen. (A private scheme, not an `https` App Link — claiming a domain you don't
   own is how a link ends up opening someone else's app.)
-- 253 tests covering the engine, layer fold + required/offered-set resolution, per-meforish roll-up,
+- 254 tests covering the engine, layer fold + required/offered-set resolution, per-meforish roll-up,
   bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
   reminders, backup validation, chazara scheduling, siyumim, learning cycles, the session timer,
   per-profile settings, schema migrations, derive-engine cost, the write guard + route table, and UI.
@@ -163,7 +163,7 @@ app uses in-app nudges only), and **running on Android/desktop** (needs the plat
 flutter pub get
 dart run build_runner build   # generates Drift code
 flutter analyze               # clean
-flutter test                  # 253 tests, all green
+flutter test                  # 254 tests, all green
 ```
 
 CI runs all of the above on every push and pull request, plus a release APK build, and fails if the

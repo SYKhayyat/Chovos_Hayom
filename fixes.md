@@ -32,7 +32,7 @@ Where the README currently overclaims (backup completeness, node-level mefarshim
 
 ## Status — worked through 2026-07-23
 
-Commits `a6c6cde` … `2ab099a`. Analyzer clean under `--fatal-infos`; **253 tests** pass (was 122).
+Commits `a6c6cde` … `2ab099a`. Analyzer clean under `--fatal-infos`; **254 tests** pass (was 122).
 
 Everything in this document is now done. The two items §5 left open — one error-handling policy for
 writes, and a routing abstraction — landed together, because they turned out to need each other: a
@@ -146,6 +146,19 @@ Two more of the same shape turned up in *Clear settings*, both found by writing 
   flight — or one nothing on the Settings screen keeps alive, which is the actual case for
   `customNodesProvider` — reads as an **empty list**, so the clear deleted nothing and reported
   success. It now asks the repository, which is the truth, rather than a cache of it.
+
+And that pattern was not confined to the clear. The same four reads sat in **`_buildExport`**, which
+is the backup: a provider that had not loaded meant an export with no custom sefarim, no custom
+mefarshim and no required/offered sets in it, reported as "Exported to clipboard". This is §2b's
+defect — "goals are silently excluded from backup" — in four more fields, and the new test for it
+fails on the old code exactly that way. `mefarshim_config_sheet`'s delete read the same two lists to
+decide which references to rewrite, so it could have told the user "required in 0 places" and then
+left every one of them dangling: §2f's defect, by the same route. Both now read the repository.
+
+The general shape, worth naming: **`.asData?.value ?? const []` is a silent lie in any write path.**
+It is fine for rendering — an empty list draws as "nothing yet" and the next frame fixes it — and
+wrong everywhere a decision is made from it, because "not loaded" and "there is none" become the
+same answer.
 
 ---
 

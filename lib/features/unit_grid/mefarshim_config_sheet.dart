@@ -188,9 +188,15 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
   /// gone, so nothing is gated on or offers a meforish that no longer exists.
   Future<void> _deleteLayer(Layer layer) async {
     final profileId = ref.read(activeProfileProvider);
+    final repo = ref.read(progressRepositoryProvider);
     final guard = WriteGuard.of(context, ref);
-    final requirements = ref.read(layerConfigProvider).asData?.value ?? const [];
-    final offered = ref.read(offeredConfigProvider).asData?.value ?? const [];
+    // From the repository, not from the providers that cache it. A config that
+    // read as an empty list would tell the user "required in 0 places" and then
+    // leave every one of those references dangling — the exact failure deleting
+    // a meforish was fixed for.
+    final requirements = await repo.watchLayerRequirements(profileId).first;
+    final offered = await repo.watchOfferedLayers(profileId).first;
+    if (!mounted) return;
 
     final affectedRequired = [
       for (final e in requirements)
@@ -237,7 +243,6 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
     );
     if (ok != true) return;
 
-    final repo = ref.read(progressRepositoryProvider);
     final deleted = await guard.run(
       () => repo.transaction(() async {
         for (final e in affectedRequired) {
