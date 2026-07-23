@@ -422,6 +422,17 @@ class $LearningEventsTable extends LearningEvents
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _batchIdMeta = const VerificationMeta(
+    'batchId',
+  );
+  @override
+  late final GeneratedColumn<String> batchId = GeneratedColumn<String>(
+    'batch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -434,6 +445,7 @@ class $LearningEventsTable extends LearningEvents
     durationMin,
     note,
     layersJson,
+    batchId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -513,6 +525,12 @@ class $LearningEventsTable extends LearningEvents
         layersJson.isAcceptableOrUnknown(data['layers_json']!, _layersJsonMeta),
       );
     }
+    if (data.containsKey('batch_id')) {
+      context.handle(
+        _batchIdMeta,
+        batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta),
+      );
+    }
     return context;
   }
 
@@ -564,6 +582,10 @@ class $LearningEventsTable extends LearningEvents
         DriftSqlType.string,
         data['${effectivePrefix}layers_json'],
       ),
+      batchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}batch_id'],
+      ),
     );
   }
 
@@ -596,6 +618,11 @@ class LearningEventRow extends DataClass
   /// JSON list of layer ids this event marks/unmarks (the text and/or mefarshim).
   /// Null is read as `["main"]` — the primary text — matching pre-layers events.
   final String? layersJson;
+
+  /// Groups the events written by one bulk action, so it stays undoable long
+  /// after the snackbar is gone. Null on ordinary single marks. Indexed, since
+  /// the undo list groups the whole log by it.
+  final String? batchId;
   const LearningEventRow({
     required this.id,
     required this.profileId,
@@ -607,6 +634,7 @@ class LearningEventRow extends DataClass
     this.durationMin,
     this.note,
     this.layersJson,
+    this.batchId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -631,6 +659,9 @@ class LearningEventRow extends DataClass
     if (!nullToAbsent || layersJson != null) {
       map['layers_json'] = Variable<String>(layersJson);
     }
+    if (!nullToAbsent || batchId != null) {
+      map['batch_id'] = Variable<String>(batchId);
+    }
     return map;
   }
 
@@ -650,6 +681,9 @@ class LearningEventRow extends DataClass
       layersJson: layersJson == null && nullToAbsent
           ? const Value.absent()
           : Value(layersJson),
+      batchId: batchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(batchId),
     );
   }
 
@@ -671,6 +705,7 @@ class LearningEventRow extends DataClass
       durationMin: serializer.fromJson<int?>(json['durationMin']),
       note: serializer.fromJson<String?>(json['note']),
       layersJson: serializer.fromJson<String?>(json['layersJson']),
+      batchId: serializer.fromJson<String?>(json['batchId']),
     );
   }
   @override
@@ -689,6 +724,7 @@ class LearningEventRow extends DataClass
       'durationMin': serializer.toJson<int?>(durationMin),
       'note': serializer.toJson<String?>(note),
       'layersJson': serializer.toJson<String?>(layersJson),
+      'batchId': serializer.toJson<String?>(batchId),
     };
   }
 
@@ -703,6 +739,7 @@ class LearningEventRow extends DataClass
     Value<int?> durationMin = const Value.absent(),
     Value<String?> note = const Value.absent(),
     Value<String?> layersJson = const Value.absent(),
+    Value<String?> batchId = const Value.absent(),
   }) => LearningEventRow(
     id: id ?? this.id,
     profileId: profileId ?? this.profileId,
@@ -714,6 +751,7 @@ class LearningEventRow extends DataClass
     durationMin: durationMin.present ? durationMin.value : this.durationMin,
     note: note.present ? note.value : this.note,
     layersJson: layersJson.present ? layersJson.value : this.layersJson,
+    batchId: batchId.present ? batchId.value : this.batchId,
   );
   LearningEventRow copyWithCompanion(LearningEventsCompanion data) {
     return LearningEventRow(
@@ -733,6 +771,7 @@ class LearningEventRow extends DataClass
       layersJson: data.layersJson.present
           ? data.layersJson.value
           : this.layersJson,
+      batchId: data.batchId.present ? data.batchId.value : this.batchId,
     );
   }
 
@@ -748,7 +787,8 @@ class LearningEventRow extends DataClass
           ..write('loggedAt: $loggedAt, ')
           ..write('durationMin: $durationMin, ')
           ..write('note: $note, ')
-          ..write('layersJson: $layersJson')
+          ..write('layersJson: $layersJson, ')
+          ..write('batchId: $batchId')
           ..write(')'))
         .toString();
   }
@@ -765,6 +805,7 @@ class LearningEventRow extends DataClass
     durationMin,
     note,
     layersJson,
+    batchId,
   );
   @override
   bool operator ==(Object other) =>
@@ -779,7 +820,8 @@ class LearningEventRow extends DataClass
           other.loggedAt == this.loggedAt &&
           other.durationMin == this.durationMin &&
           other.note == this.note &&
-          other.layersJson == this.layersJson);
+          other.layersJson == this.layersJson &&
+          other.batchId == this.batchId);
 }
 
 class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
@@ -793,6 +835,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
   final Value<int?> durationMin;
   final Value<String?> note;
   final Value<String?> layersJson;
+  final Value<String?> batchId;
   final Value<int> rowid;
   const LearningEventsCompanion({
     this.id = const Value.absent(),
@@ -805,6 +848,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     this.durationMin = const Value.absent(),
     this.note = const Value.absent(),
     this.layersJson = const Value.absent(),
+    this.batchId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningEventsCompanion.insert({
@@ -818,6 +862,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     this.durationMin = const Value.absent(),
     this.note = const Value.absent(),
     this.layersJson = const Value.absent(),
+    this.batchId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        profileId = Value(profileId),
@@ -837,6 +882,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     Expression<int>? durationMin,
     Expression<String>? note,
     Expression<String>? layersJson,
+    Expression<String>? batchId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -850,6 +896,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
       if (durationMin != null) 'duration_min': durationMin,
       if (note != null) 'note': note,
       if (layersJson != null) 'layers_json': layersJson,
+      if (batchId != null) 'batch_id': batchId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -865,6 +912,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     Value<int?>? durationMin,
     Value<String?>? note,
     Value<String?>? layersJson,
+    Value<String?>? batchId,
     Value<int>? rowid,
   }) {
     return LearningEventsCompanion(
@@ -878,6 +926,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
       durationMin: durationMin ?? this.durationMin,
       note: note ?? this.note,
       layersJson: layersJson ?? this.layersJson,
+      batchId: batchId ?? this.batchId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -917,6 +966,9 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     if (layersJson.present) {
       map['layers_json'] = Variable<String>(layersJson.value);
     }
+    if (batchId.present) {
+      map['batch_id'] = Variable<String>(batchId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -936,6 +988,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
           ..write('durationMin: $durationMin, ')
           ..write('note: $note, ')
           ..write('layersJson: $layersJson, ')
+          ..write('batchId: $batchId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2687,6 +2740,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $RequiredLayerConfigsTable(this);
   late final $OfferedLayerConfigsTable offeredLayerConfigs =
       $OfferedLayerConfigsTable(this);
+  late final Index learningEventsBatch = Index(
+    'learning_events_batch',
+    'CREATE INDEX learning_events_batch ON learning_events (profile_id, batch_id)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2698,6 +2755,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     customLayers,
     requiredLayerConfigs,
     offeredLayerConfigs,
+    learningEventsBatch,
   ];
 }
 
@@ -2893,6 +2951,7 @@ typedef $$LearningEventsTableCreateCompanionBuilder =
       Value<int?> durationMin,
       Value<String?> note,
       Value<String?> layersJson,
+      Value<String?> batchId,
       Value<int> rowid,
     });
 typedef $$LearningEventsTableUpdateCompanionBuilder =
@@ -2907,6 +2966,7 @@ typedef $$LearningEventsTableUpdateCompanionBuilder =
       Value<int?> durationMin,
       Value<String?> note,
       Value<String?> layersJson,
+      Value<String?> batchId,
       Value<int> rowid,
     });
 
@@ -2969,6 +3029,11 @@ class $$LearningEventsTableFilterComposer
     column: $table.layersJson,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get batchId => $composableBuilder(
+    column: $table.batchId,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$LearningEventsTableOrderingComposer
@@ -3029,6 +3094,11 @@ class $$LearningEventsTableOrderingComposer
     column: $table.layersJson,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get batchId => $composableBuilder(
+    column: $table.batchId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LearningEventsTableAnnotationComposer
@@ -3075,6 +3145,9 @@ class $$LearningEventsTableAnnotationComposer
     column: $table.layersJson,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get batchId =>
+      $composableBuilder(column: $table.batchId, builder: (column) => column);
 }
 
 class $$LearningEventsTableTableManager
@@ -3124,6 +3197,7 @@ class $$LearningEventsTableTableManager
                 Value<int?> durationMin = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<String?> layersJson = const Value.absent(),
+                Value<String?> batchId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningEventsCompanion(
                 id: id,
@@ -3136,6 +3210,7 @@ class $$LearningEventsTableTableManager
                 durationMin: durationMin,
                 note: note,
                 layersJson: layersJson,
+                batchId: batchId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3150,6 +3225,7 @@ class $$LearningEventsTableTableManager
                 Value<int?> durationMin = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<String?> layersJson = const Value.absent(),
+                Value<String?> batchId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningEventsCompanion.insert(
                 id: id,
@@ -3162,6 +3238,7 @@ class $$LearningEventsTableTableManager
                 durationMin: durationMin,
                 note: note,
                 layersJson: layersJson,
+                batchId: batchId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

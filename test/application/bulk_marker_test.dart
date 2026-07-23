@@ -135,4 +135,66 @@ void main() {
     expect(again.isEmpty, isTrue);
     expect(again.unitsAffected, 0);
   });
+
+  test('planning writes nothing and reports the count the commit will use',
+      () async {
+    final m = await marker();
+    final plan =
+        m.planFinish(nodeId: 'cat', selection: const RequiredLayerSelection());
+
+    expect(plan.unitsAffected, 5);
+    expect(await repo.getEvents('p'), isEmpty, reason: 'planning is read-only');
+
+    final result = await m.commit(plan);
+    expect(result.unitsAffected, plan.unitsAffected);
+  });
+
+  test('a plan that would change nothing is empty, so the UI can say so',
+      () async {
+    await (await marker())
+        .finish(nodeId: 'a', selection: const RequiredLayerSelection());
+    final plan = (await marker())
+        .planFinish(nodeId: 'a', selection: const RequiredLayerSelection());
+    expect(plan.isEmpty, isTrue);
+  });
+
+  test('every event of one bulk action shares a batch id', () async {
+    final result = await (await marker())
+        .finish(nodeId: 'cat', selection: const RequiredLayerSelection());
+
+    expect(result.batchId, isNotNull);
+    final events = await repo.getEvents('p');
+    expect(events.map((e) => e.batchId).toSet(), {result.batchId});
+    // Distinct from every event id, so undo-by-batch can't collide with them.
+    expect(events.map((e) => e.id), isNot(contains(result.batchId)));
+  });
+
+  test('two bulk actions get different batch ids', () async {
+    final first = await (await marker())
+        .finish(nodeId: 'a', selection: const RequiredLayerSelection());
+    final second = await (await marker())
+        .finish(nodeId: 'b', selection: const RequiredLayerSelection());
+    expect(first.batchId, isNot(second.batchId));
+  });
+
+  test('undo by batch id reverts exactly that batch, days later', () async {
+    final first = await (await marker())
+        .finish(nodeId: 'a', selection: const RequiredLayerSelection());
+    await (await marker())
+        .finish(nodeId: 'b', selection: const RequiredLayerSelection());
+
+    // No held event-id list — just the batch id, which the log itself carries.
+    final removed = await repo.removeBatch('p', first.batchId!);
+
+    expect(removed, 3);
+    final fold = await currentFold();
+    expect(fold.doneUnits('a'), isEmpty, reason: 'the undone batch');
+    expect(fold.doneUnits('b'), {1, 2}, reason: 'the other batch is untouched');
+  });
+
+  test('a single mark carries no batch id, so it never joins the undo list',
+      () async {
+    await logger.markDone('a', 2);
+    expect((await repo.getEvents('p')).single.batchId, isNull);
+  });
 }

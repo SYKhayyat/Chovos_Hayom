@@ -73,14 +73,16 @@ class LoggingService {
           action: EventAction.undone,
           layers: layers);
 
-  /// Append many marks in one transaction, all sharing a single timestamp — the
-  /// backing operation for bulk finish/clear. Returns the created events (so the
-  /// caller can offer an undo by removing them by id). Id/timestamp generation
-  /// stays here so event creation has a single owner.
+  /// Append many marks in one transaction, all sharing a single timestamp and a
+  /// single `batchId` — the backing operation for bulk finish/clear. The shared
+  /// id is what makes the action undoable later from the log alone, without the
+  /// caller having to hold on to a list of event ids (see [BatchHistory]).
+  /// Id/timestamp generation stays here so event creation has a single owner.
   Future<List<LearningEvent>> logBatch(List<BulkMark> marks,
       {DateTime? occurredAt}) async {
     if (marks.isEmpty) return const [];
     final now = _now();
+    final batchId = _idGen();
     final events = [
       for (final m in marks)
         LearningEvent(
@@ -92,6 +94,7 @@ class LoggingService {
           occurredAt: occurredAt ?? now,
           loggedAt: now,
           layers: m.layers,
+          batchId: batchId,
         ),
     ];
     await _repo.addEvents(events);

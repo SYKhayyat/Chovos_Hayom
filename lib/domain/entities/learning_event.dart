@@ -15,6 +15,7 @@ class LearningEvent {
     this.durationMin,
     this.note,
     this.layers = const [mainLayerId],
+    this.batchId,
   });
 
   final String id;
@@ -45,6 +46,15 @@ class LearningEvent {
   /// the two were merged, and [mergeNotes] is how legacy pairs are folded in.
   final String? note;
 
+  /// Ties this event to the bulk action that created it. Every event of one
+  /// "finish all" / "clear all" shares an id; single marks carry null.
+  ///
+  /// It exists so a bulk action stays undoable *durably* — the undo list is
+  /// derived from the log by grouping on this, rather than held in a snackbar
+  /// that vanishes in four seconds (see [BatchHistory]). It records a fact about
+  /// how the event was written, not derived state, so the log stays the truth.
+  final String? batchId;
+
   LearningEvent copyWith({
     DateTime? occurredAt,
     int? durationMin,
@@ -62,6 +72,7 @@ class LearningEvent {
         durationMin: durationMin ?? this.durationMin,
         note: note ?? this.note,
         layers: layers ?? this.layers,
+        batchId: batchId,
       );
 
   /// Returns a copy with edited annotations, where passing null *clears* the
@@ -83,6 +94,7 @@ class LearningEvent {
         durationMin: durationMin,
         note: note,
         layers: layers,
+        batchId: batchId,
       );
 
   Map<String, dynamic> toJson() => {
@@ -97,6 +109,7 @@ class LearningEvent {
         if (note != null) 'note': note,
         // Omit the default single-'main' list to keep old backups byte-identical.
         if (!(layers.length == 1 && layers.first == mainLayerId)) 'layers': layers,
+        if (batchId != null) 'batchId': batchId,
       };
 
   factory LearningEvent.fromJson(Map<String, dynamic> json) => LearningEvent(
@@ -113,6 +126,7 @@ class LearningEvent {
         note: mergeNotes(json['note'] as String?, json['haara'] as String?),
         layers: (json['layers'] as List?)?.cast<String>() ??
             const [mainLayerId],
+        batchId: json['batchId'] as String?,
       );
 
   /// Folds a legacy (note, haara) pair into the single note field. Keeps both

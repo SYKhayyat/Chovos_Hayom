@@ -121,7 +121,7 @@ void main() {
 
     expect(columns, isNot(contains('haara')));
     expect(columns, contains('note'));
-    expect(version, 8);
+    expect(version, 9);
   });
 
   test('a half-migrated database still opens instead of bricking', () async {
@@ -175,6 +175,88 @@ void main() {
     db.close();
 
     expect(nodes.map((r) => r['id']), ['n1']);
-    expect(version, 8);
+    expect(version, 9);
+  });
+
+  test('v8 -> v9 adds batch_id and its index without touching existing rows',
+      () async {
+    // The v8 shape: `haara` already merged away, no `batch_id` yet.
+    seed([
+      '''
+      CREATE TABLE learning_events (
+        id TEXT NOT NULL,
+        profile_id TEXT NOT NULL,
+        node_id TEXT NOT NULL,
+        unit_index INTEGER NOT NULL,
+        action INTEGER NOT NULL,
+        occurred_at INTEGER NOT NULL,
+        logged_at INTEGER NOT NULL,
+        duration_min INTEGER NULL,
+        note TEXT NULL,
+        layers_json TEXT NULL,
+        PRIMARY KEY (id)
+      )
+      ''',
+      '''
+      INSERT INTO learning_events
+        (id, profile_id, node_id, unit_index, action, occurred_at, logged_at, note)
+      VALUES ('x', 'p', 'berachos', 2, 0, 1750000000, 1750000000, 'kept')
+      ''',
+    ], userVersion: 8);
+
+    final notes = await openAndReadNotes();
+    expect(notes['x'], 'kept', reason: 'pre-existing progress is untouched');
+
+    final db = raw.sqlite3.open(path);
+    final columns = db
+        .select('PRAGMA table_info(learning_events)')
+        .map((r) => r['name'] as String)
+        .toSet();
+    final indexes = db
+        .select("SELECT name FROM sqlite_master WHERE type = 'index'")
+        .map((r) => r['name'] as String)
+        .toSet();
+    final batchIds = db
+        .select('SELECT batch_id FROM learning_events')
+        .map((r) => r['batch_id'])
+        .toList();
+    db.close();
+
+    expect(columns, contains('batch_id'));
+    expect(indexes, contains('learning_events_batch'));
+    expect(batchIds, [null], reason: 'events written before batches have none');
+  });
+
+  test('a v7 database upgrades all the way to v9 in one run', () async {
+    // The ordering trap this covers: v8 rebuilds learning_events from the
+    // current Dart definition, which now carries `batch_id`. If the v9 column
+    // were added after that rebuild rather than before it, the rebuild's
+    // column-by-column copy would die on `no such column: batch_id` and no v7
+    // install could ever upgrade again.
+    seed([
+      v7LearningEvents,
+      insertEvent('x', note: 'before', haara: 'and after'),
+    ], userVersion: 7);
+
+    final notes = await openAndReadNotes();
+    expect(notes['x'], 'before\n\nand after');
+
+    final db = raw.sqlite3.open(path);
+    final columns = db
+        .select('PRAGMA table_info(learning_events)')
+        .map((r) => r['name'] as String)
+        .toSet();
+    final indexes = db
+        .select("SELECT name FROM sqlite_master WHERE type = 'index'")
+        .map((r) => r['name'] as String)
+        .toSet();
+    final version = db.select('PRAGMA user_version').first['user_version'] as int;
+    db.close();
+
+    expect(columns, contains('batch_id'));
+    expect(columns, isNot(contains('haara')));
+    expect(indexes, contains('learning_events_batch'),
+        reason: 'the index must outlive the v8 table rebuild');
+    expect(version, 9);
   });
 }

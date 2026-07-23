@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/preferences.dart';
 import '../domain/usecases/goal_evaluator.dart';
 import '../domain/usecases/pace_engine.dart';
 import 'providers.dart';
@@ -9,7 +10,7 @@ import 'stats.dart';
 
 /// Target finish dates per node, scoped to the active profile and persisted.
 class GoalsController extends Notifier<Map<String, DateTime>> {
-  String _key(String profileId) => 'goals:$profileId';
+  String _key(String profileId) => PrefKeys.goalsFor(profileId);
 
   @override
   Map<String, DateTime> build() {
@@ -36,6 +37,21 @@ class GoalsController extends Notifier<Map<String, DateTime>> {
 
   Future<void> removeGoal(String nodeId) async {
     state = {...state}..remove(nodeId);
+    await _persist();
+  }
+
+  /// Merge goals from an imported backup. Import is a merge everywhere else, so
+  /// it is a merge here too — an imported goal wins for a node it names, and
+  /// goals the backup does not mention are kept.
+  Future<void> applyBackup(Map<String, DateTime> goals) async {
+    if (goals.isEmpty) return;
+    state = {...state, ...goals};
+    await _persist();
+  }
+
+  /// Drop every goal for the active profile (part of "clear settings").
+  Future<void> clearAll() async {
+    state = const {};
     await _persist();
   }
 }

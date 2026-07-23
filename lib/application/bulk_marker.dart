@@ -41,12 +41,37 @@ class AllLayersSelection extends LayerSelection {
   const AllLayersSelection();
 }
 
-/// The outcome of a bulk action: the ids of the events it appended (so the
-/// caller can undo by removing them) and how many units it actually touched.
+/// A planned-but-not-yet-written bulk action: exactly the marks that would be
+/// appended, with the no-ops already stripped out.
+///
+/// Planning is separated from committing so the UI can tell the user what a
+/// destructive action will actually do — "this marks 2,711 units" — *before* it
+/// happens, using the same numbers the write will use rather than an estimate.
+class BulkPlan {
+  const BulkPlan(this.marks);
+
+  final List<BulkMark> marks;
+
+  /// Units this would touch. One mark per unit, so this is the count the
+  /// confirmation dialog shows.
+  int get unitsAffected => marks.length;
+
+  bool get isEmpty => marks.isEmpty;
+}
+
+/// The outcome of a committed bulk action: the batch it wrote (undo it by id,
+/// durably — see [BatchHistory]), the ids of its events, and the units touched.
 class BulkResult {
-  const BulkResult({required this.addedEventIds, required this.unitsAffected});
+  const BulkResult({
+    required this.addedEventIds,
+    required this.unitsAffected,
+    this.batchId,
+  });
   final List<String> addedEventIds;
   final int unitsAffected;
+
+  /// The shared batch id of the appended events, or null if nothing was written.
+  final String? batchId;
 
   bool get isEmpty => addedEventIds.isEmpty;
 }
@@ -74,14 +99,14 @@ class BulkMarker {
   final OfferedLayers offered;
   final LoggingService logger;
 
-  /// Mark units done under [nodeId] according to [selection]. [range] bounds the
-  /// units (leaf-level only; ignored for a category cascade where units span
-  /// many leaves).
-  Future<BulkResult> finish({
+  /// Plan marking units done under [nodeId] according to [selection]. [range]
+  /// bounds the units (leaf-level only; ignored for a category cascade where
+  /// units span many leaves). Writes nothing — pass the result to [commit].
+  BulkPlan planFinish({
     required String nodeId,
     required LayerSelection selection,
     UnitRange? range,
-  }) async {
+  }) {
     final marks = <BulkMark>[];
     for (final (leaf, unit) in _targetUnits(nodeId, range)) {
       final have = fold.completedLayers(leaf.id, unit);
@@ -94,17 +119,17 @@ class BulkMarker {
             layers: toAdd));
       }
     }
-    return _commit(marks);
+    return BulkPlan(marks);
   }
 
-  /// Un-mark units under [nodeId]. With no [selection] (or [AllLayersSelection])
-  /// every learned layer on each unit is cleared; a [SingleLayerSelection] clears
-  /// just that layer.
-  Future<BulkResult> clear({
+  /// Plan un-marking units under [nodeId]. With no [selection] (or
+  /// [AllLayersSelection]) every learned layer on each unit is cleared; a
+  /// [SingleLayerSelection] clears just that layer. Writes nothing.
+  BulkPlan planClear({
     required String nodeId,
     LayerSelection selection = const AllLayersSelection(),
     UnitRange? range,
-  }) async {
+  }) {
     final marks = <BulkMark>[];
     for (final (leaf, unit) in _targetUnits(nodeId, range)) {
       final have = fold.completedLayers(leaf.id, unit);
@@ -122,8 +147,24 @@ class BulkMarker {
             layers: toRemove));
       }
     }
-    return _commit(marks);
+    return BulkPlan(marks);
   }
+
+  /// Plan and commit in one step. The UI plans first (so it can confirm with a
+  /// real count); this is the convenience path for callers that don't need to.
+  Future<BulkResult> finish({
+    required String nodeId,
+    required LayerSelection selection,
+    UnitRange? range,
+  }) =>
+      commit(planFinish(nodeId: nodeId, selection: selection, range: range));
+
+  Future<BulkResult> clear({
+    required String nodeId,
+    LayerSelection selection = const AllLayersSelection(),
+    UnitRange? range,
+  }) =>
+      commit(planClear(nodeId: nodeId, selection: selection, range: range));
 
   /// The layers to *add* for one unit under [selection], excluding any already
   /// learned. Empty means "nothing to do — skip this unit".
@@ -156,14 +197,16 @@ class BulkMarker {
     }
   }
 
-  Future<BulkResult> _commit(List<BulkMark> marks) async {
-    if (marks.isEmpty) {
+  /// Write a [BulkPlan] as one batch. Safe to call with an empty plan.
+  Future<BulkResult> commit(BulkPlan plan) async {
+    if (plan.isEmpty) {
       return const BulkResult(addedEventIds: [], unitsAffected: 0);
     }
-    final events = await logger.logBatch(marks);
+    final events = await logger.logBatch(plan.marks);
     return BulkResult(
       addedEventIds: [for (final e in events) e.id],
-      unitsAffected: marks.length,
+      unitsAffected: plan.unitsAffected,
+      batchId: events.first.batchId,
     );
   }
 }

@@ -50,6 +50,17 @@ class DriftProgressRepository implements ProgressRepository {
     await (_db.delete(_db.learningEvents)..where((t) => t.id.isIn(eventIds))).go();
   }
 
+  @override
+  Future<int> removeBatch(String profileId, String batchId) =>
+      (_db.delete(_db.learningEvents)
+            ..where((t) =>
+                t.profileId.equals(profileId) & t.batchId.equals(batchId)))
+          .go();
+
+  @override
+  Future<T> transaction<T>(Future<T> Function() action) =>
+      _db.transaction(action);
+
   LearningEventsCompanion _eventCompanion(LearningEvent e) =>
       LearningEventsCompanion.insert(
         id: e.id,
@@ -62,6 +73,7 @@ class DriftProgressRepository implements ProgressRepository {
         durationMin: Value(e.durationMin),
         note: Value(e.note),
         layersJson: Value(_encodeLayers(e.layers)),
+        batchId: Value(e.batchId),
       );
 
   @override
@@ -140,6 +152,7 @@ class DriftProgressRepository implements ProgressRepository {
         durationMin: row.durationMin,
         note: row.note,
         layers: _decodeLayers(row.layersJson),
+        batchId: row.batchId,
       );
 
   /// Stores the default single-'main' list as null to keep old rows unchanged.

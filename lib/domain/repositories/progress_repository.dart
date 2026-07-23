@@ -23,6 +23,16 @@ abstract interface class ProgressRepository {
   /// Remove many events by id in one transaction — used to undo a bulk action.
   Future<void> removeEvents(List<String> eventIds);
 
+  /// Remove every event of one bulk batch, returning how many rows went. Undo by
+  /// batch id rather than by a list of ids the caller has to have kept, so a bulk
+  /// action stays revertible in a later session (see [BatchHistory]).
+  Future<int> removeBatch(String profileId, String batchId);
+
+  /// Run [action] as one atomic unit: either every write inside it lands or none
+  /// does. Import uses this so a malformed or truncated backup can never leave
+  /// half of itself behind.
+  Future<T> transaction<T>(Future<T> Function() action);
+
   /// Edit the *annotations* of an existing event in place — its [occurredAt]
   /// (when it was learned), [durationMin], and [note]. The event's identity and
   /// action are unchanged, so the folded done-set is unaffected; this lets the

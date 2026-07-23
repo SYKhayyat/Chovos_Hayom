@@ -13,6 +13,7 @@ import '../domain/entities/profile.dart';
 import '../domain/entities/progress_node.dart';
 import '../domain/repositories/catalog_repository.dart';
 import '../domain/repositories/progress_repository.dart';
+import '../domain/usecases/batch_history.dart';
 import '../domain/usecases/fold_log.dart';
 import '../domain/usecases/layer_requirements.dart';
 import '../domain/usecases/mefarshim_stats.dart';
@@ -108,6 +109,11 @@ class ProfilesController extends AsyncNotifier<List<Profile>> {
       throw StateError('Cannot delete the last profile.');
     }
     await repo.deleteProfile(id);
+    // Goals live in preferences rather than the database, so the repository's
+    // cascade can't reach them. Without this the key outlives the profile
+    // forever — and a new profile that happened to reuse the id would inherit
+    // a stranger's targets.
+    await ref.read(appPreferencesProvider).remove(PrefKeys.goalsFor(id));
     if (ref.read(activeProfileProvider) == id) {
       final next = profiles.firstWhere((p) => p.id != id);
       await ref.read(activeProfileProvider.notifier).setProfile(next.id);
@@ -301,6 +307,14 @@ final bulkMarkerProvider = Provider<BulkMarker?>((ref) {
     offered: ref.watch(offeredLayersProvider),
     logger: ref.watch(loggingServiceProvider),
   );
+});
+
+/// Every bulk action still present in the log, most recent first — the durable
+/// undo list. Derived, never stored, so it can't disagree with the log.
+final batchHistoryProvider = Provider<List<BulkBatch>>((ref) {
+  final events = ref.watch(eventsProvider).asData?.value;
+  if (events == null) return const [];
+  return BatchHistory.of(events);
 });
 
 /// The derived progress forest: merged catalog + folded log, rolled up.

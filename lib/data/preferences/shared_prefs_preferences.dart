@@ -17,4 +17,7 @@ class SharedPrefsPreferences implements AppPreferences {
   @override
   Future<void> setString(String key, String value) =>
       _prefs.setString(key, value);
+
+  @override
+  Future<void> remove(String key) => _prefs.remove(key);
 }

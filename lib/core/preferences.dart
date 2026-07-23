@@ -3,6 +3,10 @@
 abstract interface class AppPreferences {
   String? getString(String key);
   Future<void> setString(String key, String value);
+
+  /// Delete a key outright. Distinct from writing an empty string: profile
+  /// deletion must leave nothing behind, not an empty orphan.
+  Future<void> remove(String key);
 }
 
 class InMemoryPreferences implements AppPreferences {
@@ -14,6 +18,9 @@ class InMemoryPreferences implements AppPreferences {
 
   @override
   Future<void> setString(String key, String value) async => _m[key] = value;
+
+  @override
+  Future<void> remove(String key) async => _m.remove(key);
 }
 
 /// Well-known preference keys.
@@ -31,4 +38,9 @@ class PrefKeys {
   /// Comma-separated layer ids whose per-meforish coverage line is hidden in the
   /// tree. Absent/empty means every enabled meforish shows its bar.
   static const hiddenMeforishBars = 'hiddenMeforishBars';
+
+  /// Where one profile's target finish dates live. Profile-scoped rather than a
+  /// fixed key, so goals follow the profile they belong to — and so deleting a
+  /// profile has a single key to remove.
+  static String goalsFor(String profileId) => 'goals:$profileId';
 }

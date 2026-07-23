@@ -13,10 +13,13 @@ import '../../domain/entities/layer.dart';
 /// - **Mark all — `<meforish>`** — one specific layer across every unit (only
 ///   the layers offered/required at this node are listed).
 /// - **Finish a range…** — a user-chosen `[start, end]` of units (leaf only).
-/// - **Clear all** — un-mark everything (confirmed; destructive).
+/// - **Clear all** — un-mark everything.
 ///
-/// Every action is one batched transaction and returns undo-able event ids, so a
-/// snackbar can revert it. Works with mouse + keyboard; no touchscreen assumed.
+/// **Every** action is planned first and confirmed with the real number of units
+/// it would change — a "finish all" on a category can be twelve thousand writes,
+/// and a mis-tap that large must never be one tap away. Each action commits as
+/// one batch and stays undoable from *Bulk action history* long after the
+/// snackbar is gone. Works with mouse + keyboard; no touchscreen assumed.
 Future<void> showBulkActionsSheet(
   BuildContext context,
   WidgetRef ref, {
@@ -82,8 +85,10 @@ class _BulkActionsSheet extends ConsumerWidget {
               title: const Text('Finish all'),
               subtitle: const Text('Mark every unit’s required mefarshim done'),
               onTap: () => _run(
+                title: 'Finish all of “${node.name}”?',
                 verb: 'Finished',
-                action: (m) => m.finish(
+                confirmLabel: 'Finish',
+                plan: (m) => m.planFinish(
                     nodeId: node.id, selection: const RequiredLayerSelection()),
               ),
             ),
@@ -95,8 +100,10 @@ class _BulkActionsSheet extends ConsumerWidget {
                     ? const Text('The primary text on every unit')
                     : null,
                 onTap: () => _run(
+                  title: 'Mark ${layer.name} on all of “${node.name}”?',
                   verb: 'Marked ${layer.name} on',
-                  action: (m) => m.finish(
+                  confirmLabel: 'Mark',
+                  plan: (m) => m.planFinish(
                       nodeId: node.id,
                       selection: SingleLayerSelection(layer.id)),
                 ),
@@ -128,17 +135,88 @@ class _BulkActionsSheet extends ConsumerWidget {
   // outlives the sheet), never the sheet's own ref — the sheet is popped first.
   ProviderContainer get _container => ProviderScope.containerOf(host);
 
-  /// Runs a bulk [action]: closes the sheet, then applies + reports with undo.
+  /// Closes the sheet, plans the action, confirms it with the real unit count,
+  /// then commits and reports with undo. [destructive] colours the confirm
+  /// button as a warning (clearing) rather than a normal action (marking).
   Future<void> _run({
+    required String title,
     required String verb,
-    required Future<BulkResult> Function(BulkMarker) action,
+    required String confirmLabel,
+    required BulkPlan Function(BulkMarker) plan,
+    String? extraWarning,
+    bool destructive = false,
   }) async {
     final container = _container;
     final messenger = ScaffoldMessenger.of(host);
     if (Navigator.canPop(host)) Navigator.pop(host);
     final marker = container.read(bulkMarkerProvider);
     if (marker == null) return;
-    _report(container, messenger, verb, await action(marker));
+
+    final planned = plan(marker);
+    if (planned.isEmpty) {
+      messenger.showSnackBar(const SnackBar(content: Text('Nothing to change')));
+      return;
+    }
+    final ok = await _confirm(
+      title: title,
+      units: planned.unitsAffected,
+      confirmLabel: confirmLabel,
+      extraWarning: extraWarning,
+      destructive: destructive,
+    );
+    if (ok != true) return;
+    _report(container, messenger, verb, await marker.commit(planned));
+  }
+
+  /// The one gate every bulk write goes through. Always states the exact number
+  /// of units, because that number is the whole point — "finish all" on Shas and
+  /// on one mesechta look identical until you see 12,092 versus 64.
+  Future<bool?> _confirm({
+    required String title,
+    required int units,
+    required String confirmLabel,
+    String? extraWarning,
+    bool destructive = false,
+  }) {
+    final noun = units == 1 ? 'unit' : 'units';
+    return showDialog<bool>(
+      context: host,
+      builder: (dialogContext) {
+        final scheme = Theme.of(dialogContext).colorScheme;
+        return AlertDialog(
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('This changes ${_thousands(units)} $noun.',
+                  style: Theme.of(dialogContext).textTheme.titleMedium),
+              if (extraWarning != null) ...[
+                const SizedBox(height: 8),
+                Text(extraWarning),
+              ],
+              const SizedBox(height: 8),
+              const Text('You can undo it from Settings → Bulk action history '
+                  'for as long as you like.'),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel')),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: destructive
+                  ? FilledButton.styleFrom(
+                      backgroundColor: scheme.error,
+                      foregroundColor: scheme.onError)
+                  : null,
+              child: Text(confirmLabel),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _finishRange() async {
@@ -150,8 +228,10 @@ class _BulkActionsSheet extends ConsumerWidget {
     );
     if (range == null) return;
     await _run(
+      title: 'Finish units ${range.start}–${range.end} of “${node.name}”?',
       verb: 'Finished units ${range.start}–${range.end} of',
-      action: (m) => m.finish(
+      confirmLabel: 'Finish',
+      plan: (m) => m.planFinish(
         nodeId: node.id,
         selection: const RequiredLayerSelection(),
         range: range,
@@ -159,35 +239,17 @@ class _BulkActionsSheet extends ConsumerWidget {
     );
   }
 
-  Future<void> _clearAll() async {
-    final container = _container;
-    final messenger = ScaffoldMessenger.of(host);
-    if (Navigator.canPop(host)) Navigator.pop(host); // close the sheet first
-    final confirmed = await showDialog<bool>(
-      context: host,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Clear all of “${node.name}”?'),
-        content: Text(node.isLeaf
+  Future<void> _clearAll() => _run(
+        title: 'Clear all of “${node.name}”?',
+        verb: 'Cleared',
+        confirmLabel: 'Clear',
+        destructive: true,
+        extraWarning: node.isLeaf
             ? 'Un-marks every unit here, including any mefarshim you checked off.'
-            : 'Un-marks every unit under this — including all its mefarshim. '
-                'This can be a lot.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancel')),
-          FilledButton.tonal(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Clear'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    final marker = container.read(bulkMarkerProvider);
-    if (marker == null) return;
-    _report(container, messenger, 'Cleared',
-        await marker.clear(nodeId: node.id, selection: const AllLayersSelection()));
-  }
+            : 'Un-marks every unit under this — including all its mefarshim.',
+        plan: (m) =>
+            m.planClear(nodeId: node.id, selection: const AllLayersSelection()),
+      );
 
   void _report(ProviderContainer container, ScaffoldMessengerState messenger,
       String verb, BulkResult result) {
@@ -196,17 +258,34 @@ class _BulkActionsSheet extends ConsumerWidget {
           const SnackBar(content: Text('Nothing to change')));
       return;
     }
+    final batchId = result.batchId;
     messenger.showSnackBar(SnackBar(
-      content: Text('$verb ${result.unitsAffected} '
+      content: Text('$verb ${_thousands(result.unitsAffected)} '
           '${result.unitsAffected == 1 ? 'unit' : 'units'}'),
-      action: SnackBarAction(
-        label: 'Undo',
-        onPressed: () => container
-            .read(progressRepositoryProvider)
-            .removeEvents(result.addedEventIds),
-      ),
+      action: batchId == null
+          ? null
+          // Undo by batch, not by the ids held in this closure — the same call
+          // the history screen makes, so the two paths can't disagree.
+          : SnackBarAction(
+              label: 'Undo',
+              onPressed: () => container
+                  .read(progressRepositoryProvider)
+                  .removeBatch(container.read(activeProfileProvider), batchId),
+            ),
     ));
   }
+}
+
+/// Thousands separators — the difference between "12092" and "12,092" is the
+/// difference between a number you skim and one you actually read.
+String _thousands(int n) {
+  final digits = n.toString();
+  final buffer = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
+    buffer.write(digits[i]);
+  }
+  return buffer.toString();
 }
 
 /// Two-field start/end picker for a unit range, defaulting to the full leaf.

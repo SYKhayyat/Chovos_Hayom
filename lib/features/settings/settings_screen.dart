@@ -6,10 +6,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/backup_service.dart';
+import '../../application/goals.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/layer.dart';
+import '../history/bulk_history_screen.dart';
 import '../profiles/profiles_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -98,6 +100,21 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Manage profiles'),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const ProfilesScreen()),
+            ),
+          ),
+          const Divider(),
+          const _SectionHeader('History'),
+          ListTile(
+            leading: const Icon(Icons.history),
+            title: const Text('Bulk action history'),
+            subtitle: Text(() {
+              final n = ref.watch(batchHistoryProvider).length;
+              return n == 0
+                  ? 'Undo a finish-all or clear-all, any time'
+                  : '$n undoable ${n == 1 ? 'action' : 'actions'}';
+            }()),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const BulkHistoryScreen()),
             ),
           ),
           const Divider(),
@@ -230,17 +247,38 @@ class SettingsScreen extends ConsumerWidget {
       requirements: ref.read(layerConfigProvider).asData?.value ?? const [],
       offered: ref.read(offeredConfigProvider).asData?.value ?? const [],
       settings: ref.read(settingsProvider.notifier).toBackup(),
+      goals: ref.read(goalsProvider),
     );
   }
 
-  /// Import [jsonStr], applying repo data + settings. Returns events added.
+  /// Import [jsonStr], applying repo data + settings + goals. Returns events
+  /// added. Validation and the repository write happen inside `importInto`; the
+  /// preference-backed parts (settings, goals) are applied after it succeeds.
   Future<int> _applyImport(WidgetRef ref, String jsonStr) async {
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
-    final data = await BackupService(repo).importInto(profileId, jsonStr);
+    // The catalog's ids, so a custom sefer filed under a built-in one validates
+    // instead of being rejected as an orphan.
+    final catalog = ref.read(mergedCatalogProvider).asData?.value;
+    final data = await BackupService(repo).importInto(
+      profileId,
+      jsonStr,
+      knownNodeIds: {
+        if (catalog != null)
+          for (final n in catalog.all) n.id,
+      },
+    );
     await ref.read(settingsProvider.notifier).applyBackup(data.settings);
+    await ref.read(goalsProvider.notifier).applyBackup(data.goals);
     return data.events.length;
   }
+
+  /// Import failures are shown verbatim when we know what is wrong — "unit count
+  /// is negative" tells the user which file to stop using; "invalid data" does
+  /// not.
+  static String _importError(Object e) => e is BackupFormatException
+      ? 'Import failed: ${e.message}'
+      : 'Import failed: the file could not be read.';
 
   Future<void> _exportToFile(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -277,8 +315,8 @@ class SettingsScreen extends ConsumerWidget {
       messenger.showSnackBar(
           SnackBar(content: Text('Imported $added new events')));
     } catch (e) {
-      messenger.showSnackBar(
-          const SnackBar(content: Text('Import failed: invalid data')));
+      messenger.showSnackBar(SnackBar(
+          content: Text(_importError(e)), duration: const Duration(seconds: 8)));
     }
   }
 
@@ -293,41 +331,43 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _import(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
     final ctrl = TextEditingController();
-    final text = await showDialog<String>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Import data'),
-        content: TextField(
-          controller: ctrl,
-          maxLines: 6,
-          decoration: const InputDecoration(hintText: 'Paste export JSON here'),
+    final String? text;
+    try {
+      text = await showDialog<String>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Import data'),
+          content: TextField(
+            controller: ctrl,
+            maxLines: 6,
+            decoration:
+                const InputDecoration(hintText: 'Paste export JSON here'),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel')),
+            FilledButton(
+                onPressed: () => Navigator.pop(context, ctrl.text.trim()),
+                child: const Text('Import')),
+          ],
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          FilledButton(
-              onPressed: () => Navigator.pop(context, ctrl.text.trim()),
-              child: const Text('Import')),
-        ],
-      ),
-    );
+      );
+    } finally {
+      ctrl.dispose();
+    }
     if (text == null || text.isEmpty) return;
 
     try {
       final added = await _applyImport(ref, text);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Imported $added new events')),
-        );
-      }
-    } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Import failed: invalid data')),
-        );
-      }
+      messenger.showSnackBar(
+        SnackBar(content: Text('Imported $added new events')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(
+          content: Text(_importError(e)), duration: const Duration(seconds: 8)));
     }
   }
 }

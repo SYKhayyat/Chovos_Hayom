@@ -19,6 +19,7 @@ class Profiles extends Table {
 
 /// The append-only event log — the single source of truth.
 @DataClassName('LearningEventRow')
+@TableIndex(name: 'learning_events_batch', columns: {#profileId, #batchId})
 class LearningEvents extends Table {
   TextColumn get id => text()();
   TextColumn get profileId => text()();
@@ -38,6 +39,11 @@ class LearningEvents extends Table {
   /// JSON list of layer ids this event marks/unmarks (the text and/or mefarshim).
   /// Null is read as `["main"]` — the primary text — matching pre-layers events.
   TextColumn get layersJson => text().nullable()();
+
+  /// Groups the events written by one bulk action, so it stays undoable long
+  /// after the snackbar is gone. Null on ordinary single marks. Indexed, since
+  /// the undo list groups the whole log by it.
+  TextColumn get batchId => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -141,7 +147,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'chovos_hayom'));
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   /// Every schema change must extend [MigrationStrategy.onUpgrade]. Without this,
   /// bumping [schemaVersion] silently does nothing on existing installs and
@@ -198,6 +204,21 @@ class AppDatabase extends _$AppDatabase {
           if (from < 7) {
             await _createTableIfMissing(m, offeredLayerConfigs);
           }
+          // v8 -> v9: tag bulk-written events with the batch that wrote them, so
+          // "finish all" stays undoable durably instead of only for as long as a
+          // snackbar lives. Additive and null for every existing row: events
+          // written before this simply have no batch to undo.
+          //
+          // Out of version order on purpose. `alterTable` below rebuilds
+          // learning_events from the *current* Dart definition and copies the
+          // rows column-by-column — including this one. If the physical table
+          // did not have `batch_id` by then, that copy would fail with
+          // `no such column: batch_id` and no v7 database could ever upgrade.
+          // The rule this follows: **additive columns run before any rebuild of
+          // the same table.** Every future step must keep it.
+          if (from < 9) {
+            await _addColumnIfMissing(m, learningEvents, learningEvents.batchId);
+          }
           // v7 -> v8: collapse the two note fields into one. The learning-note /
           // haara split asked the user to classify a thought before writing it;
           // now there is a single haara you can use however you like.
@@ -218,6 +239,13 @@ class AppDatabase extends _$AppDatabase {
             // Recreates the table from the current Dart definition, which no
             // longer has `haara` — every surviving column is copied across.
             await m.alterTable(TableMigration(learningEvents));
+          }
+          // The batch index goes last: the v8 rebuild drops and recreates
+          // learning_events, which would take any index created before it.
+          if (from < 9) {
+            await _createIndexIfMissing('learning_events_batch',
+                'CREATE INDEX learning_events_batch '
+                    'ON learning_events (profile_id, batch_id)');
           }
         },
       );
@@ -270,5 +298,15 @@ class AppDatabase extends _$AppDatabase {
     if (!await _tableExists(table.actualTableName)) {
       await m.createTable(table);
     }
+  }
+
+  /// Same replay-safety as the column helpers: a migration that died after
+  /// creating the index must not throw `index ... already exists` on the retry.
+  Future<void> _createIndexIfMissing(String name, String sql) async {
+    final rows = await customSelect(
+      "SELECT 1 FROM sqlite_master WHERE type = 'index' AND name = ?1",
+      variables: [Variable<String>(name)],
+    ).get();
+    if (rows.isEmpty) await customStatement(sql);
   }
 }

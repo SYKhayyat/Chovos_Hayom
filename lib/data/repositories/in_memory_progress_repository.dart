@@ -74,6 +74,84 @@ class InMemoryProgressRepository implements ProgressRepository {
   }
 
   @override
+  Future<int> removeBatch(String profileId, String batchId) async {
+    final list = _events[profileId];
+    if (list == null) return 0;
+    final before = list.length;
+    list.removeWhere((e) => e.batchId == batchId);
+    final removed = before - list.length;
+    if (removed > 0) _emit(profileId);
+    return removed;
+  }
+
+  /// Snapshot-and-restore, so a failed [action] leaves nothing behind — the same
+  /// all-or-nothing guarantee the SQLite repository gets from a real transaction.
+  /// Nested calls join the outermost one, matching SQLite's behaviour.
+  @override
+  Future<T> transaction<T>(Future<T> Function() action) async {
+    if (_inTransaction) return action();
+    _inTransaction = true;
+    final undo = _snapshotAll();
+    try {
+      return await action();
+    } catch (_) {
+      undo();
+      _emitAll();
+      rethrow;
+    } finally {
+      _inTransaction = false;
+    }
+  }
+
+  bool _inTransaction = false;
+
+  /// Captures every mutable collection; the returned closure puts them all back.
+  void Function() _snapshotAll() {
+    final events = {for (final e in _events.entries) e.key: [...e.value]};
+    final profiles = [..._profiles];
+    final nodes = {for (final e in _customNodes.entries) e.key: [...e.value]};
+    final layers = {for (final e in _customLayers.entries) e.key: [...e.value]};
+    final reqs = {for (final e in _requirements.entries) e.key: [...e.value]};
+    final offered = {for (final e in _offered.entries) e.key: [...e.value]};
+    return () {
+      _events
+        ..clear()
+        ..addAll(events);
+      _profiles
+        ..clear()
+        ..addAll(profiles);
+      _customNodes
+        ..clear()
+        ..addAll(nodes);
+      _customLayers
+        ..clear()
+        ..addAll(layers);
+      _requirements
+        ..clear()
+        ..addAll(reqs);
+      _offered
+        ..clear()
+        ..addAll(offered);
+    };
+  }
+
+  void _emitAll() {
+    for (final p in {
+      ..._events.keys,
+      ..._customNodes.keys,
+      ..._customLayers.keys,
+      ..._requirements.keys,
+      ..._offered.keys,
+    }) {
+      _emit(p);
+      _emitCustom(p);
+      _emitLayers(p);
+      _emitReqs(p);
+      _emitOffered(p);
+    }
+  }
+
+  @override
   Future<void> updateEvent(LearningEvent event) async {
     final list = _events[event.profileId];
     if (list == null) return;
