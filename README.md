@@ -116,7 +116,9 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   a meforish carries the same date, duration and haara as anything else.
 - **Everything editable**: rename, re-count, re-type, re-parent (attach anywhere), hide/delete, or
   reset **any** node — built-in or custom — via a per-profile override layer; clone a subtree's
-  structure; give units real names. A full backup and settings export/import/clear round-trip it all.
+  structure; give units real names. A full backup and settings export/import/clear round-trip it
+  all — and *Clear settings* names everything it removes (preferences, goals, custom sefarim,
+  mefarshim, required sets) before it removes any of it, leaving the learning log untouched.
 - **Your data stays yours.** Android's automatic cloud backup is switched **off** — left on, it
   would copy the database (every daf, every haara) to your Google account by default, unasked. The
   app's own export is the only way your learning leaves the device. Imported backups are
@@ -138,7 +140,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   sefer's grid with the dashboard behind it, and a path the app doesn't serve says so rather than
   showing a blank screen. (A private scheme, not an `https` App Link — claiming a domain you don't
   own is how a link ends up opening someone else's app.)
-- 252 tests covering the engine, layer fold + required/offered-set resolution, per-meforish roll-up,
+- 253 tests covering the engine, layer fold + required/offered-set resolution, per-meforish roll-up,
   bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
   reminders, backup validation, chazara scheduling, siyumim, learning cycles, the session timer,
   per-profile settings, schema migrations, derive-engine cost, the write guard + route table, and UI.
@@ -161,7 +163,7 @@ app uses in-app nudges only), and **running on Android/desktop** (needs the plat
 flutter pub get
 dart run build_runner build   # generates Drift code
 flutter analyze               # clean
-flutter test                  # 252 tests, all green
+flutter test                  # 253 tests, all green
 ```
 
 CI runs all of the above on every push and pull request, plus a release APK build, and fails if the

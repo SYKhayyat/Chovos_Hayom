@@ -32,7 +32,7 @@ Where the README currently overclaims (backup completeness, node-level mefarshim
 
 ## Status — worked through 2026-07-23
 
-Commits `a6c6cde` … `2ab099a`. Analyzer clean under `--fatal-infos`; **252 tests** pass (was 122).
+Commits `a6c6cde` … `2ab099a`. Analyzer clean under `--fatal-infos`; **253 tests** pass (was 122).
 
 Everything in this document is now done. The two items §5 left open — one error-handling policy for
 writes, and a routing abstraction — landed together, because they turned out to need each other: a
@@ -136,6 +136,16 @@ was the Phase 0 scaffold. Two of §1's ticks were therefore wrong, one of them s
 
 Both are now actually in the manifest. The lesson for this document: a file being *written* is not
 the same as it being *wired*, and only the second one ships.
+
+Two more of the same shape turned up in *Clear settings*, both found by writing the test for it:
+
+- `GoalsController.clearAll()` existed, was documented "part of clear settings", and was called by
+  nothing. A reset that promised to reset the preferences kept every target date. Goals travel with
+  the settings in a backup, so they go with them here too — and the confirmation now says so.
+- The clear read its four lists as `ref.read(…).asData?.value ?? const []`. A provider still in
+  flight — or one nothing on the Settings screen keeps alive, which is the actual case for
+  `customNodesProvider` — reads as an **empty list**, so the clear deleted nothing and reported
+  success. It now asks the repository, which is the truth, rather than a cache of it.
 
 ---
 

@@ -11,9 +11,7 @@ import '../../application/goals.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
-import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
-import '../../domain/usecases/layer_requirements.dart';
 import '../common/guarded.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -164,8 +162,9 @@ class SettingsScreen extends ConsumerWidget {
             leading: Icon(Icons.restart_alt,
                 color: Theme.of(context).colorScheme.error),
             title: const Text('Clear settings'),
-            subtitle: const Text('Reset preferences, custom sefarim, mefarshim, '
-                'and required-set settings. Your learning log is kept.'),
+            subtitle: const Text('Reset preferences, goals, custom sefarim, '
+                'mefarshim, and required-set settings. Your learning log is '
+                'kept.'),
             onTap: () => _clearSettings(context, ref),
           ),
         ],
@@ -180,9 +179,9 @@ class SettingsScreen extends ConsumerWidget {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Clear all settings?'),
         content: const Text(
-            'This resets preferences and removes your custom sefarim, custom '
-            'mefarshim, and required-mefarshim settings. Your learning log '
-            '(everything you marked done) is not touched.'),
+            'This resets preferences and removes your goals, custom sefarim, '
+            'custom mefarshim, and required-mefarshim settings. Your learning '
+            'log (everything you marked done) is not touched.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
@@ -197,18 +196,26 @@ class SettingsScreen extends ConsumerWidget {
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
     final settings = ref.read(settingsProvider.notifier);
-    final customNodes =
-        ref.read(customNodesProvider).asData?.value ?? const <CatalogNode>[];
-    final customLayers =
-        ref.read(customLayersProvider).asData?.value ?? const <Layer>[];
-    final requirements =
-        ref.read(layerConfigProvider).asData?.value ?? const <LayerConfigEntry>[];
-    final offered = ref.read(offeredConfigProvider).asData?.value ??
-        const <LayerConfigEntry>[];
+    final goals = ref.read(goalsProvider.notifier);
 
     await guard.run(
       () async {
+        // Straight from the repository, not from the providers that cache it.
+        // These four were `.asData?.value ?? const []`, which turns a provider
+        // still in flight — or one nothing on this screen keeps alive — into an
+        // empty list: a clear that silently skips exactly the rows it was asked
+        // to remove, and then reports success for it.
+        final customNodes = await repo.watchCustomNodes(profileId).first;
+        final customLayers = await repo.watchCustomLayers(profileId).first;
+        final requirements = await repo.watchLayerRequirements(profileId).first;
+        final offered = await repo.watchOfferedLayers(profileId).first;
+
         await settings.clearAll();
+        // Goals are configuration, not history: they travel with the settings
+        // in a backup, and `GoalsController.clearAll` was written for this call
+        // and then never wired to it — so "clear settings" left every target
+        // date behind while claiming to have reset the preferences.
+        await goals.clearAll();
         // One transaction for the repository half: a clear that dies partway
         // used to leave some custom sefarim gone and others still there, with
         // nothing to tell the user which.
