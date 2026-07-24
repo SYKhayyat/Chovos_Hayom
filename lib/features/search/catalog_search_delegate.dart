@@ -30,7 +30,10 @@ class CatalogSearchDelegate extends SearchDelegate<void> {
 
   @override
   Widget buildLeading(BuildContext context) => IconButton(
-        icon: const Icon(Icons.arrow_back),
+        // "Back" is whichever way the text came from.
+        icon: Icon(Directionality.of(context) == TextDirection.rtl
+            ? Icons.arrow_forward
+            : Icons.arrow_back),
         onPressed: () => close(context, null),
       );
 

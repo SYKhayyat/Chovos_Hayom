@@ -346,7 +346,7 @@ class _AppDrawer extends ConsumerWidget {
             decoration:
                 BoxDecoration(color: Theme.of(context).colorScheme.primary),
             child: Align(
-              alignment: Alignment.bottomLeft,
+              alignment: AlignmentDirectional.bottomStart,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,

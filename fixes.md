@@ -842,6 +842,18 @@ pass (was 293); Windows release builds and launches in both locales with no new 
   `profiles_screen._promptForName` and `settings_screen._editIntervals` — untested and unreported,
   but the same latent bug.
 
+**Then, from looking at it in Hebrew**
+
+- **The tree indented the wrong way.** Every generation was indented with a physical
+  `EdgeInsets.only(left:)`, so under a right-to-left layout a child was pushed *away* from the edge
+  its text begins on and read as outdented from its parent. Fixed with `EdgeInsetsDirectional`, and
+  the same sweep caught the rest: the unit cell's chazara badge and note glyph were pinned to
+  physical corners, the drawer header and the layers sheet aligned to `Alignment.*Left`, the chazara
+  lines under a unit's details indented physically, and the drill-in chevron and the search screen's
+  back arrow both pointed the wrong way. `rtl_layout_test.dart` measures the indent as *geometry* in
+  both directions — and immediately earned its keep by catching that the first attempt at the fix
+  had only been applied to the leaf branch of the tile, not the category branch.
+
 **Still open**
 
 - The Hebrew *wording* wants a native reader; the machinery and the data are complete and tested,

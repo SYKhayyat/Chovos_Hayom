@@ -478,8 +478,11 @@ class _UnitCell extends StatelessWidget {
                     ),
                   ),
                   if (reviewCount > 0)
-                    Positioned(
-                      right: 4,
+                    // Directional: the chazara count belongs in the trailing
+                    // top corner and the note glyph in the leading bottom one,
+                    // which swap sides under a right-to-left layout.
+                    PositionedDirectional(
+                      end: 4,
                       top: 2,
                       child: Text('↻$reviewCount',
                           style: TextStyle(
@@ -488,8 +491,8 @@ class _UnitCell extends StatelessWidget {
                                   isDone ? scheme.onPrimary : scheme.primary)),
                     ),
                   if (hasDetails)
-                    Positioned(
-                      left: 5,
+                    PositionedDirectional(
+                      start: 5,
                       bottom: 4,
                       child: Icon(Icons.sticky_note_2,
                           size: 11,

@@ -108,7 +108,7 @@ class _UnitLayersSheet extends ConsumerWidget {
                 ),
               const Divider(),
               Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: TextButton.icon(
                   icon: const Icon(Icons.done_all, size: 18),
                   label: Text(l10n.markAllRequiredLearned),
@@ -129,7 +129,7 @@ class _UnitLayersSheet extends ConsumerWidget {
               // pick. Same sheet the grid's long-press opens, so the two ways in
               // write the same thing.
               Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: TextButton.icon(
                   icon: const Icon(Icons.edit_calendar, size: 18),
                   label: Text(l10n.logWithDateDurationHaara),
@@ -141,7 +141,7 @@ class _UnitLayersSheet extends ConsumerWidget {
               ),
               if (completed.isNotEmpty)
                 Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: TextButton.icon(
                     icon: const Icon(Icons.undo, size: 18),
                     label: Text(l10n.clearThisUnit),

@@ -47,12 +47,17 @@ class ProgressTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Indent from the **start** edge, not from the left. The tree's whole job is
+    // to show nesting, and under a Hebrew (right-to-left) layout a physical
+    // `left` padding indents away from the side the text begins on — so a child
+    // appeared to sit *outdented* from its parent, which reads as the opposite
+    // of what it means.
     final indent = 16.0 + depth * 16;
     final l10n = AppLocalizations.of(context);
 
     if (node.node.isLeaf) {
       return ListTile(
-        contentPadding: EdgeInsets.only(left: indent, right: 8),
+        contentPadding: EdgeInsetsDirectional.only(start: indent, end: 8),
         title: Text(nodeName(l10n, node.node)),
         subtitle: _ProgressBar(node: node),
         trailing: Row(
@@ -61,7 +66,12 @@ class ProgressTile extends ConsumerWidget {
             _nodeMenu(context, ref),
             node.isComplete
                 ? const Icon(Icons.check_circle, color: Colors.green)
-                : const Icon(Icons.chevron_right),
+                // "Drill in" points the way the text runs, so it points left
+                // under Hebrew. A chevron that always points right is telling a
+                // right-to-left reader to go back.
+                : Icon(Directionality.of(context) == TextDirection.rtl
+                    ? Icons.chevron_left
+                    : Icons.chevron_right),
           ],
         ),
         onTap: () => Navigator.pushNamed(context, Routes.sefer(node.node.id)),
@@ -69,7 +79,7 @@ class ProgressTile extends ConsumerWidget {
     }
 
     return ListTile(
-      contentPadding: EdgeInsets.only(left: indent, right: 8),
+      contentPadding: EdgeInsetsDirectional.only(start: indent, end: 8),
       title: Text(nodeName(l10n, node.node)),
       subtitle: _ProgressBar(node: node),
       trailing: Row(

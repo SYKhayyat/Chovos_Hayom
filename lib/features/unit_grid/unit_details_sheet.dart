@@ -84,7 +84,10 @@ class _UnitDetailsSheet extends ConsumerWidget {
                 ),
                 if (history.reviews.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(left: 32, top: 2, bottom: 4),
+                    // Directional: these chazara lines indent *under* the row
+                    // above them, which is the start edge, not the left one.
+                    padding: const EdgeInsetsDirectional.only(
+                        start: 32, top: 2, bottom: 4),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
