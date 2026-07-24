@@ -46,3 +46,11 @@ app.*.map.json
 
 # Coverage
 coverage/
+
+# The gen-l10n report of keys present in the template and missing from a
+# translation (see l10n.yaml). A build artifact, regenerated on every run — CI
+# fails when it is non-empty. The *generated* localizations under
+# lib/l10n/generated/ are deliberately NOT ignored: they are committed and
+# diffed the same way the Drift/Riverpod .g.dart files are, so a stale
+# translation table fails the build instead of surfacing as a missing string.
+l10n_untranslated.json
