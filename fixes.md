@@ -819,12 +819,34 @@ pass (was 293); Windows release builds and launches in both locales with no new 
   hooks-based `sqlite3` 3.x, depended on by `drift_flutter` itself. Removed from `pubspec.yaml`
   (it still resolves transitively) so the line stops inviting the same wrong conclusion.
 
+**Then, from looking at it running**
+
+- **The sefarim were all still English.** The mechanism worked; the data was missing. All 312 nodes
+  now carry `nameHebrew`, disambiguated the way the English is (a mesechta appears in Mishnayos,
+  Shas, Yerushalmi and Rambam, and a flat list has no tree around it to say which). Two guards in
+  `catalog_integrity_test.dart`: every node has one, and no two are the same — the second caught a
+  real clash, the Mishnayos seder Nashim against the Rambam's Sefer Nashim, which the English
+  catalog has too.
+- **Custom things needed both names too.** Both forms now show an English field and a Hebrew one
+  side by side, and either alone is enough — someone working entirely in Hebrew should not have to
+  invent a transliteration to get past a form, so the Hebrew stands in as the primary name. A custom
+  meforish could previously only be created and deleted, so a Hebrew name not typed at creation was
+  unreachable except by deleting the meforish and every required/offered set naming it; it is now
+  editable in place, reusing the same id.
+- **The backup reminder was distracting.** The switch always existed in Settings, but a warning you
+  can only silence by hunting through a screen — possibly in a language you don't read — is just
+  noise. One tap on the banner turns it off, says where to turn it back on, and offers Undo.
+- **A use-after-dispose**, found by the new meforish-edit test: the dialog's controllers were
+  disposed as soon as `showDialog` returned, while the route's exit animation still referenced them.
+  The dialog is now a `StatefulWidget` that owns them. The same shape exists in
+  `profiles_screen._promptForName` and `settings_screen._editIntervals` — untested and unreported,
+  but the same latent bug.
+
 **Still open**
 
-- The Hebrew *wording* wants a native reader; the machinery is complete and tested, but complete and
-  grammatical is not the same as idiomatic. Everything is in `lib/l10n/app_he.arb`.
-- The bundled catalog's 312 sefer names have no `nameHebrew`, so sefarim read as transliterations
-  under a Hebrew locale. The mechanism works; it needs the data.
-- The RTL layout has been *run* but not *looked at*. Overflow, mirrored chevrons and numbers inside
+- The Hebrew *wording* wants a native reader; the machinery and the data are complete and tested,
+  but complete and grammatical is not the same as idiomatic. Two files: `lib/l10n/app_he.arb` and
+  the `nameHebrew` fields in `assets/catalog/catalog.json`.
+- The RTL layout has been *run* but only glanced at. Overflow, mirrored chevrons and numbers inside
   RTL sentences are exactly what tests miss.
 - Windows has no code signing or installer.

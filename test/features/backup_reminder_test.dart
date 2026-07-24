@@ -6,6 +6,7 @@ import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/features/dashboard/dashboard_screen.dart';
 import 'package:chovos_hayom/features/settings/settings_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -165,6 +166,68 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Back up'), findsNothing);
+  });
+
+  testWidgets('the banner can be switched off from the banner itself',
+      (tester) async {
+    // The switch has always existed in Settings, but a warning you can only
+    // silence by hunting through a screen — possibly in a language you don't
+    // read — is a warning that just becomes noise.
+    final repo = InMemoryProgressRepository();
+    await repo.addEvent(done(2, DateTime(2026, 2, 1)));
+    final prefs = InMemoryPreferences();
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+        progressRepositoryProvider.overrideWithValue(repo),
+        appPreferencesProvider.overrideWithValue(prefs),
+        clockProvider.overrideWithValue(() => now),
+        crashLogProvider.overrideWithValue(crashLog),
+      ],
+      child: localizedApp(home: const DashboardScreen()),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Back up'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Turn off this reminder'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Back up'), findsNothing);
+    // It says where to turn it back on rather than just vanishing...
+    expect(find.textContaining('Settings'), findsOneWidget);
+    // ...and the choice is persisted, not just this session's.
+    expect(
+        prefs.getString(
+            PrefKeys.scoped('default', PrefKeys.backupReminderEnabled)),
+        'false');
+  });
+
+  testWidgets('dismissing the banner is undoable', (tester) async {
+    // Turning off a safety warning by mis-tap must cost nothing.
+    final repo = InMemoryProgressRepository();
+    await repo.addEvent(done(2, DateTime(2026, 2, 1)));
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+        progressRepositoryProvider.overrideWithValue(repo),
+        appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+        clockProvider.overrideWithValue(() => now),
+        crashLogProvider.overrideWithValue(crashLog),
+      ],
+      child: localizedApp(home: const DashboardScreen()),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Turn off this reminder'));
+    await tester.pumpAndSettle();
+    expect(find.text('Back up'), findsNothing);
+
+    await tester.tap(find.widgetWithText(SnackBarAction, 'Undo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Back up'), findsOneWidget);
   });
 
   testWidgets('turning the reminder off removes the banner', (tester) async {

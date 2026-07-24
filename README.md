@@ -98,10 +98,15 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
 - **The app speaks Hebrew.** One toggle switches every string in it — screens, menus,
   confirmations, error messages, the sentence a failed write reports itself with — into Hebrew, and
   lays the app out right-to-left. It used to flip the direction and localize Material's own date
-  pickers while leaving the app's own text in English, which is a mirror, not a translation. Sefarim
-  and mefarshim are shown by their Hebrew names where they have one (רש״י, תוספות) and by the name
-  they do have where they don't, so a partly-named catalog reads as it always did rather than as
-  blanks. Alongside the separate Hebrew/secular **calendar** toggle and light/dark theme.
+  pickers while leaving the app's own text in English, which is a mirror, not a translation.
+  **All 312 sefarim** carry their real names (ברכות, בבא מציעא, שולחן ערוך), as do the built-in
+  mefarshim (רש״י, תוספות) — a mesechta that appears in Mishnayos, Shas, Yerushalmi and Rambam is
+  disambiguated in Hebrew the way it always was in English, so a search result or a dropdown with no
+  tree around it still tells you which one you're looking at. Anything **you** add takes both names
+  too: the custom-sefer and custom-meforish forms offer an English field and a Hebrew one side by
+  side, either alone is enough, and a custom meforish can be renamed afterwards — which it could
+  not before, so a Hebrew name you didn't type at creation used to be unreachable. Alongside the
+  separate Hebrew/secular **calendar** toggle and light/dark theme.
 - **Mefarshim as layers**: mark a daf done per-meforish (Gemara, Rashi, Tosafos, or your own
   custom mefarshim); a unit is "done" only once its *required* mefarshim are learned. Required
   sets are configured at any node and inherited down (default is text-only, so existing progress is
@@ -192,7 +197,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   sefer's grid with the dashboard behind it, and a path the app doesn't serve says so rather than
   showing a blank screen. (A private scheme, not an `https` App Link — claiming a domain you don't
   own is how a link ends up opening someone else's app.)
-- 329 tests covering the engine, layer fold + required/offered-set resolution (including that
+- 340 tests covering the engine, layer fold + required/offered-set resolution (including that
   un-ticking one meforish never wipes the rest of a unit's history), per-meforish roll-up,
   bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
   reminders, backup validation (including override-row parent cycles), chazara scheduling (complete
@@ -223,13 +228,12 @@ product decision; the app uses in-app nudges only). Windows desktop builds requi
 Mode** enabled for plugin symlinks. Other desktop platforms are a `flutter create --platforms` away.
 
 Still needing a native reader: **the Hebrew wording**. The machinery is complete and tested — both
-locales are key-for-key, the plurals are per-locale, and the tests assert the words change and not
-just the direction — but "complete and grammatical" is not the same as "reads the way a
-ben-Torah would say it". Worth one pass by a native speaker before release; every string is in
-`lib/l10n/app_he.arb`, which is the only file such a pass has to touch. The bundled catalog's 312
-sefer names are a separate, and separate-sized, job: `nameHebrew` is displayed wherever it is set
-(and is set for every built-in meforish), but `assets/catalog/catalog.json` carries none, so sefarim
-still read by their transliterations under a Hebrew locale.
+locales are key-for-key, the plurals are per-locale, all 312 catalog names are present and unique,
+and the tests assert the words change and not just the direction — but "complete and grammatical" is
+not the same as "reads the way a ben-Torah would say it". Worth one pass by a native speaker before
+release. It is a contained job: the app's own sentences are all in `lib/l10n/app_he.arb`, and the
+sefer names are all in `nameHebrew` fields in `assets/catalog/catalog.json`. Those are the only two
+files such a pass has to touch.
 
 ### Toolchain notes (why some versions are pinned)
 
@@ -261,7 +265,7 @@ build. The user-facing name is the window title in `windows/runner/main.cpp`.
 flutter pub get               # also runs gen-l10n (pubspec: generate: true)
 dart run build_runner build   # generates Drift code
 flutter analyze               # clean
-flutter test                  # 329 tests, all green
+flutter test                  # 340 tests, all green
 ```
 
 CI runs all of the above on every push and pull request, plus a release APK build. It fails if the

@@ -7,308 +7,352 @@
       "parentId": null,
       "name": "Kol HaTorah Kula",
       "kind": "category",
-      "sortOrder": 0
+      "sortOrder": 0,
+      "nameHebrew": "כל התורה כולה"
     },
     {
       "id": "tanach",
       "parentId": "all",
       "name": "Tanach",
       "kind": "category",
-      "sortOrder": 0
+      "sortOrder": 0,
+      "nameHebrew": "תנ״ך"
     },
     {
       "id": "mishnayos",
       "parentId": "all",
       "name": "Mishnayos",
       "kind": "category",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "nameHebrew": "משניות"
     },
     {
       "id": "shas",
       "parentId": "all",
       "name": "Shas",
       "kind": "category",
-      "sortOrder": 2
+      "sortOrder": 2,
+      "nameHebrew": "ש״ס"
     },
     {
       "id": "yerushalmi",
       "parentId": "all",
       "name": "Yerushalmi",
       "kind": "category",
-      "sortOrder": 3
+      "sortOrder": 3,
+      "nameHebrew": "ירושלמי"
     },
     {
       "id": "rambam",
       "parentId": "all",
       "name": "Rambam",
       "kind": "category",
-      "sortOrder": 4
+      "sortOrder": 4,
+      "nameHebrew": "רמב״ם"
     },
     {
       "id": "tur",
       "parentId": "all",
       "name": "Tur",
       "kind": "category",
-      "sortOrder": 5
+      "sortOrder": 5,
+      "nameHebrew": "טור"
     },
     {
       "id": "shulchanAruch",
       "parentId": "all",
       "name": "Shulchan Aruch",
       "kind": "category",
-      "sortOrder": 6
+      "sortOrder": 6,
+      "nameHebrew": "שולחן ערוך"
     },
     {
       "id": "mishnaBerura",
       "parentId": "all",
       "name": "Mishna Berura",
       "kind": "category",
-      "sortOrder": 7
+      "sortOrder": 7,
+      "nameHebrew": "משנה ברורה"
     },
     {
       "id": "torah",
       "parentId": "tanach",
       "name": "Torah",
       "kind": "category",
-      "sortOrder": 0
+      "sortOrder": 0,
+      "nameHebrew": "תורה"
     },
     {
       "id": "neviim",
       "parentId": "tanach",
       "name": "Neviim",
       "kind": "category",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "nameHebrew": "נביאים"
     },
     {
       "id": "kesuvim",
       "parentId": "tanach",
       "name": "Kesuvim",
       "kind": "category",
-      "sortOrder": 2
+      "sortOrder": 2,
+      "nameHebrew": "כתובים"
     },
     {
       "id": "zeraim",
       "parentId": "mishnayos",
       "name": "Zeraim",
       "kind": "category",
-      "sortOrder": 0
+      "sortOrder": 0,
+      "nameHebrew": "זרעים"
     },
     {
       "id": "moed",
       "parentId": "mishnayos",
       "name": "Moed",
       "kind": "category",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "nameHebrew": "מועד"
     },
     {
       "id": "nashim",
       "parentId": "mishnayos",
       "name": "Nashim",
       "kind": "category",
-      "sortOrder": 2
+      "sortOrder": 2,
+      "nameHebrew": "נשים"
     },
     {
       "id": "nezikin",
       "parentId": "mishnayos",
       "name": "Nezikin",
       "kind": "category",
-      "sortOrder": 3
+      "sortOrder": 3,
+      "nameHebrew": "נזיקין"
     },
     {
       "id": "kodshim",
       "parentId": "mishnayos",
       "name": "Kodshim",
       "kind": "category",
-      "sortOrder": 4
+      "sortOrder": 4,
+      "nameHebrew": "קדשים"
     },
     {
       "id": "taharos",
       "parentId": "mishnayos",
       "name": "Taharos",
       "kind": "category",
-      "sortOrder": 5
+      "sortOrder": 5,
+      "nameHebrew": "טהרות"
     },
     {
       "id": "zeraimShas",
       "parentId": "shas",
       "name": "Zeraim (Shas)",
       "kind": "category",
-      "sortOrder": 0
+      "sortOrder": 0,
+      "nameHebrew": "זרעים (ש״ס)"
     },
     {
       "id": "moedShas",
       "parentId": "shas",
       "name": "Moed (Shas)",
       "kind": "category",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "nameHebrew": "מועד (ש״ס)"
     },
     {
       "id": "nashimShas",
       "parentId": "shas",
       "name": "Nashim (Shas)",
       "kind": "category",
-      "sortOrder": 2
+      "sortOrder": 2,
+      "nameHebrew": "נשים (ש״ס)"
     },
     {
       "id": "nezikinShas",
       "parentId": "shas",
       "name": "Nezikin (Shas)",
       "kind": "category",
-      "sortOrder": 3
+      "sortOrder": 3,
+      "nameHebrew": "נזיקין (ש״ס)"
     },
     {
       "id": "kodshimShas",
       "parentId": "shas",
       "name": "Kodshim (Shas)",
       "kind": "category",
-      "sortOrder": 4
+      "sortOrder": 4,
+      "nameHebrew": "קדשים (ש״ס)"
     },
     {
       "id": "taharosShas",
       "parentId": "shas",
       "name": "Taharos (Shas)",
       "kind": "category",
-      "sortOrder": 5
+      "sortOrder": 5,
+      "nameHebrew": "טהרות (ש״ס)"
     },
     {
       "id": "zeraimYerushalmi",
       "parentId": "yerushalmi",
       "name": "Zeraim (Yerushalmi)",
       "kind": "category",
-      "sortOrder": 0
+      "sortOrder": 0,
+      "nameHebrew": "זרעים (ירושלמי)"
     },
     {
       "id": "moedYerushalmi",
       "parentId": "yerushalmi",
       "name": "Moed (Yerushalmi)",
       "kind": "category",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "nameHebrew": "מועד (ירושלמי)"
     },
     {
       "id": "nashimYerushalmi",
       "parentId": "yerushalmi",
       "name": "Nashim (Yerushalmi)",
       "kind": "category",
-      "sortOrder": 2
+      "sortOrder": 2,
+      "nameHebrew": "נשים (ירושלמי)"
     },
     {
       "id": "nezikinYerushalmi",
       "parentId": "yerushalmi",
       "name": "Nezikin (Yerushalmi)",
       "kind": "category",
-      "sortOrder": 3
+      "sortOrder": 3,
+      "nameHebrew": "נזיקין (ירושלמי)"
     },
     {
       "id": "taharosYerushalmi",
       "parentId": "yerushalmi",
       "name": "Taharos (Yerushalmi)",
       "kind": "category",
-      "sortOrder": 4
+      "sortOrder": 4,
+      "nameHebrew": "טהרות (ירושלמי)"
     },
     {
       "id": "seferHamitzvos",
       "parentId": "rambam",
       "name": "Sefer Hamitzvos",
       "kind": "category",
-      "sortOrder": 0
+      "sortOrder": 0,
+      "nameHebrew": "ספר המצוות"
     },
     {
       "id": "maddah",
       "parentId": "rambam",
       "name": "Maddah",
       "kind": "category",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "nameHebrew": "מדע"
     },
     {
       "id": "ahava",
       "parentId": "rambam",
       "name": "Ahava",
       "kind": "category",
-      "sortOrder": 2
+      "sortOrder": 2,
+      "nameHebrew": "אהבה"
     },
     {
       "id": "zemanim",
       "parentId": "rambam",
       "name": "Zemanim",
       "kind": "category",
-      "sortOrder": 3
+      "sortOrder": 3,
+      "nameHebrew": "זמנים"
     },
     {
       "id": "nashimRambam",
       "parentId": "rambam",
       "name": "Nashim",
       "kind": "category",
-      "sortOrder": 4
+      "sortOrder": 4,
+      "nameHebrew": "נשים (רמב״ם)"
     },
     {
       "id": "kedusha",
       "parentId": "rambam",
       "name": "Kedusha",
       "kind": "category",
-      "sortOrder": 5
+      "sortOrder": 5,
+      "nameHebrew": "קדושה"
     },
     {
       "id": "haflaah",
       "parentId": "rambam",
       "name": "Haflaah",
       "kind": "category",
-      "sortOrder": 6
+      "sortOrder": 6,
+      "nameHebrew": "הפלאה"
     },
     {
       "id": "zeraimRambam",
       "parentId": "rambam",
       "name": "Zeraim (Rambam)",
       "kind": "category",
-      "sortOrder": 7
+      "sortOrder": 7,
+      "nameHebrew": "זרעים (רמב״ם)"
     },
     {
       "id": "avodah",
       "parentId": "rambam",
       "name": "Avodah",
       "kind": "category",
-      "sortOrder": 8
+      "sortOrder": 8,
+      "nameHebrew": "עבודה"
     },
     {
       "id": "korbanos",
       "parentId": "rambam",
       "name": "Korbanos",
       "kind": "category",
-      "sortOrder": 9
+      "sortOrder": 9,
+      "nameHebrew": "קרבנות"
     },
     {
       "id": "tahara",
       "parentId": "rambam",
       "name": "Tahara",
       "kind": "category",
-      "sortOrder": 10
+      "sortOrder": 10,
+      "nameHebrew": "טהרה"
     },
     {
       "id": "nezikinRambam",
       "parentId": "rambam",
       "name": "Nezikin (Rambam)",
       "kind": "category",
-      "sortOrder": 11
+      "sortOrder": 11,
+      "nameHebrew": "נזיקין (רמב״ם)"
     },
     {
       "id": "kinyan",
       "parentId": "rambam",
       "name": "Kinyan",
       "kind": "category",
-      "sortOrder": 12
+      "sortOrder": 12,
+      "nameHebrew": "קניין"
     },
     {
       "id": "mishpatim",
       "parentId": "rambam",
       "name": "Mishpatim",
       "kind": "category",
-      "sortOrder": 13
+      "sortOrder": 13,
+      "nameHebrew": "משפטים"
     },
     {
       "id": "shoftimRambam",
       "parentId": "rambam",
       "name": "Shoftim (Rambam)",
       "kind": "category",
-      "sortOrder": 14
+      "sortOrder": 14,
+      "nameHebrew": "שופטים (רמב״ם)"
     },
     {
       "id": "bereishis",
@@ -318,7 +362,8 @@
       "sortOrder": 0,
       "unitCount": 50,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "בראשית"
     },
     {
       "id": "shemos",
@@ -328,7 +373,8 @@
       "sortOrder": 1,
       "unitCount": 40,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שמות"
     },
     {
       "id": "vayikrah",
@@ -338,7 +384,8 @@
       "sortOrder": 2,
       "unitCount": 27,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ויקרא"
     },
     {
       "id": "bamidbar",
@@ -348,7 +395,8 @@
       "sortOrder": 3,
       "unitCount": 36,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "במדבר"
     },
     {
       "id": "devarim",
@@ -358,7 +406,8 @@
       "sortOrder": 4,
       "unitCount": 34,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "דברים"
     },
     {
       "id": "yehoshua",
@@ -368,7 +417,8 @@
       "sortOrder": 0,
       "unitCount": 24,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "יהושע"
     },
     {
       "id": "shoftim",
@@ -378,7 +428,8 @@
       "sortOrder": 1,
       "unitCount": 21,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שופטים"
     },
     {
       "id": "shmuelA",
@@ -388,7 +439,8 @@
       "sortOrder": 2,
       "unitCount": 31,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שמואל א׳"
     },
     {
       "id": "shmuelB",
@@ -398,7 +450,8 @@
       "sortOrder": 3,
       "unitCount": 24,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שמואל ב׳"
     },
     {
       "id": "melachimA",
@@ -408,7 +461,8 @@
       "sortOrder": 4,
       "unitCount": 22,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מלכים א׳"
     },
     {
       "id": "melachimB",
@@ -418,7 +472,8 @@
       "sortOrder": 5,
       "unitCount": 25,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מלכים ב׳"
     },
     {
       "id": "yeshaya",
@@ -428,7 +483,8 @@
       "sortOrder": 6,
       "unitCount": 66,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ישעיה"
     },
     {
       "id": "yirmiya",
@@ -438,7 +494,8 @@
       "sortOrder": 7,
       "unitCount": 52,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ירמיה"
     },
     {
       "id": "yechezkel",
@@ -448,7 +505,8 @@
       "sortOrder": 8,
       "unitCount": 48,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "יחזקאל"
     },
     {
       "id": "treiAsar",
@@ -458,7 +516,8 @@
       "sortOrder": 9,
       "unitCount": 67,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תרי עשר"
     },
     {
       "id": "divreiHayamimA",
@@ -468,7 +527,8 @@
       "sortOrder": 0,
       "unitCount": 29,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "דברי הימים א׳"
     },
     {
       "id": "divreiHayamimB",
@@ -478,7 +538,8 @@
       "sortOrder": 1,
       "unitCount": 36,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "דברי הימים ב׳"
     },
     {
       "id": "tehillim",
@@ -488,7 +549,8 @@
       "sortOrder": 2,
       "unitCount": 150,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תהילים"
     },
     {
       "id": "iyov",
@@ -498,7 +560,8 @@
       "sortOrder": 3,
       "unitCount": 42,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "איוב"
     },
     {
       "id": "mishlei",
@@ -508,7 +571,8 @@
       "sortOrder": 4,
       "unitCount": 31,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "משלי"
     },
     {
       "id": "rus",
@@ -518,7 +582,8 @@
       "sortOrder": 5,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "רות"
     },
     {
       "id": "shirHashirim",
@@ -528,7 +593,8 @@
       "sortOrder": 6,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שיר השירים"
     },
     {
       "id": "koheles",
@@ -538,7 +604,8 @@
       "sortOrder": 7,
       "unitCount": 12,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "קהלת"
     },
     {
       "id": "eichah",
@@ -548,7 +615,8 @@
       "sortOrder": 8,
       "unitCount": 5,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "איכה"
     },
     {
       "id": "esther",
@@ -558,7 +626,8 @@
       "sortOrder": 9,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "אסתר"
     },
     {
       "id": "daniel",
@@ -568,7 +637,8 @@
       "sortOrder": 10,
       "unitCount": 12,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "דניאל"
     },
     {
       "id": "ezra",
@@ -578,7 +648,8 @@
       "sortOrder": 11,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "עזרא"
     },
     {
       "id": "nechemia",
@@ -588,7 +659,8 @@
       "sortOrder": 12,
       "unitCount": 13,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "נחמיה"
     },
     {
       "id": "berachos",
@@ -598,7 +670,8 @@
       "sortOrder": 0,
       "unitCount": 9,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ברכות"
     },
     {
       "id": "peah",
@@ -608,7 +681,8 @@
       "sortOrder": 1,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "פאה"
     },
     {
       "id": "demai",
@@ -618,7 +692,8 @@
       "sortOrder": 2,
       "unitCount": 7,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "דמאי"
     },
     {
       "id": "kilayim",
@@ -628,7 +703,8 @@
       "sortOrder": 3,
       "unitCount": 9,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "כלאים"
     },
     {
       "id": "shviis",
@@ -638,7 +714,8 @@
       "sortOrder": 4,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שביעית"
     },
     {
       "id": "terumos",
@@ -648,7 +725,8 @@
       "sortOrder": 5,
       "unitCount": 11,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תרומות"
     },
     {
       "id": "maasros",
@@ -658,7 +736,8 @@
       "sortOrder": 6,
       "unitCount": 5,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מעשרות"
     },
     {
       "id": "maaserSheni",
@@ -668,7 +747,8 @@
       "sortOrder": 7,
       "unitCount": 5,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מעשר שני"
     },
     {
       "id": "challah",
@@ -678,7 +758,8 @@
       "sortOrder": 8,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "חלה"
     },
     {
       "id": "orlah",
@@ -688,7 +769,8 @@
       "sortOrder": 9,
       "unitCount": 3,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ערלה"
     },
     {
       "id": "bikkurim",
@@ -698,7 +780,8 @@
       "sortOrder": 10,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ביכורים"
     },
     {
       "id": "shabbos",
@@ -708,7 +791,8 @@
       "sortOrder": 0,
       "unitCount": 24,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שבת"
     },
     {
       "id": "eiruvin",
@@ -718,7 +802,8 @@
       "sortOrder": 1,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "עירובין"
     },
     {
       "id": "pesachim",
@@ -728,7 +813,8 @@
       "sortOrder": 2,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "פסחים"
     },
     {
       "id": "shekalim",
@@ -738,7 +824,8 @@
       "sortOrder": 3,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שקלים"
     },
     {
       "id": "yoma",
@@ -748,7 +835,8 @@
       "sortOrder": 4,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "יומא"
     },
     {
       "id": "sukkah",
@@ -758,7 +846,8 @@
       "sortOrder": 5,
       "unitCount": 5,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "סוכה"
     },
     {
       "id": "beitza",
@@ -768,7 +857,8 @@
       "sortOrder": 6,
       "unitCount": 5,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ביצה"
     },
     {
       "id": "roshHashana",
@@ -778,7 +868,8 @@
       "sortOrder": 7,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ראש השנה"
     },
     {
       "id": "taanis",
@@ -788,7 +879,8 @@
       "sortOrder": 8,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תענית"
     },
     {
       "id": "megilla",
@@ -798,7 +890,8 @@
       "sortOrder": 9,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מגילה"
     },
     {
       "id": "moedKatan",
@@ -808,7 +901,8 @@
       "sortOrder": 10,
       "unitCount": 3,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מועד קטן"
     },
     {
       "id": "chagiga",
@@ -818,7 +912,8 @@
       "sortOrder": 11,
       "unitCount": 3,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "חגיגה"
     },
     {
       "id": "yevamos",
@@ -828,7 +923,8 @@
       "sortOrder": 0,
       "unitCount": 16,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "יבמות"
     },
     {
       "id": "kesuvos",
@@ -838,7 +934,8 @@
       "sortOrder": 1,
       "unitCount": 13,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "כתובות"
     },
     {
       "id": "nedarim",
@@ -848,7 +945,8 @@
       "sortOrder": 2,
       "unitCount": 11,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "נדרים"
     },
     {
       "id": "nazir",
@@ -858,7 +956,8 @@
       "sortOrder": 3,
       "unitCount": 9,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "נזיר"
     },
     {
       "id": "sottah",
@@ -868,7 +967,8 @@
       "sortOrder": 4,
       "unitCount": 9,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "סוטה"
     },
     {
       "id": "gittin",
@@ -878,7 +978,8 @@
       "sortOrder": 5,
       "unitCount": 9,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "גיטין"
     },
     {
       "id": "kiddushin",
@@ -888,7 +989,8 @@
       "sortOrder": 6,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "קידושין"
     },
     {
       "id": "bavaKama",
@@ -898,7 +1000,8 @@
       "sortOrder": 0,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "בבא קמא"
     },
     {
       "id": "bavaMetzia",
@@ -908,7 +1011,8 @@
       "sortOrder": 1,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "בבא מציעא"
     },
     {
       "id": "bavaBasra",
@@ -918,7 +1022,8 @@
       "sortOrder": 2,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "בבא בתרא"
     },
     {
       "id": "sanhedrin",
@@ -928,7 +1033,8 @@
       "sortOrder": 3,
       "unitCount": 11,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "סנהדרין"
     },
     {
       "id": "makkos",
@@ -938,7 +1044,8 @@
       "sortOrder": 4,
       "unitCount": 13,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מכות"
     },
     {
       "id": "shevuos",
@@ -948,7 +1055,8 @@
       "sortOrder": 5,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שבועות"
     },
     {
       "id": "eduyos",
@@ -958,7 +1066,8 @@
       "sortOrder": 6,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "עדיות"
     },
     {
       "id": "avodaZarah",
@@ -968,7 +1077,8 @@
       "sortOrder": 7,
       "unitCount": 5,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "עבודה זרה"
     },
     {
       "id": "avos",
@@ -978,7 +1088,8 @@
       "sortOrder": 8,
       "unitCount": 6,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "אבות"
     },
     {
       "id": "horayos",
@@ -988,7 +1099,8 @@
       "sortOrder": 9,
       "unitCount": 3,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "הוריות"
     },
     {
       "id": "zevachim",
@@ -998,7 +1110,8 @@
       "sortOrder": 0,
       "unitCount": 14,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "זבחים"
     },
     {
       "id": "menachos",
@@ -1008,7 +1121,8 @@
       "sortOrder": 1,
       "unitCount": 13,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מנחות"
     },
     {
       "id": "chullin",
@@ -1018,7 +1132,8 @@
       "sortOrder": 2,
       "unitCount": 12,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "חולין"
     },
     {
       "id": "bechoros",
@@ -1028,7 +1143,8 @@
       "sortOrder": 3,
       "unitCount": 9,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "בכורות"
     },
     {
       "id": "erchin",
@@ -1038,7 +1154,8 @@
       "sortOrder": 4,
       "unitCount": 9,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ערכין"
     },
     {
       "id": "temurah",
@@ -1048,7 +1165,8 @@
       "sortOrder": 5,
       "unitCount": 7,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תמורה"
     },
     {
       "id": "kerisos",
@@ -1058,7 +1176,8 @@
       "sortOrder": 6,
       "unitCount": 6,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "כריתות"
     },
     {
       "id": "meilah",
@@ -1068,7 +1187,8 @@
       "sortOrder": 7,
       "unitCount": 6,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מעילה"
     },
     {
       "id": "tamid",
@@ -1078,7 +1198,8 @@
       "sortOrder": 8,
       "unitCount": 7,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תמיד"
     },
     {
       "id": "middos",
@@ -1088,7 +1209,8 @@
       "sortOrder": 9,
       "unitCount": 5,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מידות"
     },
     {
       "id": "kinnim",
@@ -1098,7 +1220,8 @@
       "sortOrder": 10,
       "unitCount": 3,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "קינים"
     },
     {
       "id": "keilim",
@@ -1108,7 +1231,8 @@
       "sortOrder": 0,
       "unitCount": 30,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "כלים"
     },
     {
       "id": "oholos",
@@ -1118,7 +1242,8 @@
       "sortOrder": 1,
       "unitCount": 18,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "אהלות"
     },
     {
       "id": "negaim",
@@ -1128,7 +1253,8 @@
       "sortOrder": 2,
       "unitCount": 14,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "נגעים"
     },
     {
       "id": "parah",
@@ -1138,7 +1264,8 @@
       "sortOrder": 3,
       "unitCount": 12,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "פרה"
     },
     {
       "id": "taharosMesechta",
@@ -1148,7 +1275,8 @@
       "sortOrder": 4,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "טהרות (מסכת)"
     },
     {
       "id": "mikvaos",
@@ -1158,7 +1286,8 @@
       "sortOrder": 5,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מקוואות"
     },
     {
       "id": "niddah",
@@ -1168,7 +1297,8 @@
       "sortOrder": 6,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "נדה"
     },
     {
       "id": "machshirin",
@@ -1178,7 +1308,8 @@
       "sortOrder": 7,
       "unitCount": 6,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מכשירין"
     },
     {
       "id": "zavim",
@@ -1188,7 +1319,8 @@
       "sortOrder": 8,
       "unitCount": 5,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "זבים"
     },
     {
       "id": "tevulYom",
@@ -1198,7 +1330,8 @@
       "sortOrder": 9,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "טבול יום"
     },
     {
       "id": "yadayim",
@@ -1208,7 +1341,8 @@
       "sortOrder": 10,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ידיים"
     },
     {
       "id": "uktzin",
@@ -1218,7 +1352,8 @@
       "sortOrder": 11,
       "unitCount": 3,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "עוקצין"
     },
     {
       "id": "berachosShas",
@@ -1228,7 +1363,8 @@
       "sortOrder": 0,
       "unitCount": 63,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "ברכות (ש״ס)"
     },
     {
       "id": "shabbosShas",
@@ -1238,7 +1374,8 @@
       "sortOrder": 0,
       "unitCount": 156,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "שבת (ש״ס)"
     },
     {
       "id": "eruvinShas",
@@ -1248,7 +1385,8 @@
       "sortOrder": 1,
       "unitCount": 104,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "עירובין (ש״ס)"
     },
     {
       "id": "pesachimShas",
@@ -1258,7 +1396,8 @@
       "sortOrder": 2,
       "unitCount": 120,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "פסחים (ש״ס)"
     },
     {
       "id": "roshHashanaShas",
@@ -1268,7 +1407,8 @@
       "sortOrder": 3,
       "unitCount": 34,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "ראש השנה (ש״ס)"
     },
     {
       "id": "yomaShas",
@@ -1278,7 +1418,8 @@
       "sortOrder": 4,
       "unitCount": 87,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "יומא (ש״ס)"
     },
     {
       "id": "sukkahShas",
@@ -1288,7 +1429,8 @@
       "sortOrder": 5,
       "unitCount": 55,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "סוכה (ש״ס)"
     },
     {
       "id": "beitzaShas",
@@ -1298,7 +1440,8 @@
       "sortOrder": 6,
       "unitCount": 39,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "ביצה (ש״ס)"
     },
     {
       "id": "taanisShas",
@@ -1308,7 +1451,8 @@
       "sortOrder": 7,
       "unitCount": 30,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "תענית (ש״ס)"
     },
     {
       "id": "megillaShas",
@@ -1318,7 +1462,8 @@
       "sortOrder": 8,
       "unitCount": 31,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "מגילה (ש״ס)"
     },
     {
       "id": "moedKatanShas",
@@ -1328,7 +1473,8 @@
       "sortOrder": 9,
       "unitCount": 28,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "מועד קטן (ש״ס)"
     },
     {
       "id": "chagigaShas",
@@ -1338,7 +1484,8 @@
       "sortOrder": 10,
       "unitCount": 26,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "חגיגה (ש״ס)"
     },
     {
       "id": "yevamosShas",
@@ -1348,7 +1495,8 @@
       "sortOrder": 0,
       "unitCount": 121,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "יבמות (ש״ס)"
     },
     {
       "id": "kesuvosShas",
@@ -1358,7 +1506,8 @@
       "sortOrder": 1,
       "unitCount": 111,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "כתובות (ש״ס)"
     },
     {
       "id": "nedarimShas",
@@ -1368,7 +1517,8 @@
       "sortOrder": 2,
       "unitCount": 90,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "נדרים (ש״ס)"
     },
     {
       "id": "nazirShas",
@@ -1378,7 +1528,8 @@
       "sortOrder": 3,
       "unitCount": 65,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "נזיר (ש״ס)"
     },
     {
       "id": "sotahShas",
@@ -1388,7 +1539,8 @@
       "sortOrder": 4,
       "unitCount": 48,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "סוטה (ש״ס)"
     },
     {
       "id": "gittinShas",
@@ -1398,7 +1550,8 @@
       "sortOrder": 5,
       "unitCount": 89,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "גיטין (ש״ס)"
     },
     {
       "id": "kiddushinShas",
@@ -1408,7 +1561,8 @@
       "sortOrder": 6,
       "unitCount": 81,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "קידושין (ש״ס)"
     },
     {
       "id": "bavaKamaShas",
@@ -1418,7 +1572,8 @@
       "sortOrder": 0,
       "unitCount": 118,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "בבא קמא (ש״ס)"
     },
     {
       "id": "bavaMetziaShas",
@@ -1428,7 +1583,8 @@
       "sortOrder": 1,
       "unitCount": 118,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "בבא מציעא (ש״ס)"
     },
     {
       "id": "bavaBasraShas",
@@ -1438,7 +1594,8 @@
       "sortOrder": 2,
       "unitCount": 175,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "בבא בתרא (ש״ס)"
     },
     {
       "id": "sanhedrinShas",
@@ -1448,7 +1605,8 @@
       "sortOrder": 3,
       "unitCount": 112,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "סנהדרין (ש״ס)"
     },
     {
       "id": "makkosShas",
@@ -1458,7 +1616,8 @@
       "sortOrder": 4,
       "unitCount": 23,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "מכות (ש״ס)"
     },
     {
       "id": "shevuosShas",
@@ -1468,7 +1627,8 @@
       "sortOrder": 5,
       "unitCount": 48,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "שבועות (ש״ס)"
     },
     {
       "id": "avodahZarahShas",
@@ -1478,7 +1638,8 @@
       "sortOrder": 6,
       "unitCount": 75,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "עבודה זרה (ש״ס)"
     },
     {
       "id": "horayosShas",
@@ -1488,7 +1649,8 @@
       "sortOrder": 7,
       "unitCount": 13,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "הוריות (ש״ס)"
     },
     {
       "id": "zevachimShas",
@@ -1498,7 +1660,8 @@
       "sortOrder": 0,
       "unitCount": 119,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "זבחים (ש״ס)"
     },
     {
       "id": "menachosShas",
@@ -1508,7 +1671,8 @@
       "sortOrder": 1,
       "unitCount": 109,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "מנחות (ש״ס)"
     },
     {
       "id": "chullinShas",
@@ -1518,7 +1682,8 @@
       "sortOrder": 2,
       "unitCount": 141,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "חולין (ש״ס)"
     },
     {
       "id": "bechorosShas",
@@ -1528,7 +1693,8 @@
       "sortOrder": 3,
       "unitCount": 60,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "בכורות (ש״ס)"
     },
     {
       "id": "erchinShas",
@@ -1538,7 +1704,8 @@
       "sortOrder": 4,
       "unitCount": 33,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "ערכין (ש״ס)"
     },
     {
       "id": "temurahShas",
@@ -1548,7 +1715,8 @@
       "sortOrder": 5,
       "unitCount": 33,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "תמורה (ש״ס)"
     },
     {
       "id": "kerisosShas",
@@ -1558,7 +1726,8 @@
       "sortOrder": 6,
       "unitCount": 27,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "כריתות (ש״ס)"
     },
     {
       "id": "meilahShas",
@@ -1568,7 +1737,8 @@
       "sortOrder": 7,
       "unitCount": 21,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "מעילה (ש״ס)"
     },
     {
       "id": "tamidShas",
@@ -1578,7 +1748,8 @@
       "sortOrder": 8,
       "unitCount": 9,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "תמיד (ש״ס)"
     },
     {
       "id": "niddahShas",
@@ -1588,7 +1759,8 @@
       "sortOrder": 0,
       "unitCount": 72,
       "unitOffset": 2,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "נדה (ש״ס)"
     },
     {
       "id": "berachosYerushalmi",
@@ -1598,7 +1770,8 @@
       "sortOrder": 0,
       "unitCount": 58,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "ברכות (ירושלמי)"
     },
     {
       "id": "peahYerushalmi",
@@ -1608,7 +1781,8 @@
       "sortOrder": 1,
       "unitCount": 55,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "פאה (ירושלמי)"
     },
     {
       "id": "demaiYerushalmi",
@@ -1618,7 +1792,8 @@
       "sortOrder": 2,
       "unitCount": 44,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "דמאי (ירושלמי)"
     },
     {
       "id": "kilayimYerushalmi",
@@ -1628,7 +1803,8 @@
       "sortOrder": 3,
       "unitCount": 56,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "כלאים (ירושלמי)"
     },
     {
       "id": "shviisYerushalmi",
@@ -1638,7 +1814,8 @@
       "sortOrder": 4,
       "unitCount": 56,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "שביעית (ירושלמי)"
     },
     {
       "id": "terumosYerushalmi",
@@ -1648,7 +1825,8 @@
       "sortOrder": 5,
       "unitCount": 48,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "תרומות (ירושלמי)"
     },
     {
       "id": "maasrosYerushalmi",
@@ -1658,7 +1836,8 @@
       "sortOrder": 6,
       "unitCount": 20,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "מעשרות (ירושלמי)"
     },
     {
       "id": "maaserSheniYerushalmi",
@@ -1668,7 +1847,8 @@
       "sortOrder": 7,
       "unitCount": 24,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "מעשר שני (ירושלמי)"
     },
     {
       "id": "challahYerushalmi",
@@ -1678,7 +1858,8 @@
       "sortOrder": 8,
       "unitCount": 19,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "חלה (ירושלמי)"
     },
     {
       "id": "orlahYerushalmi",
@@ -1688,7 +1869,8 @@
       "sortOrder": 9,
       "unitCount": 21,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "ערלה (ירושלמי)"
     },
     {
       "id": "bikkurimYerushalmi",
@@ -1698,7 +1880,8 @@
       "sortOrder": 10,
       "unitCount": 21,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "ביכורים (ירושלמי)"
     },
     {
       "id": "shabbosYerushalmi",
@@ -1708,7 +1891,8 @@
       "sortOrder": 0,
       "unitCount": 141,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "שבת (ירושלמי)"
     },
     {
       "id": "eruvinYerushalmi",
@@ -1718,7 +1902,8 @@
       "sortOrder": 1,
       "unitCount": 94,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "עירובין (ירושלמי)"
     },
     {
       "id": "pesachimYerushalmi",
@@ -1728,7 +1913,8 @@
       "sortOrder": 2,
       "unitCount": 86,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "פסחים (ירושלמי)"
     },
     {
       "id": "yomaYerushalmi",
@@ -1738,7 +1924,8 @@
       "sortOrder": 3,
       "unitCount": 51,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "יומא (ירושלמי)"
     },
     {
       "id": "shekalimYerushalmi",
@@ -1748,7 +1935,8 @@
       "sortOrder": 4,
       "unitCount": 32,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "שקלים (ירושלמי)"
     },
     {
       "id": "sukkahYerushalmi",
@@ -1758,7 +1946,8 @@
       "sortOrder": 5,
       "unitCount": 49,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "סוכה (ירושלמי)"
     },
     {
       "id": "roshHashanaYerushalmi",
@@ -1768,7 +1957,8 @@
       "sortOrder": 6,
       "unitCount": 36,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "ראש השנה (ירושלמי)"
     },
     {
       "id": "beitzaYerushalmi",
@@ -1778,7 +1968,8 @@
       "sortOrder": 7,
       "unitCount": 46,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "ביצה (ירושלמי)"
     },
     {
       "id": "taanisYerushalmi",
@@ -1788,7 +1979,8 @@
       "sortOrder": 8,
       "unitCount": 40,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "תענית (ירושלמי)"
     },
     {
       "id": "megillahYerushalmi",
@@ -1798,7 +1990,8 @@
       "sortOrder": 9,
       "unitCount": 38,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "מגילה (ירושלמי)"
     },
     {
       "id": "chagigahYerushalmi",
@@ -1808,7 +2001,8 @@
       "sortOrder": 10,
       "unitCount": 23,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "חגיגה (ירושלמי)"
     },
     {
       "id": "moedKatanYerushalmi",
@@ -1818,7 +2012,8 @@
       "sortOrder": 11,
       "unitCount": 24,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "מועד קטן (ירושלמי)"
     },
     {
       "id": "yevamosYerushalmi",
@@ -1828,7 +2023,8 @@
       "sortOrder": 0,
       "unitCount": 143,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "יבמות (ירושלמי)"
     },
     {
       "id": "sotahYerushalmi",
@@ -1838,7 +2034,8 @@
       "sortOrder": 1,
       "unitCount": 73,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "סוטה (ירושלמי)"
     },
     {
       "id": "kesuvosYerushalmi",
@@ -1848,7 +2045,8 @@
       "sortOrder": 2,
       "unitCount": 121,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "כתובות (ירושלמי)"
     },
     {
       "id": "nedarimYerushalmi",
@@ -1858,7 +2056,8 @@
       "sortOrder": 3,
       "unitCount": 94,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "נדרים (ירושלמי)"
     },
     {
       "id": "nazirYerushalmi",
@@ -1868,7 +2067,8 @@
       "sortOrder": 4,
       "unitCount": 55,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "נזיר (ירושלמי)"
     },
     {
       "id": "gittinYerushalmi",
@@ -1878,7 +2078,8 @@
       "sortOrder": 5,
       "unitCount": 75,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "גיטין (ירושלמי)"
     },
     {
       "id": "kidushinYerushalmi",
@@ -1888,7 +2089,8 @@
       "sortOrder": 6,
       "unitCount": 43,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "קידושין (ירושלמי)"
     },
     {
       "id": "bavaKamaYerushalmi",
@@ -1898,7 +2100,8 @@
       "sortOrder": 0,
       "unitCount": 85,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "בבא קמא (ירושלמי)"
     },
     {
       "id": "bavaMetziaYerushalmi",
@@ -1908,7 +2111,8 @@
       "sortOrder": 1,
       "unitCount": 84,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "בבא מציעא (ירושלמי)"
     },
     {
       "id": "bavaBasraYerushalmi",
@@ -1918,7 +2122,8 @@
       "sortOrder": 2,
       "unitCount": 76,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "בבא בתרא (ירושלמי)"
     },
     {
       "id": "sanhedrinYerushalmi",
@@ -1928,7 +2133,8 @@
       "sortOrder": 3,
       "unitCount": 89,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "סנהדרין (ירושלמי)"
     },
     {
       "id": "shevuosYerushalmi",
@@ -1938,7 +2144,8 @@
       "sortOrder": 4,
       "unitCount": 58,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "שבועות (ירושלמי)"
     },
     {
       "id": "avodahZarahYerushalmi",
@@ -1948,7 +2155,8 @@
       "sortOrder": 5,
       "unitCount": 60,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "עבודה זרה (ירושלמי)"
     },
     {
       "id": "makkosYerushalmi",
@@ -1958,7 +2166,8 @@
       "sortOrder": 6,
       "unitCount": 28,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "מכות (ירושלמי)"
     },
     {
       "id": "horayosYerushalmi",
@@ -1968,7 +2177,8 @@
       "sortOrder": 7,
       "unitCount": 20,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "הוריות (ירושלמי)"
     },
     {
       "id": "niddahYerushalmi",
@@ -1978,7 +2188,8 @@
       "sortOrder": 0,
       "unitCount": 25,
       "unitOffset": 1,
-      "unitLabel": "daf"
+      "unitLabel": "daf",
+      "nameHebrew": "נדה (ירושלמי)"
     },
     {
       "id": "shorashim",
@@ -1988,7 +2199,8 @@
       "sortOrder": 0,
       "unitCount": 14,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שורשים"
     },
     {
       "id": "mitzvosAssei",
@@ -1998,7 +2210,8 @@
       "sortOrder": 1,
       "unitCount": 248,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מצוות עשה"
     },
     {
       "id": "mitzvosLoSaasei",
@@ -2008,7 +2221,8 @@
       "sortOrder": 2,
       "unitCount": 365,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מצוות לא תעשה"
     },
     {
       "id": "yesodeiHatorah",
@@ -2018,7 +2232,8 @@
       "sortOrder": 0,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "יסודי התורה"
     },
     {
       "id": "deos",
@@ -2028,7 +2243,8 @@
       "sortOrder": 1,
       "unitCount": 7,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "דעות"
     },
     {
       "id": "talmudTorah",
@@ -2038,7 +2254,8 @@
       "sortOrder": 2,
       "unitCount": 7,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תלמוד תורה"
     },
     {
       "id": "avodahZaraRambam",
@@ -2048,7 +2265,8 @@
       "sortOrder": 3,
       "unitCount": 12,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "עבודה זרה (רמב״ם)"
     },
     {
       "id": "teshuva",
@@ -2058,7 +2276,8 @@
       "sortOrder": 4,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תשובה"
     },
     {
       "id": "kriasShema",
@@ -2068,7 +2287,8 @@
       "sortOrder": 0,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "קריאת שמע"
     },
     {
       "id": "tefilla",
@@ -2078,7 +2298,8 @@
       "sortOrder": 1,
       "unitCount": 15,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תפילה"
     },
     {
       "id": "tefillinEtc",
@@ -2088,7 +2309,8 @@
       "sortOrder": 2,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תפילין, מזוזה וספר תורה"
     },
     {
       "id": "tzitzis",
@@ -2098,7 +2320,8 @@
       "sortOrder": 3,
       "unitCount": 3,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ציצית"
     },
     {
       "id": "berachosRambam",
@@ -2108,7 +2331,8 @@
       "sortOrder": 4,
       "unitCount": 11,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ברכות (רמב״ם)"
     },
     {
       "id": "milah",
@@ -2118,7 +2342,8 @@
       "sortOrder": 5,
       "unitCount": 3,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מילה"
     },
     {
       "id": "siddur",
@@ -2128,7 +2353,8 @@
       "sortOrder": 6,
       "unitCount": 1,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "סדר תפילות"
     },
     {
       "id": "shabbosRambam",
@@ -2138,7 +2364,8 @@
       "sortOrder": 0,
       "unitCount": 30,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שבת (רמב״ם)"
     },
     {
       "id": "eiruvinRambam",
@@ -2148,7 +2375,8 @@
       "sortOrder": 1,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "עירובין (רמב״ם)"
     },
     {
       "id": "shvisasAssor",
@@ -2158,7 +2386,8 @@
       "sortOrder": 2,
       "unitCount": 3,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שביתת עשור"
     },
     {
       "id": "yomTov",
@@ -2168,7 +2397,8 @@
       "sortOrder": 3,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "יום טוב"
     },
     {
       "id": "chametz",
@@ -2178,7 +2408,8 @@
       "sortOrder": 4,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "חמץ ומצה"
     },
     {
       "id": "shofar",
@@ -2188,7 +2419,8 @@
       "sortOrder": 5,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שופר, סוכה ולולב"
     },
     {
       "id": "shekalimRambam",
@@ -2198,7 +2430,8 @@
       "sortOrder": 6,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שקלים (רמב״ם)"
     },
     {
       "id": "kiduchHachodesh",
@@ -2208,7 +2441,8 @@
       "sortOrder": 7,
       "unitCount": 19,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "קידוש החודש"
     },
     {
       "id": "taanisRambam",
@@ -2218,7 +2452,8 @@
       "sortOrder": 8,
       "unitCount": 5,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תענית (רמב״ם)"
     },
     {
       "id": "megillahChanukah",
@@ -2228,7 +2463,8 @@
       "sortOrder": 9,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מגילה וחנוכה"
     },
     {
       "id": "ishus",
@@ -2238,7 +2474,8 @@
       "sortOrder": 0,
       "unitCount": 25,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "אישות"
     },
     {
       "id": "geirushin",
@@ -2248,7 +2485,8 @@
       "sortOrder": 1,
       "unitCount": 13,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "גירושין"
     },
     {
       "id": "yibum",
@@ -2258,7 +2496,8 @@
       "sortOrder": 2,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ייבום וחליצה"
     },
     {
       "id": "besulah",
@@ -2268,7 +2507,8 @@
       "sortOrder": 3,
       "unitCount": 3,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "נערה בתולה"
     },
     {
       "id": "sotahRambam",
@@ -2278,7 +2518,8 @@
       "sortOrder": 4,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "סוטה (רמב״ם)"
     },
     {
       "id": "issureiBiah",
@@ -2288,7 +2529,8 @@
       "sortOrder": 0,
       "unitCount": 22,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "איסורי ביאה"
     },
     {
       "id": "maachalosAssuros",
@@ -2298,7 +2540,8 @@
       "sortOrder": 1,
       "unitCount": 17,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מאכלות אסורות"
     },
     {
       "id": "shechita",
@@ -2308,7 +2551,8 @@
       "sortOrder": 2,
       "unitCount": 14,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שחיטה"
     },
     {
       "id": "shevuosRambam",
@@ -2318,7 +2562,8 @@
       "sortOrder": 0,
       "unitCount": 12,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שבועות (רמב״ם)"
     },
     {
       "id": "nedarimRambam",
@@ -2328,7 +2573,8 @@
       "sortOrder": 1,
       "unitCount": 13,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "נדרים (רמב״ם)"
     },
     {
       "id": "nezirus",
@@ -2338,7 +2584,8 @@
       "sortOrder": 2,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "נזירות"
     },
     {
       "id": "erchinRambam",
@@ -2348,7 +2595,8 @@
       "sortOrder": 3,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ערכין (רמב״ם)"
     },
     {
       "id": "kelayimRambam",
@@ -2358,7 +2606,8 @@
       "sortOrder": 0,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "כלאים (רמב״ם)"
     },
     {
       "id": "matnosAniim",
@@ -2368,7 +2617,8 @@
       "sortOrder": 1,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מתנות עניים"
     },
     {
       "id": "terumosRambam",
@@ -2378,7 +2628,8 @@
       "sortOrder": 2,
       "unitCount": 15,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תרומות (רמב״ם)"
     },
     {
       "id": "maaser",
@@ -2388,7 +2639,8 @@
       "sortOrder": 3,
       "unitCount": 14,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מעשר"
     },
     {
       "id": "maaserSheniNetaRevai",
@@ -2398,7 +2650,8 @@
       "sortOrder": 4,
       "unitCount": 11,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מעשר שני ונטע רבעי"
     },
     {
       "id": "matnosKehuna",
@@ -2408,7 +2661,8 @@
       "sortOrder": 5,
       "unitCount": 12,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מתנות כהונה"
     },
     {
       "id": "shemita",
@@ -2418,7 +2672,8 @@
       "sortOrder": 6,
       "unitCount": 13,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שמיטה"
     },
     {
       "id": "beisHabechirah",
@@ -2428,7 +2683,8 @@
       "sortOrder": 0,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "בית הבחירה"
     },
     {
       "id": "kleiHamikdash",
@@ -2438,7 +2694,8 @@
       "sortOrder": 1,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "כלי המקדש"
     },
     {
       "id": "biasHamikdash",
@@ -2448,7 +2705,8 @@
       "sortOrder": 2,
       "unitCount": 9,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ביאת המקדש"
     },
     {
       "id": "mizbeach",
@@ -2458,7 +2716,8 @@
       "sortOrder": 3,
       "unitCount": 7,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מזבח"
     },
     {
       "id": "korbanosRambam",
@@ -2468,7 +2727,8 @@
       "sortOrder": 4,
       "unitCount": 19,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "קרבנות (רמב״ם)"
     },
     {
       "id": "tmidim",
@@ -2478,7 +2738,8 @@
       "sortOrder": 5,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תמידין ומוספין"
     },
     {
       "id": "pesuleiMukdashin",
@@ -2488,7 +2749,8 @@
       "sortOrder": 6,
       "unitCount": 19,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "פסולי המוקדשין"
     },
     {
       "id": "avodasYomKippur",
@@ -2498,7 +2760,8 @@
       "sortOrder": 7,
       "unitCount": 5,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "עבודת יום הכיפורים"
     },
     {
       "id": "meilahRambam",
@@ -2508,7 +2771,8 @@
       "sortOrder": 8,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מעילה (רמב״ם)"
     },
     {
       "id": "pesach",
@@ -2518,7 +2782,8 @@
       "sortOrder": 0,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "קרבן פסח"
     },
     {
       "id": "chagigahRambam",
@@ -2528,7 +2793,8 @@
       "sortOrder": 1,
       "unitCount": 3,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "חגיגה (רמב״ם)"
     },
     {
       "id": "bechorosRambam",
@@ -2538,7 +2804,8 @@
       "sortOrder": 2,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "בכורות (רמב״ם)"
     },
     {
       "id": "shegagos",
@@ -2548,7 +2815,8 @@
       "sortOrder": 3,
       "unitCount": 15,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שגגות"
     },
     {
       "id": "mechusreiKapparah",
@@ -2558,7 +2826,8 @@
       "sortOrder": 4,
       "unitCount": 5,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מחוסרי כפרה"
     },
     {
       "id": "temurahRambam",
@@ -2568,7 +2837,8 @@
       "sortOrder": 5,
       "unitCount": 4,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "תמורה (רמב״ם)"
     },
     {
       "id": "tumasMeis",
@@ -2578,7 +2848,8 @@
       "sortOrder": 0,
       "unitCount": 25,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "טומאת מת"
     },
     {
       "id": "parahRambam",
@@ -2588,7 +2859,8 @@
       "sortOrder": 1,
       "unitCount": 15,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "פרה (רמב״ם)"
     },
     {
       "id": "tzaraas",
@@ -2598,7 +2870,8 @@
       "sortOrder": 2,
       "unitCount": 16,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "צרעת"
     },
     {
       "id": "mishkavMoshav",
@@ -2608,7 +2881,8 @@
       "sortOrder": 3,
       "unitCount": 13,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מטמאי משכב ומושב"
     },
     {
       "id": "shearTumos",
@@ -2618,7 +2892,8 @@
       "sortOrder": 4,
       "unitCount": 20,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שאר אבות הטומאות"
     },
     {
       "id": "ochlin",
@@ -2628,7 +2903,8 @@
       "sortOrder": 5,
       "unitCount": 16,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "טומאת אוכלין"
     },
     {
       "id": "keilimRambam",
@@ -2638,7 +2914,8 @@
       "sortOrder": 6,
       "unitCount": 28,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "כלים (רמב״ם)"
     },
     {
       "id": "mikvaosRambam",
@@ -2648,7 +2925,8 @@
       "sortOrder": 7,
       "unitCount": 11,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מקוואות (רמב״ם)"
     },
     {
       "id": "mamon",
@@ -2658,7 +2936,8 @@
       "sortOrder": 0,
       "unitCount": 14,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "נזקי ממון"
     },
     {
       "id": "geneiva",
@@ -2668,7 +2947,8 @@
       "sortOrder": 1,
       "unitCount": 9,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "גניבה"
     },
     {
       "id": "gezeilaAveida",
@@ -2678,7 +2958,8 @@
       "sortOrder": 2,
       "unitCount": 18,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "גזילה ואבידה"
     },
     {
       "id": "chovel",
@@ -2688,7 +2969,8 @@
       "sortOrder": 3,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "חובל ומזיק"
     },
     {
       "id": "rotzeachShmira",
@@ -2698,7 +2980,8 @@
       "sortOrder": 4,
       "unitCount": 13,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "רוצח ושמירת נפש"
     },
     {
       "id": "mechirah",
@@ -2708,7 +2991,8 @@
       "sortOrder": 0,
       "unitCount": 30,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מכירה"
     },
     {
       "id": "matanah",
@@ -2718,7 +3002,8 @@
       "sortOrder": 1,
       "unitCount": 12,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "זכייה ומתנה"
     },
     {
       "id": "shecheinim",
@@ -2728,7 +3013,8 @@
       "sortOrder": 2,
       "unitCount": 14,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שכנים"
     },
     {
       "id": "sheluchim",
@@ -2738,7 +3024,8 @@
       "sortOrder": 3,
       "unitCount": 10,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שלוחין ושותפין"
     },
     {
       "id": "avadim",
@@ -2748,7 +3035,8 @@
       "sortOrder": 4,
       "unitCount": 9,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "עבדים"
     },
     {
       "id": "sechirus",
@@ -2758,7 +3046,8 @@
       "sortOrder": 0,
       "unitCount": 13,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שכירות"
     },
     {
       "id": "sheeilah",
@@ -2768,7 +3057,8 @@
       "sortOrder": 1,
       "unitCount": 8,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "שאלה ופיקדון"
     },
     {
       "id": "lovehMalveh",
@@ -2778,7 +3068,8 @@
       "sortOrder": 2,
       "unitCount": 27,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מלווה ולווה"
     },
     {
       "id": "toein",
@@ -2788,7 +3079,8 @@
       "sortOrder": 3,
       "unitCount": 16,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "טוען ונטען"
     },
     {
       "id": "nachalos",
@@ -2798,7 +3090,8 @@
       "sortOrder": 4,
       "unitCount": 11,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "נחלות"
     },
     {
       "id": "sanhedrinRambam",
@@ -2808,7 +3101,8 @@
       "sortOrder": 0,
       "unitCount": 26,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "סנהדרין (רמב״ם)"
     },
     {
       "id": "eidus",
@@ -2818,7 +3112,8 @@
       "sortOrder": 1,
       "unitCount": 22,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "עדות"
     },
     {
       "id": "mamrim",
@@ -2828,7 +3123,8 @@
       "sortOrder": 2,
       "unitCount": 7,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "ממרים"
     },
     {
       "id": "avel",
@@ -2838,7 +3134,8 @@
       "sortOrder": 3,
       "unitCount": 14,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "אבל"
     },
     {
       "id": "melachim",
@@ -2848,7 +3145,8 @@
       "sortOrder": 4,
       "unitCount": 12,
       "unitOffset": 1,
-      "unitLabel": "perek"
+      "unitLabel": "perek",
+      "nameHebrew": "מלכים ומלחמות"
     },
     {
       "id": "orachChaim",
@@ -2858,7 +3156,8 @@
       "sortOrder": 0,
       "unitCount": 697,
       "unitOffset": 1,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "אורח חיים (טור)"
     },
     {
       "id": "yorehDeah",
@@ -2868,7 +3167,8 @@
       "sortOrder": 1,
       "unitCount": 403,
       "unitOffset": 1,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "יורה דעה (טור)"
     },
     {
       "id": "choshenMishpat",
@@ -2878,7 +3178,8 @@
       "sortOrder": 2,
       "unitCount": 427,
       "unitOffset": 1,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "חושן משפט (טור)"
     },
     {
       "id": "evenHaezer",
@@ -2888,7 +3189,8 @@
       "sortOrder": 3,
       "unitCount": 178,
       "unitOffset": 1,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "אבן העזר (טור)"
     },
     {
       "id": "orachChaimSA",
@@ -2898,7 +3200,8 @@
       "sortOrder": 0,
       "unitCount": 697,
       "unitOffset": 1,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "אורח חיים (שולחן ערוך)"
     },
     {
       "id": "yorehDeahSA",
@@ -2908,7 +3211,8 @@
       "sortOrder": 1,
       "unitCount": 403,
       "unitOffset": 1,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "יורה דעה (שולחן ערוך)"
     },
     {
       "id": "choshenMishpatSA",
@@ -2918,7 +3222,8 @@
       "sortOrder": 2,
       "unitCount": 427,
       "unitOffset": 1,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "חושן משפט (שולחן ערוך)"
     },
     {
       "id": "evenHaezerSA",
@@ -2928,7 +3233,8 @@
       "sortOrder": 3,
       "unitCount": 178,
       "unitOffset": 1,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "אבן העזר (שולחן ערוך)"
     },
     {
       "id": "chelek1",
@@ -2938,7 +3244,8 @@
       "sortOrder": 0,
       "unitCount": 127,
       "unitOffset": 1,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "חלק א׳"
     },
     {
       "id": "chelek2",
@@ -2948,7 +3255,8 @@
       "sortOrder": 1,
       "unitCount": 114,
       "unitOffset": 128,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "חלק ב׳"
     },
     {
       "id": "chelek3",
@@ -2958,7 +3266,8 @@
       "sortOrder": 2,
       "unitCount": 103,
       "unitOffset": 242,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "חלק ג׳"
     },
     {
       "id": "chelek4",
@@ -2968,7 +3277,8 @@
       "sortOrder": 3,
       "unitCount": 84,
       "unitOffset": 346,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "חלק ד׳"
     },
     {
       "id": "chelek5",
@@ -2978,7 +3288,8 @@
       "sortOrder": 4,
       "unitCount": 99,
       "unitOffset": 430,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "חלק ה׳"
     },
     {
       "id": "chelek6",
@@ -2988,7 +3299,8 @@
       "sortOrder": 5,
       "unitCount": 168,
       "unitOffset": 529,
-      "unitLabel": "siman"
+      "unitLabel": "siman",
+      "nameHebrew": "חלק ו׳"
     }
   ]
 }

@@ -133,12 +133,15 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
                       requiredSet.remove(layer.id);
                     }
                   }),
+                  onEdit: layer.builtIn
+                      ? null
+                      : () => _editCustomLayer(existing: layer),
                   onDelete: layer.builtIn ? null : () => _deleteLayer(layer),
                 ),
               TextButton.icon(
                 icon: const Icon(Icons.add),
                 label: Text(l10n.mefarshimAddMeforish),
-                onPressed: _addCustomLayer,
+                onPressed: _editCustomLayer,
               ),
               const SizedBox(height: 8),
               Row(
@@ -334,64 +337,129 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
         nodeId: entry.nodeId, unitIndex: entry.unitIndex, layers: remaining));
   }
 
-  Future<void> _addCustomLayer() async {
+  /// Add a meforish, or edit one you added.
+  ///
+  /// Editing used to be impossible: a custom meforish could be created and
+  /// deleted and nothing else, so a Hebrew name you didn't think to type at
+  /// creation could never be added — the only route was to delete it (losing
+  /// every required/offered set that named it) and start again. Saving reuses
+  /// the same id, and `addCustomLayer` is an upsert, so a rename leaves every
+  /// event and every layer setting still pointing at it.
+  Future<void> _editCustomLayer({Layer? existing}) async {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
-    final nameCtrl = TextEditingController();
-    final hebrewCtrl = TextEditingController();
-    final ok = await showDialog<bool>(
+    final result = await showDialog<({String name, String hebrew})>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.mefarshimNewTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              autofocus: true,
-              decoration: InputDecoration(labelText: l10n.labelName),
-            ),
-            TextField(
-              controller: hebrewCtrl,
-              decoration:
-                  InputDecoration(labelText: l10n.mefarshimHebrewOptional),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(l10n.actionCancel)),
-          FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(l10n.actionAdd)),
-        ],
-      ),
+      builder: (_) => _LayerNameDialog(existing: existing),
     );
-    final name = nameCtrl.text.trim();
-    final hebrew = hebrewCtrl.text.trim();
-    nameCtrl.dispose();
-    hebrewCtrl.dispose();
-    if (ok != true || name.isEmpty) return;
-    final id = const Uuid().v4();
+    if (result == null) return;
+    final typed = result.name;
+    final hebrew = result.hebrew;
+    // Either field alone is enough. Someone working entirely in Hebrew should
+    // not have to invent a transliteration to get past the form, so the Hebrew
+    // stands in as the primary name — which is also the fallback every
+    // English-locale screen will then show.
+    final name = typed.isNotEmpty ? typed : hebrew;
+    if (name.isEmpty) {
+      guard.report(l10n.mefarshimNeedName);
+      return;
+    }
+    final id = existing?.id ?? const Uuid().v4();
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
-    final added = await guard.run(
+    final saved = await guard.run(
       () => repo.addCustomLayer(
         profileId,
         Layer(id: id, name: name, nameHebrew: hebrew.isEmpty ? null : hebrew),
       ),
-      what: l10n.whatAddingMeforish(name),
+      what: existing == null
+          ? l10n.whatAddingMeforish(name)
+          : l10n.whatSavingMeforish(name),
     );
-    if (!added) return;
+    if (!saved || existing != null) return;
     // A freshly-added meforish starts Available (checkable) but not Required —
-    // exactly the "offer without mandating" case.
+    // exactly the "offer without mandating" case. An *edit* changes no set, so
+    // it deliberately leaves `_dirty` alone.
     if (mounted) {
       setState(() {
         _dirty = true;
         _available!.add(id);
       });
     }
+  }
+}
+
+/// The add/rename dialog for a custom meforish.
+///
+/// A `StatefulWidget` so it *owns* its controllers and disposes them in its own
+/// `dispose`. Creating them beside `showDialog` and disposing as soon as the
+/// await returns looks equivalent and is not: the route's exit animation is
+/// still running, its `TextField`s still reference the controllers, and the next
+/// frame throws "A TextEditingController was used after being disposed". Letting
+/// the dialog own them means they die exactly when the widgets that use them do.
+class _LayerNameDialog extends StatefulWidget {
+  const _LayerNameDialog({this.existing});
+
+  final Layer? existing;
+
+  @override
+  State<_LayerNameDialog> createState() => _LayerNameDialogState();
+}
+
+class _LayerNameDialogState extends State<_LayerNameDialog> {
+  late final TextEditingController _name =
+      TextEditingController(text: widget.existing?.name ?? '');
+  late final TextEditingController _hebrew =
+      TextEditingController(text: widget.existing?.nameHebrew ?? '');
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _hebrew.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.pop(
+        context,
+        (name: _name.text.trim(), hebrew: _hebrew.text.trim()),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final existing = widget.existing;
+    return AlertDialog(
+      title: Text(existing == null
+          ? l10n.mefarshimNewTitle
+          : l10n.mefarshimEditTitle(layerName(l10n, existing))),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _name,
+            autofocus: true,
+            decoration: InputDecoration(labelText: l10n.labelNameEnglish),
+          ),
+          TextField(
+            controller: _hebrew,
+            textDirection: TextDirection.rtl,
+            decoration: InputDecoration(labelText: l10n.labelNameHebrew),
+            onSubmitted: (_) => _submit(),
+          ),
+          const SizedBox(height: 8),
+          Text(l10n.namePairHelp,
+              style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.actionCancel)),
+        FilledButton(
+            onPressed: _submit,
+            child: Text(existing == null ? l10n.actionAdd : l10n.actionSave)),
+      ],
+    );
   }
 }
 
@@ -405,6 +473,7 @@ class _MeforishRow extends StatelessWidget {
     required this.required,
     required this.onAvailable,
     required this.onRequired,
+    this.onEdit,
     this.onDelete,
   });
 
@@ -413,6 +482,10 @@ class _MeforishRow extends StatelessWidget {
   final bool required;
   final ValueChanged<bool> onAvailable;
   final ValueChanged<bool> onRequired;
+
+  /// Rename it, or give it the Hebrew name you didn't type at creation.
+  /// Null for the built-ins, which are not the user's to rename.
+  final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   @override
@@ -450,6 +523,12 @@ class _MeforishRow extends StatelessWidget {
             onSelected: onRequired,
             visualDensity: VisualDensity.compact,
           ),
+          if (onEdit != null)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              tooltip: l10n.tooltipEditMeforish,
+              onPressed: onEdit,
+            ),
           if (onDelete != null)
             IconButton(
               icon: const Icon(Icons.delete_outline, size: 20),

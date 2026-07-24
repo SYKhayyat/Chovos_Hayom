@@ -69,6 +69,16 @@ class AppLocalizationsHe extends AppLocalizations {
   String get labelOptional => 'רשות';
 
   @override
+  String get labelNameEnglish => 'שם (אנגלית)';
+
+  @override
+  String get labelNameHebrew => 'שם (עברית)';
+
+  @override
+  String get namePairHelp =>
+      'די באחד מהם. האפליקציה מציגה את זה שמתאים לשפה שבה אתה משתמש, ונופלת לשני אם הוא חסר.';
+
+  @override
   String writeFailed(String what) {
     return '$what — נכשל.';
   }
@@ -960,6 +970,22 @@ class AppLocalizationsHe extends AppLocalizations {
   String get mefarshimNewTitle => 'מפרש חדש';
 
   @override
+  String mefarshimEditTitle(String name) {
+    return 'עריכת ״$name״';
+  }
+
+  @override
+  String get mefarshimNeedName => 'תן למפרש שם, באחת מהשפות.';
+
+  @override
+  String get tooltipEditMeforish => 'עריכת המפרש';
+
+  @override
+  String whatSavingMeforish(String name) {
+    return 'שמירת המפרש ״$name״';
+  }
+
+  @override
   String get mefarshimHebrewOptional => 'עברית (רשות)';
 
   @override
@@ -1539,6 +1565,9 @@ class AppLocalizationsHe extends AppLocalizations {
   String get addNodeNeedName => 'אנא הזן שם.';
 
   @override
+  String get addNodeNeedNameEither => 'תן לו שם, באחת מהשפות.';
+
+  @override
   String get addNodeNeedUnits => 'מספר היחידות חייב להיות גדול מ־0.';
 
   @override
@@ -1990,6 +2019,13 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get backupBannerAction => 'גיבוי';
+
+  @override
+  String get backupBannerDismiss => 'כיבוי התזכורת הזו';
+
+  @override
+  String get backupBannerDismissed =>
+      'תזכורת הגיבוי כבויה — אפשר להפעילה שוב בהגדרות ← גיבוי';
 
   @override
   String get backupSaveDialogTitle => 'שמירת גיבוי';

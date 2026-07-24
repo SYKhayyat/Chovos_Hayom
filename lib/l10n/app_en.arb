@@ -30,6 +30,12 @@
   "labelName": "Name",
   "labelRequired": "Required",
   "labelOptional": "Optional",
+  "labelNameEnglish": "Name (English)",
+  "labelNameHebrew": "Name (Hebrew)",
+  "namePairHelp": "Either one is enough. The app shows whichever matches the language you are using, and falls back to the other.",
+  "@namePairHelp": {
+    "description": "Under the paired English/Hebrew name fields on the custom-sefer and custom-meforish forms."
+  },
 
   "@_WRITE_GUARD": {},
   "writeFailed": "{what} failed.",
@@ -503,6 +509,12 @@
   "mefarshimAddMeforish": "Add a meforish",
   "mefarshimResetToInherited": "Reset to inherited",
   "mefarshimNewTitle": "New meforish",
+  "mefarshimEditTitle": "Edit “{name}”",
+  "@mefarshimEditTitle": { "placeholders": { "name": { "type": "String" } } },
+  "mefarshimNeedName": "Give the meforish a name, in either language.",
+  "tooltipEditMeforish": "Edit meforish",
+  "whatSavingMeforish": "Saving the meforish “{name}”",
+  "@whatSavingMeforish": { "placeholders": { "name": { "type": "String" } } },
   "mefarshimHebrewOptional": "Hebrew (optional)",
   "tooltipDeleteMeforish": "Delete meforish",
   "mefarshimDeleteTitle": "Delete “{name}”?",
@@ -769,6 +781,7 @@
   "addNodeUnitNamesHelper": "e.g. parsha or siman titles — shown instead of numbers, in order from the first unit.",
   "addNodeLoweringCount": "Lowering the count keeps any progress on the removed units hidden but intact — raise it again to restore them.",
   "addNodeNeedName": "Please enter a name.",
+  "addNodeNeedNameEither": "Give it a name, in either language.",
   "addNodeNeedUnits": "Number of units must be greater than 0.",
   "addNodeTooManyUnits": "That is more units than any sefer has.",
   "addNodeNegativeOffset": "The first unit number cannot be negative.",
@@ -946,6 +959,8 @@
   },
   "backupBannerWhy": "It lives only on this device — nothing is copied anywhere automatically.",
   "backupBannerAction": "Back up",
+  "backupBannerDismiss": "Turn off this reminder",
+  "backupBannerDismissed": "Backup reminder off — turn it back on in Settings → Backup",
 
   "@_BACKUP": {},
   "backupSaveDialogTitle": "Save backup",

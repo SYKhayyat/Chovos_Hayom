@@ -12,6 +12,7 @@ import '../../domain/entities/progress_node.dart';
 import '../../domain/usecases/reminders_policy.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/error_view.dart';
+import '../common/guarded.dart';
 import '../common/naming.dart';
 import '../search/catalog_search_delegate.dart';
 import 'progress_tile.dart';
@@ -263,7 +264,38 @@ class _BackupBanner extends ConsumerWidget {
               onPressed: () => Navigator.pushNamed(context, Routes.settings),
               child: Text(l10n.backupBannerAction),
             ),
+            // Dismissable from where the annoyance is.
+            //
+            // The switch has always existed in Settings, but a warning you can
+            // only silence by hunting through a screen you may not read is a
+            // warning that just becomes noise. Turning it off here is one tap,
+            // says where to turn it back on, and offers Undo — so a mis-tap on a
+            // safety feature costs nothing.
+            IconButton(
+              icon: const Icon(Icons.close, size: 20),
+              tooltip: l10n.backupBannerDismiss,
+              color: scheme.onErrorContainer,
+              onPressed: () => _dismiss(context, ref, l10n),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _dismiss(
+      BuildContext context, WidgetRef ref, AppLocalizations l10n) async {
+    final notifier = ref.read(settingsProvider.notifier);
+    final guard = WriteGuard.of(context, ref);
+    await guard.run(
+      () => notifier.setBackupReminderEnabled(false),
+      what: l10n.whatChangingBackupReminder,
+      success: l10n.backupBannerDismissed,
+      undo: SnackBarAction(
+        label: l10n.actionUndo,
+        onPressed: () => guard.run(
+          () => notifier.setBackupReminderEnabled(true),
+          what: l10n.whatChangingBackupReminder,
         ),
       ),
     );

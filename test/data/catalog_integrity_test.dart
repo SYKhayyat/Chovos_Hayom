@@ -23,6 +23,39 @@ void main() {
       expect(ids.toSet(), hasLength(ids.length));
     });
 
+    // The Hebrew names are what the app shows under a Hebrew locale. They were
+    // absent for a long time — `nameHebrew` was carried through the JSON, the
+    // database, the backup format and the search index and never populated —
+    // so every sefer read as its transliteration. These two guard the data
+    // rather than the code: a future catalog edit must not quietly drop one.
+    test('every node has a Hebrew name', () {
+      final unnamed = [
+        for (final n in all)
+          if ((n.nameHebrew ?? '').trim().isEmpty) n.id,
+      ];
+      expect(unnamed, isEmpty, reason: 'no Hebrew name for: $unnamed');
+    });
+
+    test('Hebrew names are unique, so a flat list stays unambiguous', () {
+      // The English disambiguates a mesechta that appears in Mishnayos, Shas,
+      // Yerushalmi and Rambam with a "(Shas)"-style suffix. Search results, the
+      // calculator's dropdown and the cycle-linking picker are all flat lists
+      // with no tree around them to supply the context, so the Hebrew has to
+      // disambiguate too.
+      final seen = <String, String>{};
+      final clashes = <String>[];
+      for (final n in all) {
+        final hebrew = n.nameHebrew!;
+        final first = seen[hebrew];
+        if (first != null) {
+          clashes.add('$hebrew: $first and ${n.id}');
+        } else {
+          seen[hebrew] = n.id;
+        }
+      }
+      expect(clashes, isEmpty);
+    });
+
     test('every non-root parentId resolves to an existing node', () {
       for (final n in all) {
         if (n.parentId != null) {

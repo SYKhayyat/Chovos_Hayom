@@ -218,6 +218,24 @@ abstract class AppLocalizations {
   /// **'Optional'**
   String get labelOptional;
 
+  /// No description provided for @labelNameEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (English)'**
+  String get labelNameEnglish;
+
+  /// No description provided for @labelNameHebrew.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (Hebrew)'**
+  String get labelNameHebrew;
+
+  /// Under the paired English/Hebrew name fields on the custom-sefer and custom-meforish forms.
+  ///
+  /// In en, this message translates to:
+  /// **'Either one is enough. The app shows whichever matches the language you are using, and falls back to the other.'**
+  String get namePairHelp;
+
   /// The one failure sentence for every write. {what} is a phrase that completes '… failed', e.g. 'Marking Shabbos daf 2 learned'.
   ///
   /// In en, this message translates to:
@@ -1436,6 +1454,30 @@ abstract class AppLocalizations {
   /// **'New meforish'**
   String get mefarshimNewTitle;
 
+  /// No description provided for @mefarshimEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit “{name}”'**
+  String mefarshimEditTitle(String name);
+
+  /// No description provided for @mefarshimNeedName.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the meforish a name, in either language.'**
+  String get mefarshimNeedName;
+
+  /// No description provided for @tooltipEditMeforish.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit meforish'**
+  String get tooltipEditMeforish;
+
+  /// No description provided for @whatSavingMeforish.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving the meforish “{name}”'**
+  String whatSavingMeforish(String name);
+
   /// No description provided for @mefarshimHebrewOptional.
   ///
   /// In en, this message translates to:
@@ -2252,6 +2294,12 @@ abstract class AppLocalizations {
   /// **'Please enter a name.'**
   String get addNodeNeedName;
 
+  /// No description provided for @addNodeNeedNameEither.
+  ///
+  /// In en, this message translates to:
+  /// **'Give it a name, in either language.'**
+  String get addNodeNeedNameEither;
+
   /// No description provided for @addNodeNeedUnits.
   ///
   /// In en, this message translates to:
@@ -2929,6 +2977,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back up'**
   String get backupBannerAction;
+
+  /// No description provided for @backupBannerDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off this reminder'**
+  String get backupBannerDismiss;
+
+  /// No description provided for @backupBannerDismissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup reminder off — turn it back on in Settings → Backup'**
+  String get backupBannerDismissed;
 
   /// No description provided for @backupSaveDialogTitle.
   ///

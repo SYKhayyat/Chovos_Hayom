@@ -110,14 +110,22 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // The two names sit together, labelled symmetrically, so it is obvious
+          // that both exist and which is which. Either alone is enough — see
+          // `_save`.
           TextField(
             controller: _name,
-            decoration: InputDecoration(labelText: l10n.labelName),
+            decoration: InputDecoration(labelText: l10n.labelNameEnglish),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _hebrew,
-            decoration: InputDecoration(labelText: l10n.addNodeHebrewName),
+            textDirection: TextDirection.rtl,
+            decoration: InputDecoration(
+              labelText: l10n.labelNameHebrew,
+              helperText: l10n.namePairHelp,
+              helperMaxLines: 3,
+            ),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String?>(
@@ -208,9 +216,14 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
     final navigator = Navigator.of(context);
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
-    final name = _name.text.trim();
+    final hebrew = _hebrew.text.trim();
+    // Either field alone is enough. Someone working entirely in Hebrew should
+    // not have to invent a transliteration to get past the form, so the Hebrew
+    // stands in as the primary name — which is also what an English-locale
+    // screen then falls back to showing.
+    final name = _name.text.trim().isNotEmpty ? _name.text.trim() : hebrew;
     if (name.isEmpty) {
-      guard.report(l10n.addNodeNeedName);
+      guard.report(l10n.addNodeNeedNameEither);
       return;
     }
     final count = int.tryParse(_count.text.trim()) ?? 0;
@@ -229,7 +242,6 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
       guard.report(l10n.addNodeNegativeOffset);
       return;
     }
-    final hebrew = _hebrew.text.trim();
     // Trim trailing blank lines but keep interior blanks (they line up unnamed
     // units with their index).
     final names =

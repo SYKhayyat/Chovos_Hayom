@@ -69,6 +69,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelOptional => 'Optional';
 
   @override
+  String get labelNameEnglish => 'Name (English)';
+
+  @override
+  String get labelNameHebrew => 'Name (Hebrew)';
+
+  @override
+  String get namePairHelp =>
+      'Either one is enough. The app shows whichever matches the language you are using, and falls back to the other.';
+
+  @override
   String writeFailed(String what) {
     return '$what failed.';
   }
@@ -964,6 +974,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mefarshimNewTitle => 'New meforish';
 
   @override
+  String mefarshimEditTitle(String name) {
+    return 'Edit “$name”';
+  }
+
+  @override
+  String get mefarshimNeedName =>
+      'Give the meforish a name, in either language.';
+
+  @override
+  String get tooltipEditMeforish => 'Edit meforish';
+
+  @override
+  String whatSavingMeforish(String name) {
+    return 'Saving the meforish “$name”';
+  }
+
+  @override
   String get mefarshimHebrewOptional => 'Hebrew (optional)';
 
   @override
@@ -1545,6 +1572,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addNodeNeedName => 'Please enter a name.';
 
   @override
+  String get addNodeNeedNameEither => 'Give it a name, in either language.';
+
+  @override
   String get addNodeNeedUnits => 'Number of units must be greater than 0.';
 
   @override
@@ -2000,6 +2030,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupBannerAction => 'Back up';
+
+  @override
+  String get backupBannerDismiss => 'Turn off this reminder';
+
+  @override
+  String get backupBannerDismissed =>
+      'Backup reminder off — turn it back on in Settings → Backup';
 
   @override
   String get backupSaveDialogTitle => 'Save backup';
