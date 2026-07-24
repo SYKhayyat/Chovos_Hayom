@@ -1,7 +1,14 @@
 # Chovos Hayom — Production-Readiness Assessment & Fix List
 
-> **Assessment date:** 2026-07-23 · **Commit at time of review:** `6d36596` (plus a large uncommitted working tree)
-> **Verified by:** `flutter analyze` (clean), `flutter test` (122 pass), catalog JSON validation (312 nodes / 12,092 units), and a benchmark of the derive engine.
+> **First assessment:** 2026-07-23 at `6d36596` (plus a large uncommitted working tree).
+> Verified by `flutter analyze` (clean), `flutter test` (122 pass), catalog JSON validation
+> (312 nodes / 12,092 units), and a benchmark of the derive engine. Everything it found was fixed —
+> see *Status*, then the *Verdict* section at the end for the assessment as originally written.
+>
+> **Second assessment:** 2026-07-23 at `5e92c26`, after that work landed. Verified by
+> `flutter analyze --fatal-infos` (clean), `flutter test` (254 pass), and three throwaway probes.
+> **It is still not shippable**, for one packaging reason and one data reason — see
+> *[Second review](#second-review--2026-07-23-at-5e92c26)*, which is the live fix list.
 
 ---
 
@@ -34,7 +41,12 @@ Where the README currently overclaims (backup completeness, node-level mefarshim
 
 Commits `a6c6cde` … `91fd750`. Analyzer clean under `--fatal-infos`; **254 tests** pass (was 122).
 
-Everything in this document is now done. The two items §5 left open — one error-handling policy for
+> **Read with the second review.** Every item *in the original assessment* is done. A fresh audit at
+> `5e92c26` found that two of the ticks below are wrong — §1's release signing and R8 were never
+> wired into `build.gradle.kts` — and that three fixes recurred as defects on fields added after
+> them. See *[Second review](#second-review--2026-07-23-at-5e92c26)*.
+
+The two items §5 left open — one error-handling policy for
 writes, and a routing abstraction — landed together, because they turned out to need each other: a
 failure message worth showing is one that can offer *Details*, and offering it means being able to
 name a screen.
@@ -162,6 +174,521 @@ same answer.
 
 ---
 
+---
+
+# Second review — 2026-07-23, at `5e92c26`
+
+> A fresh audit of the whole app, run against the state the *Status* section above describes as
+> done. Method: read every file in `lib/`; `flutter analyze --fatal-infos` (**clean**);
+> `flutter test` (**254 pass**); and three throwaway probes — one for the fold, one for the backup
+> validator, one benchmarking the derive engine against the real 312-node / 12,092-unit catalog.
+> Every claim below was reproduced, not inferred. Nothing in the repository was changed.
+
+## Verdict — not yet
+
+**The engineering above is real and it held up.** The derive engine is now genuinely fast (numbers
+in §P1), the single-fold discipline is enforced by tests rather than by comments, the write guard
+covers every write in `features/`, and the trust boundary, the migrations and the route table are
+better than most shipped apps. The architecture is not the problem.
+
+But it cannot ship, for one flat reason and one serious one:
+
+- **§B1 — release builds are still signed with the debug key.** The file that would fix it has
+  never been edited. It is not distributable.
+- **§C1 — un-ticking one meforish silently destroys the rest of that unit's history:** its
+  learned-on date, its chazara count, and its haara flag. In an app whose entire promise is that
+  your learning is recorded, that is the worst class of bug there is, and it is a five-line fix.
+
+Below that, three defects are the *same defect the Status section reports as fixed*, recurring on
+fields that were added afterwards. That pattern is worth more attention than any single item on
+this list — see §M at the end.
+
+---
+
+## B. Ship blockers
+
+### B1. Release builds are debug-signed. `android/app/build.gradle.kts` has never been touched.
+
+`git log -- android/app/build.gradle.kts` returns exactly one commit: `ced840c`, the Phase 0
+scaffold. The file still reads:
+
+```kotlin
+buildTypes {
+    release {
+        // TODO: Add your own signing config for the release build.
+        // Signing with the debug keys for now, so `flutter run --release` works.
+        signingConfig = signingConfigs.getByName("debug")
+    }
+}
+```
+
+Three separate claims rest on this file, and none of them are true:
+
+| Claim | Where | Reality |
+|---|---|---|
+| "Release signing from a git-ignored `key.properties`" | *Status* table, `1d4ba71` | `key.properties` is never read. `key.properties.example` was written; nothing consumes it. |
+| "(+ R8, proguard rules)" | same row | `isMinifyEnabled` is never set and `proguardFiles` is never set. `android/app/proguard-rules.pro` — written, committed, carefully commented — is referenced by nothing. |
+| "Release builds are signed from `android/key.properties`" | README §Releasing | Copying the example file and creating a keystore changes nothing at all. |
+
+CI does not catch it, and its own comment says why it thinks it does: *"A release build is where
+signing, R8 and the manifest actually get exercised."* The release build exercises the manifest.
+It exercises neither of the other two, because neither is wired to anything, and a debug-signed
+build succeeds.
+
+This is precisely the defect the *Status* section already named — *"a file being **written** is not
+the same as it being **wired**, and only the second one ships"* — written about `AndroidManifest.xml`,
+which was the *other half of the same commit*. The lesson was drawn and then not applied to the file
+sitting next to it.
+
+**Fix:** read `key.properties` in `build.gradle.kts`, fall back to debug signing when it is absent
+(the README already promises exactly that behaviour), set `isMinifyEnabled = true` and
+`proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")`. Then
+give CI something that can actually fail: assert the release APK's signer is not the debug key when
+a keystore is present, or at minimum assert `minifyEnabled` is on in the merged release config.
+
+### B2. `version: 1.0.0+1`, unchanged since scaffolding.
+
+The README's release checklist says to bump it. It has never been bumped. A first release at
+`1.0.0+1` is fine; shipping a *second* one without noticing this is not.
+
+---
+
+## C. Correctness and data integrity
+
+### C1. Un-ticking one meforish wipes the unit's date, its chazara history, and its haara flag.
+
+`FoldLog.fold`'s `undone` branch removes the named layers, and then — **unconditionally, whether or
+not anything is left** — clears the unit's review count, `doneAt`, `touchedAt`, and `annotated`
+(`lib/domain/usecases/fold_log.dart:125-137`). The guard that distinguishes a partial un-mark from a
+full one exists three lines above (`if (set.isEmpty)`) and is simply not applied to the rest.
+
+Reachable in two taps: `unit_layers_sheet.dart:99` calls `markUndone(node, unit, layers: [id])` for
+every checkbox in the per-meforish checklist.
+
+Reproduced. Mark a daf with `main`, `rashi` and `tosafos`, a haara and 45 minutes; log two chazaras;
+then un-tick Tosafos:
+
+```
+completedLayers = {main, rashi}   ← correct, the other layers survive
+doneUnits       = {2}             ← the unit is still "done"
+reviewCount     = 0               ← was 2
+doneAt          = null            ← was a date
+touchedAt       = null            ← was a date
+annotated       = false           ← the haara is still in the log
+```
+
+What the user sees, all from one un-tick of an *optional* meforish:
+
+- The grid's `↻2` chazara badge and the haara glyph both vanish. The events are still in the log;
+  nothing derived from them survives.
+- The unit **drops out of the cumulative progress chart** (`ProgressSeries.cumulative` reads
+  `doneAtByNode`) while still counting in the headline `learned` (`RollUp` reads `doneUnits`). That
+  breaks the invariant `ProgressSeries.cumulative`'s own doc comment promises: *"the line's final
+  value always equals the headline `learned` count."*
+- The unit **falls off the chazara schedule permanently** — `ChazaraSchedule.due` iterates
+  `touchedAtByNode`, and nothing will ever put it back short of un-marking and re-marking the whole
+  unit, which loses the original date anyway.
+- **A siyum can silently lose or move its date.** `SiyumFinder` dates a completed node from the
+  latest `doneAt` under it. If the erased unit was the last one finished, the mesechta's siyum
+  re-dates to an earlier daf; if a leaf loses every `doneAt` this way, `finishedOn` is null and its
+  siyum disappears despite `isComplete` being true.
+
+The intent in the comment — *"Un-marking clears the unit's review history too, so a later re-mark
+starts fresh"* — is right for a **full** un-mark. The bug is that the code never asks which kind it
+is looking at.
+
+**Fix:** clear the four metadata maps only when the completed set actually empties, i.e. inside the
+existing `if (set.isEmpty)` branch. Ship it with the reproduction above as a test — `layers_test.dart`
+already has *"undone removes only the named layers"*, and it passes today because it only ever
+asserts on `completedLayers`.
+
+### C2. Learning cycles are destroyed by *Clear settings* and are not in any backup.
+
+`PrefKeys.cycles` is in `PrefKeys.perProfile` (`core/preferences.dart:60-71`), so
+`SettingsNotifier.clearAll()` removes it. It is **not** in `SettingsNotifier.toBackup()`
+(`application/settings.dart:185-195`), which enumerates nine keys and omits this one.
+
+So, for the feature the README describes as *"Everything else — Mishna Yomi, Rambam Yomi, Amud Yomi,
+a yeshiva's seder, your own chazara programme — you **define yourself**"*:
+
+- *Clear settings* deletes every user-defined cycle, every hidden-built-in choice, and every
+  hand-made sefer-name mapping.
+- The confirmation dialog lists what it will remove — *"preferences and… your goals, custom sefarim,
+  custom mefarshim, and required-mefarshim settings"* — and does not mention cycles.
+- Export → clear → import does not bring them back, because they were never exported.
+
+This is §2b — *"goals are silently excluded from backup"* — recurring verbatim on the field added
+after §2b was fixed. The README's *"A full backup and settings export/import/clear round-trips it
+all"* is false again, for the same reason it was false before.
+
+**Fix:** add `PrefKeys.cycles` to `toBackup()`, name cycles in the confirmation, and add a test that
+asserts `toBackup().keys` covers `PrefKeys.perProfile` — so the next per-profile key added cannot
+repeat this a third time.
+
+### C3. Deleting a profile leaves all ten of its settings keys behind.
+
+`ProfilesController.delete` (`application/providers.dart:114-132`) removes the database rows and
+`PrefKeys.goalsFor(id)`. It does not touch the profile-scoped preference keys —
+`<id>/calendarMode`, `<id>/themeMode`, `<id>/reminderEnabled`, `<id>/hebrewLayout`, `<id>/sortMetric`,
+`<id>/sortDescending`, `<id>/sortLevel`, `<id>/chazaraIntervals`, `<id>/hiddenMeforishBars`, and
+`<id>/cycles`.
+
+The confirmation says *"This permanently deletes the profile and all of its learning history, custom
+sefarim, and goals."* The user's learning cycles are not learning history and not goals; they are
+simply left in `shared_preferences` forever, orphaned.
+
+This is the same defect as C2 and as §2b, in the third of three places the goals fix touched. The
+comment at `providers.dart:121` explains exactly why goals needed removing here — *"the repository's
+cascade can't reach them"* — and that reasoning applies unchanged to the ten keys next to it.
+
+**Fix:** loop `PrefKeys.perProfile` and remove `PrefKeys.scoped(id, key)`, alongside the goals key.
+
+### C4. The backup validator's cycle check does not cover override rows.
+
+`BackupValidator._validateNodes` walks parent chains only through `byId` — the backup's *own* nodes —
+and treats any parent in `knownNodeIds` as terminal (`backup_service.dart:303-318`). Custom rows
+whose id matches a built-in node are **overrides**, so a single row can re-parent a built-in beneath
+its own descendant, and every id involved is "known".
+
+Reproduced. One override row, `{id: "shas", parentId: "shas.berachos"}`, against a catalog that
+already contains both:
+
+```
+BackupValidator.validate(...)   → accepted
+Catalog(...).roots              → []
+```
+
+Zero roots. The dashboard renders an empty tree; `progressForestProvider` is empty, so
+`progressIndexProvider` is empty, so **every** `NodeScreen` and `UnitGridScreen` reads its node as
+null and shows *"This item no longer exists."* Search still lists the nodes and every result is a
+dead end. The node menu that carries *Reset to default* lives on the tree, which is gone — so the
+only route out is *Clear settings*, which (per C2) also destroys the user's cycles.
+
+The learning log is untouched and a determined user can recover, so this is not data loss. It is
+still exactly what the validator's own doc comment says it exists to prevent: *"Everything it
+rejects is something that, once in SQLite, has no in-app cure."*
+
+`InheritedLayerSet.forNode` is already defensive against this and says so. `Catalog.leavesUnder` is
+not — a cycle between two *category* nodes recurses without bound, and it is called from
+`BulkMarker._targetUnits` and `edit_cycle_screen.dart:256`.
+
+**Fix:** run the cycle check over the *merged* parent map (backup rows overlaid on the known
+catalog), not over the backup's rows alone. Make `Catalog.leavesUnder` refuse to visit a node twice
+while you are there, for the same reason `InheritedLayerSet` does.
+
+### C5. The session timer is device-wide, not per-profile.
+
+`PrefKeys.sessionTimer` is read and written unscoped (`session_timer.dart:83`, `:99-101`) and is
+absent from `PrefKeys.perProfile`. Two people sharing a device share one timer: start a session on
+Berachos daf 2, switch profiles, and the other user's dashboard shows a live session banner for a
+daf that is not theirs — and stopping it writes the duration into *their* log against *your* node.
+
+It also survives *Clear settings* (not in `perProfile`) and profile deletion (not removed anywhere).
+
+**Fix:** scope the key like every other per-profile setting.
+
+### C6. `GoalsController.build()` is the one preference read that can take the app down.
+
+```dart
+final map = jsonDecode(raw) as Map<String, dynamic>;
+return { for (final e in map.entries) e.key: DateTime.parse(e.value as String) };
+```
+
+No `try`. `CyclesController.build()` and `SessionTimerController.build()` both guard the identical
+pattern, each with a comment saying why — *"A corrupt value must never stop the app opening."* This
+one throws inside the provider, and `goalsProvider` is watched by the dashboard tiles, the unit grid
+and the Goals screen.
+
+**Fix:** the same `try`/`catch` and the same comment as its two neighbours.
+
+---
+
+## P. Performance
+
+### P1. The derive engine is fast now. The chart helpers are 40× slower than everything else combined.
+
+Benchmarked against the real catalog (312 nodes / 12,092 units), debug JIT, 5 reps after warm-up:
+
+| events | `fold` | `buildForest` | `SiyumFinder` | `ProgressSeries.cumulative` | `ProgressSeries.dailyDone` |
+|---:|---:|---:|---:|---:|---:|
+| 2,000 | 3 ms | 3 ms | 0 ms | **77 ms** | **79 ms** |
+| 8,000 | 7 ms | 2 ms | 0 ms | **393 ms** | **342 ms** |
+| 20,000 | 11 ms | 4 ms | 0 ms | **481 ms** | **409 ms** |
+
+The three things the last performance pass targeted are now genuinely cheap and stay cheap — the
+`derive_cost_test.dart` scans-counter is a good piece of work and it is holding. The cost simply
+moved somewhere nobody measured.
+
+The cause is one line, `progress_series.dart:17`:
+
+```dart
+static DateTime _dayKey(DateTime d) => DateTime(d.year, d.month, d.day);
+```
+
+Constructing a **local** `DateTime` goes through a timezone conversion. Measured, 20,000 calls:
+
+```
+local  DateTime(y, m, d)                      461 ms
+utc    DateTime.utc(y, m, d)                    2 ms      (230×)
+int    …millisecondsSinceEpoch ~/ 86400000      0 ms
+```
+
+`_dayKey` is called once per event and once per marked unit, so it *is* the runtime. And the app
+already knows this: `PaceEngine._dayNumber` and `ChazaraSchedule._dayNumber` both use the UTC
+ordinal, and `PaceEngine`'s class comment explains the choice. `ProgressSeries` — written for the
+same purpose, in the same directory — did not get it.
+
+Exposure is bounded: `statsProvider` is watched only by `StatsScreen`, so this is the Statistics
+screen taking roughly a second to open for a multi-year user (less under AOT, but linear in history
+either way, which is the wrong shape for the users you most want to keep).
+
+**Fix:** key both maps on the UTC day-ordinal `int` and materialise a `DateTime` once per *distinct
+day* instead of once per event. Cost goes from O(events) expensive constructions to O(days) cheap
+ones. Add the numbers above to `derive_cost_test.dart`'s scope so the next hotspot is caught by the
+same mechanism that caught the last one.
+
+### P2. The Notes Journal re-scans and re-sorts the whole log on every keystroke.
+
+`_NotesJournalScreenState.build` calls `_entries(events, catalog)`, which filters the entire event
+log, allocates a `_JournalEntry` per haara, and **sorts** — and `onChanged` calls `setState` on
+every character typed (`notes_journal_screen.dart:47-61`, `:78`). The sort does not depend on the
+query and is redone anyway.
+
+**Fix:** build and sort the list once (a `Provider` off `eventsProvider`, or a memo keyed on the
+event list), and let the search filter the sorted result. Debouncing is the lesser fix; not sorting
+per keystroke is the real one.
+
+### P3. Every write re-reads and re-folds the entire log.
+
+`watchEvents` streams the whole table filtered by profile, so one tap on a daf re-materialises every
+row, JSON-decodes every `layersJson`, and re-folds. This is architectural and it is a deliberate,
+defensible trade — and at 11 ms per fold at 20,000 events it is currently a non-issue. Noting it so
+it stays measured: at 100,000 events it becomes one, and P1 is what happens when the measurement
+stops.
+
+### P4. Expand-all mounts the whole tree at once.
+
+The dashboard's `ListView` is not lazy over the tree, and *Expand all* mounts ~312 tiles — each with
+a `LinearProgressIndicator` plus a per-meforish bar row — in a single frame. Expand-all is the one
+action that will jank on a mid-range phone.
+
+---
+
+## U. Features and rough edges
+
+### U1. Opening the Mefarshim sheet and pressing Save silently ends inheritance.
+
+`_MefarshimConfigSheetState.build` seeds its chips from `required.forNode(...)` / `offered.forNode(...)`,
+which are the **inherited** answers. `_save` then writes them as an explicit node-level pin. So
+opening the sheet on a mesechta to look at it, and saving without changing anything, detaches that
+mesechta from Shas — and a later change at Shas no longer reaches it. *Reset to inherited* undoes it,
+but nothing tells the user it happened.
+
+**Fix:** distinguish "inherited" from "pinned here" in the UI (a third chip state, or a header line
+reading "inherited from Shas"), and don't write a pin for a set the user never touched.
+
+### U2. The chazara list shows units that aren't complete, and units that no longer exist.
+
+`ChazaraSchedule.due` iterates `touchedAtByNode`, which carries an entry for any unit with a `done`
+event — including one where only an optional meforish was ticked and the required set is unmet. Its
+own doc says *"A unit is included only if it is currently marked done"*; it isn't checking that.
+
+It also never asks the catalog. Units on a hidden node, or above a lowered `unitCount`, stay on the
+list and in the drawer's due-count badge; `_ChazaraRow` renders them as a raw node id.
+
+**Fix:** filter `due` against the required-set resolver and against the merged catalog's ranges —
+both are already providers next door in `stats.dart`.
+
+### U3. *Reset to default* can be missing from the node menu.
+
+`ProgressTile._nodeMenu` builds `CatalogEditor(ref)` and calls `isOverridden`, which reads
+`customNodesProvider` with `ref.read(...).asData?.value ?? const []` (`catalog_editor.dart:22`).
+`read`, not `watch` — so after hiding or editing a node, the menu entry that undoes it may not appear
+until something unrelated rebuilds the tile. It is the `.asData?.value ?? const []` shape the
+*Status* section already named, in a decision path rather than a rendering one.
+
+### U4. Smaller ones.
+
+- `main()` constructs `CrashLog()` directly while `crashLogProvider` constructs another. Same file,
+  so it works, but the *Status* section's "the crash log has one owner" is one instance short. Two
+  concurrent `record` calls also read-modify-write the same file and can lose an entry.
+- `BackupValidator.maxUnitCount` is 1,000,000. A leaf that size is accepted by both the importer and
+  the add-node form; *Finish all* on it plans a million marks and writes them as one batch.
+- `_exportToFile` does not pass `allowedExtensions` to `FilePicker.saveFile`, so a Windows user can
+  save a backup with no `.json` extension and then not see it in the import dialog's filter.
+- `_Heatmap` steps days with `Duration(days: 1)` on a local `DateTime`, which shifts by an hour
+  across a DST boundary; the `DateTime(y,m,d)` normalisation afterwards can therefore skip or repeat
+  a column twice a year.
+
+---
+
+## M. The pattern worth more than the list
+
+Three of the six items in §C — C2, C3, and C4 — are the *same defect* the *Status* section reports
+as fixed, recurring on a field or a code path that was added afterwards:
+
+| Defect fixed | Where it came back |
+|---|---|
+| §2b — goals excluded from backup, orphaned on profile delete | C2 (cycles excluded from backup), C3 (ten settings keys orphaned on delete) |
+| §2c — the import path validates nothing | C4 (the validator covers backup-internal cycles, not override rows) |
+| §1 — a file written but never wired | B1 (`build.gradle.kts`, the other half of the commit whose manifest half taught this lesson) |
+
+Each original fix was correct and each was complete *for the fields that existed when it was
+written*. What is missing is the thing that makes a fix hold: a check that enumerates rather than
+lists. `toBackup()` writes out nine keys by hand next to a `PrefKeys.perProfile` list of ten;
+profile deletion removes one key by hand next to the same list. Both would be permanently correct as
+a loop over that list, and a test asserting the two agree would have failed the day `cycles` was
+added.
+
+The same shape would have caught B1: nothing in CI can distinguish "signing is configured" from
+"signing is a TODO", because the only assertion is that the build command exits zero.
+
+**The recommendation, in order:**
+
+1. **§B1** — wire signing, R8 and the proguard rules; give CI an assertion that can fail.
+2. **§C1** — the five-line fold fix, with the reproduction as a test.
+3. **§C2 + §C3** — make `toBackup()` and profile-delete loops over `PrefKeys.perProfile`, and add
+   the test that asserts they cover it.
+4. **§P1** — the one-line `_dayKey` change, and extend the cost test to cover the series helpers.
+5. **§C4, §C5, §C6** — validator over the merged parent map; scope the timer key; guard the goals read.
+6. **§U1, §U2, §P2** — the three that a user would actually notice and report.
+
+Items 1–4 are a day's work between them and take the app from "not shippable" to "shippable". The
+foundation is not in question — everything on this list is contained, and the fact that the last
+round's performance work is still holding under a fresh benchmark is the strongest evidence of that.
+
+---
+
+---
+
+## Resolution — 2026-07-24
+
+Every item of the second review is done. Analyzer clean under `--fatal-infos`; **275 tests** pass at
+this point — was 254, so 21 new, each failing on the old code and passing on the new. (The count
+reaches 293 by the end of the sections that follow.) Fixes were made at the cause, in the layer the
+item belonged to, and shipped with a test that pins the behaviour.
+
+**Ship blockers**
+
+| Item | What landed |
+|---|---|
+| §B1 | `android/app/build.gradle.kts` now reads `key.properties`, creates a release signing config from it (debug fallback when absent, as the README promised), and turns on R8 — `isMinifyEnabled`, `isShrinkResources`, `proguardFiles(...)` wiring the committed `proguard-rules.pro`. CI now asserts R8 actually ran (the `mapping.txt` R8 only emits when minify is on), so unwiring it again is a red build, not a silent one. |
+| §B2 | `version:` bumped `1.0.0+1` → `1.0.1+2`. |
+
+**Correctness and data integrity**
+
+| Item | What landed |
+|---|---|
+| §C1 | `FoldLog.fold` clears a unit's review count / `doneAt` / `touchedAt` / `annotated` **only inside `if (set.isEmpty)`** — a partial un-mark keeps the unit's history. Test: mark 3 layers + haara + 2 chazaras, un-tick one → the rest survives; un-tick the last → all cleared. |
+| §C2 | `toBackup()` includes `PrefKeys.cycles`; the *Clear settings* confirmation names cycles; import/clear invalidate `cyclesConfigProvider`. Test asserts `toBackup().keys ⊇ PrefKeys.perProfile`, so the next per-profile key can't be forgotten. |
+| §C3 | `ProfilesController.delete` loops `PrefKeys.perProfile` (plus the session timer and goals) removing each scoped key. Test: a deleted profile leaves nothing behind, a bystander keeps everything. |
+| §C4 | `BackupValidator` builds the **merged** parent map (backup rows over the known catalog) and walks that for cycles, so an override re-parenting a built-in beneath its own child is caught. `Catalog.leavesUnder` now refuses to visit a node twice. `importInto`/`validate` take `knownParents` instead of bare ids. Tests for both. |
+| §C5 | The session-timer pref key is scoped per profile; test: switching profiles shows no session, switching back finds yours. |
+| §C6 | `GoalsController.build` guards the parse in `try/catch` like its two neighbours. Tests: corrupt JSON and a bad date both yield no goals rather than a launch crash. |
+
+**Performance**
+
+| Item | What landed |
+|---|---|
+| §P1 | `ProgressSeries` groups on the UTC day-ordinal `int` and materialises a local `DateTime` once per distinct day, not once per event. Tests pin the day-collapsing behaviour the refactor must preserve. |
+| §P2 | The Notes Journal's build + sort moved into `_journalEntriesProvider`; keystrokes now only filter the pre-sorted list. |
+
+**Features and rough edges**
+
+| Item | What landed |
+|---|---|
+| §U1 | The mefarshim sheet shows *set here* / *inherited from X* / *default*, and a `_dirty` guard means opening-and-saving an untouched sheet no longer pins the inherited set. `pinnedSource` added to the layer engine, with tests. |
+| §U2 | `ChazaraSchedule.due` gates on the required set (complete units only); `chazaraDueProvider` also drops units whose node was hidden/removed or is now out of range. Tests for both. |
+| §U3 | `ProgressTile`'s node menu `watch`es `customNodesProvider` for the override check instead of the swallowing `.asData?.value ?? const []` read. |
+| §U4 | One `CrashLog` owner (`main` hands its instance to `crashLogProvider`); `record` serialises its writes so two concurrent crashes can't clobber each other (test); `maxUnitCount` lowered 1,000,000 → 100,000; the save dialog constrains to `.json`; the heatmap steps calendar days through the `DateTime` constructor, immune to DST. |
+
+**§P3 and §P4 were left open at this point** — noted rather than silently folded in. Both were
+closed shortly afterwards; see *Finishing §P3 and §P4* below.
+
+## Actually building it — 2026-07-24
+
+The suite being green says nothing about whether the app *builds*. It didn't, on either platform.
+Three ship-blockers that no test could have caught, found by running the builds and fixed:
+
+| Where | What was wrong |
+|---|---|
+| **Windows** | `windows/CMakeLists.txt` set `BINARY_NAME "Chovos Hayom"` — a CMake **target id**, which cannot contain spaces. `add_executable(${BINARY_NAME} …)` parsed it as a target `Chovos` plus a stray source `Hayom`, so the real target never existed and every `target_*` call failed. **The Windows app did not build at all.** Fixed to `chovos_hayom`; the user-facing name was already the window title in `runner/main.cpp`, which is where it belongs. |
+| **Android** | `file_picker` 11.0.2's `android/build.gradle` applies its Kotlin plugin *only when AGP < 9*, assuming AGP 9 implies built-in Kotlin. Flutter 3.44 ships `android.builtInKotlin=false`, so nothing applied Kotlin to its module, `FilePickerPlugin.kt` never compiled, and the registrant failed with "cannot find symbol". Every other flag combination breaks something else (`builtInKotlin=true` breaks `flutter_plugin_android_lifecycle`; `newDsl=true` breaks the app's own old-DSL `build.gradle.kts`). Pinned `file_picker` to **8.x** — Java Android implementation, same save/pick surface. |
+| **Android** | file_picker 8.3.7 hardcodes `compileSdk 34` while `flutter_plugin_android_lifecycle` refuses consumers below 36 (`:file_picker:checkDebugAarMetadata`). `android/build.gradle.kts` now lifts plugin subprojects to 36 — skipping `:app`, which `evaluationDependsOn(":app")` force-evaluates early, so registering an `afterEvaluate` on it throws. |
+
+**Verified, not assumed:**
+
+- **Windows** — builds; launches; loads the catalog; exits clean with **no crash-log entries**.
+- **Android** — debug **and** `--release` build. The release APK is 62.6 MB and R8 genuinely ran
+  (an 812 s build and a 6.4 MB `mapping.txt`), which is the first real confirmation that §B1's R8 +
+  proguard wiring works — and it is exactly what the new CI assertion checks. Signing correctly fell
+  back to the debug key with no `key.properties` present.
+- **Android runtime** — installed on an API 36 emulator: the dashboard renders **0 / 12,092**, the
+  tree expands to Tanach 929 · Mishnayos 535 · Shas 2,684 · Yerushalmi 2,211 · Rambam 1,628 · Tur
+  1,705 · Shulchan Aruch 1,705 · Mishna Berura 695 (summing to 12,092), with no `FATAL` / `E/flutter`
+  in logcat.
+
+Analyzer clean and **275 tests** pass against this configuration (293 once the sections below land).
+
+The lesson, which is the *Status* section's own lesson one layer out: a file being **written** isn't
+the same as it being **wired**, and a suite being **green** isn't the same as the app being
+**buildable**. Nothing in `flutter test` links a CMake target or applies a Gradle plugin.
+
+## Finishing §P3 and §P4 — 2026-07-24
+
+**§P4 — the tree renders lazily.** The dashboard was an eager `ListView` of recursive
+`ExpansionTile`s, so *Expand all* mounted every node at once. Expansion state moved onto the screen,
+the visible tree is flattened to a row list, and `ListView.builder` mounts only what is on screen.
+Expand-all now builds a screenful instead of ~312 tiles. Three widget tests guard it, one asserting
+fewer than a quarter of 421 nodes mount after expand-all. Expansion also now survives a rebuild,
+which the old epoch-bump-the-key trick destroyed by design.
+
+**§P3/§P1 — kept measured.** `derive_cost_test.dart` gained two benchmarks. The existing
+scans-counter catches *algorithmic* regressions; it cannot see a **constant-factor** one, which is
+exactly the shape §P1 had. Isolating the numbers while writing them confirmed the fix:
+
+| 20,000 events, warmed | cost |
+|---|---|
+| `cumulative` / `dailyDone` / `dailyDeltas` | 30 / 70 / 44 ms |
+| local `DateTime(y, m, d)` ×20k | **2,163 ms** |
+| UTC ordinal ×20k | **8 ms** |
+
+The thresholds sit an order of magnitude above measured cost, and the first attempt failed at 530 ms
+because it timed the *first* call — JIT compilation, not steady state. The benchmark warms up first,
+as the original one did.
+
+## What running it on a real machine turned up — 2026-07-24
+
+Three defects that only surfaced by using the app, none of which a test could have reached:
+
+- **`saveFile` wrote nothing on desktop.** After pinning file_picker to 8.x, its Windows `saveFile`
+  turns out to ignore the `bytes` argument entirely — it runs the dialog and returns a path. So
+  *Export to file* reported "Saved backup" over an empty file: a false success, the exact failure the
+  write-guard exists to prevent, reintroduced through a dependency rather than through a call site.
+  The app now writes the file itself on desktop (the plugin only does the writing on Android/iOS,
+  where it requires the bytes) and forces the `.json` suffix the import dialog filters for.
+- **Import could not restore.** `Import from file` was labelled "Restore/merge" while only merge
+  existed. Because the log is append-only, un-marking *appends* an `undone`; re-importing a backup
+  taken beforehand adds nothing (every id is present) and the later `undone` still wins, so the unit
+  stays un-marked. There is now a separate, confirmed **Restore** that makes the profile match the
+  backup by deleting what was recorded since. Merge remains the default: a replacing import would
+  destroy whichever device you imported into.
+- **The restore reported in events.** Putting a daf back means *deleting* the later `undone`, so the
+  first version said "removed 2, added 0" while a completion visibly returned. Reports are now
+  phrased in units — the derived thing the user can see — and the confirmation predicts the same
+  numbers it will later report.
+
+**Verified:** Windows builds, launches, and expand-all, export and import were exercised by hand;
+Android builds debug **and** release (R8 genuinely runs — an 812 s build and a 6.4 MB `mapping.txt`)
+and renders the full 12,092-unit tree. The Android SAF export/import path is the one branch still
+unexercised; it differs from desktop precisely because the plugin does the writing there.
+
+Analyzer clean under `--fatal-infos`; **293 tests** pass.
+
+---
+
+---
+
 ## Verdict
 
 > Everything below is the **original assessment**, kept as written so the list above can be read
@@ -255,3 +782,49 @@ Process: your working tree has ~35 modified files and 13 untracked ones uncommit
 8. Let the layered checklist carry date/duration/haara.
 
 The foundation is sound enough that all eight of these are contained changes, not rewrites — which is the real compliment to the architecture.
+
+---
+
+## Round three — 2026-07-24
+
+Assessed at the working tree above `5e92c26`. Analyzer clean under `--fatal-infos`; **329 tests**
+pass (was 293); Windows release builds and launches in both locales with no new crash-log entries.
+
+**Done**
+
+| Item | What it was |
+|---|---|
+| **Localization** | `supportedLocales: [en, he]` and a "Hebrew layout" toggle had shipped for a long time over an app whose every string was hardcoded English — the toggle mirrored the app rather than translating it. 503 messages in each locale, `nameHebrew` displayed at last, and the presentation-layer `features/common/naming.dart` so `domain/` stops deciding what things are *called*. |
+| **CI** | Pinned `FLUTTER_VERSION` (two dependencies are held back *because of* 3.44, so tracking `stable` meant testing and releasing a combination nobody chose), plus gates on stale generated localizations and on any locale missing a string — the second verified by deleting a Hebrew key and watching it fail. `permissions`, `timeout-minutes`. |
+| **Read failures** | Three screens rendered `Center(child: Text('Error: $e'))`. `features/common/error_view.dart` names what failed, says nothing was lost, retries (and recovers), and records to the crash log — which provider errors never reached, since an `AsyncValue.error` is not an uncaught exception. |
+| **Grid accessibility** | A unit cell carried its state in **colour alone** over a bare number, so the app's central screen announced itself as "2, 3, 4, 5". Now labelled, checked, and focusable. |
+| **Backup reminder** | Android auto-backup is deliberately off, which makes the app's own export the only copy that survives a lost phone — and nothing ever said so. `domain/usecases/backup_reminder.dart` counts *units* at risk, goes quiet when there is nothing unsaved however old the export, never warns an empty profile, and stamps "last exported" only after an export actually succeeds. |
+
+**Investigated, not fixed**
+
+- **`setState() called during build`**, recorded in the crash log at 11:18 on 2026-07-24 from
+  Riverpod's provider scope while an overlay was building. Could not be reproduced: three
+  reconstructions of the recorded stack — the sort sheet (which flipped the dashboard's set of
+  watched providers), the drawer, and mutating providers part-way through a route transition — all
+  pass, and are kept as `dashboard_rebuild_test.dart`. The one genuine app-side smell in that path
+  was fixed anyway: the dashboard's `sort.active ? ref.watch(…) : {}` was the app's only conditional
+  watch, and the gate moved inside `nodeLastActivityProvider` so the subscription set is stable and
+  the roll-up is still only paid for when a sort needs it. **This is not a proven fix.** If it
+  recurs, the log entry is the place to start.
+
+**Corrected from the previous assessment**
+
+- `sqlite3_flutter_libs 0.6.0+eol` was called a risk on the strength of its version string. It is
+  the opposite: an intentionally *empty* marker package asserting the app has migrated to the
+  hooks-based `sqlite3` 3.x, depended on by `drift_flutter` itself. Removed from `pubspec.yaml`
+  (it still resolves transitively) so the line stops inviting the same wrong conclusion.
+
+**Still open**
+
+- The Hebrew *wording* wants a native reader; the machinery is complete and tested, but complete and
+  grammatical is not the same as idiomatic. Everything is in `lib/l10n/app_he.arb`.
+- The bundled catalog's 312 sefer names have no `nameHebrew`, so sefarim read as transliterations
+  under a Hebrew locale. The mechanism works; it needs the data.
+- The RTL layout has been *run* but not *looked at*. Overflow, mirrored chevrons and numbers inside
+  RTL sentences are exactly what tests miss.
+- Windows has no code signing or installer.

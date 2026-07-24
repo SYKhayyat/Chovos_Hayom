@@ -24,7 +24,8 @@ Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Dr
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 **Stack:** Flutter · Riverpod · Drift (SQLite) · `fl_chart` (charts) · `kosher_dart` (Hebrew
-calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_provider` (crash log).
+calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_provider` (crash log) ·
+`flutter_localizations` + `gen-l10n` (English/Hebrew).
 
 ## Status
 
@@ -38,6 +39,9 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
 | **5 — Hardening+** | Migration strategy, correctness fixes, cycles, chazara scheduling, siyumim, time analytics, RTL, file backup, full data management | ✅ Done |
 | **6 — Depth** | Haaros + Notes Journal, tree sorting, **mefarshim as per-daf layers** (custom + configurable required sets), chazara as first-class passes, full node editability (edit/hide/reset/clone **any** node, named units, attach-anywhere), settings export/import/clear | ✅ Done |
 | **7 — Production readiness** | Durable bulk undo, validated + atomic import, one-pass derive engine, per-profile settings, configurable learning cycles, release signing + icon + CI + crash log, one write-error policy, named routes + deep links | ✅ Done |
+| **8 — Shipping it** | Partial-un-mark data-loss fix, backup covers every per-profile key, profile-delete cleanup, override-cycle validation, day-ordinal series keying, lazy tree rendering, real restore-from-backup — and the app actually **built and run** on Windows and Android | ✅ Done |
+| **9 — Speaking Hebrew** | Full English/Hebrew localization (the toggle translates rather than mirrors), `nameHebrew` finally displayed, screen-reader labels on the unit grid, a real error view with retry behind every failed read, and CI that pins its toolchain and fails on a stale or incomplete string table | ✅ Done |
+| **10 — Not losing it** | A backup reminder that counts what is genuinely at risk, so the "everything stays on your device" promise stops being a silent single point of failure | ✅ Done |
 
 ### What works today
 - Expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur, Shulchan
@@ -71,15 +75,33 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   repeats. One-tap logging for whatever today calls for — and if a cycle names a sefer your catalog
   spells differently, you can **link it by hand** instead of hitting a dead end.
 - **Chazara scheduling**: a spaced-repetition list of units **due for review**, most-overdue first,
-  with a due-count badge; reviewing pushes the next date out.
+  with a due-count badge; reviewing pushes the next date out. Only units that are actually complete
+  appear — ticking an optional meforish doesn't put a half-learned daf on the list — and a unit whose
+  sefer you've since hidden or shrunk drops off rather than lingering as a dead row.
 - **Siyumim at every level**: a running, auto-derived list of everything you've **completed** — a
   mesechta, a seder, Nach, or Shas itself — each dated by its final unit, with the bigger siyumim
   marked as such.
 - **Time analytics**: total time learned and time-this-month, from logged session durations.
+- **Import merges; Restore replaces.** Two separate actions, because they answer different
+  questions. *Import* adds whatever a backup has that you don't and never removes anything — so
+  re-importing a backup you already have reports "already up to date" rather than a bare "0". But the
+  log is append-only: un-marking a daf *appends* an `undone`, it doesn't delete the `done`. So a
+  merge can never undo something you did after the backup — every id in the file is already present,
+  and your later `undone` still wins. *Restore* is the one that puts it back: it makes the profile
+  exactly match the backup, removing what was recorded since. Both report in the terms you can see —
+  "1 unit is marked again; 1 unit is no longer marked" — and restore tells you exactly what it will
+  change *before* it changes it, because putting a daf back is done by deleting an event, so an
+  event-level tally would read "removed 2, added 0" while a completion visibly returns.
 - **Full data management**: **file** (and clipboard) export/import, **delete/rename profiles**,
   **delete custom sefarim**, undo on goal removal, and expand-all / collapse-all for the tree
   (which now starts collapsed).
-- **Optional Hebrew (RTL) layout** toggle, alongside the Hebrew/secular calendar and light/dark theme.
+- **The app speaks Hebrew.** One toggle switches every string in it — screens, menus,
+  confirmations, error messages, the sentence a failed write reports itself with — into Hebrew, and
+  lays the app out right-to-left. It used to flip the direction and localize Material's own date
+  pickers while leaving the app's own text in English, which is a mirror, not a translation. Sefarim
+  and mefarshim are shown by their Hebrew names where they have one (רש״י, תוספות) and by the name
+  they do have where they don't, so a partly-named catalog reads as it always did rather than as
+  blanks. Alongside the separate Hebrew/secular **calendar** toggle and light/dark theme.
 - **Mefarshim as layers**: mark a daf done per-meforish (Gemara, Rashi, Tosafos, or your own
   custom mefarshim); a unit is "done" only once its *required* mefarshim are learned. Required
   sets are configured at any node and inherited down (default is text-only, so existing progress is
@@ -112,19 +134,36 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
 - **Per-profile settings**: calendar, theme, RTL, sort, chazara intervals, meforish bars and cycles
   all belong to the profile rather than the device, so two people sharing one get their own.
 - **Mefarshim configurable at any node**: pin a required/available set on Shas, on a seder, on one
-  mesechta, or on a single daf, and it inherits down until something nearer overrides it. Logging
-  a meforish carries the same date, duration and haara as anything else.
+  mesechta, or on a single daf, and it inherits down until something nearer overrides it. The sheet
+  tells you whether what you're looking at is *set here* or *inherited from* a higher node, and
+  opening it without changing anything won't pin the inherited set as an override — so a set on Shas
+  keeps reaching a mesechta you merely glanced at. Logging a meforish carries the same date, duration
+  and haara as anything else.
 - **Everything editable**: rename, re-count, re-type, re-parent (attach anywhere), hide/delete, or
   reset **any** node — built-in or custom — via a per-profile override layer; clone a subtree's
   structure; give units real names. A full backup and settings export/import/clear round-trip it
-  all — and *Clear settings* names everything it removes (preferences, goals, custom sefarim,
-  mefarshim, required sets) before it removes any of it, leaving the learning log untouched.
+  all — learning cycles included — and *Clear settings* names everything it removes (preferences,
+  goals, learning cycles, custom sefarim, mefarshim, required sets) before it removes any of it,
+  leaving the learning log untouched.
+- **It tells you when your learning exists in only one place.** Keeping everything on the device is
+  the point (see below), and the consequence is that the app's own export is the only copy that
+  survives a lost phone — which nothing ever mentioned. Settings now shows where you stand ("last
+  exported 3 March · 41 units learned since — they exist only on this device"), and once there is
+  unsaved learning older than your chosen interval, the dashboard says so and offers the export.
+  It counts **units**, not log entries, so the number means something; it goes quiet the moment
+  there is nothing unsaved, however long ago the last export was, so a finished sefer isn't nagged
+  about forever; an empty profile is never warned at; and the "last exported" stamp is written
+  *after* the export succeeds and never on a failure or a cancel — a false "you're safe" would
+  silence the one warning that mattered. The interval is yours to set, and the whole thing is one
+  switch to turn off.
 - **Your data stays yours.** Android's automatic cloud backup is switched **off** — left on, it
   would copy the database (every daf, every haara) to your Google account by default, unasked. The
   app's own export is the only way your learning leaves the device. Imported backups are
   **validated before anything is written** and applied in one transaction, so a corrupt or
-  hand-edited file gives a clear error instead of a permanently broken app. Goals travel with the
-  backup, and deleting a profile takes its goals with it.
+  hand-edited file gives a clear error instead of a permanently broken app — including a hand-edited
+  override that would re-parent a built-in sefer beneath its own descendant and empty the tree. Goals
+  and cycles travel with the backup, and deleting a profile takes *all* of its settings with it — its
+  goals, cycles, and every per-profile preference — not just its learning history.
 - **A crash log**, on the device only, readable and copyable from Settings — so a bug that only
   happens on your phone is something you can actually report. Nothing is sent anywhere.
 - **A write either happens or it says so.** Every write the app makes goes through one guard: it is
@@ -133,6 +172,19 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   the failure is already recorded under what you were doing ("Marking Shabbos daf 2 learned").
   Nothing is fire-and-forget, so nothing can fail in silence, and a form whose save failed stays
   open with your work still in it rather than closing over something that was never written.
+- **A failed *read* says so too.** The three screens that load data used to render a raw exception
+  with no way forward, which made a database that lost a race look identical to a permanently broken
+  install. They now say what could not be loaded, say that nothing was lost (every one of them is a
+  read), offer **Try again** — which genuinely re-runs the load, and recovers — and put the failure
+  in the crash log, so the *Open crash log* they offer is not a promise of something that isn't
+  there. A provider error never reached the log before: it isn't an uncaught exception, so none of
+  the crash handlers ever saw it.
+- **The grid can be read aloud.** A unit cell shows whether it is learned through colour alone, and
+  its only text is the bare unit number — so the app's central screen announced itself to a screen
+  reader as "2, 3, 4, 5". Each cell now says what it is ("daf 2, learned", "daf 7, partly learned,
+  50%"), including its chazara count and whether it carries recorded details, and announces as a
+  checked button you can reach by keyboard. Progress bars are marked decorative, since the count
+  beside them already carries the number in words.
 - **Every screen has an address.** Screens are named routes that carry ids (`/sefer/<id>`), never
   widget objects — which is what makes deep links, notification taps and Android's state
   restoration possible at all, and what makes a rename show up on a screen that is already open.
@@ -140,34 +192,101 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   sefer's grid with the dashboard behind it, and a path the app doesn't serve says so rather than
   showing a blank screen. (A private scheme, not an `https` App Link — claiming a domain you don't
   own is how a link ends up opening someone else's app.)
-- 254 tests covering the engine, layer fold + required/offered-set resolution, per-meforish roll-up,
+- 329 tests covering the engine, layer fold + required/offered-set resolution (including that
+  un-ticking one meforish never wipes the rest of a unit's history), per-meforish roll-up,
   bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
-  reminders, backup validation, chazara scheduling, siyumim, learning cycles, the session timer,
-  per-profile settings, schema migrations, derive-engine cost, the write guard + route table, and UI.
+  reminders, backup validation (including override-row parent cycles), chazara scheduling (complete
+  units only), siyumim, learning cycles, the per-profile session timer, per-profile settings + their
+  backup coverage and profile-delete cleanup, restore-vs-merge (including that a merge *cannot* undo
+  an un-mark and a restore can), schema migrations, derive-engine cost — both the scans-counter and
+  two benchmarks that catch constant-factor regressions — lazy tree rendering, the write guard
+  + route table, the read-failure view (that retry re-runs the load and recovers, and that a rebuild
+  does not re-log the same failure), the grid's screen-reader labels, the backup reminder (that a failed export never stamps the profile as safe, that units are counted rather than log entries, and that a profile with nothing unsaved is left alone), and translation — that Hebrew
+  changes the *words* and not only the direction, that both locales are key-for-key complete, and
+  that reports read correctly in each.
 
-## Remaining device-only work
-Almost everything is verified via `flutter test`. A few things need a real device/build to finish:
-**file export/import** (logic is wired via `file_picker`, but the native file dialogs need an
-on-device/desktop run to verify — and Windows desktop builds require **Developer Mode** enabled for
-plugin symlinks), the **generated launcher icons** (correct by construction, but worth an eyeball
-on a real launcher), the **`chovoshayom://` deep-link intent filter** (the route table it feeds is
-covered by tests, including the URI shape Android delivers, but only a real device proves the
-manifest hands it over), **OS push notifications** (intentionally left out per product decision; the
-app uses in-app nudges only), and **running on Android/desktop** (needs the platform toolchains from
-`flutter doctor`). The app targets Android + Windows; other desktop platforms are a
-`flutter create --platforms` away.
+## Platform status
+
+Both target platforms are built and run-verified:
+
+| Platform | Build | Runtime |
+|---|---|---|
+| **Windows** | `flutter build windows` ✅ | Launches, loads the catalog, no crash-log entries ✅ |
+| **Android** | debug + `--release` (R8) ✅ | Runs on API 36; tree renders 0 / 12,092 and expands ✅ |
+
+Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
+logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher
+icons** (correct by construction), the **`chovoshayom://` deep-link intent filter** (the route table
+it feeds is covered by tests, including the URI shape Android delivers, but only a real device
+proves the manifest hands it over), and **OS push notifications** (intentionally left out per
+product decision; the app uses in-app nudges only). Windows desktop builds require **Developer
+Mode** enabled for plugin symlinks. Other desktop platforms are a `flutter create --platforms` away.
+
+Still needing a native reader: **the Hebrew wording**. The machinery is complete and tested — both
+locales are key-for-key, the plurals are per-locale, and the tests assert the words change and not
+just the direction — but "complete and grammatical" is not the same as "reads the way a
+ben-Torah would say it". Worth one pass by a native speaker before release; every string is in
+`lib/l10n/app_he.arb`, which is the only file such a pass has to touch. The bundled catalog's 312
+sefer names are a separate, and separate-sized, job: `nameHebrew` is displayed wherever it is set
+(and is set for every built-in meforish), but `assets/catalog/catalog.json` carries none, so sefarim
+still read by their transliterations under a Hebrew locale.
+
+### Toolchain notes (why some versions are pinned)
+
+Two pins exist because the plugin ecosystem lags Flutter 3.44's Android defaults (AGP 9 / Gradle 9):
+
+- **`file_picker` is held at 8.x.** Version 11's `android/build.gradle` assumes "AGP 9 ⟹ built-in
+  Kotlin is on", but Flutter 3.44 ships `android.builtInKotlin=false`, so nothing applies Kotlin to
+  its module, `FilePickerPlugin.kt` never compiles, and the Android build fails outright. 8.x has a
+  Java Android implementation with the same save/pick surface this app uses. Revisit when file_picker
+  ships a Flutter-3.44-compatible release.
+- **`android/build.gradle.kts` lifts plugin subprojects to `compileSdk 36`.** file_picker 8.3.7
+  hardcodes 34, and `flutter_plugin_android_lifecycle` refuses consumers below 36.
+
+And one that looks like a problem and is not: **`sqlite3_flutter_libs 0.6.0+eol`** appears in
+`pubspec.lock`. It is not an abandoned dependency — since `sqlite3` 3.x the native library is built
+through Dart's hooks/native-assets mechanism, so that package was *emptied of all its code* and now
+exists only as a marker meaning "this app no longer uses the old Flutter-specific build scripts".
+`drift_flutter` depends on it for exactly that reason, which is why it is resolved at all; it is not
+listed in `pubspec.yaml`, so nobody has to read the `+eol` and go looking for a problem. SQLite
+itself comes from `sqlite3` 3.5.0 (the `sqlite3.dll` beside the Windows exe is built by its hook).
+
+The Windows runner's `BINARY_NAME` must stay space-free (`chovos_hayom`) — it is a CMake target id,
+and a spaced value makes `add_executable` read it as a target plus a stray source file, failing the
+build. The user-facing name is the window title in `windows/runner/main.cpp`.
 
 ## Developing
 
 ```bash
-flutter pub get
+flutter pub get               # also runs gen-l10n (pubspec: generate: true)
 dart run build_runner build   # generates Drift code
 flutter analyze               # clean
-flutter test                  # 254 tests, all green
+flutter test                  # 329 tests, all green
 ```
 
-CI runs all of the above on every push and pull request, plus a release APK build, and fails if the
-generated Drift/Riverpod code is stale.
+CI runs all of the above on every push and pull request, plus a release APK build. It fails if the
+generated Drift/Riverpod code is stale, if the generated localizations are stale, if any shipped
+locale is missing a string, or if R8 didn't actually run on the release build. The Flutter version
+is **pinned** (`FLUTTER_VERSION` in the workflow) rather than tracking `stable`: two dependencies
+are held back precisely because of that version (see *Toolchain notes*), so following `stable` would
+mean CI silently testing — and releasing — a combination nobody chose. Bump it deliberately, with
+those pins reviewed alongside.
+
+### Translating
+
+Strings live in `lib/l10n/app_en.arb` (the template) and `lib/l10n/app_he.arb`; `l10n.yaml` drives
+the codegen. Add a key to the template with a `@key` description, add its translation to every other
+locale, and run `flutter gen-l10n` — the output under `lib/l10n/generated/` is **committed**, the
+same way the Drift/Riverpod `.g.dart` files are, so a stale table fails CI instead of surfacing as a
+missing string on someone's screen. Adding a locale is `app_<code>.arb` plus a full set of keys;
+`supportedLocales` follows the generated table automatically.
+
+Two rules keep the domain out of it. `domain/` is pure Dart with no locale, so it holds only what is
+genuinely data — a unit's own name, or its number — and everything whose wording depends on the
+reader lives in `features/common/naming.dart`. And a message is one whole ARB entry, never a
+sentence glued together from a verb and a count: the bulk-action reports used to be
+`'$verb $n unit(s)'`, which is a sentence only in a language whose verb comes first and whose plural
+is an "s". Plural rules belong in the ARB, where each locale states its own.
 
 `analysis_options.yaml` goes past the `flutter_lints` defaults: `strict-casts` and
 `strict-raw-types` (an implicit `dynamic` is how a wrong-typed field becomes a crash three layers

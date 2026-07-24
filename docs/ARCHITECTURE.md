@@ -125,8 +125,12 @@ lib/
     mappers/          row <-> entity
   features/        self-contained feature modules (see §10); each owns its
                    presentation + application (Riverpod notifiers/providers).
-    common/           the one write guard + the "this id no longer exists" screen
+    common/           the one write guard, the one read-failure view, the
+                      "this id no longer exists" screen, and naming.dart —
+                      every domain value that has to become words
     dashboard/  tree/  logging/  stats/  goals/  cycles/  profiles/  search/  settings/
+  l10n/            app_en.arb + app_he.arb (source) and generated/ (committed
+                   output, diffed by CI the same way the .g.dart files are)
   main.dart
 assets/
   catalog/          shas.json, tanach.json, rambam.json, ... + catalog_index.json
@@ -173,11 +177,11 @@ re-emits → dashboard re-renders. No manual refresh plumbing (the legacy app wa
 | Hebrew/secular calendar toggle | `kosher_dart`; a display layer over every DateTime |
 | Custom cycles / rolling averages | `PaceEngine` windows + `Predictor` |
 | Multiple local profiles | `profileId` designed in from day 0 |
-| Expandable tree view | replaces legacy drill-down; one reactive widget |
+| Expandable tree view | replaces legacy drill-down; the visible tree is **flattened** to rows and fed to a `ListView.builder`, so only what is on screen is built (see §10) |
 | Multi-criteria sorting | sort/compare over the derived tree |
 | Recommendation engine | `Predictor` (targetDate → required rate) — same code as prediction |
 | Global search | filter/query over catalog + custom nodes (Drift FTS optional) |
-| Export/import | serialize the event log + custom nodes + settings (versioned JSON) |
+| Export/import | serialize the event log + custom nodes + settings (versioned JSON). **Import merges; restore replaces** — see §10 |
 | Undo/redo | inverse events / log tail — falls out of the architecture |
 | Single source of truth | derive `learned`; storing it is impossible by design |
 | Reminders/notifications | Phase 4; needs `PaceEngine` to detect "behind" first |
@@ -289,3 +293,44 @@ Explicit product requirements, enforced architecturally:
   succeeds — never alongside it — a failure is recorded to the on-device `CrashLog` labelled with
   what the user was doing, and every failure reads the same way, with a *Details* action that opens
   the log. `unawaited_futures` is on precisely so nothing drifts back out of this.
+- **One policy for every failed read, too.** `features/common/error_view.dart` is the read-side
+  counterpart: it names what could not be loaded, says whether anything was lost (nothing is — these
+  are all reads), records the failure to the same `CrashLog` *once per mount*, and offers a retry
+  that re-runs the load. A provider error is not an uncaught exception, so `FlutterError.onError`
+  and the guarded zone never see one; without this they reach neither the log nor the user as
+  anything but a raw `toString`.
+- **The domain has no language.** `domain/` is pure Dart, which means it cannot decide what to
+  *call* anything. It holds what is genuinely data — a unit's own name, or its number
+  (`CatalogNode.unitDisplay`) — and everything whose wording depends on who is reading lives in
+  `features/common/naming.dart`. `unitHeading` used to build `'daf 5'` in the domain by
+  interpolating an enum's English name, which is a presentation decision taken three layers below
+  the presentation, and the reason the Hebrew toggle could only ever mirror the app rather than
+  translate it.
+- **A message is one ARB entry, not a sentence assembled at the call site.** The bulk reports were
+  built as `'$verb $n unit(s)'`; that is a sentence only in a language whose verb comes first and
+  whose plural is an "s". Each action supplies its whole message and each locale states its own
+  plural rules, which is also what lets `12,092` be grouped by the locale rather than by a
+  hand-rolled thousands helper.
+- **Import merges; restore replaces — and only one of them can undo.** The log is append-only, so
+  un-marking a unit *appends* an `undone` rather than deleting the `done`. A merge therefore cannot
+  reverse anything done after a backup: every id in the file is already present, so nothing is added,
+  while the later `undone` still wins. Making a profile match a backup means **deleting** the events
+  recorded since it — which is why restore is a separate, confirmed action rather than a flag on
+  import. Merge stays the default because a replacing import would destroy whichever device you
+  imported *into*.
+- **Report in units; the log is internal.** A restore that puts a daf back does it by deleting an
+  event, never adding one, so an event-level tally reads "removed 2, added 0" at the moment the user
+  watches a completion return. Anything user-facing is phrased in the derived thing they can see —
+  units marked — not in log entries. The same rule is why "0 new events" now explains *which* kind
+  of nothing it was.
+- **The tree renders lazily.** The dashboard flattens the *visible* tree (a node, then its children
+  only if expanded) into a row list and feeds `ListView.builder`. Expansion state lives on the
+  screen rather than inside each tile, which is what makes flattening possible — and means
+  *Expand all* builds a screenful of rows instead of mounting all ~312 tiles, each with a progress
+  bar and a per-meforish bar row, in one frame.
+- **Group calendar days by a UTC ordinal, not a local `DateTime`.** Constructing a *local*
+  `DateTime(y, m, d)` forces a timezone conversion roughly 230× more expensive than the UTC form
+  (measured: 2,163 ms vs 8 ms per 20,000). Anything that buckets the log by day keys on the integer
+  ordinal and materialises one `DateTime` per *distinct day*. `derive_cost_test.dart` guards this:
+  the scans-counter catches algorithmic regressions, and two benchmarks catch constant-factor ones,
+  which is the shape this bug had.
