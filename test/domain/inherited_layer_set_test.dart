@@ -100,6 +100,25 @@ void main() {
     });
   });
 
+  group('pinnedSource distinguishes "set here" from "inherited" from "default"', () {
+    test('names the nearest configured ancestor, or the node itself', () {
+      final s = setWith(nodeConfig: {
+        'shas': {'main', 'rashi'}
+      });
+      expect(s.pinnedSource('shas.moed.shabbos'), 'shas');
+      expect(s.pinnedSource('shas'), 'shas');
+    });
+
+    test('is null when nothing is configured up the chain', () {
+      expect(setWith().pinnedSource('shas.moed.shabbos'), isNull);
+    });
+
+    test('terminates on a parent cycle rather than hanging', () {
+      final s = setWith(parentOf: const {'a': 'b', 'b': 'a'});
+      expect(s.pinnedSource('a'), isNull);
+    });
+  });
+
   test('repeated lookups memoize the whole chain', () {
     final s = setWith(nodeConfig: {
       'shas': {'main', 'rashi'}

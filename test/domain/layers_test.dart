@@ -60,6 +60,61 @@ void main() {
       ]);
       expect(fold.completedLayers('a', 2), {'main'});
     });
+
+    test('un-ticking one meforish keeps the unit’s date, chazaras and haara', () {
+      // The data-loss trap: un-marking an *optional* meforish wiped the review
+      // count, the learned-on date and the haara of a unit that is still done.
+      final fold = FoldLog.fold([
+        LearningEvent(
+          id: 'd0',
+          profileId: 'p',
+          nodeId: 'a',
+          unitIndex: 2,
+          action: EventAction.done,
+          occurredAt: DateTime(2026, 1, 1),
+          loggedAt: DateTime(2026, 1, 1),
+          layers: const ['main', 'rashi', 'tosafos'],
+          note: 'a chiddush',
+          durationMin: 45,
+        ),
+        ev(EventAction.reviewed, seq: 1, unit: 2),
+        ev(EventAction.reviewed, seq: 2, unit: 2),
+        // Un-tick only Tosafos — main and rashi survive.
+        ev(EventAction.undone, seq: 3, unit: 2, layers: ['tosafos']),
+      ]);
+
+      expect(fold.completedLayers('a', 2), {'main', 'rashi'});
+      expect(fold.reviewCount('a', 2), 2, reason: 'chazaras must not vanish');
+      expect(fold.doneAt('a', 2), isNotNull, reason: 'the learned-on date survives');
+      expect(fold.touchedAt('a', 2), isNotNull);
+      expect(fold.isAnnotated('a', 2), isTrue, reason: 'the haara survives');
+    });
+
+    test('un-ticking the last meforish clears the unit’s history', () {
+      // A *full* un-mark still resets everything, so a later re-mark starts fresh.
+      final fold = FoldLog.fold([
+        LearningEvent(
+          id: 'd0',
+          profileId: 'p',
+          nodeId: 'a',
+          unitIndex: 2,
+          action: EventAction.done,
+          occurredAt: DateTime(2026, 1, 1),
+          loggedAt: DateTime(2026, 1, 1),
+          layers: const ['main', 'rashi'],
+          note: 'note',
+          durationMin: 10,
+        ),
+        ev(EventAction.reviewed, seq: 1, unit: 2),
+        ev(EventAction.undone, seq: 2, unit: 2, layers: ['main', 'rashi']),
+      ]);
+
+      expect(fold.completedLayers('a', 2), isEmpty);
+      expect(fold.reviewCount('a', 2), 0);
+      expect(fold.doneAt('a', 2), isNull);
+      expect(fold.touchedAt('a', 2), isNull);
+      expect(fold.isAnnotated('a', 2), isFalse);
+    });
   });
 
   group('LayerRequirements resolution', () {

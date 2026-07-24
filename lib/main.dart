@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/routes.dart';
@@ -8,16 +7,27 @@ import 'application/providers.dart';
 import 'application/settings.dart';
 import 'application/stats.dart';
 import 'data/preferences/shared_prefs_preferences.dart';
+import 'l10n/generated/app_localizations.dart';
 
 Future<void> main() async {
+  // One crash log for the whole app. It has to exist before the ProviderScope
+  // (the startup guard needs it), so it is built here and then handed to
+  // `crashLogProvider` as an override — otherwise `main` would guard one
+  // instance while the write guard and Settings screen read a second, and the
+  // "the failure is already in the log under what you were doing" promise would
+  // land on the wrong file.
+  final crashLog = CrashLog();
   // Everything runs inside the crash guard, so a failure during startup — the
   // hardest kind to diagnose from a user's description — is recorded too.
-  await CrashLog().guard(() async {
+  await crashLog.guard(() async {
     WidgetsFlutterBinding.ensureInitialized();
     final prefs = await SharedPrefsPreferences.load();
     runApp(
       ProviderScope(
-        overrides: [appPreferencesProvider.overrideWithValue(prefs)],
+        overrides: [
+          appPreferencesProvider.overrideWithValue(prefs),
+          crashLogProvider.overrideWithValue(crashLog),
+        ],
         child: const ChovosHayomApp(),
       ),
     );
@@ -55,7 +65,9 @@ class _ChovosHayomAppState extends ConsumerState<ChovosHayomApp> {
     final hebrewLayout =
         ref.watch(settingsProvider.select((s) => s.hebrewLayout));
     return MaterialApp(
-      title: 'Chovos Hayom',
+      // `onGenerateTitle`, not `title`: the task-switcher label is a localized
+      // string, and a plain `title` is resolved before any Localizations exist.
+      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       themeMode: themeMode,
       // Named routes, not `home:` — see lib/app/routes.dart. The restoration
       // scope is what lets Android rebuild this stack after killing the process
@@ -66,15 +78,14 @@ class _ChovosHayomAppState extends ConsumerState<ChovosHayomApp> {
       onGenerateRoute: AppRouter.onGenerateRoute,
       onGenerateInitialRoutes: AppRouter.onGenerateInitialRoutes,
       onUnknownRoute: AppRouter.onUnknownRoute,
-      // Optional Hebrew (RTL) layout: a 'he' locale flips direction app-wide and
-      // localizes the Material date pickers/dialogs. Null = system default (LTR).
+      // The Hebrew toggle is a real language switch: a 'he' locale now selects
+      // the Hebrew string table as well as flipping direction and localizing the
+      // Material date pickers. Until the app's own text was translated this
+      // setting produced right-to-left *English*, which is the half-measure it
+      // was built to avoid. Null = follow the system, falling back to English.
       locale: hebrewLayout ? const Locale('he') : null,
-      supportedLocales: const [Locale('en'), Locale('he')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       theme: ThemeData(
         colorSchemeSeed: const Color(0xFF3B5BA5),
         useMaterial3: true,

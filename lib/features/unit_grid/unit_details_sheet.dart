@@ -8,7 +8,9 @@ import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/entities/learning_event.dart';
 import '../../domain/usecases/unit_history.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
+import '../common/naming.dart';
 import 'add_chazara_sheet.dart';
 import 'log_unit_sheet.dart';
 
@@ -44,6 +46,7 @@ class _UnitDetailsSheet extends ConsumerWidget {
     final mode = ref.watch(settingsProvider).calendar;
     final theme = Theme.of(context);
     final done = history.done;
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: Padding(
@@ -53,29 +56,31 @@ class _UnitDetailsSheet extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${node.name} · ${node.unitHeading(unit)}',
+              Text(nodeAndUnit(l10n, node, unit),
                   style: theme.textTheme.titleLarge),
               const SizedBox(height: 12),
               if (done == null)
-                Text('Not learned yet.', style: theme.textTheme.bodyLarge)
+                Text(l10n.detailsNotLearnedYet,
+                    style: theme.textTheme.bodyLarge)
               else ...[
                 _DetailRow(
                   icon: Icons.event_available,
-                  label: 'Finished',
+                  label: l10n.detailsFinished,
                   value: DateDisplay.formatWithTime(done.occurredAt, mode),
                 ),
                 _DetailRow(
                   icon: Icons.timer_outlined,
-                  label: 'Time to learn',
+                  label: l10n.detailsTimeToLearn,
                   value: done.durationMin != null
-                      ? _fmtMinutes(done.durationMin!)
-                      : 'Not recorded',
+                      ? formatMinutes(l10n, done.durationMin!)
+                      : l10n.detailsNotRecorded,
                 ),
                 _DetailRow(
                   icon: Icons.refresh,
-                  label: 'Chazara passes',
-                  value:
-                      history.reviewCount == 0 ? 'None yet' : '${history.reviewCount}',
+                  label: l10n.detailsChazaraPasses,
+                  value: history.reviewCount == 0
+                      ? l10n.detailsNoneYet
+                      : '${history.reviewCount}',
                 ),
                 if (history.reviews.isNotEmpty)
                   Padding(
@@ -90,9 +95,9 @@ class _UnitDetailsSheet extends ConsumerWidget {
                   ),
                 _DetailRow(
                   icon: Icons.lightbulb_outline,
-                  label: 'Haara',
+                  label: l10n.detailsHaara,
                   value: (done.note == null || done.note!.isEmpty)
-                      ? 'No haara'
+                      ? l10n.detailsNoHaara
                       : done.note!,
                 ),
                 const SizedBox(height: 16),
@@ -102,18 +107,18 @@ class _UnitDetailsSheet extends ConsumerWidget {
                   children: [
                     FilledButton.icon(
                       icon: const Icon(Icons.edit, size: 18),
-                      label: const Text('Edit details'),
+                      label: Text(l10n.detailsEdit),
                       onPressed: () => _edit(context, ref, history),
                     ),
                     FilledButton.tonalIcon(
                       icon: const Icon(Icons.refresh, size: 18),
-                      label: const Text('Add chazara'),
+                      label: Text(l10n.detailsAddChazara),
                       onPressed: () =>
                           showAddChazaraSheet(context, ref, node: node, unit: unit),
                     ),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.undo, size: 18),
-                      label: const Text('Un-mark'),
+                      label: Text(l10n.detailsUnmark),
                       onPressed: () => _unmark(context, ref),
                     ),
                   ],
@@ -131,23 +136,26 @@ class _UnitDetailsSheet extends ConsumerWidget {
   Future<void> _unmark(BuildContext context, WidgetRef ref) async {
     final logger = ref.read(loggingServiceProvider);
     final guard = WriteGuard.of(context, ref);
+    final l10n = AppLocalizations.of(context);
     Navigator.of(context).pop();
     await guard.run(() => logger.markUndone(node.id, unit),
-        what: 'Un-marking ${node.name} · ${node.unitHeading(unit)}');
+        what: l10n.whatUnmarking(nodeAndUnit(l10n, node, unit)));
   }
 
   Widget _chazaraLine(BuildContext context, WidgetRef ref, int n,
       LearningEvent review, CalendarMode mode) {
+    final l10n = AppLocalizations.of(context);
     final allLayers = ref.read(allLayersProvider);
-    String nameOf(String id) => allLayers
-        .firstWhere((l) => l.id == id, orElse: () => Layer(id: id, name: id))
-        .name;
+    String nameOf(String id) => layerName(
+        l10n,
+        allLayers.firstWhere((l) => l.id == id,
+            orElse: () => Layer(id: id, name: id)));
     final mefarshim =
         review.layers.where((l) => l != mainLayerId).map(nameOf).toList();
     final head = <String>[
-      'Pass $n',
+      l10n.chazaraPass(n),
       DateDisplay.format(review.occurredAt, mode),
-      if (review.durationMin != null) '${review.durationMin}m',
+      if (review.durationMin != null) l10n.minutesShort(review.durationMin!),
       if (mefarshim.isNotEmpty) mefarshim.join(', '),
     ].join(' · ');
     final theme = Theme.of(context);
@@ -172,13 +180,15 @@ class _UnitDetailsSheet extends ConsumerWidget {
     if (done == null) return;
     final logger = ref.read(loggingServiceProvider);
     final guard = WriteGuard.of(context, ref);
+    final l10n = AppLocalizations.of(context);
+    final heading = nodeAndUnit(l10n, node, unit);
     final result = await showLogUnitSheet(
       context,
-      title: 'Edit · ${node.name} · ${node.unitHeading(unit)}',
+      title: l10n.detailsEditTitle(heading),
       initialOccurredAt: done.occurredAt,
       initialDurationMin: done.durationMin,
       initialNote: done.note,
-      saveLabel: 'Save changes',
+      saveLabel: l10n.logSheetSaveChanges,
     );
     if (result == null) return;
     await guard.run(
@@ -189,15 +199,8 @@ class _UnitDetailsSheet extends ConsumerWidget {
         durationMin: result.durationMin,
         note: result.note,
       ),
-      what: 'Saving the details for ${node.name} · ${node.unitHeading(unit)}',
+      what: l10n.whatSavingDetails(heading),
     );
-  }
-
-  static String _fmtMinutes(int minutes) {
-    if (minutes < 60) return '$minutes min';
-    final h = minutes ~/ 60;
-    final m = minutes % 60;
-    return m == 0 ? '${h}h' : '${h}h ${m}m';
   }
 }
 

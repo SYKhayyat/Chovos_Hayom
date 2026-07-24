@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
+import '../support/localized_app.dart';
 import '../support/in_memory_progress_repository.dart';
 
 LearningEvent done(int unit, DateTime day) => LearningEvent(
@@ -35,7 +36,7 @@ void main() {
           progressRepositoryProvider.overrideWithValue(repo),
           clockProvider.overrideWithValue(() => clock),
         ],
-        child: const MaterialApp(home: StatsScreen()),
+        child: localizedApp(home: const StatsScreen()),
       ),
     );
     await tester.pumpAndSettle();

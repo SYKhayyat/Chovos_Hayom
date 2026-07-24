@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../common/naming.dart';
 
 /// The list of siyumim, most recent first — a running record of what you've
 /// been maslim.
@@ -18,19 +20,15 @@ class SiyumScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final siyumim = ref.watch(siyumimProvider);
     final mode = ref.watch(settingsProvider).calendar;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Siyumim')),
+      appBar: AppBar(title: Text(l10n.siyumTitle)),
       body: siyumim.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text(
-                  'No siyumim yet.\n'
-                  'Finish every unit of a sefer — or of a whole seder — and it '
-                  'will appear here. חזק!',
-                  textAlign: TextAlign.center,
-                ),
+                padding: const EdgeInsets.all(32),
+                child: Text(l10n.siyumEmpty, textAlign: TextAlign.center),
               ),
             )
           : ListView(
@@ -38,7 +36,7 @@ class SiyumScreen extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Text(
-                    '${siyumim.length} siyum${siyumim.length == 1 ? '' : 'im'} — יישר כח!',
+                    l10n.siyumCount(siyumim.length),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
@@ -52,15 +50,19 @@ class SiyumScreen extends ConsumerWidget {
                       size: s.isCategory ? 30 : 24,
                     ),
                     title: Text(
-                      s.node.name,
+                      nodeName(l10n, s.node),
                       style: s.isCategory
                           ? const TextStyle(fontWeight: FontWeight.bold)
                           : null,
                     ),
                     subtitle: Text(
-                        'Completed ${DateDisplay.format(s.completedOn, mode)} · '
-                        '${s.units} ${s.node.unitLabel?.name ?? 'unit'}s'
-                        '${s.isCategory ? ' · everything underneath' : ''}'),
+                        l10n.siyumCompleted(
+                              DateDisplay.format(s.completedOn, mode),
+                              unitCount(l10n, s.units, s.node.unitLabel),
+                            ) +
+                            (s.isCategory
+                                ? l10n.siyumEverythingUnderneath
+                                : '')),
                   ),
               ],
             ),

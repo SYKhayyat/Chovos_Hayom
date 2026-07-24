@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/calendar.dart';
 import '../core/preferences.dart';
+import '../domain/usecases/backup_reminder.dart';
 import '../domain/usecases/chazara_schedule.dart';
 import 'providers.dart';
 import 'sorting.dart';
@@ -17,11 +18,21 @@ class SettingsState {
     this.sort = const SortConfig(),
     this.chazaraIntervals = ChazaraSchedule.defaultIntervals,
     this.hiddenMeforishBars = const {},
+    this.backupReminderEnabled = true,
+    this.backupIntervalDays = BackupReminder.defaultIntervalDays,
   });
 
   final CalendarMode calendar;
   final ThemeMode themeMode;
   final bool reminderEnabled;
+
+  /// Whether to point out that there is learning no export contains. Defaults
+  /// **on**: the export is the only copy that survives a lost device, so the
+  /// safe default is the one that speaks up.
+  final bool backupReminderEnabled;
+
+  /// Days of unsaved learning tolerated before the reminder appears.
+  final int backupIntervalDays;
 
   /// When true, the whole app renders in Hebrew (right-to-left) layout. Optional.
   final bool hebrewLayout;
@@ -47,6 +58,8 @@ class SettingsState {
     SortConfig? sort,
     List<int>? chazaraIntervals,
     Set<String>? hiddenMeforishBars,
+    bool? backupReminderEnabled,
+    int? backupIntervalDays,
   }) =>
       SettingsState(
         calendar: calendar ?? this.calendar,
@@ -56,6 +69,9 @@ class SettingsState {
         sort: sort ?? this.sort,
         chazaraIntervals: chazaraIntervals ?? this.chazaraIntervals,
         hiddenMeforishBars: hiddenMeforishBars ?? this.hiddenMeforishBars,
+        backupReminderEnabled:
+            backupReminderEnabled ?? this.backupReminderEnabled,
+        backupIntervalDays: backupIntervalDays ?? this.backupIntervalDays,
       );
 }
 
@@ -115,7 +131,17 @@ class SettingsNotifier extends Notifier<SettingsState> {
       ),
       chazaraIntervals: _parseIntervals(_get(PrefKeys.chazaraIntervals)),
       hiddenMeforishBars: _parseIdSet(_get(PrefKeys.hiddenMeforishBars)),
+      // Absent reads as ON — an install that predates this setting is exactly
+      // the one whose learning has never been exported.
+      backupReminderEnabled: _get(PrefKeys.backupReminderEnabled) != 'false',
+      backupIntervalDays: _parsePositive(_get(PrefKeys.backupIntervalDays),
+          fallback: BackupReminder.defaultIntervalDays),
     );
+  }
+
+  static int _parsePositive(String? raw, {required int fallback}) {
+    final n = int.tryParse(raw?.trim() ?? '');
+    return (n == null || n <= 0) ? fallback : n;
   }
 
   static Set<String> _parseIdSet(String? raw) {
@@ -171,6 +197,17 @@ class SettingsNotifier extends Notifier<SettingsState> {
     state = state.copyWith(reminderEnabled: enabled);
   }
 
+  Future<void> setBackupReminderEnabled(bool enabled) async {
+    await _set(PrefKeys.backupReminderEnabled, enabled.toString());
+    state = state.copyWith(backupReminderEnabled: enabled);
+  }
+
+  Future<void> setBackupIntervalDays(int days) async {
+    final effective = days > 0 ? days : BackupReminder.defaultIntervalDays;
+    await _set(PrefKeys.backupIntervalDays, effective.toString());
+    state = state.copyWith(backupIntervalDays: effective);
+  }
+
   Future<void> setCalendar(CalendarMode mode) async {
     await _set(PrefKeys.calendarMode, mode.name);
     state = state.copyWith(calendar: mode);
@@ -182,6 +219,11 @@ class SettingsNotifier extends Notifier<SettingsState> {
   }
 
   /// Serialise all preferences (for a backup), keyed by their pref keys.
+  ///
+  /// This must cover every key in [PrefKeys.perProfile]; a missing one is a
+  /// per-profile setting that silently doesn't survive export → clear → import.
+  /// `settings_test.dart` asserts the coverage so the next key added here can't
+  /// be forgotten — cycles were, once.
   Map<String, dynamic> toBackup() => {
         PrefKeys.calendarMode: state.calendar.name,
         PrefKeys.themeMode: state.themeMode.name,
@@ -192,6 +234,16 @@ class SettingsNotifier extends Notifier<SettingsState> {
         PrefKeys.sortLevel: state.sort.level?.toString() ?? '',
         PrefKeys.chazaraIntervals: state.chazaraIntervals.join(','),
         PrefKeys.hiddenMeforishBars: state.hiddenMeforishBars.join(','),
+        PrefKeys.backupReminderEnabled: state.backupReminderEnabled.toString(),
+        PrefKeys.backupIntervalDays: state.backupIntervalDays.toString(),
+        // Learning cycles aren't part of SettingsState — CyclesController owns
+        // them — but they are a per-profile preference, so they travel with the
+        // backup like the rest. Read straight from the pref; '' for a profile
+        // with no cycles yet, which imports back as "no cycles".
+        PrefKeys.cycles: ref
+                .read(appPreferencesProvider)
+                .getString(PrefKeys.scoped(_profileId, PrefKeys.cycles)) ??
+            '',
       };
 
   /// Apply a serialised preferences map (from an imported backup) to the active

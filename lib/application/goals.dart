@@ -17,10 +17,19 @@ class GoalsController extends Notifier<Map<String, DateTime>> {
     final profileId = ref.watch(activeProfileProvider);
     final raw = ref.watch(appPreferencesProvider).getString(_key(profileId));
     if (raw == null || raw.isEmpty) return {};
-    final map = jsonDecode(raw) as Map<String, dynamic>;
-    return {
-      for (final e in map.entries) e.key: DateTime.parse(e.value as String),
-    };
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      return {
+        for (final e in map.entries) e.key: DateTime.parse(e.value as String),
+      };
+    } catch (_) {
+      // A corrupt value must never stop the app opening. goalsProvider is
+      // watched by the dashboard tiles, the unit grid and the Goals screen, so
+      // a throw here takes all three down — a lost goal map is a far smaller
+      // loss than a launch failure. (Same guard, same reason, as
+      // CyclesController.build and SessionTimerController.build.)
+      return {};
+    }
   }
 
   Future<void> _persist() async {

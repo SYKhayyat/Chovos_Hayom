@@ -32,4 +32,8 @@ class OfferedLayers {
   /// otherwise the node-level set.
   Set<String> forUnit(String nodeId, int unitIndex) =>
       _set.forUnit(nodeId, unitIndex);
+
+  /// The nearest node ([nodeId] or an ancestor) with an explicit offered-set
+  /// pin, or null when the answer is the default. See [InheritedLayerSet].
+  String? pinnedSource(String nodeId) => _set.pinnedSource(nodeId);
 }

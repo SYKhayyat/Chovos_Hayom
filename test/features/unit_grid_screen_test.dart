@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
+import '../support/localized_app.dart';
 import '../support/in_memory_progress_repository.dart';
 
 /// The grid is addressed by id, which is what makes `/sefer/<id>` a route — and
@@ -19,7 +20,7 @@ void main() {
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
           progressRepositoryProvider.overrideWithValue(repo),
         ],
-        child: MaterialApp(home: UnitGridScreen(nodeId: id)),
+        child: localizedApp(home: UnitGridScreen(nodeId: id)),
       );
 
   testWidgets('the title follows a rename made while the grid is open',

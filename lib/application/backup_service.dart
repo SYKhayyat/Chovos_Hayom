@@ -29,7 +29,13 @@ class BackupData {
     this.offered = const [],
     this.settings = const {},
     this.goals = const {},
+    this.removedEvents = 0,
   });
+
+  /// How many events a *restore* deleted because the backup doesn't contain
+  /// them. Always 0 for a merge. Set on the value [BackupService.importInto]
+  /// returns, so the caller can report what it actually did.
+  final int removedEvents;
 
   final int version;
   final List<LearningEvent> events;
@@ -159,29 +165,50 @@ class BackupService {
   /// The payload is fully validated *before* anything is written (see
   /// [BackupValidator]), and the whole write runs in a transaction — so a
   /// malformed backup can neither persist a node that crashes the dashboard nor
-  /// leave half of itself behind. [knownNodeIds] are the ids the app already
-  /// knows (the bundled catalog), so a custom node parented onto a built-in one
-  /// validates.
+  /// leave half of itself behind. [knownParents] maps each id the app already
+  /// knows (the bundled catalog) to its parent, so a custom node parented onto a
+  /// built-in one validates — and so the cycle check can see a loop an *override*
+  /// row creates by re-parenting a built-in beneath its own descendant, which
+  /// knowing only the ids cannot.
   ///
   /// Returns the parsed data (so the caller can apply settings and goals, which
   /// live outside the repository) with [BackupData.events] holding only the
   /// newly-added events.
+  /// With [replace] the import is a **restore**: the profile's log is made to
+  /// match the backup exactly, which means dropping events the backup does not
+  /// contain.
+  ///
+  /// That deletion is the whole point, and merging cannot substitute for it. The
+  /// log is append-only, so un-marking a unit *adds* an `undone` event rather
+  /// than removing the `done`. Re-importing a backup taken before the un-mark
+  /// adds nothing (every id in it is already present) while the later `undone`
+  /// still wins — so the unit stays un-marked and the "restore" restores
+  /// nothing. Only removing the events recorded since the backup puts it back.
   Future<BackupData> importInto(
     String targetProfileId,
     String jsonStr, {
-    Set<String> knownNodeIds = const {},
+    Map<String, String?> knownParents = const {},
+    bool replace = false,
   }) async {
     final data = parse(jsonStr);
-    BackupValidator.validate(data, knownNodeIds: knownNodeIds);
+    BackupValidator.validate(data, knownParents: knownParents);
 
-    final existing =
-        (await _repo.getEvents(targetProfileId)).map((e) => e.id).toSet();
+    final existingEvents = await _repo.getEvents(targetProfileId);
+    final existing = existingEvents.map((e) => e.id).toSet();
     final added = [
       for (final e in data.events)
         if (!existing.contains(e.id)) _rescope(e, targetProfileId),
     ];
+    final backupIds = data.events.map((e) => e.id).toSet();
+    final stale = replace
+        ? [
+            for (final e in existingEvents)
+              if (!backupIds.contains(e.id)) e.id,
+          ]
+        : const <String>[];
 
     await _repo.transaction(() async {
+      if (stale.isNotEmpty) await _repo.removeEvents(stale);
       await _repo.addEvents(added);
       for (final n in data.customNodes) {
         await _repo.addCustomNode(targetProfileId, n);
@@ -206,6 +233,7 @@ class BackupService {
       offered: data.offered,
       settings: data.settings,
       goals: data.goals,
+      removedEvents: stale.length,
     );
   }
 
@@ -238,20 +266,24 @@ class BackupValidator {
   const BackupValidator._();
 
   /// A unit count past which a "leaf" is certainly corrupt rather than
-  /// ambitious — Shas entire is ~2,711 dapim, so a million-unit sefer is a
-  /// damaged number, and building its grid would hang the app.
-  static const maxUnitCount = 1000000;
+  /// ambitious — Shas entire is ~2,711 dapim, and even a daily habit tracked for
+  /// a lifetime is tens of thousands, so 100,000 is well beyond anything real
+  /// while still bounding what *Finish all* can plan in a single batch. Shared
+  /// with the add-node form, so the importer and the UI agree on the ceiling.
+  static const maxUnitCount = 100000;
 
   /// Throws [BackupFormatException] on the first problem found.
-  static void validate(BackupData data, {Set<String> knownNodeIds = const {}}) {
-    _validateNodes(data.customNodes, knownNodeIds);
+  static void validate(BackupData data,
+      {Map<String, String?> knownParents = const {}}) {
+    _validateNodes(data.customNodes, knownParents);
     _validateEvents(data.events);
     _validateLayers(data.customLayers);
     _validateConfigs(data.requirements, 'required-mefarshim');
     _validateConfigs(data.offered, 'offered-mefarshim');
   }
 
-  static void _validateNodes(List<CatalogNode> nodes, Set<String> known) {
+  static void _validateNodes(
+      List<CatalogNode> nodes, Map<String, String?> knownParents) {
     final byId = <String, CatalogNode>{};
     for (final n in nodes) {
       if (n.id.trim().isEmpty) {
@@ -291,29 +323,42 @@ class BackupValidator {
     for (final n in nodes) {
       final parent = n.parentId;
       if (parent == null) continue;
-      if (!byId.containsKey(parent) && !known.contains(parent)) {
+      if (!byId.containsKey(parent) && !knownParents.containsKey(parent)) {
         throw BackupFormatException(
             '“${n.name}” is filed under a sefer that does not exist '
             '(parent $parent).');
       }
     }
 
-    // Cycle check: walk each chain, bounded by the node count. A cycle is only
-    // possible among the backup's own nodes — known ids are already a valid tree.
+    // Cycle check, over the *merged* parent map — the backup's rows overlaid on
+    // the catalog the app already knows. A backup node whose id matches a
+    // built-in is an override that *replaces* that node's parent, so a single
+    // row can re-parent a built-in beneath its own descendant (`{shas ->
+    // shas.berachos}` when the catalog has `shas.berachos -> shas`). Every id in
+    // that loop is "known", so walking only the backup's own rows — as this once
+    // did — cannot see it, and the loop lands in SQLite and empties the tree.
+    //
+    // Any cycle the backup introduces must contain at least one backup node
+    // (the known catalog alone is a valid tree), so starting from each backup
+    // node and following merged parents reaches it.
+    final parentOf = <String, String?>{...knownParents};
+    for (final n in nodes) {
+      parentOf[n.id] = n.parentId;
+    }
     for (final start in nodes) {
-      var current = start.parentId;
+      var current = parentOf[start.id];
       var steps = 0;
-      while (current != null && byId.containsKey(current)) {
+      while (current != null && parentOf.containsKey(current)) {
         if (current == start.id) {
           throw BackupFormatException(
               '“${start.name}” is its own ancestor — the file has a loop in its '
               'sefer hierarchy.');
         }
-        if (++steps > byId.length) {
+        if (++steps > parentOf.length) {
           throw const BackupFormatException(
               'The custom sefer hierarchy contains a loop.');
         }
-        current = byId[current]!.parentId;
+        current = parentOf[current];
       }
     }
   }

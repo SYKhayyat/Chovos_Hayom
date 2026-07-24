@@ -1,0 +1,22 @@
+# Localization codegen (`flutter gen-l10n`, run for you by `flutter pub get`).
+#
+# The generated output is written into `lib/` and **committed**, matching how the
+# Drift/Riverpod `.g.dart` files are handled — CI regenerates and diffs, so a
+# stale translation table fails the build rather than surfacing as a missing
+# string at runtime. Naming an `output-dir` under `lib/` is what puts the
+# generated code somewhere that can be committed and diffed at all — the
+# synthetic package gen-l10n used to default to could be neither.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-dir: lib/l10n/generated
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+
+# `AppLocalizations.of(context)` returns non-null. Every screen sits under the
+# MaterialApp that installs the delegate, so the nullable form would add a `!`
+# to several hundred call sites to describe a state that cannot happen.
+nullable-getter: false
+
+# An untranslated string in a shipped locale is a defect, not a warning to
+# scroll past: this fails the build and names the missing keys.
+untranslated-messages-file: l10n_untranslated.json

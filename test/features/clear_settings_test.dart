@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
+import '../support/localized_app.dart';
 import '../support/in_memory_progress_repository.dart';
 
 /// *Clear settings* names what it removes, and removes exactly that.
@@ -59,7 +60,7 @@ void main() {
         progressRepositoryProvider.overrideWithValue(repo),
         appPreferencesProvider.overrideWithValue(prefs),
       ],
-      child: const MaterialApp(home: SettingsScreen()),
+      child: localizedApp(home: const SettingsScreen()),
     ));
     await tester.pumpAndSettle();
 
@@ -69,6 +70,10 @@ void main() {
     expect(container.read(settingsProvider).themeMode, ThemeMode.dark);
 
     await tester.scrollUntilVisible(find.text('Clear settings'), 200);
+    // scrollUntilVisible stops the moment the target is attached, which can
+    // leave it flush against the viewport edge where a tap misses it.
+    await tester.ensureVisible(find.text('Clear settings'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Clear settings'));
     await tester.pumpAndSettle();
 

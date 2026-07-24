@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
 import '../../domain/entities/layer.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// A breakdown of how much of each meforish (and the primary text) you've
 /// learned across everything — e.g. "Rashi: 240 units". Becomes meaningful once
@@ -15,6 +16,7 @@ class MefarshimProgressScreen extends ConsumerWidget {
     final stats = ref.watch(mefarshimStatsProvider);
     final layers = ref.watch(allLayersProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     Layer layerOf(String id) =>
         layers.firstWhere((l) => l.id == id, orElse: () => Layer(id: id, name: id));
@@ -24,14 +26,13 @@ class MefarshimProgressScreen extends ConsumerWidget {
         : stats.map((s) => s.learnedUnits).reduce((a, b) => a > b ? a : b);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mefarshim progress')),
+      appBar: AppBar(title: Text(l10n.mefarshimProgressTitle)),
       body: stats.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Text(
-                  'Nothing learned yet.\nAs you check off mefarshim, their totals '
-                  'appear here.',
+                  l10n.mefarshimProgressEmpty,
                   textAlign: TextAlign.center,
                 ),
               ),

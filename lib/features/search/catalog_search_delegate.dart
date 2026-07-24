@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../app/routes.dart';
 import '../../domain/entities/catalog_node.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../common/naming.dart';
 
 /// Global search across every catalog + custom node by name.
 class CatalogSearchDelegate extends SearchDelegate<void> {
@@ -39,12 +41,13 @@ class CatalogSearchDelegate extends SearchDelegate<void> {
   Widget buildSuggestions(BuildContext context) => _list(context);
 
   Widget _list(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final matches = _matches();
     if (query.trim().isEmpty) {
-      return const Center(child: Text('Search sefarim, mesechtos, dafim…'));
+      return Center(child: Text(l10n.searchPrompt));
     }
     if (matches.isEmpty) {
-      return const Center(child: Text('No matches.'));
+      return Center(child: Text(l10n.searchNoMatches));
     }
     return ListView.builder(
       itemCount: matches.length,
@@ -52,9 +55,9 @@ class CatalogSearchDelegate extends SearchDelegate<void> {
         final node = matches[i];
         return ListTile(
           leading: Icon(node.isLeaf ? Icons.menu_book : Icons.folder_outlined),
-          title: Text(node.name),
+          title: Text(nodeName(l10n, node)),
           subtitle: node.isLeaf
-              ? Text('${node.unitCount} ${node.unitLabel?.name ?? 'units'}')
+              ? Text(unitCount(l10n, node.unitCount, node.unitLabel))
               : null,
           onTap: () => Navigator.pushNamed(
             context,

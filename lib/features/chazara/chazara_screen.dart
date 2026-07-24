@@ -5,7 +5,9 @@ import '../../application/providers.dart';
 import '../../application/stats.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/usecases/chazara_schedule.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
+import '../common/naming.dart';
 import '../unit_grid/add_chazara_sheet.dart';
 
 /// Units due for a chazara (review) pass, on a spaced-repetition schedule.
@@ -16,16 +18,16 @@ class ChazaraScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final due = ref.watch(chazaraDueProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chazara due')),
+      appBar: AppBar(title: Text(l10n.chazaraTitle)),
       body: due.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
+                padding: const EdgeInsets.all(32),
                 child: Text(
-                  'Nothing due for review right now.\n'
-                  'Learned units come back here on a spaced schedule.',
+                  l10n.chazaraEmpty,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -47,35 +49,39 @@ class _ChazaraRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final node = ref.watch(catalogNodeProvider(item.nodeId));
-    final name = node?.name ?? item.nodeId;
     // Named units (parshiyos, simanim) read as their names here too, not as
     // bare numbers — the same heading the grid and the journal show.
-    final unit = node?.unitHeading(item.unitIndex) ?? 'unit ${item.unitIndex}';
+    final heading = node == null
+        ? l10n.nodeAndUnit(
+            item.nodeId,
+            l10n.unitHeading(l10n.unitLabelUnknown, item.unitIndex),
+          )
+        : nodeAndUnit(l10n, node, item.unitIndex);
     final overdue = item.daysOverdue == 0
-        ? 'due today'
-        : '${item.daysOverdue} day${item.daysOverdue == 1 ? '' : 's'} overdue';
+        ? l10n.chazaraDueToday
+        : l10n.chazaraOverdue(item.daysOverdue);
 
     return ListTile(
       leading: const Icon(Icons.refresh),
-      title: Text('$name · $unit'),
-      subtitle: Text('$overdue · ${item.reviewCount} review'
-          '${item.reviewCount == 1 ? '' : 's'} so far'),
+      title: Text(heading),
+      subtitle: Text(l10n.chazaraRowSubtitle(overdue, item.reviewCount)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           // The full sheet: pick which mefarshim, when, how long, and a haara.
           IconButton(
             icon: const Icon(Icons.edit_note),
-            tooltip: 'Log with details',
+            tooltip: l10n.chazaraLogWithDetails,
             onPressed: node == null
                 ? null
                 : () => showAddChazaraSheet(context, ref,
                     node: node, unit: item.unitIndex),
           ),
           FilledButton.tonal(
-            onPressed: () => _quickReview(context, ref, name, unit),
-            child: const Text('Review'),
+            onPressed: () => _quickReview(context, ref, l10n, heading),
+            child: Text(l10n.actionReview),
           ),
         ],
       ),
@@ -87,8 +93,8 @@ class _ChazaraRow extends ConsumerWidget {
   /// this button recorded only the text, so a daf reviewed from here silently
   /// lost its mefarshim, and the same action meant two different things
   /// depending on where you tapped it.
-  Future<void> _quickReview(
-      BuildContext context, WidgetRef ref, String name, String unit) async {
+  Future<void> _quickReview(BuildContext context, WidgetRef ref,
+      AppLocalizations l10n, String heading) async {
     final fold = ref.read(foldProvider).asData?.value;
     final learned =
         fold?.completedLayers(item.nodeId, item.unitIndex) ?? const <String>{};
@@ -101,8 +107,8 @@ class _ChazaraRow extends ConsumerWidget {
         item.unitIndex,
         layers: learned.isEmpty ? const [mainLayerId] : learned.toList(),
       ),
-      what: 'Logging a chazara on $name · $unit',
-      success: 'Reviewed $name · $unit',
+      what: l10n.whatLoggingChazara(heading),
+      success: l10n.chazaraReviewed(heading),
     );
   }
 }

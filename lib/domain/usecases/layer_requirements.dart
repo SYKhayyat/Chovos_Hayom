@@ -67,6 +67,10 @@ class LayerRequirements {
   Set<String> forUnit(String nodeId, int unitIndex) =>
       _set.forUnit(nodeId, unitIndex);
 
+  /// The nearest node ([nodeId] or an ancestor) with an explicit required-set
+  /// pin, or null when the answer is the default. See [InheritedLayerSet].
+  String? pinnedSource(String nodeId) => _set.pinnedSource(nodeId);
+
   /// True when this unit needs more than just the primary text — i.e. its
   /// *required* set alone already implies layered controls. Whether the UI shows
   /// a checklist also depends on the *offered* set (see [UnitLayerView]).

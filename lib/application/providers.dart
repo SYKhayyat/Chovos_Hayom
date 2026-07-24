@@ -118,11 +118,27 @@ class ProfilesController extends AsyncNotifier<List<Profile>> {
       throw StateError('Cannot delete the last profile.');
     }
     await repo.deleteProfile(id);
-    // Goals live in preferences rather than the database, so the repository's
-    // cascade can't reach them. Without this the key outlives the profile
-    // forever — and a new profile that happened to reuse the id would inherit
-    // a stranger's targets.
-    await ref.read(appPreferencesProvider).remove(PrefKeys.goalsFor(id));
+    // Everything a profile owns in preferences rather than the database — the
+    // repository's cascade can't reach any of it, so without this each key
+    // outlives the profile forever, and a new profile that reused the id would
+    // inherit a stranger's calendar, cycles, sort order and target dates.
+    //
+    // Looping `perProfile` rather than naming the keys is deliberate: goals were
+    // the one removal here for a long time, then `cycles` and nine other keys
+    // were added next to it and orphaned on every delete. Enumerating the list
+    // means the next per-profile key added is cleaned up by construction.
+    final prefs = ref.read(appPreferencesProvider);
+    for (final key in PrefKeys.perProfile) {
+      await prefs.remove(PrefKeys.scoped(id, key));
+    }
+    // The session timer and the last-backup stamp are per-profile *state* rather
+    // than backed-up settings, so they aren't in `perProfile`; remove them
+    // explicitly with the profile they belong to. Goals have their own key shape
+    // (`goals:<id>`), likewise. Leaving the backup stamp behind would tell a
+    // later profile that reused this id it had been exported when it never was.
+    await prefs.remove(PrefKeys.scoped(id, PrefKeys.sessionTimer));
+    await prefs.remove(PrefKeys.scoped(id, PrefKeys.lastBackupAt));
+    await prefs.remove(PrefKeys.goalsFor(id));
     if (ref.read(activeProfileProvider) == id) {
       final next = profiles.firstWhere((p) => p.id != id);
       await ref.read(activeProfileProvider.notifier).setProfile(next.id);

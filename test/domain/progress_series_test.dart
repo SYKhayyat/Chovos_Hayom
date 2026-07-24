@@ -77,5 +77,35 @@ void main() {
     test('empty log yields empty series', () {
       expect(ProgressSeries.cumulative(FoldLog.fold(const [])), isEmpty);
     });
+
+    // The helpers now group on the cheap UTC day-ordinal and materialise a
+    // DateTime once per distinct day (constructing a *local* DateTime per event
+    // was ~230× slower and made the Statistics screen take a second to open).
+    // These pin the behaviour that refactor must preserve: events at different
+    // times of the same calendar day still collapse to one local-midnight key.
+    test('events at different times of one day collapse to that day’s midnight', () {
+      final events = [
+        ev(DateTime(2026, 3, 9, 0, 30), EventAction.done, unit: 2),
+        ev(DateTime(2026, 3, 9, 23, 45), EventAction.done, unit: 3),
+      ];
+      final done = ProgressSeries.dailyDone(events);
+      expect(done.keys, [DateTime(2026, 3, 9)]);
+      expect(done[DateTime(2026, 3, 9)], 2);
+
+      final deltas = ProgressSeries.dailyDeltas(events);
+      expect(deltas[DateTime(2026, 3, 9)], 2);
+    });
+
+    test('cumulative keys each distinct learned-day at local midnight', () {
+      final events = [
+        ev(DateTime(2026, 3, 9, 8), EventAction.done, unit: 2),
+        ev(DateTime(2026, 3, 9, 20), EventAction.done, unit: 3),
+        ev(DateTime(2026, 3, 11, 6), EventAction.done, unit: 4),
+      ];
+      final series = ProgressSeries.cumulative(FoldLog.fold(events));
+      expect(series.map((p) => p.day).toList(),
+          [DateTime(2026, 3, 9), DateTime(2026, 3, 11)]);
+      expect(series.map((p) => p.cumulative).toList(), [2, 3]);
+    });
   });
 }

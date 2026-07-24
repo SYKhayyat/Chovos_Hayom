@@ -55,6 +55,13 @@ class CrashLog {
 
   Directory? _resolved;
 
+  /// Serialises [record] writes. Two records can arrive in the same instant — a
+  /// framework error and an uncaught async error from the same failure — and
+  /// each does a read-modify-write of the whole file, so without this the second
+  /// to start reads before the first has written and clobbers it. Chaining makes
+  /// them queue instead of race.
+  Future<void> _writeChain = Future<void>.value();
+
   Future<File?> _file() async {
     try {
       _resolved ??= directory ?? await getApplicationSupportDirectory();
@@ -69,20 +76,28 @@ class CrashLog {
   /// Append a crash. Never throws: a failure to record a crash must not become
   /// a second crash.
   Future<void> record(Object error, StackTrace stack, {String? context}) async {
-    try {
-      final file = await _file();
-      if (file == null) return;
-      final record = CrashRecord(
-        at: _now(),
-        error: error.toString(),
-        stack: stack.toString(),
-        context: context,
-      );
-      final existing = await file.exists() ? await file.readAsString() : '';
-      await file.writeAsString(_trim(existing + record.format()));
-    } catch (_) {
-      // Swallowed on purpose. See above.
-    }
+    // Stamp the time now, at the moment of the crash, not when the queued write
+    // eventually runs — so a burst of records keeps its true order.
+    final entry = CrashRecord(
+      at: _now(),
+      error: error.toString(),
+      stack: stack.toString(),
+      context: context,
+    );
+    final done = _writeChain.then((_) async {
+      try {
+        final file = await _file();
+        if (file == null) return;
+        final existing = await file.exists() ? await file.readAsString() : '';
+        await file.writeAsString(_trim(existing + entry.format()));
+      } catch (_) {
+        // Swallowed on purpose: a failure to record a crash must not become a
+        // second crash.
+      }
+    });
+    // `done` never rejects (the catch is inside), so the chain stays healthy.
+    _writeChain = done;
+    return done;
   }
 
   /// The log as text, newest last. Empty when nothing has crashed.

@@ -8,8 +8,10 @@ import '../../application/settings.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/usecases/learning_cycle.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/missing_item.dart';
+import '../common/naming.dart';
 
 /// Build a learning cycle: pick the sefarim, in order, set the pace and the day
 /// it started.
@@ -32,10 +34,9 @@ class EditCycleScreen extends ConsumerWidget {
     final matches =
         ref.watch(cyclesConfigProvider).custom.where((c) => c.id == cycleId);
     if (matches.isEmpty) {
-      return const MissingItemScreen(
+      return MissingItemScreen(
         loading: false,
-        message: 'This cycle no longer exists.\n'
-            'It may have been deleted, or it belongs to another profile.',
+        message: AppLocalizations.of(context).cycleMissing,
       );
     }
     return _CycleForm(key: ValueKey(cycleId), existing: matches.first);
@@ -82,45 +83,47 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
   Widget build(BuildContext context) {
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
     final mode = ref.watch(settingsProvider).calendar;
+    final l10n = AppLocalizations.of(context);
     var total = 0;
     for (final s in _segments) {
       total += s.unitCount;
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Edit cycle' : 'New cycle')),
+      appBar: AppBar(
+          title: Text(_isEdit ? l10n.editCycleTitle : l10n.newCycleTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           TextField(
             controller: _name,
-            decoration: const InputDecoration(
-              labelText: 'Name',
-              hintText: 'e.g. Mishna Yomi, Rambam Yomi, my chazara seder',
+            decoration: InputDecoration(
+              labelText: l10n.labelName,
+              hintText: l10n.editCycleNameHint,
             ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _perDay,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Units per day',
-              helperText: 'Mishna Yomi is 2; a daf a day is 1.',
+            decoration: InputDecoration(
+              labelText: l10n.editCycleUnitsPerDay,
+              helperText: l10n.editCycleUnitsPerDayHelper,
             ),
           ),
           const SizedBox(height: 12),
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.event),
-            title: const Text('Started on'),
+            title: Text(l10n.editCycleStartedOn),
             subtitle: Text(DateDisplay.format(_startDate, mode)),
             trailing: const Icon(Icons.edit),
             onTap: _pickStart,
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Starts over when it finishes'),
-            subtitle: const Text('Off = a one-time programme'),
+            title: Text(l10n.editCycleRepeats),
+            subtitle: Text(l10n.editCycleRepeatsSubtitle),
             value: _repeats,
             onChanged: (v) => setState(() => _repeats = v),
           ),
@@ -128,17 +131,18 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
           Row(
             children: [
               Expanded(
-                child: Text('Sefarim, in order',
+                child: Text(l10n.editCycleSefarimInOrder,
                     style: Theme.of(context).textTheme.titleMedium),
               ),
-              Text('$total units', style: Theme.of(context).textTheme.bodySmall),
+              Text(l10n.editCycleTotalUnits(total),
+                  style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
           const SizedBox(height: 4),
           if (_segments.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('Add the sefarim this cycle walks through.'),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(l10n.editCycleEmpty),
             ),
           // Reorderable so the order — which *is* the cycle — can be corrected
           // by dragging, and with mouse-friendly up/down as well.
@@ -155,13 +159,15 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
           ),
           TextButton.icon(
             icon: const Icon(Icons.add),
-            label: const Text('Add a sefer'),
+            label: Text(l10n.editCycleAddSefer),
             onPressed: catalog == null ? null : () => _addSegment(catalog.all),
           ),
           const SizedBox(height: 24),
           FilledButton(
             onPressed: _save,
-            child: Text(_isEdit ? 'Save cycle' : 'Create cycle'),
+            child: Text(_isEdit
+                ? l10n.editCycleSaveExisting
+                : l10n.editCycleCreate),
           ),
         ],
       ),
@@ -169,6 +175,7 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
   }
 
   Widget _segmentTile(int i) {
+    final l10n = AppLocalizations.of(context);
     final segment = _segments[i];
     final node = ref.read(catalogNodeProvider(segment.nodeId));
     return ListTile(
@@ -176,14 +183,15 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
       contentPadding: EdgeInsets.zero,
       leading: ReorderableDragStartListener(
           index: i, child: const Icon(Icons.drag_handle)),
-      title: Text(node?.name ?? segment.nodeId),
-      subtitle: Text('${segment.unitCount} units from ${segment.unitOffset}'),
+      title: Text(node == null ? segment.nodeId : nodeName(l10n, node)),
+      subtitle: Text(l10n.editCycleSegmentSubtitle(
+          segment.unitCount, segment.unitOffset)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_upward, size: 18),
-            tooltip: 'Move up',
+            tooltip: l10n.tooltipMoveUp,
             onPressed: i == 0
                 ? null
                 : () => setState(() =>
@@ -191,7 +199,7 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
           ),
           IconButton(
             icon: const Icon(Icons.arrow_downward, size: 18),
-            tooltip: 'Move down',
+            tooltip: l10n.tooltipMoveDown,
             onPressed: i == _segments.length - 1
                 ? null
                 : () => setState(() =>
@@ -199,7 +207,7 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
           ),
           IconButton(
             icon: const Icon(Icons.close, size: 18),
-            tooltip: 'Remove',
+            tooltip: l10n.tooltipRemove,
             onPressed: () => setState(() => _segments.removeAt(i)),
           ),
         ],
@@ -222,12 +230,14 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
   Future<void> _addSegment(Iterable<CatalogNode> all) async {
     final catalog = ref.read(mergedCatalogProvider).asData?.value;
     if (catalog == null) return;
-    final choices = all.toList()..sort((a, b) => a.name.compareTo(b.name));
+    final l10n = AppLocalizations.of(context);
+    final choices = all.toList()
+      ..sort((a, b) => nodeName(l10n, a).compareTo(nodeName(l10n, b)));
 
     final chosen = await showDialog<CatalogNode>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
-        title: const Text('Add a sefer or category'),
+        title: Text(l10n.editCycleAddDialogTitle),
         children: [
           SizedBox(
             width: 340,
@@ -238,10 +248,10 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
                 final n = choices[i];
                 return ListTile(
                   leading: Icon(n.isLeaf ? Icons.menu_book : Icons.folder),
-                  title: Text(n.name),
+                  title: Text(nodeName(l10n, n)),
                   subtitle: Text(n.isLeaf
-                      ? '${n.unitCount} ${n.unitLabel?.name ?? 'unit'}s'
-                      : 'everything underneath'),
+                      ? unitCount(l10n, n.unitCount, n.unitLabel)
+                      : l10n.editCycleEverythingUnderneath),
                   onTap: () => Navigator.pop(dialogContext, n),
                 );
               },
@@ -267,18 +277,19 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
   Future<void> _save() async {
     final navigator = Navigator.of(context);
     final guard = WriteGuard.of(context, ref);
+    final l10n = AppLocalizations.of(context);
     final name = _name.text.trim();
     if (name.isEmpty) {
-      guard.report('Give the cycle a name.');
+      guard.report(l10n.editCycleNeedName);
       return;
     }
     final perDay = int.tryParse(_perDay.text.trim()) ?? 0;
     if (perDay <= 0) {
-      guard.report('Units per day must be at least 1.');
+      guard.report(l10n.editCycleNeedPerDay);
       return;
     }
     if (_segments.isEmpty) {
-      guard.report('Add at least one sefer for the cycle to walk.');
+      guard.report(l10n.editCycleNeedSegment);
       return;
     }
 
@@ -292,7 +303,7 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
         repeats: _repeats,
         segments: _segments,
       )),
-      what: 'Saving the cycle "$name"',
+      what: l10n.whatSavingCycle(name),
     );
     if (saved) navigator.pop();
   }

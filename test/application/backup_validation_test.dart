@@ -2,6 +2,7 @@ import 'package:chovos_hayom/application/backup_service.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
+import 'package:chovos_hayom/domain/usecases/fold_log.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/in_memory_progress_repository.dart';
@@ -146,12 +147,29 @@ void main() {
     });
   });
 
+  test('an override row that re-parents a built-in beneath its own child', () async {
+    // The catalog has shas.berachos -> shas. This override makes shas ->
+    // shas.berachos, closing a loop in which *every* id is already "known" —
+    // invisible to a cycle check that walks only the backup's own rows, and it
+    // empties the whole tree once in SQLite.
+    final repo = InMemoryProgressRepository();
+    final json =
+        jsonEncode(backup(nodes: [node('shas', parentId: 'shas.berachos')]));
+    await expectLater(
+      BackupService(repo).importInto('b', json,
+          knownParents: {'shas': null, 'shas.berachos': 'shas'}),
+      throwsA(isA<BackupFormatException>()
+          .having((e) => e.message, 'message', contains('loop'))),
+    );
+    expect(await repo.watchCustomNodes('b').first, isEmpty);
+  });
+
   test('a parent in the bundled catalog is accepted', () async {
     final repo = InMemoryProgressRepository();
     final json =
         jsonEncode(backup(nodes: [node('mine', parentId: 'shas.moed')]));
     await BackupService(repo)
-        .importInto('b', json, knownNodeIds: {'shas.moed'});
+        .importInto('b', json, knownParents: {'shas.moed': null});
     expect((await repo.watchCustomNodes('b').first).single.id, 'mine');
   });
 
@@ -166,6 +184,84 @@ void main() {
     await expectLater(BackupService(repo).importInto('b', json),
         throwsA(isA<BackupFormatException>()));
     expect(await repo.getEvents('b'), isEmpty);
+  });
+
+  group('restore (replace) undoes what a merge cannot', () {
+    /// The log is append-only, so un-marking a unit *adds* an `undone` rather
+    /// than removing the `done`. A merge re-adds nothing (every id is already
+    /// present) and the later `undone` still wins — so the unit stays un-marked.
+    /// Only a restore, which drops events the backup doesn't contain, puts it
+    /// back. This is the exact round-trip a user hit: mark → export → un-mark →
+    /// import, and nothing came back.
+    LearningEvent ev(String id, EventAction action, DateTime at) => LearningEvent(
+          id: id,
+          profileId: 'a',
+          nodeId: 'bereishis',
+          unitIndex: 1,
+          action: action,
+          occurredAt: at,
+          loggedAt: at,
+        );
+
+    late InMemoryProgressRepository repo;
+    late String json;
+
+    setUp(() async {
+      repo = InMemoryProgressRepository();
+      await repo.addEvent(ev('done-1', EventAction.done, DateTime(2026, 7, 24, 10)));
+      // The backup is taken while the unit is marked.
+      json = await BackupService(repo).export('a', customNodes: const []);
+      // ...and then the user un-marks it, which appends rather than deletes.
+      await repo
+          .addEvent(ev('undone-1', EventAction.undone, DateTime(2026, 7, 24, 11)));
+    });
+
+    test('a merge cannot bring the un-marked unit back', () async {
+      final data = await BackupService(repo).importInto('a', json);
+
+      expect(data.events, isEmpty, reason: 'every id is already present');
+      expect(data.removedEvents, 0);
+      final ids = (await repo.getEvents('a')).map((e) => e.id).toSet();
+      expect(ids, containsAll(<String>['done-1', 'undone-1']),
+          reason: 'the later undone survives, so the unit is still un-marked');
+    });
+
+    test('a restore removes the later undone, so the unit is marked again',
+        () async {
+      final data =
+          await BackupService(repo).importInto('a', json, replace: true);
+
+      expect(data.removedEvents, 1);
+      final events = await repo.getEvents('a');
+      expect(events.map((e) => e.id), ['done-1']);
+      expect(FoldLog.fold(events).doneUnits('bereishis'), {1},
+          reason: 'the mark is genuinely back');
+    });
+
+    test('restoring twice is a no-op the second time', () async {
+      await BackupService(repo).importInto('a', json, replace: true);
+      final again =
+          await BackupService(repo).importInto('a', json, replace: true);
+
+      expect(again.removedEvents, 0);
+      expect(again.events, isEmpty);
+    });
+
+    test('a restore leaves another profile alone', () async {
+      await repo.addEvent(LearningEvent(
+        id: 'other-1',
+        profileId: 'b',
+        nodeId: 'bereishis',
+        unitIndex: 1,
+        action: EventAction.done,
+        occurredAt: DateTime(2026, 7, 24, 10),
+        loggedAt: DateTime(2026, 7, 24, 10),
+      ));
+
+      await BackupService(repo).importInto('a', json, replace: true);
+
+      expect((await repo.getEvents('b')).map((e) => e.id), ['other-1']);
+    });
   });
 
   test('goals round-trip through a backup', () async {

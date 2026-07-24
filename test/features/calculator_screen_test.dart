@@ -1,11 +1,11 @@
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/stats.dart';
 import 'package:chovos_hayom/features/calculator/calculator_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
+import '../support/localized_app.dart';
 import '../support/in_memory_progress_repository.dart';
 
 void main() {
@@ -19,7 +19,7 @@ void main() {
               .overrideWithValue(InMemoryProgressRepository()),
           clockProvider.overrideWithValue(() => clock),
         ],
-        child: const MaterialApp(home: CalculatorScreen()),
+        child: localizedApp(home: const CalculatorScreen()),
       ),
     );
     await tester.pumpAndSettle();

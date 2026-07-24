@@ -7,12 +7,12 @@ import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/layer.dart';
 import 'package:chovos_hayom/domain/usecases/layer_requirements.dart';
 import 'package:chovos_hayom/features/settings/settings_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
+import '../support/localized_app.dart';
 import '../support/in_memory_progress_repository.dart';
 
 /// A backup has to contain everything, including the parts no screen happens to
@@ -74,11 +74,15 @@ void main() {
         progressRepositoryProvider.overrideWithValue(repo),
         appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
       ],
-      child: const MaterialApp(home: SettingsScreen()),
+      child: localizedApp(home: const SettingsScreen()),
     ));
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(find.text('Export to clipboard'), 200);
+    // scrollUntilVisible stops the moment the target is attached, which can
+    // leave it flush against the viewport edge where a tap misses it.
+    await tester.ensureVisible(find.text('Export to clipboard'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Export to clipboard'));
     await tester.pumpAndSettle();
 

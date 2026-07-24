@@ -85,6 +85,25 @@ class InheritedLayerSet {
     return resolved;
   }
 
+  /// The nearest node — [nodeId] itself or an ancestor — that carries an
+  /// explicit node-level pin, or null when nothing is configured anywhere up the
+  /// chain (so the answer is the pure [defaultSet]). Cycle-guarded like [forNode].
+  ///
+  /// Lets the UI tell "set here" from "inherited from Shas" from "default", so a
+  /// config sheet doesn't silently pin an inherited answer as a node-level
+  /// override the moment it opens.
+  String? pinnedSource(String nodeId) {
+    final seen = <String>{};
+    var current = nodeId;
+    while (true) {
+      if (!seen.add(current)) return null;
+      if (nodeConfig.containsKey(current)) return current;
+      final parent = parentOf[current];
+      if (parent == null) return null;
+      current = parent;
+    }
+  }
+
   /// The set for a specific unit — a per-unit override if present, otherwise the
   /// node-level (inherited) set.
   Set<String> forUnit(String nodeId, int unitIndex) {

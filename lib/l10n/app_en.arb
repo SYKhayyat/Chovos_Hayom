@@ -1,0 +1,1029 @@
+{
+  "@@locale": "en",
+
+  "@_APP": {},
+  "appTitle": "Chovos Hayom",
+  "@appTitle": {
+    "description": "The application name. Shown in the dashboard app bar and the drawer header."
+  },
+
+  "@_COMMON_ACTIONS": {},
+  "actionCancel": "Cancel",
+  "actionSave": "Save",
+  "actionDelete": "Delete",
+  "actionAdd": "Add",
+  "actionCreate": "Create",
+  "actionClear": "Clear",
+  "actionFinish": "Finish",
+  "actionMark": "Mark",
+  "actionRestore": "Restore",
+  "actionImport": "Import",
+  "actionUndo": "Undo",
+  "actionRename": "Rename",
+  "actionEdit": "Edit",
+  "actionReview": "Review",
+  "actionReset": "Reset",
+  "actionDetails": "Details",
+  "@actionDetails": {
+    "description": "The button on a failure message that opens the crash log."
+  },
+  "labelName": "Name",
+  "labelRequired": "Required",
+  "labelOptional": "Optional",
+
+  "@_WRITE_GUARD": {},
+  "writeFailed": "{what} failed.",
+  "@writeFailed": {
+    "description": "The one failure sentence for every write. {what} is a phrase that completes '… failed', e.g. 'Marking Shabbos daf 2 learned'.",
+    "placeholders": { "what": { "type": "String" } }
+  },
+
+  "@_ROUTES": {},
+  "notFoundTitle": "Not found",
+  "notFoundBody": "There is nothing here.\n\n“{name}” is not a screen this version of the app has.",
+  "@notFoundBody": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "@_DASHBOARD": {},
+  "expandAll": "Expand all",
+  "collapseAll": "Collapse all",
+  "tooltipExpand": "Expand",
+  "tooltipCollapse": "Collapse",
+  "tooltipSort": "Sort",
+  "tooltipSortActive": "Sort: {metric}",
+  "@tooltipSortActive": {
+    "placeholders": { "metric": { "type": "String" } }
+  },
+  "tooltipSearch": "Search",
+  "tooltipStatistics": "Statistics",
+  "tooltipSiyumCalculator": "Siyum calculator",
+  "tooltipAddCustomSefer": "Add custom sefer",
+  "nudgeHaventLearnedToday": "You haven't learned yet today — pick something below!",
+  "drawerProfile": "Profile: {name}",
+  "@drawerProfile": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "navLearningCycles": "Learning cycles",
+  "navGoals": "Goals",
+  "navChazaraDue": "Chazara due",
+  "navSiyumim": "Siyumim",
+  "navNotesJournal": "Notes Journal",
+  "navMefarshimProgress": "Mefarshim progress",
+  "navProfiles": "Profiles",
+  "navAddCustomSefer": "Add custom sefer",
+  "navSettings": "Settings",
+
+  "@_PROGRESS_TILE": {},
+  "progressCount": "{learned} / {total}  ({percent}%)",
+  "@progressCount": {
+    "description": "The count under a node's progress bar. {percent} arrives pre-rounded to one decimal.",
+    "placeholders": {
+      "learned": { "type": "int", "format": "decimalPattern" },
+      "total": { "type": "int", "format": "decimalPattern" },
+      "percent": { "type": "String" }
+    }
+  },
+  "meforishCoverage": "{learned}/{total}",
+  "@meforishCoverage": {
+    "description": "The count beside one meforish's thin coverage line.",
+    "placeholders": {
+      "learned": { "type": "int", "format": "decimalPattern" },
+      "total": { "type": "int", "format": "decimalPattern" }
+    }
+  },
+  "nodeMenuTooltip": "Mefarshim / edit / add / hide",
+  "menuMefarshim": "Mefarshim…",
+  "menuBulkActions": "Finish all / clear all",
+  "menuAddSubItem": "Add sub-item",
+  "menuCloneStructure": "Clone structure",
+  "menuHideDelete": "Hide / delete",
+  "menuResetToDefault": "Reset to default",
+  "menuRemovePermanently": "Remove permanently",
+  "hideNodeTitle": "Hide “{name}”?",
+  "@hideNodeTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "hideNodeBody": "It is removed from the tree. Your logged progress stays intact, and you can restore it with “Reset to default”.",
+  "hideNodeConfirm": "Hide",
+  "whatCloning": "Cloning “{name}”",
+  "@whatCloning": { "placeholders": { "name": { "type": "String" } } },
+  "clonedNode": "Cloned “{name}”",
+  "@clonedNode": { "placeholders": { "name": { "type": "String" } } },
+  "whatHiding": "Hiding “{name}”",
+  "@whatHiding": { "placeholders": { "name": { "type": "String" } } },
+  "whatResetting": "Resetting “{name}”",
+  "@whatResetting": { "placeholders": { "name": { "type": "String" } } },
+
+  "@_UNIT_LABELS": {},
+  "unitLabelPerek": "perek",
+  "unitLabelDaf": "daf",
+  "unitLabelAmud": "amud",
+  "unitLabelSiman": "siman",
+  "unitLabelHalacha": "halacha",
+  "unitLabelPage": "page",
+  "unitLabelCustom": "unit",
+  "unitLabelUnknown": "unit",
+  "@unitLabelUnknown": {
+    "description": "Fallback when a leaf has no unit type set."
+  },
+  "unitHeading": "{label} {number}",
+  "@unitHeading": {
+    "description": "A unit named by its type and number, e.g. 'daf 5'. Used wherever a unit has no name of its own.",
+    "placeholders": {
+      "label": { "type": "String" },
+      "number": { "type": "int" }
+    }
+  },
+  "unitCountWithLabel": "{count} {label}",
+  "@unitCountWithLabel": {
+    "description": "A leaf's size, e.g. '64 dapim'. {label} is already pluralised by unitLabelPlural.",
+    "placeholders": {
+      "count": { "type": "int", "format": "decimalPattern" },
+      "label": { "type": "String" }
+    }
+  },
+  "unitLabelPluralPerek": "perakim",
+  "unitLabelPluralDaf": "dapim",
+  "unitLabelPluralAmud": "amudim",
+  "unitLabelPluralSiman": "simanim",
+  "unitLabelPluralHalacha": "halachos",
+  "unitLabelPluralPage": "pages",
+  "unitLabelPluralCustom": "units",
+  "unitLabelPluralUnknown": "units",
+  "nodeAndUnit": "{node} · {unit}",
+  "@nodeAndUnit": {
+    "description": "A unit qualified by its sefer, e.g. 'Shabbos · daf 12'.",
+    "placeholders": {
+      "node": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "@_UNIT_GRID": {},
+  "tooltipBulkActions": "Finish all / clear all",
+  "tooltipMefarshim": "Mefarshim",
+  "tooltipSetGoalDate": "Set goal date",
+  "gridCellSemanticDone": "{unit}, learned",
+  "@gridCellSemanticDone": {
+    "description": "Screen-reader label for a completed unit cell. Completion is shown visually by colour alone, so it has to be said here.",
+    "placeholders": { "unit": { "type": "String" } }
+  },
+  "gridCellSemanticNotDone": "{unit}, not learned",
+  "@gridCellSemanticNotDone": {
+    "placeholders": { "unit": { "type": "String" } }
+  },
+  "gridCellSemanticPartial": "{unit}, partly learned, {percent}%",
+  "@gridCellSemanticPartial": {
+    "placeholders": {
+      "unit": { "type": "String" },
+      "percent": { "type": "int" }
+    }
+  },
+  "gridCellSemanticReviews": "{count, plural, =1{1 chazara} other{{count} chazaras}}",
+  "@gridCellSemanticReviews": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "gridCellSemanticHasDetails": "has recorded details",
+  "whatMarkingLearned": "Marking {unit} learned",
+  "@whatMarkingLearned": { "placeholders": { "unit": { "type": "String" } } },
+  "whatUnmarking": "Un-marking {unit}",
+  "@whatUnmarking": { "placeholders": { "unit": { "type": "String" } } },
+  "whatLogging": "Logging {unit}",
+  "@whatLogging": { "placeholders": { "unit": { "type": "String" } } },
+  "whatSettingGoal": "Setting a goal for {name}",
+  "@whatSettingGoal": { "placeholders": { "name": { "type": "String" } } },
+  "cellMenuViewEditDetails": "View / edit details",
+  "cellMenuViewEditDetailsSubtitle": "When you finished, how long, your note",
+  "cellMenuRelog": "Re-log with date / duration / note",
+  "cellMenuLog": "Log with date / duration / note",
+  "cellMenuAddChazara": "Add chazara (review)",
+  "cellMenuUnmark": "Un-mark",
+  "cellMenuMarkLearned": "Mark learned",
+  "seferMissing": "This sefer no longer exists.\nIt may have been hidden, deleted, or replaced.",
+  "itemMissing": "This item no longer exists.\nIt may have been hidden or deleted.",
+  "itemMissingRenamed": "This item no longer exists.\nIt may have been removed or renamed.",
+  "cycleMissing": "This cycle no longer exists.\nIt may have been deleted, or it belongs to another profile.",
+
+  "@_GOAL_BANNER": {},
+  "goalReached": "Goal reached! 🎉",
+  "goalBanner": "Goal {date} · need {rate}/day · {status}",
+  "@goalBanner": {
+    "placeholders": {
+      "date": { "type": "String" },
+      "rate": { "type": "String" },
+      "status": { "type": "String" }
+    }
+  },
+  "goalOnTrack": "on track",
+  "goalBehind": "behind",
+  "tooltipRemoveGoal": "Remove goal",
+  "whatRemovingGoal": "Removing the goal for {name}",
+  "@whatRemovingGoal": { "placeholders": { "name": { "type": "String" } } },
+  "goalRemoved": "Goal removed",
+  "whatRestoringGoal": "Restoring the goal for {name}",
+  "@whatRestoringGoal": { "placeholders": { "name": { "type": "String" } } },
+
+  "@_GOALS_SCREEN": {},
+  "goalsTitle": "Goals",
+  "goalsEmpty": "No goals yet.\nOpen any sefer and tap the flag to set a target date.",
+  "goalRowReached": "Reached!",
+  "goalRowStatus": "By {date} · need {rate}/day · {status}",
+  "@goalRowStatus": {
+    "placeholders": {
+      "date": { "type": "String" },
+      "rate": { "type": "String" },
+      "status": { "type": "String" }
+    }
+  },
+  "goalRemovedFor": "Goal for “{name}” removed",
+  "@goalRemovedFor": { "placeholders": { "name": { "type": "String" } } },
+
+  "@_UNIT_LAYERS_SHEET": {},
+  "layersComplete": "Complete — all required mefarshim learned.",
+  "layersRemaining": "{missing} of {total} required still to learn.",
+  "@layersRemaining": {
+    "placeholders": {
+      "missing": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "deletedMeforish": "Deleted meforish",
+  "@deletedMeforish": {
+    "description": "Stands in for a meforish id whose definition was deleted after a unit was marked with it."
+  },
+  "markAllRequiredLearned": "Mark all required learned",
+  "logWithDateDurationHaara": "Log with date / duration / haara…",
+  "clearThisUnit": "Clear this unit",
+  "whatMarkingLayer": "Marking {layer} on {unit}",
+  "@whatMarkingLayer": {
+    "placeholders": {
+      "layer": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "whatUnmarkingLayer": "Un-marking {layer} on {unit}",
+  "@whatUnmarkingLayer": {
+    "placeholders": {
+      "layer": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "whatMarkingEveryRequired": "Marking every required meforish on {unit}",
+  "@whatMarkingEveryRequired": { "placeholders": { "unit": { "type": "String" } } },
+  "whatClearingUnit": "Clearing {unit}",
+  "@whatClearingUnit": { "placeholders": { "unit": { "type": "String" } } },
+
+  "@_LOG_UNIT_SHEET": {},
+  "logSheetWhatYouLearned": "What you learned:",
+  "logSheetManualDateTime": "Set date & time manually",
+  "logSheetDefaultsToNow": "Defaults to now",
+  "logSheetPickDate": "Pick date",
+  "logSheetPickTime": "Pick time",
+  "logSheetTimer": "Timer  {clock}",
+  "@logSheetTimer": {
+    "description": "{clock} is an elapsed MM:SS readout.",
+    "placeholders": { "clock": { "type": "String" } }
+  },
+  "logSheetStart": "Start",
+  "logSheetStop": "Stop",
+  "logSheetKeepsRunning": "Keeps running if you close this — go learn.",
+  "logSheetDuration": "How long it took (minutes, optional)",
+  "logSheetHaara": "Haara (optional)",
+  "logSheetHaaraHint": "A chiddush, a question, a maareh makom, how it went…",
+  "logSheetHaaraHelper": "Collected in your Notes Journal.",
+  "logSheetMarkLearned": "Mark learned",
+  "logSheetSaveChanges": "Save changes",
+  "whatStartingTimer": "Starting the session timer",
+  "whatPausingTimer": "Pausing the session timer",
+  "whatResettingTimer": "Resetting the session timer",
+  "whatEndingTimer": "Ending the session timer",
+  "dateTimeLabel": "{date} · {time}",
+  "@dateTimeLabel": {
+    "placeholders": {
+      "date": { "type": "String" },
+      "time": { "type": "String" }
+    }
+  },
+
+  "@_ADD_CHAZARA_SHEET": {},
+  "addChazaraTitle": "Add chazara",
+  "addChazaraReviewed": "Reviewed:",
+  "addChazaraDuration": "How long (minutes, optional)",
+  "addChazaraSubmit": "Log chazara",
+  "whatLoggingChazara": "Logging a chazara on {unit}",
+  "@whatLoggingChazara": { "placeholders": { "unit": { "type": "String" } } },
+
+  "@_UNIT_DETAILS_SHEET": {},
+  "detailsNotLearnedYet": "Not learned yet.",
+  "detailsFinished": "Finished",
+  "detailsTimeToLearn": "Time to learn",
+  "detailsNotRecorded": "Not recorded",
+  "detailsChazaraPasses": "Chazara passes",
+  "detailsNoneYet": "None yet",
+  "detailsHaara": "Haara",
+  "detailsNoHaara": "No haara",
+  "detailsEdit": "Edit details",
+  "detailsAddChazara": "Add chazara",
+  "detailsUnmark": "Un-mark",
+  "detailsEditTitle": "Edit · {unit}",
+  "@detailsEditTitle": { "placeholders": { "unit": { "type": "String" } } },
+  "chazaraPass": "Pass {n}",
+  "@chazaraPass": { "placeholders": { "n": { "type": "int" } } },
+  "minutesShort": "{minutes}m",
+  "@minutesShort": { "placeholders": { "minutes": { "type": "int" } } },
+  "whatSavingDetails": "Saving the details for {unit}",
+  "@whatSavingDetails": { "placeholders": { "unit": { "type": "String" } } },
+  "durationMinutes": "{minutes} min",
+  "@durationMinutes": { "placeholders": { "minutes": { "type": "int" } } },
+  "durationHours": "{hours}h",
+  "@durationHours": { "placeholders": { "hours": { "type": "int" } } },
+  "durationHoursMinutes": "{hours}h {minutes}m",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": { "type": "int" },
+      "minutes": { "type": "int" }
+    }
+  },
+
+  "@_BULK_ACTIONS": {},
+  "bulkTitle": "Bulk actions",
+  "bulkAllUnitsUnderneath": "{name} · all units underneath",
+  "@bulkAllUnitsUnderneath": { "placeholders": { "name": { "type": "String" } } },
+  "bulkFinishAll": "Finish all",
+  "bulkFinishAllSubtitle": "Mark every unit’s required mefarshim done",
+  "bulkMarkAllLayer": "Mark all — {layer}",
+  "@bulkMarkAllLayer": { "placeholders": { "layer": { "type": "String" } } },
+  "bulkMainTextSubtitle": "The primary text on every unit",
+  "bulkFinishRange": "Finish a range…",
+  "bulkFinishRangeSubtitle": "Choose a start and end unit",
+  "bulkClearAll": "Clear all",
+  "bulkClearAllSubtitle": "Un-mark every unit (and its mefarshim)",
+  "bulkNothingToChange": "Nothing to change",
+  "bulkConfirmUnits": "{count, plural, =1{This changes 1 unit.} other{This changes {count} units.}}",
+  "@bulkConfirmUnits": {
+    "description": "The count is the whole point of the confirmation — finishing one mesechta and finishing Shas look identical until you see 64 versus 12,092.",
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "bulkUndoNote": "You can undo it from Settings → Bulk action history for as long as you like.",
+  "bulkFinishAllTitle": "Finish all of “{name}”?",
+  "@bulkFinishAllTitle": { "placeholders": { "name": { "type": "String" } } },
+  "bulkWhatFinishingAll": "Finishing all of “{name}”",
+  "@bulkWhatFinishingAll": { "placeholders": { "name": { "type": "String" } } },
+  "bulkMarkLayerTitle": "Mark {layer} on all of “{name}”?",
+  "@bulkMarkLayerTitle": {
+    "placeholders": {
+      "layer": { "type": "String" },
+      "name": { "type": "String" }
+    }
+  },
+  "bulkWhatMarkingLayer": "Marking {layer} on all of “{name}”",
+  "@bulkWhatMarkingLayer": {
+    "placeholders": {
+      "layer": { "type": "String" },
+      "name": { "type": "String" }
+    }
+  },
+  "bulkClearAllTitle": "Clear all of “{name}”?",
+  "@bulkClearAllTitle": { "placeholders": { "name": { "type": "String" } } },
+  "bulkWhatClearingAll": "Clearing all of “{name}”",
+  "@bulkWhatClearingAll": { "placeholders": { "name": { "type": "String" } } },
+  "bulkClearWarningLeaf": "Un-marks every unit here, including any mefarshim you checked off.",
+  "bulkClearWarningCategory": "Un-marks every unit under this — including all its mefarshim.",
+  "bulkRangeTitle": "Finish units {start}–{end} of “{name}”?",
+  "@bulkRangeTitle": {
+    "placeholders": {
+      "start": { "type": "int" },
+      "end": { "type": "int" },
+      "name": { "type": "String" }
+    }
+  },
+  "bulkWhatFinishingRange": "Finishing units {start}–{end} of “{name}”",
+  "@bulkWhatFinishingRange": {
+    "placeholders": {
+      "start": { "type": "int" },
+      "end": { "type": "int" },
+      "name": { "type": "String" }
+    }
+  },
+  "bulkReportFinished": "{count, plural, =1{Finished 1 unit} other{Finished {count} units}}",
+  "@bulkReportFinished": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "bulkReportCleared": "{count, plural, =1{Cleared 1 unit} other{Cleared {count} units}}",
+  "@bulkReportCleared": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "bulkReportMarkedLayer": "{count, plural, =1{Marked {layer} on 1 unit} other{Marked {layer} on {count} units}}",
+  "@bulkReportMarkedLayer": {
+    "placeholders": {
+      "count": { "type": "int", "format": "decimalPattern" },
+      "layer": { "type": "String" }
+    }
+  },
+  "bulkReportFinishedRange": "{count, plural, =1{Finished 1 unit in {start}–{end}} other{Finished {count} units in {start}–{end}}}",
+  "@bulkReportFinishedRange": {
+    "placeholders": {
+      "count": { "type": "int", "format": "decimalPattern" },
+      "start": { "type": "int" },
+      "end": { "type": "int" }
+    }
+  },
+  "whatUndoingBulk": "Undoing that bulk action",
+  "rangeDialogTitle": "Finish a range",
+  "rangeDialogBody": "Units {first}–{last}. Both ends included.",
+  "@rangeDialogBody": {
+    "placeholders": {
+      "first": { "type": "int" },
+      "last": { "type": "int" }
+    }
+  },
+  "rangeFrom": "From",
+  "rangeTo": "To",
+  "rangeErrorTwoNumbers": "Enter two numbers.",
+  "rangeErrorBounds": "Units run from {first} to {last}.",
+  "@rangeErrorBounds": {
+    "placeholders": {
+      "first": { "type": "int" },
+      "last": { "type": "int" }
+    }
+  },
+
+  "@_BULK_HISTORY": {},
+  "bulkHistoryTitle": "Bulk action history",
+  "bulkHistoryEmpty": "No bulk actions yet.\n\nAnything you finish or clear in bulk shows up here, and stays undoable until you undo it.",
+  "bulkHistoryFinishedEntry": "{count, plural, =1{Finished 1 unit} other{Finished {count} units}} · {where}",
+  "@bulkHistoryFinishedEntry": {
+    "placeholders": {
+      "count": { "type": "int", "format": "decimalPattern" },
+      "where": { "type": "String" }
+    }
+  },
+  "bulkHistoryClearedEntry": "{count, plural, =1{Cleared 1 unit} other{Cleared {count} units}} · {where}",
+  "@bulkHistoryClearedEntry": {
+    "placeholders": {
+      "count": { "type": "int", "format": "decimalPattern" },
+      "where": { "type": "String" }
+    }
+  },
+  "bulkHistorySefarimCount": "{count, plural, =1{1 sefer} other{{count} sefarim}}",
+  "@bulkHistorySefarimCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "bulkHistoryWhereWithCount": "{name} ({count, plural, =1{1 sefer} other{{count} sefarim}})",
+  "@bulkHistoryWhereWithCount": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "bulkHistoryUndoTitle": "Undo this bulk action?",
+  "bulkHistoryUndoFinishBody": "{count, plural, =1{Removes the 1 mark this action made.} other{Removes the {count} marks this action made.}} Anything you had learned before it is untouched.",
+  "@bulkHistoryUndoFinishBody": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "bulkHistoryUndoClearBody": "{count, plural, =1{Restores the 1 unit this action cleared.} other{Restores the {count} units this action cleared.}}",
+  "@bulkHistoryUndoClearBody": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "whatUndoingThisBulk": "Undoing this bulk action",
+  "bulkHistoryUndone": "{count, plural, =1{Undone — 1 event removed} other{Undone — {count} events removed}}",
+  "@bulkHistoryUndone": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+
+  "@_MEFARSHIM_CONFIG": {},
+  "mefarshimTitle": "Mefarshim",
+  "mefarshimExplainer": "“Available” = you can check it off here. “Required” = a unit is done only once it’s learned. Applies to everything under this item unless overridden.",
+  "mefarshimSetHere": "Set on this item.",
+  "mefarshimInheritedFrom": "Inherited from {name}. Saving pins them here.",
+  "@mefarshimInheritedFrom": { "placeholders": { "name": { "type": "String" } } },
+  "mefarshimDefault": "Default (text only). Saving pins a set here.",
+  "mefarshimAvailable": "Available",
+  "mefarshimAddMeforish": "Add a meforish",
+  "mefarshimResetToInherited": "Reset to inherited",
+  "mefarshimNewTitle": "New meforish",
+  "mefarshimHebrewOptional": "Hebrew (optional)",
+  "tooltipDeleteMeforish": "Delete meforish",
+  "mefarshimDeleteTitle": "Delete “{name}”?",
+  "@mefarshimDeleteTitle": { "placeholders": { "name": { "type": "String" } } },
+  "mefarshimDeleteRequiredWarning": "{count, plural, =1{It is currently required in 1 place.} other{It is currently required in {count} places.}} Those units will go back to not needing it, so anything they were waiting on it for becomes complete.",
+  "@mefarshimDeleteRequiredWarning": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "mefarshimDeleteLogNote": "Chazaras and learning you already recorded against it stay in your log.",
+  "whatSavingMefarshim": "Saving the mefarshim for {name}",
+  "@whatSavingMefarshim": { "placeholders": { "name": { "type": "String" } } },
+  "whatResettingMefarshim": "Resetting the mefarshim for {name}",
+  "@whatResettingMefarshim": { "placeholders": { "name": { "type": "String" } } },
+  "whatDeletingMeforish": "Deleting “{name}”",
+  "@whatDeletingMeforish": { "placeholders": { "name": { "type": "String" } } },
+  "whatAddingMeforish": "Adding the meforish “{name}”",
+  "@whatAddingMeforish": { "placeholders": { "name": { "type": "String" } } },
+
+  "@_MEFARSHIM_PROGRESS": {},
+  "mefarshimProgressTitle": "Mefarshim progress",
+  "mefarshimProgressEmpty": "Nothing learned yet.\nAs you check off mefarshim, their totals appear here.",
+
+  "@_CHAZARA_SCREEN": {},
+  "chazaraTitle": "Chazara due",
+  "chazaraEmpty": "Nothing due for review right now.\nLearned units come back here on a spaced schedule.",
+  "chazaraDueToday": "due today",
+  "chazaraOverdue": "{count, plural, =1{1 day overdue} other{{count} days overdue}}",
+  "@chazaraOverdue": { "placeholders": { "count": { "type": "int" } } },
+  "chazaraRowSubtitle": "{overdue} · {count, plural, =0{no reviews so far} =1{1 review so far} other{{count} reviews so far}}",
+  "@chazaraRowSubtitle": {
+    "placeholders": {
+      "overdue": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "chazaraLogWithDetails": "Log with details",
+  "chazaraReviewed": "Reviewed {unit}",
+  "@chazaraReviewed": { "placeholders": { "unit": { "type": "String" } } },
+
+  "@_SIYUM_SCREEN": {},
+  "siyumTitle": "Siyumim",
+  "siyumEmpty": "No siyumim yet.\nFinish every unit of a sefer — or of a whole seder — and it will appear here. חזק!",
+  "siyumCount": "{count, plural, =1{1 siyum} other{{count} siyumim}} — יישר כח!",
+  "@siyumCount": { "placeholders": { "count": { "type": "int" } } },
+  "siyumCompleted": "Completed {date} · {units}",
+  "@siyumCompleted": {
+    "placeholders": {
+      "date": { "type": "String" },
+      "units": { "type": "String" }
+    }
+  },
+  "siyumEverythingUnderneath": " · everything underneath",
+
+  "@_NOTES_JOURNAL": {},
+  "journalTitle": "Notes Journal",
+  "journalSearchHint": "Search haaros…",
+  "journalEmpty": "No haaros yet.\nAdd one when you log or edit a daf — the “Haara” field lands here.",
+  "journalNoMatches": "No haaros match “{query}”.",
+  "@journalNoMatches": { "placeholders": { "query": { "type": "String" } } },
+  "journalUnknownItem": "Unknown item",
+  "journalSubtitle": "{location} · {date}",
+  "@journalSubtitle": {
+    "placeholders": {
+      "location": { "type": "String" },
+      "date": { "type": "String" }
+    }
+  },
+
+  "@_SEARCH": {},
+  "searchPrompt": "Search sefarim, mesechtos, dafim…",
+  "searchNoMatches": "No matches.",
+
+  "@_STATS": {},
+  "statsTitle": "Statistics",
+  "statsOverall": "Overall",
+  "statsLearned": "Learned",
+  "statsStreak": "Streak",
+  "statsStreakValue": "{count, plural, =1{1 day} other{{count} days}}",
+  "@statsStreakValue": { "placeholders": { "count": { "type": "int" } } },
+  "statsAvgPerDay": "Avg / day (30d)",
+  "statsTimeLearned": "Time learned",
+  "statsTimeThisMonth": "Time this month",
+  "statsProjectedSiyum": "Projected siyum",
+  "statsLearnedValue": "{learned} / {total}",
+  "@statsLearnedValue": {
+    "placeholders": {
+      "learned": { "type": "int", "format": "decimalPattern" },
+      "total": { "type": "int", "format": "decimalPattern" }
+    }
+  },
+  "statsPercentValue": "{percent}%",
+  "@statsPercentValue": { "placeholders": { "percent": { "type": "String" } } },
+  "statsNone": "—",
+  "statsProgressOverTime": "Progress over time",
+  "statsActivity": "Activity (last 12 weeks)",
+  "statsNeedMoreData": "Learn a few units to see your trend.",
+
+  "@_CALCULATOR": {},
+  "calculatorTitle": "Siyum Calculator",
+  "calculatorWhatFinishing": "What are you finishing?",
+  "calculatorRemaining": "{remaining} of {total} left",
+  "@calculatorRemaining": {
+    "placeholders": {
+      "remaining": { "type": "int", "format": "decimalPattern" },
+      "total": { "type": "int", "format": "decimalPattern" }
+    }
+  },
+  "calculatorModeRate": "Rate",
+  "calculatorModeCycle": "Cycle",
+  "calculatorModeByDate": "By date",
+  "calculatorAmountPerDay": "Amount per day",
+  "calculatorAmountShabbos": "Amount on Shabbos (optional)",
+  "calculatorCycleAmounts": "Cycle amounts (comma-separated, one per day)",
+  "calculatorCycleAmountsHelper": "e.g. “5, 5, 5, 5, 5, 0, 10” is a 7-day cycle",
+  "calculatorCycleDay": "Which cycle-day is today?",
+  "calculatorCycleDayHelper": "1 = first amount above; 4 = you are on day 4",
+  "calculatorTarget": "Target: {date}",
+  "@calculatorTarget": { "placeholders": { "date": { "type": "String" } } },
+  "calculatorPickDate": "Pick date",
+  "calculatorAlreadyFinished": "Already finished! 🎉",
+  "calculatorEnterDailyAmount": "Enter a daily amount above 0.",
+  "calculatorEnterAmounts": "Enter amounts, e.g. “5, 5, 0, 10”.",
+  "calculatorCycleNeverFinishes": "That cycle never finishes (all zeros).",
+  "calculatorPickFutureDate": "Pick a date in the future.",
+  "calculatorNeverFinish": "At that rate you never finish.",
+  "calculatorFinishOn": "You will finish on {date}\n(about {days, plural, =1{1 day} other{{days} days}} from today).",
+  "@calculatorFinishOn": {
+    "placeholders": {
+      "date": { "type": "String" },
+      "days": { "type": "int", "format": "decimalPattern" }
+    }
+  },
+  "calculatorCycleLength": "\nCycle length: {days, plural, =1{1 day} other{{days} days}}.",
+  "@calculatorCycleLength": { "placeholders": { "days": { "type": "int" } } },
+  "calculatorRequiredRate": "Learn {rate} per day to finish by\n{date}.",
+  "@calculatorRequiredRate": {
+    "placeholders": {
+      "rate": { "type": "String" },
+      "date": { "type": "String" }
+    }
+  },
+
+  "@_CYCLES": {},
+  "cyclesTitle": "Learning cycles",
+  "cyclesWhichToShow": "Which cycles to show",
+  "cyclesNew": "New cycle",
+  "cyclesToday": "Today · {date}",
+  "@cyclesToday": { "placeholders": { "date": { "type": "String" } } },
+  "cyclesEmpty": "No cycles yet. Turn on a built-in one, or define your own — any sefarim, in any order, at any pace.",
+  "cyclesBuiltInExplainer": "Built-in cycles are the ones the Hebrew calendar can work out exactly. For anything else, define your own.",
+  "cycleBavliName": "Daf Yomi (Bavli)",
+  "cycleBavliDescription": "One daf of Talmud Bavli a day",
+  "cycleYerushalmiName": "Daf Yomi (Yerushalmi)",
+  "cycleYerushalmiDescription": "One daf of Talmud Yerushalmi a day",
+  "whatShowingCycle": "Showing {name}",
+  "@whatShowingCycle": { "placeholders": { "name": { "type": "String" } } },
+  "whatHidingCycle": "Hiding {name}",
+  "@whatHidingCycle": { "placeholders": { "name": { "type": "String" } } },
+  "cycleNumber": "{description} · cycle {number}",
+  "@cycleNumber": {
+    "placeholders": {
+      "description": { "type": "String" },
+      "number": { "type": "int" }
+    }
+  },
+  "tooltipEditCycle": "Edit cycle",
+  "cycleNothingToday": "This cycle has nothing scheduled for today.",
+  "cycleDeleteTitle": "Delete “{name}”?",
+  "@cycleDeleteTitle": { "placeholders": { "name": { "type": "String" } } },
+  "cycleDeleteBody": "Only the cycle is removed. Everything you learned through it stays in your log.",
+  "whatDeletingCycle": "Deleting the cycle “{name}”",
+  "@whatDeletingCycle": { "placeholders": { "name": { "type": "String" } } },
+  "cycleUnitOutOfRange": "“{name}” doesn’t have a unit {unit}, so this can’t be logged. Check the sefer’s unit count, or link this cycle to a different one.",
+  "@cycleUnitOutOfRange": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "unit": { "type": "int" }
+    }
+  },
+  "cycleAlreadyLearned": "Already learned ✓",
+  "cycleLearnedOn": "Learned {date} ✓",
+  "@cycleLearnedOn": { "placeholders": { "date": { "type": "String" } } },
+  "cycleLogButton": "Log {unit}",
+  "@cycleLogButton": { "placeholders": { "unit": { "type": "String" } } },
+  "cycleLogged": "Logged {unit}",
+  "@cycleLogged": { "placeholders": { "unit": { "type": "String" } } },
+  "cycleSeferNotInCatalog": "“{name}” isn’t in your catalog under that name.",
+  "@cycleSeferNotInCatalog": { "placeholders": { "name": { "type": "String" } } },
+  "cycleLinkToSefer": "Link it to a sefer",
+  "cycleLinkTitle": "Link “{name}” to…",
+  "@cycleLinkTitle": { "placeholders": { "name": { "type": "String" } } },
+  "whatLinkingSefer": "Linking “{from}” to {to}",
+  "@whatLinkingSefer": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "cycleLinked": "Linked “{from}” to {to}",
+  "@cycleLinked": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "cycleDafHebrew": "{sefer} · דף {unit}",
+  "@cycleDafHebrew": {
+    "description": "The Hebrew-script line under a Daf Yomi heading. Kept Hebrew in every locale — it is the daf's own name.",
+    "placeholders": {
+      "sefer": { "type": "String" },
+      "unit": { "type": "int" }
+    }
+  },
+
+  "@_EDIT_CYCLE": {},
+  "editCycleTitle": "Edit cycle",
+  "newCycleTitle": "New cycle",
+  "editCycleNameHint": "e.g. Mishna Yomi, Rambam Yomi, my chazara seder",
+  "editCycleUnitsPerDay": "Units per day",
+  "editCycleUnitsPerDayHelper": "Mishna Yomi is 2; a daf a day is 1.",
+  "editCycleStartedOn": "Started on",
+  "editCycleRepeats": "Starts over when it finishes",
+  "editCycleRepeatsSubtitle": "Off = a one-time programme",
+  "editCycleSefarimInOrder": "Sefarim, in order",
+  "editCycleTotalUnits": "{count, plural, =1{1 unit} other{{count} units}}",
+  "@editCycleTotalUnits": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "editCycleEmpty": "Add the sefarim this cycle walks through.",
+  "editCycleAddSefer": "Add a sefer",
+  "editCycleSaveExisting": "Save cycle",
+  "editCycleCreate": "Create cycle",
+  "editCycleSegmentSubtitle": "{count} units from {offset}",
+  "@editCycleSegmentSubtitle": {
+    "placeholders": {
+      "count": { "type": "int", "format": "decimalPattern" },
+      "offset": { "type": "int" }
+    }
+  },
+  "tooltipMoveUp": "Move up",
+  "tooltipMoveDown": "Move down",
+  "tooltipRemove": "Remove",
+  "editCycleAddDialogTitle": "Add a sefer or category",
+  "editCycleEverythingUnderneath": "everything underneath",
+  "editCycleNeedName": "Give the cycle a name.",
+  "editCycleNeedPerDay": "Units per day must be at least 1.",
+  "editCycleNeedSegment": "Add at least one sefer for the cycle to walk.",
+  "whatSavingCycle": "Saving the cycle “{name}”",
+  "@whatSavingCycle": { "placeholders": { "name": { "type": "String" } } },
+
+  "@_ADD_CUSTOM_NODE": {},
+  "addNodeTitle": "Add",
+  "editNodeTitle": "Edit “{name}”",
+  "@editNodeTitle": { "placeholders": { "name": { "type": "String" } } },
+  "addNodeHebrewName": "Hebrew name (optional)",
+  "addNodeParent": "Parent",
+  "addNodeTopLevel": "— Top level —",
+  "addNodeIsLeaf": "Trackable sefer (has units)",
+  "addNodeIsLeafSubtitle": "Off = a folder/category",
+  "addNodeUnitType": "Unit type",
+  "addNodeUnitCount": "Number of units",
+  "addNodeFirstUnit": "First unit number",
+  "addNodeUnitNames": "Unit names (optional, one per line)",
+  "addNodeUnitNamesHelper": "e.g. parsha or siman titles — shown instead of numbers, in order from the first unit.",
+  "addNodeLoweringCount": "Lowering the count keeps any progress on the removed units hidden but intact — raise it again to restore them.",
+  "addNodeNeedName": "Please enter a name.",
+  "addNodeNeedUnits": "Number of units must be greater than 0.",
+  "addNodeTooManyUnits": "That is more units than any sefer has.",
+  "addNodeNegativeOffset": "The first unit number cannot be negative.",
+  "addNodeTooManyNames": "You listed {names} unit names but only have {units} units.",
+  "@addNodeTooManyNames": {
+    "placeholders": {
+      "names": { "type": "int" },
+      "units": { "type": "int" }
+    }
+  },
+  "whatSavingNode": "Saving “{name}”",
+  "@whatSavingNode": { "placeholders": { "name": { "type": "String" } } },
+  "whatAddingNode": "Adding “{name}”",
+  "@whatAddingNode": { "placeholders": { "name": { "type": "String" } } },
+
+  "@_PROFILES": {},
+  "profilesTitle": "Profiles",
+  "profilesNew": "New profile",
+  "profilesActive": "Active",
+  "profilesRenameTitle": "Rename profile",
+  "profilesDeleteTitle": "Delete “{name}”?",
+  "@profilesDeleteTitle": { "placeholders": { "name": { "type": "String" } } },
+  "profilesDeleteBody": "This permanently deletes the profile and all of its learning history, custom sefarim, and goals. This cannot be undone.",
+  "whatSwitchingProfile": "Switching to “{name}”",
+  "@whatSwitchingProfile": { "placeholders": { "name": { "type": "String" } } },
+  "whatRenamingProfile": "Renaming “{from}” to “{to}”",
+  "@whatRenamingProfile": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "whatDeletingProfile": "Deleting “{name}”",
+  "@whatDeletingProfile": { "placeholders": { "name": { "type": "String" } } },
+  "profileDeleted": "Deleted “{name}”.",
+  "@profileDeleted": { "placeholders": { "name": { "type": "String" } } },
+  "profileLastOneKept": "There has to be at least one profile, so “{name}” was kept.",
+  "@profileLastOneKept": { "placeholders": { "name": { "type": "String" } } },
+  "profileDeleteFailed": "Deleting “{name}” failed.",
+  "@profileDeleteFailed": { "placeholders": { "name": { "type": "String" } } },
+  "whatCreatingProfile": "Creating the profile “{name}”",
+  "@whatCreatingProfile": { "placeholders": { "name": { "type": "String" } } },
+
+  "@_SORT_SHEET": {},
+  "sortSheetTitle": "Sort the tree",
+  "sortDescending": "Descending",
+  "sortDescendingSubtitle": "Highest / latest first",
+  "sortApplyTo": "Apply to",
+  "sortAllLevels": "All levels",
+  "sortChildren": "Children",
+  "sortLevel": "Level {n}",
+  "@sortLevel": { "placeholders": { "n": { "type": "int" } } },
+  "whatSavingSortOrder": "Saving the sort order",
+  "sortMetricCatalog": "Catalog order",
+  "sortMetricName": "Name",
+  "sortMetricPercent": "Percent complete",
+  "sortMetricLearned": "Amount done",
+  "sortMetricRemaining": "Amount remaining",
+  "sortMetricLastLearned": "Last learned",
+
+  "@_SESSION_BANNER": {},
+  "sessionLearning": "{clock}  ·  learning",
+  "@sessionLearning": { "placeholders": { "clock": { "type": "String" } } },
+  "sessionPaused": "{clock}  ·  paused",
+  "@sessionPaused": { "placeholders": { "clock": { "type": "String" } } },
+  "sessionLabelled": "{clock}  ·  {label}",
+  "@sessionLabelled": {
+    "placeholders": {
+      "clock": { "type": "String" },
+      "label": { "type": "String" }
+    }
+  },
+  "tooltipPauseSession": "Pause session",
+  "tooltipResumeSession": "Resume session",
+  "tooltipDiscardSession": "Discard session",
+  "whatPausingSession": "Pausing the session",
+  "whatResumingSession": "Resuming the session",
+  "whatDiscardingSession": "Discarding the session",
+
+  "@_SETTINGS": {},
+  "settingsTitle": "Settings",
+  "settingsSectionCalendar": "Calendar",
+  "settingsCalendarGregorian": "Secular (Gregorian)",
+  "settingsCalendarHebrew": "Hebrew",
+  "whatChangingCalendar": "Changing the calendar",
+  "settingsSectionAppearance": "Appearance",
+  "settingsThemeSystem": "Follow system",
+  "settingsThemeLight": "Light",
+  "settingsThemeDark": "Dark",
+  "whatChangingTheme": "Changing the theme",
+  "settingsLanguage": "Hebrew (עברית)",
+  "settingsLanguageSubtitle": "Show the app in Hebrew, right-to-left",
+  "whatChangingLanguage": "Changing the language",
+  "settingsSectionReminders": "Reminders",
+  "settingsDailyNudge": "Daily learning nudge",
+  "settingsDailyNudgeSubtitle": "Show a reminder in the app if you have not learned today",
+  "whatChangingNudge": "Changing the daily nudge",
+  "settingsSectionChazara": "Chazara",
+  "settingsReviewIntervals": "Review intervals",
+  "settingsReviewIntervalsSubtitle": "{intervals} days after each pass",
+  "@settingsReviewIntervalsSubtitle": {
+    "placeholders": { "intervals": { "type": "String" } }
+  },
+  "settingsIntervalsTitle": "Chazara review intervals",
+  "settingsIntervalsBody": "Days after each pass before the next review is due, e.g. “1, 3, 7, 16, 35, 70”. The last value repeats after that.",
+  "settingsIntervalsHint": "1, 3, 7, 16, 35, 70",
+  "whatSavingIntervals": "Saving your chazara intervals",
+  "settingsSectionMeforishBars": "Mefarshim bars",
+  "settingsMeforishBarsExplainer": "Show or hide each meforish’s coverage line under the tree’s progress bars.",
+  "whatShowingBar": "Showing the {name} bar",
+  "@whatShowingBar": { "placeholders": { "name": { "type": "String" } } },
+  "whatHidingBar": "Hiding the {name} bar",
+  "@whatHidingBar": { "placeholders": { "name": { "type": "String" } } },
+  "settingsSectionProfiles": "Profiles",
+  "settingsManageProfiles": "Manage profiles",
+  "settingsSectionHistory": "History",
+  "settingsBulkHistory": "Bulk action history",
+  "settingsBulkHistoryEmpty": "Undo a finish-all or clear-all, any time",
+  "settingsBulkHistoryCount": "{count, plural, =1{1 undoable action} other{{count} undoable actions}}",
+  "@settingsBulkHistoryCount": { "placeholders": { "count": { "type": "int" } } },
+  "settingsSectionBackup": "Backup",
+  "settingsExportFile": "Export to file",
+  "settingsExportFileSubtitle": "Save all progress as a JSON file",
+  "settingsImportFile": "Import from file",
+  "settingsImportFileSubtitle": "Merge a saved JSON file in — adds anything missing, keeps everything you already have",
+  "settingsRestoreFile": "Restore from file",
+  "settingsRestoreFileSubtitle": "Make this profile exactly match a backup, undoing anything recorded since it",
+  "settingsExportClipboard": "Export to clipboard",
+  "settingsExportClipboardSubtitle": "Copy all progress as JSON",
+  "settingsImportClipboard": "Import from clipboard",
+  "settingsImportClipboardSubtitle": "Paste a previous export to restore/merge",
+  "settingsCrashLog": "Crash log",
+  "settingsCrashLogSubtitle": "Kept on this device only — copy it into a bug report",
+  "settingsSectionReset": "Reset",
+  "settingsClearSettings": "Clear settings",
+  "settingsClearSettingsSubtitle": "Reset preferences, goals, learning cycles, custom sefarim, mefarshim, and required-set settings. Your learning log is kept.",
+  "settingsClearTitle": "Clear all settings?",
+  "settingsClearBody": "This resets preferences and removes your goals, learning cycles, custom sefarim, custom mefarshim, and required-mefarshim settings. Your learning log (everything you marked done) is not touched.",
+  "whatClearingSettings": "Clearing your settings",
+  "settingsCleared": "Settings cleared",
+
+  "@_BACKUP_REMINDER": {},
+  "settingsBackupReminder": "Remind me to back up",
+  "settingsBackupReminderSubtitle": "Say so when there is learning no export contains. Your data never leaves this device on its own — this export is the only copy that survives losing it.",
+  "whatChangingBackupReminder": "Changing the backup reminder",
+  "settingsBackupInterval": "Remind me after",
+  "settingsBackupIntervalSubtitle": "{days, plural, =1{1 day of unsaved learning} other{{days} days of unsaved learning}}",
+  "@settingsBackupIntervalSubtitle": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "settingsBackupIntervalBody": "How many days of learning you are willing to have only on this device before the app mentions it.",
+  "settingsBackupIntervalLabel": "Days",
+  "settingsBackupIntervalInvalid": "Enter a number of days above 0.",
+  "whatSavingBackupInterval": "Saving the backup reminder interval",
+  "backupNeverExported": "Never exported",
+  "backupLastExported": "Last exported {date}",
+  "@backupLastExported": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "backupNothingUnsaved": "Everything you have learned is in that backup",
+  "backupUnsavedUnits": "{count, plural, =1{1 unit learned since — it exists only on this device} other{{count} units learned since — they exist only on this device}}",
+  "@backupUnsavedUnits": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "backupBannerNever": "{count, plural, =1{1 unit of your learning has never been backed up.} other{{count} units of your learning have never been backed up.}}",
+  "@backupBannerNever": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "backupBannerStale": "{count, plural, =1{1 unit learned since your last backup} other{{count} units learned since your last backup}} {days, plural, =1{1 day ago} other{{days} days ago}}.",
+  "@backupBannerStale": {
+    "placeholders": {
+      "count": { "type": "int", "format": "decimalPattern" },
+      "days": { "type": "int", "format": "decimalPattern" }
+    }
+  },
+  "backupBannerWhy": "It lives only on this device — nothing is copied anywhere automatically.",
+  "backupBannerAction": "Back up",
+
+  "@_BACKUP": {},
+  "backupSaveDialogTitle": "Save backup",
+  "backupChooseFile": "Choose a backup file",
+  "backupChooseRestoreFile": "Choose a backup to restore",
+  "whatExportingBackup": "Exporting your backup",
+  "whatExportingClipboard": "Exporting to the clipboard",
+  "whatImportingBackup": "Importing your backup",
+  "whatRestoringBackup": "Restoring from your backup",
+  "backupSaved": "Saved backup",
+  "backupExportCancelled": "Export cancelled",
+  "backupImportCancelled": "Import cancelled",
+  "backupRestoreCancelled": "Restore cancelled",
+  "backupExportedClipboard": "Exported to clipboard",
+  "backupImportTitle": "Import data",
+  "backupImportHint": "Paste export JSON here",
+  "backupImportFailed": "Import failed: {reason}",
+  "@backupImportFailed": {
+    "description": "{reason} is the validator's own sentence, which names the bad field.",
+    "placeholders": { "reason": { "type": "String" } }
+  },
+  "backupImportUnreadable": "Import failed: the file could not be read.",
+  "backupImported": "{count, plural, =1{Imported 1 new event} other{Imported {count} new events}}",
+  "@backupImported": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "backupNoEvents": "That backup has no learning events in it",
+  "backupAlreadyUpToDate": "Already up to date — all {count} events were already here. Import merges, so it cannot undo anything you did since. Use “Restore from file” for that.",
+  "@backupAlreadyUpToDate": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "restoreConfirmTitle": "Restore from this backup?",
+  "restoreConfirmNoChange": "This profile already matches the backup — nothing will change.",
+  "restoreConfirmIntro": "This makes the profile exactly match the backup, undoing everything recorded since it.",
+  "restoreConfirmLosing": "{count, plural, =1{1 unit you have marked since the backup will no longer be marked.} other{{count} units you have marked since the backup will no longer be marked.}}",
+  "@restoreConfirmLosing": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "restoreConfirmGaining": "{count, plural, =1{1 unit will be marked again.} other{{count} units will be marked again.}}",
+  "@restoreConfirmGaining": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "restoreConfirmBackupFirst": "Export a fresh backup first if you want to keep the newer progress.",
+  "restoreAlreadyMatched": "Restored — this profile already matched that backup",
+  "restoreNoUnitChange": "Restored to the backup — no change to which units are marked",
+  "restoreSummary": "Restored to the backup: {changes}",
+  "@restoreSummary": {
+    "description": "{changes} is one or both of restoreSummaryRestored / restoreSummaryRemoved, joined by '; '.",
+    "placeholders": { "changes": { "type": "String" } }
+  },
+  "restoreSummaryRestored": "{count, plural, =1{1 unit is marked again} other{{count} units are marked again}}",
+  "@restoreSummaryRestored": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "restoreSummaryRemoved": "{count, plural, =1{1 unit is no longer marked} other{{count} units are no longer marked}}",
+  "@restoreSummaryRemoved": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+
+  "@_CRASH_LOG": {},
+  "crashLogTitle": "Crash log",
+  "crashLogCopy": "Copy to clipboard",
+  "crashLogClear": "Clear log",
+  "crashLogCopied": "Crash log copied",
+  "whatCopyingCrashLog": "Copying the crash log",
+  "crashLogEmpty": "Nothing has crashed.\n\nIf something ever does, the details land here — on this device only — so you can copy them into a bug report.",
+
+  "@_ERROR_VIEW": {},
+  "errorTitle": "Something went wrong",
+  "errorCatalogTitle": "The catalog could not be loaded",
+  "errorCatalogBody": "The bundled list of sefarim failed to load, so the tree cannot be shown. Your learning log is untouched.",
+  "errorLogTitle": "Your learning log could not be read",
+  "errorLogBody": "The database did not open. Nothing has been changed or lost — this is a read that failed.",
+  "errorProfilesTitle": "Your profiles could not be read",
+  "errorProfilesBody": "The database did not open. Nothing has been changed or lost.",
+  "errorRetry": "Try again",
+  "errorShowDetails": "Show details",
+  "errorHideDetails": "Hide details",
+  "errorOpenCrashLog": "Open crash log",
+  "errorDetailsHint": "The full error is below, and is already in the crash log."
+}

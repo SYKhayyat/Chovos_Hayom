@@ -78,9 +78,17 @@ class SessionTimerState {
 /// screen, backgrounding the app, and quitting it, because it is persisted and
 /// derived from wall-clock instants.
 class SessionTimerController extends Notifier<SessionTimerState> {
+  /// The profile this timer belongs to. Watched, so switching profiles reads
+  /// that profile's own session — a timer is one person's learning in progress,
+  /// not the device's, and must not follow the switch into someone else's log.
+  late String _profileId;
+
+  String get _key => PrefKeys.scoped(_profileId, PrefKeys.sessionTimer);
+
   @override
   SessionTimerState build() {
-    final raw = ref.watch(appPreferencesProvider).getString(PrefKeys.sessionTimer);
+    _profileId = ref.watch(activeProfileProvider);
+    final raw = ref.watch(appPreferencesProvider).getString(_key);
     if (raw == null || raw.isEmpty) return const SessionTimerState();
     try {
       return SessionTimerState.fromJson(
@@ -96,9 +104,9 @@ class SessionTimerController extends Notifier<SessionTimerState> {
     state = next;
     final prefs = ref.read(appPreferencesProvider);
     if (!next.isActive) {
-      await prefs.remove(PrefKeys.sessionTimer);
+      await prefs.remove(_key);
     } else {
-      await prefs.setString(PrefKeys.sessionTimer, jsonEncode(next.toJson()));
+      await prefs.setString(_key, jsonEncode(next.toJson()));
     }
   }
 

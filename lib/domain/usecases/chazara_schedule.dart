@@ -1,4 +1,6 @@
+import '../entities/layer.dart';
 import 'fold_log.dart';
+import 'layer_requirements.dart';
 
 /// A unit that is due (or overdue) for a chazara (review) pass.
 class ChazaraItem {
@@ -51,12 +53,22 @@ class ChazaraSchedule {
   /// and this recomputes on the same invalidation the fold does. It also means
   /// the schedule never has to pack (nodeId, unit) into a string and pick it
   /// apart again — the nested maps carry both directly.
+  ///
+  /// [required] gates completeness: `touchedAtByNode` carries an entry for any
+  /// unit with a `done` event, *including* one where only an optional meforish
+  /// was ticked and the required set is unmet. Passing the resolver keeps the
+  /// promise the doc above makes — "only if it is currently marked done" — by
+  /// dropping units whose required layers aren't all present. With it null the
+  /// requirement is the text alone (`{main}`), the pre-layers behaviour.
   static List<ChazaraItem> due(LogFold fold, DateTime now,
-      {List<int> intervals = defaultIntervals}) {
+      {List<int> intervals = defaultIntervals, LayerRequirements? required}) {
     final today = _dayNumber(now);
     final out = <ChazaraItem>[];
     fold.touchedAtByNode.forEach((nodeId, byUnit) {
       byUnit.forEach((unitIndex, last) {
+        final req = required?.forUnit(nodeId, unitIndex) ?? const {mainLayerId};
+        final have = fold.completedLayers(nodeId, unitIndex);
+        if (!req.every(have.contains)) return;
         final rc = fold.reviewCount(nodeId, unitIndex);
         final overdue = today - (_dayNumber(last) + intervalFor(rc, intervals));
         if (overdue < 0) return;

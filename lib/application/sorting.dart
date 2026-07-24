@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/entities/progress_node.dart';
 import 'providers.dart';
+import 'settings.dart';
 
 /// How a node's children are ordered in the tree.
 enum SortMetric {
@@ -13,16 +14,10 @@ enum SortMetric {
   lastLearned, // most recent activity (time finished)
 }
 
-extension SortMetricLabel on SortMetric {
-  String get label => switch (this) {
-        SortMetric.catalog => 'Catalog order',
-        SortMetric.name => 'Name',
-        SortMetric.percent => 'Percent complete',
-        SortMetric.learned => 'Amount done',
-        SortMetric.remaining => 'Amount remaining',
-        SortMetric.lastLearned => 'Last learned',
-      };
-}
+// The English labels for these used to live here as a `SortMetricLabel`
+// extension. Naming a metric is a presentation decision that depends on the
+// reader's language, which the application layer has no business knowing — see
+// `features/common/naming.dart`, which holds it now.
 
 /// A tree-sort configuration. [level] scopes which generation is reordered:
 /// null = every level; k = only the k-th generation below the sorted root
@@ -58,7 +53,23 @@ class SortConfig {
 /// Reads the shared fold rather than re-scanning the log: `doneAtByNode` is
 /// already the learned-date of every unit currently done, so this costs only a
 /// walk of what the user has actually learned.
+///
+/// The "is a sort even switched on?" gate lives **here**, not at the call site.
+/// The dashboard used to write `sort.active ? ref.watch(this) : const {}`, which
+/// bought the same laziness by changing the *set of providers the widget
+/// subscribes to* from one build to the next. Riverpod tolerates a conditional
+/// watch, but it means subscriptions are torn down and re-established mid-frame,
+/// and the app's crash log carries one `setState() called during build` thrown
+/// from the provider scope while an overlay was building over this very screen.
+/// That stack could not be reproduced (see `dashboard_rebuild_test.dart`), so
+/// this is not a proven fix — but a stable subscription set costs nothing and
+/// removes the only conditional watch in the app.
 final nodeLastActivityProvider = Provider<Map<String, DateTime>>((ref) {
+  // Nothing is sorting by it, so nothing needs the roll-up. Same saving as the
+  // conditional watch, without the moving subscription.
+  if (!ref.watch(settingsProvider.select((s) => s.sort.active))) {
+    return const {};
+  }
   final fold = ref.watch(foldProvider).asData?.value;
   final forest = ref.watch(progressForestProvider).asData?.value;
   if (forest == null || fold == null) return const {};

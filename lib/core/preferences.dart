@@ -44,6 +44,14 @@ class PrefKeys {
   /// tree. Absent/empty means every enabled meforish shows its bar.
   static const hiddenMeforishBars = 'hiddenMeforishBars';
 
+  /// Whether to say anything when there is learning the last export doesn't
+  /// contain. On by default: the app's export is the only copy of a user's
+  /// history that survives a lost device, so silence is the dangerous default.
+  static const backupReminderEnabled = 'backupReminderEnabled';
+
+  /// How many days of unsaved learning to tolerate before saying so.
+  static const backupIntervalDays = 'backupIntervalDays';
+
   /// The in-flight learning session (JSON). Persisted so a timer survives the
   /// sheet being dismissed, the app being backgrounded, and the process dying.
   static const sessionTimer = 'sessionTimer';
@@ -55,6 +63,17 @@ class PrefKeys {
   /// Set once the one-time move of the old device-wide settings into the active
   /// profile has run. See `SettingsNotifier`.
   static const settingsScopedMigrated = 'settingsScopedMigrated';
+
+  /// When this profile was last exported (ISO-8601), or absent if it never has
+  /// been.
+  ///
+  /// Deliberately *not* in [perProfile]: it is per-profile **state**, like the
+  /// session timer, not a setting. It does not ride in a backup — "when you last
+  /// backed up" is a fact about this device, and restoring a year-old file onto
+  /// a new phone must not tell you that phone is safe — and *Clear settings*
+  /// leaves it alone, because forgetting it would silence the reminder for a
+  /// whole interval at the exact moment a user has just reset things.
+  static const lastBackupAt = 'lastBackupAt';
 
   /// Every setting that belongs to a profile rather than the device.
   static const perProfile = [
@@ -68,6 +87,8 @@ class PrefKeys {
     chazaraIntervals,
     hiddenMeforishBars,
     cycles,
+    backupReminderEnabled,
+    backupIntervalDays,
   ];
 
   /// The profile-scoped form of [key].

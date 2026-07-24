@@ -2,7 +2,20 @@ import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/usecases/chazara_schedule.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
+import 'package:chovos_hayom/domain/usecases/layer_requirements.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+LearningEvent doneWith(DateTime day, List<String> layers, {int unit = 2}) =>
+    LearningEvent(
+      id: 'd${_seq++}',
+      profileId: 'p',
+      nodeId: 'a',
+      unitIndex: unit,
+      action: EventAction.done,
+      occurredAt: day,
+      loggedAt: day,
+      layers: layers,
+    );
 
 var _seq = 0;
 LearningEvent evt(EventAction action, DateTime day, {int unit = 2}) =>
@@ -71,6 +84,32 @@ void main() {
       ];
       final due = ChazaraSchedule.due(FoldLog.fold(events), DateTime(2026, 1, 20));
       expect(due.map((d) => d.unitIndex).toList(), [2, 3]);
+    });
+
+    test('a unit with only an optional meforish ticked is not due', () {
+      // Ticking Rashi (not the text) leaves a touch date but the unit isn't done
+      // under the text-only default, so it must not appear on the schedule.
+      final fold = FoldLog.fold([doneWith(DateTime(2026, 1, 1), ['rashi'])]);
+      expect(ChazaraSchedule.due(fold, DateTime(2026, 1, 10)), isEmpty);
+    });
+
+    test('required layers gate the schedule', () {
+      final req = LayerRequirements(nodeConfig: {
+        'a': {'main', 'rashi'}
+      });
+      // Only the text learned: due date has passed, but Rashi is required.
+      final textOnly = FoldLog.fold([doneWith(DateTime(2026, 1, 1), ['main'])]);
+      expect(
+          ChazaraSchedule.due(textOnly, DateTime(2026, 1, 10), required: req),
+          isEmpty);
+
+      // Add Rashi and it becomes a real, complete unit — now it's due.
+      final both = FoldLog.fold([
+        doneWith(DateTime(2026, 1, 1), ['main']),
+        doneWith(DateTime(2026, 1, 1), ['rashi']),
+      ]);
+      expect(ChazaraSchedule.due(both, DateTime(2026, 1, 10), required: req),
+          hasLength(1));
     });
   });
 }

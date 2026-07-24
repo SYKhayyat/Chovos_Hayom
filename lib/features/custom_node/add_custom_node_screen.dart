@@ -7,8 +7,10 @@ import '../../application/providers.dart';
 import '../../domain/entities/catalog.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/enums.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/missing_item.dart';
+import '../common/naming.dart';
 
 /// Create or edit a node. In edit mode ([nodeId] set) it writes a per-profile
 /// override keyed by that node's id — so *any* node, built-in included, can be
@@ -32,8 +34,7 @@ class AddCustomNodeScreen extends ConsumerWidget {
     if (existing == null) {
       return MissingItemScreen(
         loading: !ref.watch(mergedCatalogProvider).hasValue,
-        message: 'This item no longer exists.\n'
-            'It may have been hidden or deleted.',
+        message: AppLocalizations.of(context).itemMissing,
       );
     }
     // Keyed by id so the form seeds itself once per node, and re-seeds if the
@@ -100,46 +101,52 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
         : (catalog.all.where((n) => !banned.contains(n.id)).toList()
           ..sort((a, b) => a.name.compareTo(b.name)));
 
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Edit "${widget.existing!.name}"' : 'Add')),
+      appBar: AppBar(
+          title: Text(_isEdit
+              ? l10n.editNodeTitle(nodeName(l10n, widget.existing!))
+              : l10n.addNodeTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           TextField(
             controller: _name,
-            decoration: const InputDecoration(labelText: 'Name'),
+            decoration: InputDecoration(labelText: l10n.labelName),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _hebrew,
-            decoration: const InputDecoration(labelText: 'Hebrew name (optional)'),
+            decoration: InputDecoration(labelText: l10n.addNodeHebrewName),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String?>(
             initialValue: parents.any((p) => p.id == _parentId) ? _parentId : null,
-            decoration: const InputDecoration(labelText: 'Parent'),
+            decoration: InputDecoration(labelText: l10n.addNodeParent),
             items: [
-              const DropdownMenuItem(value: null, child: Text('— Top level —')),
+              DropdownMenuItem(value: null, child: Text(l10n.addNodeTopLevel)),
               for (final c in parents)
-                DropdownMenuItem(value: c.id, child: Text(c.name)),
+                DropdownMenuItem(
+                    value: c.id, child: Text(nodeName(l10n, c))),
             ],
             onChanged: (v) => setState(() => _parentId = v),
           ),
           const SizedBox(height: 12),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Trackable sefer (has units)'),
-            subtitle: const Text('Off = a folder/category'),
+            title: Text(l10n.addNodeIsLeaf),
+            subtitle: Text(l10n.addNodeIsLeafSubtitle),
             value: _isLeaf,
             onChanged: (v) => setState(() => _isLeaf = v),
           ),
           if (_isLeaf) ...[
             DropdownButtonFormField<UnitLabel>(
               initialValue: _label,
-              decoration: const InputDecoration(labelText: 'Unit type'),
+              decoration: InputDecoration(labelText: l10n.addNodeUnitType),
               items: [
                 for (final l in UnitLabel.values)
-                  DropdownMenuItem(value: l, child: Text(l.name)),
+                  DropdownMenuItem(
+                      value: l, child: Text(unitLabelName(l10n, l))),
               ],
               onChanged: (v) => setState(() => _label = v ?? UnitLabel.perek),
             ),
@@ -147,39 +154,38 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
             TextField(
               controller: _count,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Number of units'),
+              decoration: InputDecoration(labelText: l10n.addNodeUnitCount),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _offset,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'First unit number'),
+              decoration: InputDecoration(labelText: l10n.addNodeFirstUnit),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _names,
               minLines: 2,
               maxLines: 8,
-              decoration: const InputDecoration(
-                labelText: 'Unit names (optional, one per line)',
-                helperText: 'e.g. parsha or siman titles — shown instead of '
-                    'numbers, in order from the first unit.',
+              decoration: InputDecoration(
+                labelText: l10n.addNodeUnitNames,
+                helperText: l10n.addNodeUnitNamesHelper,
                 alignLabelWithHint: true,
               ),
             ),
             if (_isEdit)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  'Lowering the count keeps any progress on the removed units '
-                  'hidden but intact — raise it again to restore them.',
-                  style: TextStyle(fontSize: 12),
+                  l10n.addNodeLoweringCount,
+                  style: const TextStyle(fontSize: 12),
                 ),
               ),
           ],
           const SizedBox(height: 24),
           FilledButton(
-              onPressed: _save, child: Text(_isEdit ? 'Save' : 'Add')),
+              onPressed: _save,
+              child: Text(_isEdit ? l10n.actionSave : l10n.actionAdd)),
         ],
       ),
     );
@@ -201,25 +207,26 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
   Future<void> _save() async {
     final navigator = Navigator.of(context);
     final guard = WriteGuard.of(context, ref);
+    final l10n = AppLocalizations.of(context);
     final name = _name.text.trim();
     if (name.isEmpty) {
-      guard.report('Please enter a name.');
+      guard.report(l10n.addNodeNeedName);
       return;
     }
     final count = int.tryParse(_count.text.trim()) ?? 0;
     final offset = int.tryParse(_offset.text.trim()) ?? 1;
     if (_isLeaf && count <= 0) {
-      guard.report('Number of units must be greater than 0.');
+      guard.report(l10n.addNodeNeedUnits);
       return;
     }
     // Same bounds the backup importer enforces, so a node can't be created here
     // that a backup of it would then be rejected for.
     if (_isLeaf && count > BackupValidator.maxUnitCount) {
-      guard.report('That is more units than any sefer has.');
+      guard.report(l10n.addNodeTooManyUnits);
       return;
     }
     if (_isLeaf && offset < 0) {
-      guard.report('The first unit number cannot be negative.');
+      guard.report(l10n.addNodeNegativeOffset);
       return;
     }
     final hebrew = _hebrew.text.trim();
@@ -231,8 +238,7 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
       names.removeLast();
     }
     if (names.length > count) {
-      guard.report('You listed ${names.length} unit names but only have '
-          '$count units.');
+      guard.report(l10n.addNodeTooManyNames(names.length, count));
       return;
     }
 
@@ -253,7 +259,7 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
     final profileId = ref.read(activeProfileProvider);
     final saved = await guard.run(
       () => repo.addCustomNode(profileId, node),
-      what: _isEdit ? 'Saving "$name"' : 'Adding "$name"',
+      what: _isEdit ? l10n.whatSavingNode(name) : l10n.whatAddingNode(name),
     );
     // The form stays open on failure, with everything the user typed still in
     // it — closing it would throw away work that was never written.

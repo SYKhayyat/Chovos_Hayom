@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/session_timer.dart';
 import '../../application/stats.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 
 /// The running-session strip: shows a live learning session wherever you are,
@@ -45,6 +46,7 @@ class _SessionBannerState extends ConsumerState<SessionBanner> {
     final session = ref.watch(sessionTimerProvider);
     if (!session.isActive) return const SizedBox.shrink();
 
+    final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     final now = ref.read(clockProvider)();
     final seconds = session.elapsedAt(now).inSeconds;
@@ -62,8 +64,10 @@ class _SessionBannerState extends ConsumerState<SessionBanner> {
           Expanded(
             child: Text(
               session.label == null
-                  ? '$clock  ·  ${session.isRunning ? 'learning' : 'paused'}'
-                  : '$clock  ·  ${session.label}',
+                  ? (session.isRunning
+                      ? l10n.sessionLearning(clock)
+                      : l10n.sessionPaused(clock))
+                  : l10n.sessionLabelled(clock, session.label!),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(color: scheme.onPrimaryContainer),
@@ -71,24 +75,28 @@ class _SessionBannerState extends ConsumerState<SessionBanner> {
           ),
           IconButton(
             icon: Icon(session.isRunning ? Icons.pause : Icons.play_arrow),
-            tooltip: session.isRunning ? 'Pause session' : 'Resume session',
+            tooltip: session.isRunning
+                ? l10n.tooltipPauseSession
+                : l10n.tooltipResumeSession,
             color: scheme.onPrimaryContainer,
             onPressed: () => guarded(
               context,
               ref,
               () => ref.read(sessionTimerProvider.notifier).toggle(now),
-              what: '${session.isRunning ? 'Pausing' : 'Resuming'} the session',
+              what: session.isRunning
+                  ? l10n.whatPausingSession
+                  : l10n.whatResumingSession,
             ),
           ),
           IconButton(
             icon: const Icon(Icons.close),
-            tooltip: 'Discard session',
+            tooltip: l10n.tooltipDiscardSession,
             color: scheme.onPrimaryContainer,
             onPressed: () => guarded(
               context,
               ref,
               () => ref.read(sessionTimerProvider.notifier).reset(),
-              what: 'Discarding the session',
+              what: l10n.whatDiscardingSession,
             ),
           ),
         ],

@@ -131,8 +131,20 @@ final chazaraDueProvider = Provider<List<ChazaraItem>>((ref) {
   final fold = ref.watch(foldProvider).asData?.value;
   if (fold == null) return const [];
   final intervals = ref.watch(settingsProvider.select((s) => s.chazaraIntervals));
-  return ChazaraSchedule.due(fold, ref.watch(clockProvider)(),
-      intervals: intervals);
+  final required = ref.watch(layerRequirementsProvider);
+  final items = ChazaraSchedule.due(fold, ref.watch(clockProvider)(),
+      intervals: intervals, required: required);
+  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+  if (catalog == null) return items;
+  // Drop units whose node has since been hidden or removed, or that now sit
+  // above a lowered unitCount — the schedule reads the log, which still
+  // remembers them, but they can't be shown (the row would render a raw id) or
+  // reviewed, so they must not sit in the list or the due-count badge.
+  return [
+    for (final item in items)
+      if (catalog.byId(item.nodeId)?.containsUnit(item.unitIndex) ?? false)
+        item,
+  ];
 });
 
 /// Completed nodes at every level (siyumim), most-recently-finished first.

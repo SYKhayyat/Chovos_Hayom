@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/session_timer.dart';
 import '../../application/stats.dart';
 import '../../domain/entities/layer.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
+import '../common/naming.dart';
 
 /// Result of the logging sheet. [occurredAt] is null when the user did not set a
 /// date/time manually, so the caller auto-fills "now" (ARCHITECTURE.md §2.2).
@@ -46,7 +48,10 @@ Future<LogUnitResult?> showLogUnitSheet(
   DateTime? initialOccurredAt,
   int? initialDurationMin,
   String? initialNote,
-  String saveLabel = 'Mark learned',
+  /// Null uses "Mark learned". A default *value* can't be a localized string —
+  /// it has to be resolved from a context — so the default is expressed as
+  /// absence and filled in where the sheet is built.
+  String? saveLabel,
   List<Layer> layerOptions = const [],
   Set<String> initialLayers = const {mainLayerId},
   String? nodeId,
@@ -73,7 +78,7 @@ Future<LogUnitResult?> showLogUnitSheet(
 class _LogUnitSheet extends ConsumerStatefulWidget {
   const _LogUnitSheet({
     required this.title,
-    required this.saveLabel,
+    this.saveLabel,
     required this.layerOptions,
     required this.initialLayers,
     this.initialOccurredAt,
@@ -84,7 +89,7 @@ class _LogUnitSheet extends ConsumerStatefulWidget {
   });
 
   final String title;
-  final String saveLabel;
+  final String? saveLabel;
   final DateTime? initialOccurredAt;
   final int? initialDurationMin;
   final String? initialNote;
@@ -139,6 +144,7 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
   Future<void> _toggleTimer() async {
     final timer = ref.read(sessionTimerProvider.notifier);
     final running = ref.read(sessionTimerProvider).isRunning;
+    final l10n = AppLocalizations.of(context);
     final ok = await guarded(
       context,
       ref,
@@ -146,7 +152,7 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
           label: widget.title,
           nodeId: widget.nodeId,
           unitIndex: widget.unitIndex),
-      what: '${running ? 'Pausing' : 'Starting'} the session timer',
+      what: running ? l10n.whatPausingTimer : l10n.whatStartingTimer,
     );
     if (!ok) return;
     // Pausing offers the time it measured as the duration, without overwriting
@@ -207,7 +213,7 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
     if (ref.read(sessionTimerProvider).isActive) {
       await guarded(context, ref,
           () => ref.read(sessionTimerProvider.notifier).reset(),
-          what: 'Ending the session timer');
+          what: AppLocalizations.of(context).whatEndingTimer);
     }
     if (!mounted) return;
     Navigator.of(context).pop(LogUnitResult(
@@ -223,6 +229,7 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final session = ref.watch(sessionTimerProvider);
     final elapsed = session.elapsedAt(_now);
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + bottomInset),
       child: SingleChildScrollView(
@@ -233,14 +240,14 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
             Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             if (widget.layerOptions.isNotEmpty) ...[
-              Text('What you learned:',
+              Text(l10n.logSheetWhatYouLearned,
                   style: Theme.of(context).textTheme.labelLarge),
               for (final layer in widget.layerOptions)
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   dense: true,
                   value: _selectedLayers.contains(layer.id),
-                  title: Text(layer.name),
+                  title: Text(layerName(l10n, layer)),
                   onChanged: (v) => setState(() {
                     if (v == true) {
                       _selectedLayers.add(layer.id);
@@ -253,8 +260,9 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
             ],
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Set date & time manually'),
-              subtitle: Text(_manualDate ? _dateTimeLabel : 'Defaults to now'),
+              title: Text(l10n.logSheetManualDateTime),
+              subtitle: Text(
+                  _manualDate ? _dateTimeLabel : l10n.logSheetDefaultsToNow),
               value: _manualDate,
               onChanged: (v) => setState(() => _manualDate = v),
             ),
@@ -264,54 +272,56 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
                 children: [
                   TextButton.icon(
                     icon: const Icon(Icons.calendar_today, size: 18),
-                    label: const Text('Pick date'),
+                    label: Text(l10n.logSheetPickDate),
                     onPressed: _pickDate,
                   ),
                   TextButton.icon(
                     icon: const Icon(Icons.schedule, size: 18),
-                    label: const Text('Pick time'),
+                    label: Text(l10n.logSheetPickTime),
                     onPressed: _pickTime,
                   ),
                 ],
               ),
             Row(
               children: [
-                Text('Timer  ${_clock(elapsed)}',
+                Text(l10n.logSheetTimer(_clock(elapsed)),
                     style: Theme.of(context).textTheme.titleMedium),
                 const Spacer(),
                 if (session.isActive && !session.isRunning)
                   TextButton(
                     onPressed: () => guarded(context, ref,
                         () => ref.read(sessionTimerProvider.notifier).reset(),
-                        what: 'Resetting the session timer'),
-                    child: const Text('Reset'),
+                        what: l10n.whatResettingTimer),
+                    child: Text(l10n.actionReset),
                   ),
                 FilledButton.tonalIcon(
                   icon: Icon(session.isRunning ? Icons.pause : Icons.play_arrow),
-                  label: Text(session.isRunning ? 'Stop' : 'Start'),
+                  label: Text(session.isRunning
+                      ? l10n.logSheetStop
+                      : l10n.logSheetStart),
                   onPressed: _toggleTimer,
                 ),
               ],
             ),
             if (session.isRunning)
               Text(
-                'Keeps running if you close this — go learn.',
+                l10n.logSheetKeepsRunning,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             TextField(
               controller: _durationCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'How long it took (minutes, optional)',
+              decoration: InputDecoration(
+                labelText: l10n.logSheetDuration,
               ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _noteCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Haara (optional)',
-                hintText: 'A chiddush, a question, a maareh makom, how it went…',
-                helperText: 'Collected in your Notes Journal.',
+              decoration: InputDecoration(
+                labelText: l10n.logSheetHaara,
+                hintText: l10n.logSheetHaaraHint,
+                helperText: l10n.logSheetHaaraHelper,
               ),
               maxLines: 5,
               minLines: 1,
@@ -322,12 +332,12 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(l10n.actionCancel),
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
                   onPressed: _selectedLayers.isEmpty ? null : _save,
-                  child: Text(widget.saveLabel),
+                  child: Text(widget.saveLabel ?? l10n.logSheetMarkLearned),
                 ),
               ],
             ),

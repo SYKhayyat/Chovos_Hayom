@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1  # bumped by the release checklist in README.md
+version: 1.0.1+2  # bumped by the release checklist in README.md
 
 environment:
   sdk: ^3.12.2
@@ -36,12 +36,27 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  file_picker: ^11.0.2
+  # Pinned to 8.x deliberately. file_picker 11's Android build.gradle assumes
+  # "AGP 9 ⟹ built-in Kotlin is on", but Flutter 3.44 ships built-in Kotlin OFF
+  # by default, so 11's Kotlin module never compiles and the Android build fails
+  # outright. 8.x has a Java Android implementation (no Kotlin plugin, builds
+  # cleanly) with full SAF save/open support, and the same save/pick API surface
+  # the app uses. Revisit when file_picker ships a Flutter-3.44-compatible release.
+  file_picker: ^8.3.7
   flutter_riverpod: ^3.3.2
   riverpod_annotation: ^4.0.3
   drift: ^2.34.0
   drift_flutter: ^0.3.0
-  sqlite3_flutter_libs: ^0.6.0+eol
+  # `sqlite3_flutter_libs` is deliberately NOT listed here.
+  #
+  # It reads like an abandoned dependency — its only published version is
+  # `0.6.0+eol` — but it is the opposite: since `sqlite3` 3.x the native library
+  # is built through Dart's hooks/native-assets mechanism, so that package was
+  # emptied of all code and now exists purely as a marker meaning "this app has
+  # migrated off the old Flutter-specific build scripts". `drift_flutter`
+  # depends on it itself for exactly that reason, so it is still resolved (and
+  # still doing nothing). Listing it directly only invites someone to read the
+  # `+eol` and go looking for a problem that isn't there.
   uuid: ^4.5.3
   collection: ^1.19.1
   fl_chart: ^1.2.0
@@ -78,6 +93,11 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Turns on `flutter gen-l10n`, which builds the AppLocalizations table from
+  # lib/l10n/*.arb (configured in l10n.yaml at the repo root). Without this flag
+  # the generator refuses to run at all.
+  generate: true
 
   assets:
     - assets/catalog/

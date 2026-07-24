@@ -126,15 +126,21 @@ class FoldLog {
           final set = completed[e.nodeId]?[e.unitIndex];
           if (set != null) {
             set.removeAll(e.layers);
-            if (set.isEmpty) completed[e.nodeId]!.remove(e.unitIndex);
+            if (set.isEmpty) {
+              completed[e.nodeId]!.remove(e.unitIndex);
+              // Only a *full* un-mark clears the unit's review history, so a
+              // later re-mark starts fresh (matches ChazaraSchedule and the
+              // grid's ↻ badge). A partial un-mark — un-ticking one optional
+              // meforish while its required set survives — must leave the date,
+              // chazara count and haara intact: the unit is still learned, and
+              // the cumulative chart, the chazara schedule and its siyum all
+              // read these. Clearing them here was silent data loss.
+              reviews[e.nodeId]?.remove(e.unitIndex);
+              doneAt[e.nodeId]?.remove(e.unitIndex);
+              touchedAt[e.nodeId]?.remove(e.unitIndex);
+              annotated[e.nodeId]?.remove(e.unitIndex);
+            }
           }
-          // Un-marking clears the unit's review history too, so a later re-mark
-          // starts fresh (matches ChazaraSchedule and the grid's ↻ badge), and
-          // with it every other trace of the unit having been learned.
-          reviews[e.nodeId]?.remove(e.unitIndex);
-          doneAt[e.nodeId]?.remove(e.unitIndex);
-          touchedAt[e.nodeId]?.remove(e.unitIndex);
-          annotated[e.nodeId]?.remove(e.unitIndex);
         case EventAction.reviewed:
           // A pass over something not currently learned isn't a chazara of it,
           // so it moves nothing. (UnitHistoryFinder shows the same to the user.)

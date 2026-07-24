@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/providers.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
+import '../common/naming.dart';
 
 /// Logs one chazara (review) pass: which mefarshim were reviewed, when, how long,
 /// and any notes. Each pass is independent of the main learning and of other
@@ -53,6 +55,7 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
     final required = ref.watch(layerRequirementsProvider);
     final allLayers = ref.watch(allLayersProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     final completed = fold?.completedLayers(widget.node.id, widget.unit) ?? const {};
     final requiredSet = required.forUnit(widget.node.id, widget.unit);
@@ -68,8 +71,10 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
       _seeded = true;
     }
 
-    Layer layerOf(String id) => allLayers.firstWhere((l) => l.id == id,
-        orElse: () => Layer(id: id, name: 'Deleted meforish'));
+    String nameOf(String id) => layerName(
+        l10n,
+        allLayers.firstWhere((l) => l.id == id,
+            orElse: () => Layer(id: id, name: l10n.deletedMeforish)));
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
@@ -79,17 +84,17 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Add chazara', style: theme.textTheme.titleLarge),
-            Text('${widget.node.name} · ${widget.node.unitHeading(widget.unit)}',
+            Text(l10n.addChazaraTitle, style: theme.textTheme.titleLarge),
+            Text(nodeAndUnit(l10n, widget.node, widget.unit),
                 style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
-            Text('Reviewed:', style: theme.textTheme.labelLarge),
+            Text(l10n.addChazaraReviewed, style: theme.textTheme.labelLarge),
             for (final id in candidates)
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
                 dense: true,
                 value: _selected.contains(id),
-                title: Text(layerOf(id).name),
+                title: Text(nameOf(id)),
                 onChanged: (v) => setState(() {
                   if (v == true) {
                     _selected.add(id);
@@ -100,8 +105,9 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
               ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Set date & time manually'),
-              subtitle: Text(_manualDate ? _dateTimeLabel : 'Defaults to now'),
+              title: Text(l10n.logSheetManualDateTime),
+              subtitle: Text(
+                  _manualDate ? _dateTimeLabel : l10n.logSheetDefaultsToNow),
               value: _manualDate,
               onChanged: (v) => setState(() => _manualDate = v),
             ),
@@ -109,12 +115,12 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
               Wrap(spacing: 8, children: [
                 TextButton.icon(
                   icon: const Icon(Icons.calendar_today, size: 18),
-                  label: const Text('Pick date'),
+                  label: Text(l10n.logSheetPickDate),
                   onPressed: _pickDate,
                 ),
                 TextButton.icon(
                   icon: const Icon(Icons.schedule, size: 18),
-                  label: const Text('Pick time'),
+                  label: Text(l10n.logSheetPickTime),
                   onPressed: _pickTime,
                 ),
               ]),
@@ -122,14 +128,14 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
               controller: _durationCtrl,
               keyboardType: TextInputType.number,
               decoration:
-                  const InputDecoration(labelText: 'How long (minutes, optional)'),
+                  InputDecoration(labelText: l10n.addChazaraDuration),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _noteCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Haara (optional)',
-                helperText: 'Collected in your Notes Journal.',
+              decoration: InputDecoration(
+                labelText: l10n.logSheetHaara,
+                helperText: l10n.logSheetHaaraHelper,
               ),
               maxLines: 4,
               minLines: 1,
@@ -140,12 +146,12 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(l10n.actionCancel),
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
                   onPressed: _selected.isEmpty ? null : _save,
-                  child: const Text('Log chazara'),
+                  child: Text(l10n.addChazaraSubmit),
                 ),
               ],
             ),
@@ -193,8 +199,8 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
     final note = _noteCtrl.text.trim();
     final logger = ref.read(loggingServiceProvider);
     final guard = WriteGuard.of(context, ref);
-    final heading =
-        '${widget.node.name} · ${widget.node.unitHeading(widget.unit)}';
+    final l10n = AppLocalizations.of(context);
+    final heading = nodeAndUnit(l10n, widget.node, widget.unit);
     Navigator.pop(context);
     await guard.run(
       () => logger.markReview(
@@ -205,7 +211,7 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
         note: note.isEmpty ? null : note,
         layers: _selected.toList(),
       ),
-      what: 'Logging a chazara on $heading',
+      what: l10n.whatLoggingChazara(heading),
     );
   }
 }

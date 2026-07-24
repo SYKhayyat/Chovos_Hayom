@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 
 /// Reads back the on-device crash log.
@@ -39,15 +40,16 @@ class _CrashLogScreenState extends ConsumerState<CrashLogScreen> {
   Widget build(BuildContext context) {
     final contents = _contents;
     final isEmpty = contents != null && contents.trim().isEmpty;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Crash log'),
+        title: Text(l10n.crashLogTitle),
         actions: [
           if (contents != null && !isEmpty) ...[
             IconButton(
               icon: const Icon(Icons.copy),
-              tooltip: 'Copy to clipboard',
+              tooltip: l10n.crashLogCopy,
               // Through the guard like everything else — a clipboard write can
               // fail on its platform channel, and "copied" when nothing was is
               // exactly the class of lie the guard exists to stop.
@@ -55,13 +57,13 @@ class _CrashLogScreenState extends ConsumerState<CrashLogScreen> {
                 context,
                 ref,
                 () => Clipboard.setData(ClipboardData(text: contents)),
-                what: 'Copying the crash log',
-                success: 'Crash log copied',
+                what: l10n.whatCopyingCrashLog,
+                success: l10n.crashLogCopied,
               ),
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline),
-              tooltip: 'Clear log',
+              tooltip: l10n.crashLogClear,
               onPressed: () async {
                 await ref.read(crashLogProvider).clear();
                 await _load();
@@ -73,13 +75,11 @@ class _CrashLogScreenState extends ConsumerState<CrashLogScreen> {
       body: contents == null
           ? const Center(child: CircularProgressIndicator())
           : isEmpty
-              ? const Center(
+              ? Center(
                   child: Padding(
-                    padding: EdgeInsets.all(32),
+                    padding: const EdgeInsets.all(32),
                     child: Text(
-                      'Nothing has crashed. \n\n'
-                      'If something ever does, the details land here — on this '
-                      'device only — so you can copy them into a bug report.',
+                      l10n.crashLogEmpty,
                       textAlign: TextAlign.center,
                     ),
                   ),

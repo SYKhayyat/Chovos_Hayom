@@ -121,4 +121,29 @@ void main() {
     await switchTo('default');
     expect(settings().chazaraIntervals, isNot([5, 10]));
   });
+
+  group('the backup covers every per-profile key', () {
+    // The enumeration guard: a per-profile key that toBackup omits is one that
+    // silently doesn't survive export → clear → import. Cycles were that key.
+    test('toBackup emits all of PrefKeys.perProfile', () {
+      final keys = notifier().toBackup().keys.toSet();
+      expect(keys.containsAll(PrefKeys.perProfile), isTrue,
+          reason: 'missing: '
+              '${PrefKeys.perProfile.toSet().difference(keys)}');
+    });
+
+    test('cycles are exported and cleared with the rest of the settings', () async {
+      // Cycles live under their own scoped pref (a separate controller owns them).
+      const raw = '{"custom":[],"hiddenBuiltIns":[],"mappings":{}}';
+      await prefs.setString(
+          PrefKeys.scoped('default', PrefKeys.cycles), raw);
+
+      expect(notifier().toBackup()[PrefKeys.cycles], raw,
+          reason: 'cycles must ride in the backup');
+
+      await notifier().clearAll();
+      expect(prefs.getString(PrefKeys.scoped('default', PrefKeys.cycles)), isNull,
+          reason: 'clear settings must take the cycles with it');
+    });
+  });
 }

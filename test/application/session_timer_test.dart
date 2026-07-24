@@ -91,7 +91,21 @@ void main() {
     await timer().reset();
 
     expect(state().isActive, isFalse);
-    expect(prefs.getString(PrefKeys.sessionTimer), isNull);
+    expect(prefs.getString(PrefKeys.scoped('default', PrefKeys.sessionTimer)),
+        isNull);
+  });
+
+  test('the timer belongs to the active profile, not the device', () async {
+    // Two people sharing a device must not share one timer: starting a session
+    // as one and switching users must not show a live banner on the other's log.
+    await timer().start(now: t0, nodeId: 'shabbos', unitIndex: 12);
+
+    await container.read(activeProfileProvider.notifier).setProfile('other');
+    expect(state().isActive, isFalse, reason: 'not the other user’s session');
+
+    await container.read(activeProfileProvider.notifier).setProfile('default');
+    expect(state().isRunning, isTrue, reason: 'yours is still there');
+    expect(state().nodeId, 'shabbos');
   });
 
   test('starting on a different unit replaces the session', () async {
@@ -122,7 +136,8 @@ void main() {
   });
 
   test('a corrupt stored session does not stop the app from opening', () async {
-    prefs = InMemoryPreferences({PrefKeys.sessionTimer: 'not json at all'});
+    prefs = InMemoryPreferences(
+        {PrefKeys.scoped('default', PrefKeys.sessionTimer): 'not json at all'});
     container.dispose();
     container = build();
 

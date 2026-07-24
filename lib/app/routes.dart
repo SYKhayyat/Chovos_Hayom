@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/generated/app_localizations.dart';
 import '../features/calculator/calculator_screen.dart';
 import '../features/chazara/chazara_screen.dart';
 import '../features/custom_node/add_custom_node_screen.dart';
@@ -158,14 +159,14 @@ class _UnknownRouteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Not found')),
+      appBar: AppBar(title: Text(l10n.notFoundTitle)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'There is nothing here.\n\n'
-            '“${name ?? ''}” is not a screen this version of the app has.',
+            l10n.notFoundBody(name ?? ''),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge,
           ),

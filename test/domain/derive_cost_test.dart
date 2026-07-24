@@ -4,9 +4,32 @@ import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
 import 'package:chovos_hayom/domain/usecases/mefarshim_stats.dart';
+import 'package:chovos_hayom/domain/usecases/progress_series.dart';
 import 'package:chovos_hayom/domain/usecases/roll_up.dart';
 import 'package:chovos_hayom/domain/usecases/siyum.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// A log of [count] `done` events spread over [days] distinct calendar days.
+///
+/// The day DateTimes are built once up front, so generating the log is not part
+/// of anything a test then measures.
+List<LearningEvent> syntheticLog(int count, {int days = 200}) {
+  final dayOf = [
+    for (var d = 0; d < days; d++) DateTime(2026, 1, 1).add(Duration(days: d)),
+  ];
+  return [
+    for (var i = 0; i < count; i++)
+      LearningEvent(
+        id: 'e$i',
+        profileId: 'p',
+        nodeId: 'huge',
+        unitIndex: i % 5000,
+        action: EventAction.done,
+        occurredAt: dayOf[i % days],
+        loggedAt: dayOf[i % days],
+      ),
+  ];
+}
 
 /// A leaf that records every time something walks its full unit range.
 ///
@@ -99,6 +122,61 @@ void main() {
     expect(huge.fullScans, 0);
     expect(stats.firstWhere((s) => s.layerId == 'main').learnedUnits, 2);
     expect(stats.firstWhere((s) => s.layerId == 'rashi').learnedUnits, 1);
+  });
+
+  // The scans-counter above catches *algorithmic* regressions (walking the whole
+  // catalog instead of what was learned). It cannot see a **constant-factor**
+  // one — and that is exactly what went wrong last time: `ProgressSeries` keyed
+  // its maps on a *local* `DateTime(y, m, d)`, which forces a timezone
+  // conversion ~230× more expensive than the UTC form, once per event. Nothing
+  // scanned anything extra; the Statistics screen simply took a second to open.
+  //
+  // So these two are wall-clock, with thresholds an order of magnitude above the
+  // measured cost — a slow CI box cannot trip them, while the code they replaced
+  // (481 ms for the same input) fails them by a wide margin.
+  group('cost stays cheap as history grows', () {
+    test('the series helpers cost O(distinct days), not O(events)', () {
+      // 20,000 events over 200 days — a serious multi-year user.
+      final events = syntheticLog(20000);
+      final fold = FoldLog.fold(events);
+
+      // Warm up first, exactly as the original benchmark did: the first call
+      // also pays for JIT-compiling these functions, which is several times the
+      // steady-state cost and would make the threshold meaningless.
+      ProgressSeries.cumulative(fold);
+      ProgressSeries.dailyDone(events);
+      ProgressSeries.dailyDeltas(events);
+
+      final sw = Stopwatch()..start();
+      final series = ProgressSeries.cumulative(fold);
+      final daily = ProgressSeries.dailyDone(events);
+      ProgressSeries.dailyDeltas(events);
+      sw.stop();
+
+      expect(series, hasLength(200), reason: 'one point per distinct day');
+      expect(daily, hasLength(200));
+      // Measured at ~145 ms for all three. The version this replaced keyed on a
+      // local DateTime per event, which alone is ~2,200 ms for 20,000 of them —
+      // so this threshold has room for a slow machine and none for that bug.
+      expect(sw.elapsedMilliseconds, lessThan(800),
+          reason: 'the series helpers took ${sw.elapsedMilliseconds} ms — a '
+              'per-event local DateTime construction is back');
+    });
+
+    // §P3: every write re-reads and re-folds the whole log. That is a deliberate
+    // trade and cheap today; this pins the size at which it would stop being
+    // cheap, so the fold cannot quietly become the next unmeasured hotspot.
+    test('folding a very large log stays bounded', () {
+      final events = syntheticLog(100000);
+
+      final sw = Stopwatch()..start();
+      final fold = FoldLog.fold(events);
+      sw.stop();
+
+      expect(fold.doneUnits('huge'), hasLength(5000));
+      expect(sw.elapsedMilliseconds, lessThan(3000),
+          reason: 'folding 100k events took ${sw.elapsedMilliseconds} ms');
+    });
   });
 
   test('out-of-range marks still cannot inflate learned', () {

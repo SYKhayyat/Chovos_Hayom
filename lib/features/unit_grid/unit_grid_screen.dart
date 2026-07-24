@@ -9,8 +9,11 @@ import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/usecases/fold_log.dart';
 import '../../domain/usecases/goal_evaluator.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../common/error_view.dart';
 import '../common/guarded.dart';
 import '../common/missing_item.dart';
+import '../common/naming.dart';
 import 'add_chazara_sheet.dart';
 import 'bulk_actions_sheet.dart';
 import 'log_unit_sheet.dart';
@@ -38,6 +41,8 @@ Future<void> logWithDetails(
   final allLayers = ref.read(allLayersProvider);
   final logger = ref.read(loggingServiceProvider);
   final guard = WriteGuard.of(context, ref);
+  final l10n = AppLocalizations.of(context);
+  final heading = nodeAndUnit(l10n, node, unit);
 
   final layered = view.isLayered(node.id, unit);
   final checkable = layered ? view.checkableFor(node.id, unit) : const <String>{};
@@ -48,7 +53,7 @@ Future<void> logWithDetails(
 
   final result = await showLogUnitSheet(
     context,
-    title: '${node.name} · ${node.unitHeading(unit)}',
+    title: heading,
     nodeId: node.id,
     unitIndex: unit,
     layerOptions: [
@@ -66,7 +71,7 @@ Future<void> logWithDetails(
         durationMin: result.durationMin,
         note: result.note,
         layers: result.layers),
-    what: 'Logging ${node.name} · ${node.unitHeading(unit)}',
+    what: l10n.whatLogging(heading),
   );
 }
 
@@ -88,8 +93,7 @@ class UnitGridScreen extends ConsumerWidget {
     if (node == null) {
       return MissingItemScreen(
         loading: !ref.watch(mergedCatalogProvider).hasValue,
-        message: 'This sefer no longer exists.\n'
-            'It may have been hidden, deleted, or replaced.',
+        message: AppLocalizations.of(context).seferMissing,
       );
     }
     return _UnitGrid(node: node);
@@ -105,35 +109,45 @@ class _UnitGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final foldAsync = ref.watch(foldProvider);
     final goal = ref.watch(goalStatusProvider(node.id));
+    final l10n = AppLocalizations.of(context);
+    final name = nodeName(l10n, node);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(node.name),
+        title: Text(name),
         actions: [
           IconButton(
             icon: const Icon(Icons.checklist),
-            tooltip: 'Finish all / clear all',
+            tooltip: l10n.tooltipBulkActions,
             onPressed: () => showBulkActionsSheet(context, ref, node: node),
           ),
           IconButton(
             icon: const Icon(Icons.auto_stories_outlined),
-            tooltip: 'Mefarshim',
+            tooltip: l10n.tooltipMefarshim,
             onPressed: () => showMefarshimConfigSheet(context, ref, node: node),
           ),
           IconButton(
             icon: const Icon(Icons.flag_outlined),
-            tooltip: 'Set goal date',
+            tooltip: l10n.tooltipSetGoalDate,
             onPressed: () => _setGoal(context, ref),
           ),
         ],
       ),
       body: Column(
         children: [
-          if (goal != null) _GoalBanner(goal: goal, nodeId: node.id, name: node.name),
+          if (goal != null) _GoalBanner(goal: goal, nodeId: node.id, name: name),
           Expanded(
             child: foldAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              // The fold is the event log; a failure here is the database, and
+              // reading it failing changes nothing that is in it.
+              error: (e, stack) => ErrorView(
+                title: l10n.errorLogTitle,
+                body: l10n.errorLogBody,
+                error: e,
+                stackTrace: stack,
+                onRetry: () => ref.invalidate(eventsProvider),
+              ),
               data: (fold) => _grid(context, ref, fold),
             ),
           ),
@@ -145,6 +159,7 @@ class _UnitGrid extends ConsumerWidget {
   Future<void> _setGoal(BuildContext context, WidgetRef ref) async {
     final now = DateTime.now();
     final guard = WriteGuard.of(context, ref);
+    final l10n = AppLocalizations.of(context);
     final picked = await showDatePicker(
       context: context,
       initialDate: now.add(const Duration(days: 180)),
@@ -154,7 +169,7 @@ class _UnitGrid extends ConsumerWidget {
     if (picked == null) return;
     await guard.run(
       () => ref.read(goalsProvider.notifier).setGoal(node.id, picked),
-      what: 'Setting a goal for ${node.name}',
+      what: l10n.whatSettingGoal(nodeName(l10n, node)),
     );
   }
 
@@ -162,6 +177,7 @@ class _UnitGrid extends ConsumerWidget {
     final required = ref.watch(layerRequirementsProvider);
     final view = ref.watch(unitLayerViewProvider);
     final done = fold.doneUnits(node.id, required);
+    final l10n = AppLocalizations.of(context);
     return GridView.builder(
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -181,14 +197,36 @@ class _UnitGrid extends ConsumerWidget {
         final fraction = isDone
             ? 1.0
             : (layered ? view.fraction(node.id, unit, fold) : 0.0);
+        final reviewCount = fold.reviewCount(node.id, unit);
+        final hasDetails = isDone && fold.isAnnotated(node.id, unit);
         return _UnitCell(
           label: node.unitDisplay(unit),
+          // Everything the cell says visually, said in words.
+          //
+          // A cell shows its state through *colour alone* — a filled square is
+          // learned, an empty one is not — which a screen reader cannot see, and
+          // which is the one thing on this screen worth knowing. Its only text
+          // child is the bare unit number, so the whole grid announced as
+          // "1, 2, 3, 4" with no indication of what had been learned: the app's
+          // central screen, unusable without sight. State, partial fill, chazara
+          // count and the details dot are all named here.
+          semanticLabel: [
+            if (isDone)
+              l10n.gridCellSemanticDone(unitHeading(l10n, node, unit))
+            else if (fraction > 0)
+              l10n.gridCellSemanticPartial(
+                  unitHeading(l10n, node, unit), (fraction * 100).round())
+            else
+              l10n.gridCellSemanticNotDone(unitHeading(l10n, node, unit)),
+            if (reviewCount > 0) l10n.gridCellSemanticReviews(reviewCount),
+            if (hasDetails) l10n.gridCellSemanticHasDetails,
+          ].join(', '),
           isDone: isDone,
           fraction: fraction,
-          reviewCount: fold.reviewCount(node.id, unit),
+          reviewCount: reviewCount,
           // The "there are details here" dot. Comes off the shared fold rather
           // than a scan of the whole log on every grid rebuild.
-          hasDetails: isDone && fold.isAnnotated(node.id, unit),
+          hasDetails: hasDetails,
           onTap: () async {
             // Layered units open a per-meforish checklist; text-only units
             // toggle with a single tap (reversible — tapping again undoes).
@@ -197,14 +235,16 @@ class _UnitGrid extends ConsumerWidget {
               return;
             }
             final logger = ref.read(loggingServiceProvider);
-            final heading = '${node.name} · ${node.unitHeading(unit)}';
+            final heading = nodeAndUnit(l10n, node, unit);
             await guarded(
               context,
               ref,
               () => isDone
                   ? logger.markUndone(node.id, unit)
                   : logger.markDone(node.id, unit),
-              what: isDone ? 'Un-marking $heading' : 'Marking $heading learned',
+              what: isDone
+                  ? l10n.whatUnmarking(heading)
+                  : l10n.whatMarkingLearned(heading),
             );
           },
           onLongPress: () => _cellMenu(context, ref, unit, isDone),
@@ -216,7 +256,8 @@ class _UnitGrid extends ConsumerWidget {
   Future<void> _cellMenu(
       BuildContext context, WidgetRef ref, int unit, bool isDone) async {
     final logger = ref.read(loggingServiceProvider);
-    final heading = '${node.name} · ${node.unitHeading(unit)}';
+    final l10n = AppLocalizations.of(context);
+    final heading = nodeAndUnit(l10n, node, unit);
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -227,8 +268,8 @@ class _UnitGrid extends ConsumerWidget {
             if (isDone)
               ListTile(
                 leading: const Icon(Icons.info_outline),
-                title: const Text('View / edit details'),
-                subtitle: const Text('When you finished, how long, your note'),
+                title: Text(l10n.cellMenuViewEditDetails),
+                subtitle: Text(l10n.cellMenuViewEditDetailsSubtitle),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   showUnitDetailsSheet(context, ref, node: node, unit: unit);
@@ -236,9 +277,8 @@ class _UnitGrid extends ConsumerWidget {
               ),
             ListTile(
               leading: const Icon(Icons.edit_calendar),
-              title: Text(isDone
-                  ? 'Re-log with date / duration / note'
-                  : 'Log with date / duration / note'),
+              title: Text(
+                  isDone ? l10n.cellMenuRelog : l10n.cellMenuLog),
               onTap: () async {
                 Navigator.pop(sheetContext);
                 await logWithDetails(context, ref, node: node, unit: unit);
@@ -247,7 +287,7 @@ class _UnitGrid extends ConsumerWidget {
             if (isDone) ...[
               ListTile(
                 leading: const Icon(Icons.refresh),
-                title: const Text('Add chazara (review)'),
+                title: Text(l10n.cellMenuAddChazara),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   showAddChazaraSheet(context, ref, node: node, unit: unit);
@@ -255,21 +295,21 @@ class _UnitGrid extends ConsumerWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.undo),
-                title: const Text('Un-mark'),
+                title: Text(l10n.cellMenuUnmark),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   guarded(context, ref, () => logger.markUndone(node.id, unit),
-                      what: 'Un-marking $heading');
+                      what: l10n.whatUnmarking(heading));
                 },
               ),
             ] else
               ListTile(
                 leading: const Icon(Icons.check),
-                title: const Text('Mark learned'),
+                title: Text(l10n.cellMenuMarkLearned),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   guarded(context, ref, () => logger.markDone(node.id, unit),
-                      what: 'Marking $heading learned');
+                      what: l10n.whatMarkingLearned(heading));
                 },
               ),
           ],
@@ -290,15 +330,18 @@ class _GoalBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(settingsProvider).calendar;
     final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
     final ok = goal.onTrack;
     final color = goal.achieved
         ? Colors.green
         : (ok ? scheme.primary : scheme.error);
     final text = goal.achieved
-        ? 'Goal reached! 🎉'
-        : 'Goal ${DateDisplay.format(goal.target, mode)} · '
-            'need ${goal.requiredPerDay.toStringAsFixed(2)}/day · '
-            '${ok ? 'on track' : 'behind'}';
+        ? l10n.goalReached
+        : l10n.goalBanner(
+            DateDisplay.format(goal.target, mode),
+            goal.requiredPerDay.toStringAsFixed(2),
+            ok ? l10n.goalOnTrack : l10n.goalBehind,
+          );
     return Container(
       width: double.infinity,
       color: color.withValues(alpha: 0.12),
@@ -310,7 +353,7 @@ class _GoalBanner extends ConsumerWidget {
           Expanded(child: Text(text, style: TextStyle(color: color))),
           IconButton(
             icon: const Icon(Icons.close, size: 18),
-            tooltip: 'Remove goal',
+            tooltip: l10n.tooltipRemoveGoal,
             onPressed: () => _remove(context, ref),
           ),
         ],
@@ -322,18 +365,19 @@ class _GoalBanner extends ConsumerWidget {
     final previous = ref.read(goalsProvider)[nodeId];
     final goals = ref.read(goalsProvider.notifier);
     final guard = WriteGuard.of(context, ref);
+    final l10n = AppLocalizations.of(context);
     await guard.run(
       () => goals.removeGoal(nodeId),
-      what: 'Removing the goal for $name',
-      success: previous == null ? null : 'Goal removed',
+      what: l10n.whatRemovingGoal(name),
+      success: previous == null ? null : l10n.goalRemoved,
       undo: previous == null
           ? null
           : SnackBarAction(
-              label: 'Undo',
+              label: l10n.actionUndo,
               // Restoring is itself a write, so it reports like one rather than
               // silently doing nothing if it fails.
               onPressed: () => guard.run(() => goals.setGoal(nodeId, previous),
-                  what: 'Restoring the goal for $name'),
+                  what: l10n.whatRestoringGoal(name)),
             ),
     );
   }
@@ -342,6 +386,7 @@ class _GoalBanner extends ConsumerWidget {
 class _UnitCell extends StatelessWidget {
   const _UnitCell({
     required this.label,
+    required this.semanticLabel,
     required this.isDone,
     required this.fraction,
     required this.reviewCount,
@@ -351,6 +396,11 @@ class _UnitCell extends StatelessWidget {
   });
 
   final String label;
+
+  /// What the cell announces to a screen reader — its state in words, since the
+  /// visual carries it in colour. See where this is built in `_grid`.
+  final String semanticLabel;
+
   final bool isDone;
 
   /// 0..1 share of required layers done — a partial fill for layered units.
@@ -364,69 +414,90 @@ class _UnitCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final partial = !isDone && fraction > 0;
-    return InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      // Right-click / secondary-tap opens the same menu — desktop-friendly, no
-      // touchscreen required.
-      onSecondaryTap: onLongPress,
-      borderRadius: BorderRadius.circular(8),
-      child: ClipRRect(
+    // The label wraps the InkWell rather than replacing its semantics: the
+    // InkWell is what advertises the cell as focusable and enabled, which is how
+    // a reader reaches it in the first place. `checked` adds the state the
+    // colour was carrying alone.
+    return Semantics(
+      label: semanticLabel,
+      // An InkWell announces itself as focusable and tappable but not as a
+      // *button*, and carries no enabled state; both are added here so the cell
+      // reads as the control it is. `checked` carries the completion the fill
+      // colour was carrying alone.
+      button: true,
+      enabled: true,
+      checked: isDone,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        // Right-click / secondary-tap opens the same menu — desktop-friendly, no
+        // touchscreen required.
+        onSecondaryTap: onLongPress,
         borderRadius: BorderRadius.circular(8),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDone ? scheme.primary : scheme.surfaceContainerHighest,
-          ),
-          alignment: Alignment.center,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Partial-completion fill rising from the bottom.
-              if (partial)
-                Positioned.fill(
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: FractionallySizedBox(
-                      heightFactor: fraction.clamp(0.05, 1),
-                      child: Container(
-                        color: scheme.primary.withValues(alpha: 0.35),
+        // The number, the ↻ badge and the note glyph are all already inside the
+        // label above, as a sentence rather than three loose fragments — so the
+        // visuals contribute nothing further to what is read out.
+        child: ExcludeSemantics(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDone ? scheme.primary : scheme.surfaceContainerHighest,
+              ),
+              alignment: Alignment.center,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Partial-completion fill rising from the bottom.
+                  if (partial)
+                    Positioned.fill(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: FractionallySizedBox(
+                          heightFactor: fraction.clamp(0.05, 1),
+                          child: Container(
+                            color: scheme.primary.withValues(alpha: 0.35),
+                          ),
+                        ),
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        // Shrink long named-unit labels so they still fit.
+                        fontSize: label.length > 3 ? 10 : 14,
+                        color:
+                            isDone ? scheme.onPrimary : scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    // Shrink long named-unit labels so they still fit the cell.
-                    fontSize: label.length > 3 ? 10 : 14,
-                    color: isDone ? scheme.onPrimary : scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                  if (reviewCount > 0)
+                    Positioned(
+                      right: 4,
+                      top: 2,
+                      child: Text('↻$reviewCount',
+                          style: TextStyle(
+                              fontSize: 10,
+                              color:
+                                  isDone ? scheme.onPrimary : scheme.primary)),
+                    ),
+                  if (hasDetails)
+                    Positioned(
+                      left: 5,
+                      bottom: 4,
+                      child: Icon(Icons.sticky_note_2,
+                          size: 11,
+                          color: isDone ? scheme.onPrimary : scheme.primary),
+                    ),
+                ],
               ),
-            if (reviewCount > 0)
-              Positioned(
-                right: 4,
-                top: 2,
-                child: Text('↻$reviewCount',
-                    style: TextStyle(
-                        fontSize: 10,
-                        color: isDone ? scheme.onPrimary : scheme.primary)),
-              ),
-              if (hasDetails)
-                Positioned(
-                  left: 5,
-                  bottom: 4,
-                  child: Icon(Icons.sticky_note_2,
-                      size: 11,
-                      color: isDone ? scheme.onPrimary : scheme.primary),
-                ),
-            ],
+            ),
           ),
         ),
       ),

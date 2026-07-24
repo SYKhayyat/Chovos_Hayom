@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../common/naming.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
@@ -14,9 +16,10 @@ class StatsScreen extends ConsumerWidget {
     final stats = ref.watch(statsProvider);
     final mode = ref.watch(settingsProvider).calendar;
     final now = ref.watch(clockProvider)();
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistics')),
+      appBar: AppBar(title: Text(l10n.statsTitle)),
       body: stats == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -24,12 +27,12 @@ class StatsScreen extends ConsumerWidget {
               children: [
                 _SummaryGrid(stats: stats, mode: mode),
                 const SizedBox(height: 24),
-                Text('Progress over time',
+                Text(l10n.statsProgressOverTime,
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 SizedBox(height: 200, child: _ProgressChart(stats: stats)),
                 const SizedBox(height: 24),
-                Text('Activity (last 12 weeks)',
+                Text(l10n.statsActivity,
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 _Heatmap(activity: stats.dailyActivity, now: now),
@@ -46,9 +49,12 @@ class _SummaryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final finish = stats.projectedFinish == null
-        ? '—'
+        ? l10n.statsNone
         : DateDisplay.format(stats.projectedFinish!, mode);
+    String time(int minutes) =>
+        minutes <= 0 ? l10n.statsNone : formatMinutes(l10n, minutes);
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -57,22 +63,27 @@ class _SummaryGrid extends StatelessWidget {
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
       children: [
-        _StatTile(label: 'Overall', value: '${stats.percent.toStringAsFixed(1)}%'),
-        _StatTile(label: 'Learned', value: '${stats.learned} / ${stats.total}'),
-        _StatTile(label: 'Streak', value: '${stats.streak} day${stats.streak == 1 ? '' : 's'}'),
-        _StatTile(label: 'Avg / day (30d)', value: stats.avgPerDay.toStringAsFixed(2)),
-        _StatTile(label: 'Time learned', value: _fmtMinutes(stats.totalMinutes)),
-        _StatTile(label: 'Time this month', value: _fmtMinutes(stats.minutesThisMonth)),
-        _StatTile(label: 'Projected siyum', value: finish, wide: true),
+        _StatTile(
+            label: l10n.statsOverall,
+            value: l10n.statsPercentValue(stats.percent.toStringAsFixed(1))),
+        _StatTile(
+            label: l10n.statsLearned,
+            value: l10n.statsLearnedValue(stats.learned, stats.total)),
+        _StatTile(
+            label: l10n.statsStreak,
+            value: l10n.statsStreakValue(stats.streak)),
+        _StatTile(
+            label: l10n.statsAvgPerDay,
+            value: stats.avgPerDay.toStringAsFixed(2)),
+        _StatTile(
+            label: l10n.statsTimeLearned, value: time(stats.totalMinutes)),
+        _StatTile(
+            label: l10n.statsTimeThisMonth,
+            value: time(stats.minutesThisMonth)),
+        _StatTile(
+            label: l10n.statsProjectedSiyum, value: finish, wide: true),
       ],
     );
-  }
-
-  static String _fmtMinutes(int m) {
-    if (m <= 0) return '—';
-    final h = m ~/ 60;
-    final min = m % 60;
-    return h == 0 ? '${min}m' : '${h}h ${min}m';
   }
 }
 
@@ -115,7 +126,8 @@ class _ProgressChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (stats.series.length < 2) {
-      return const Center(child: Text('Learn a few units to see your trend.'));
+      return Center(
+          child: Text(AppLocalizations.of(context).statsNeedMoreData));
     }
     final first = stats.series.first.day;
     final spots = [
@@ -160,7 +172,6 @@ class _Heatmap extends StatelessWidget {
     final today = DateTime(now.year, now.month, now.day);
     const weeks = 12;
     const days = weeks * 7;
-    final start = today.subtract(const Duration(days: days - 1));
     final maxCount =
         activity.values.isEmpty ? 1 : activity.values.reduce((a, b) => a > b ? a : b);
 
@@ -175,11 +186,18 @@ class _Heatmap extends StatelessWidget {
               children: [
                 for (var d = 0; d < 7; d++)
                   Builder(builder: (_) {
-                    final day = start.add(Duration(days: w * 7 + d));
+                    // Step by calendar day through the DateTime constructor,
+                    // which normalises an out-of-range day to the right local
+                    // midnight. Adding a `Duration(days:)` to a local DateTime
+                    // instead shifts by an hour across a DST boundary, and the
+                    // midnight normalisation afterwards then skips or repeats a
+                    // column twice a year.
+                    final day = DateTime(
+                        today.year, today.month, today.day - (days - 1) + w * 7 + d);
                     if (day.isAfter(today)) {
                       return const SizedBox(width: 16, height: 16);
                     }
-                    final count = activity[DateTime(day.year, day.month, day.day)] ?? 0;
+                    final count = activity[day] ?? 0;
                     final intensity = count == 0 ? 0.0 : (count / maxCount).clamp(0.2, 1.0);
                     return Container(
                       width: 14,

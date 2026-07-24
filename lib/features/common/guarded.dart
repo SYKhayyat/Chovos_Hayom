@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/routes.dart';
 import '../../application/crash_log.dart';
 import '../../application/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// The one policy for a write the user started.
 ///
@@ -30,22 +31,29 @@ import '../../application/providers.dart';
 ///    opens the crash log — the one moment the crash log is actually worth
 ///    offering.
 ///
-/// The messenger and navigator are captured *before* the write, so a sheet that
-/// pops itself before saving still reports its outcome (and so no `BuildContext`
-/// is used across an async gap).
+/// The messenger, navigator and localizations are captured *before* the write,
+/// so a sheet that pops itself before saving still reports its outcome (and so
+/// no `BuildContext` is used across an async gap).
 class WriteGuard {
-  const WriteGuard(this._messenger, this._navigator, this._crashLog);
+  const WriteGuard(
+      this._messenger, this._navigator, this._crashLog, this._l10n);
 
   /// Captures everything needed to report an outcome, up front.
   factory WriteGuard.of(BuildContext context, WidgetRef ref) => WriteGuard(
         ScaffoldMessenger.of(context),
         Navigator.of(context, rootNavigator: true),
         ref.read(crashLogProvider),
+        AppLocalizations.of(context),
       );
 
   final ScaffoldMessengerState _messenger;
   final NavigatorState _navigator;
   final CrashLog _crashLog;
+
+  /// Captured with the rest: the failure sentence and the *Details* label are
+  /// resolved from the context that started the write, not from one that may be
+  /// gone by the time it fails.
+  final AppLocalizations _l10n;
 
   /// How long a failure stays on screen. Longer than the default: a message you
   /// only get one shot at reading should not be a message you can miss.
@@ -72,10 +80,10 @@ class WriteGuard {
     } catch (error, stack) {
       await _crashLog.record(error, stack, context: what);
       _messenger.showSnackBar(SnackBar(
-        content: Text(describe?.call(error) ?? '$what failed.'),
+        content: Text(describe?.call(error) ?? _l10n.writeFailed(what)),
         duration: failureDuration,
         action: SnackBarAction(
-          label: 'Details',
+          label: _l10n.actionDetails,
           onPressed: () => _navigator.pushNamed(Routes.crashLog),
         ),
       ));

@@ -66,6 +66,23 @@ void main() {
     expect(text, contains('crash ${CrashLog.maxRecords + 19}'));
   });
 
+  test('two concurrent records both land', () async {
+    // A single failure can fire a framework error and an uncaught async error in
+    // the same instant. Each does a read-modify-write of the whole file, so
+    // without serialising them the second to start reads before the first has
+    // written and clobbers it — one entry silently lost.
+    final log = logFor();
+    await Future.wait([
+      log.record(Exception('alpha'), StackTrace.fromString('a')),
+      log.record(Exception('beta'), StackTrace.fromString('b')),
+    ]);
+
+    final text = await log.read();
+    expect(text, contains('alpha'));
+    expect(text, contains('beta'));
+    expect('--- '.allMatches(text).length, 2, reason: 'neither was lost');
+  });
+
   test('clearing removes the log', () async {
     final log = logFor();
     await log.record(Exception('x'), StackTrace.current);

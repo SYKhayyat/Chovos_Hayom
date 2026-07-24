@@ -2,9 +2,13 @@
 cmake_minimum_required(VERSION 3.14)
 project(chovos_hayom LANGUAGES CXX)
 
-# The name of the executable created for the application. Change this to change
-# the on-disk name of your application.
-set(BINARY_NAME "Chovos Hayom")
+# The name of the executable created for the application. This is a CMake target
+# id, so it must have no spaces — `add_executable(${BINARY_NAME} ...)` would
+# otherwise read a spaced value as a target plus a stray source file, and the
+# build fails with "target … is not built by this project". The user-facing name
+# ("Chovos Hayom") is the *window title*, set in runner/main.cpp, and the product
+# name in Runner.rc — not this on-disk exe name.
+set(BINARY_NAME "chovos_hayom")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

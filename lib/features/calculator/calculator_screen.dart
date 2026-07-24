@@ -7,6 +7,8 @@ import '../../application/stats.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/progress_node.dart';
 import '../../domain/usecases/predictor.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../common/naming.dart';
 
 enum _CalcMode { rate, cycle, target }
 
@@ -66,17 +68,18 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     final forest = ref.watch(progressForestProvider).asData?.value;
     final mode = ref.watch(settingsProvider).calendar;
     final now = ref.watch(clockProvider)();
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Siyum Calculator')),
+      appBar: AppBar(title: Text(l10n.calculatorTitle)),
       body: forest == null
           ? const Center(child: CircularProgressIndicator())
-          : _body(context, _selectable(forest), mode, now),
+          : _body(context, l10n, _selectable(forest), mode, now),
     );
   }
 
-  Widget _body(BuildContext context, List<_Selectable> nodes, CalendarMode mode,
-      DateTime now) {
+  Widget _body(BuildContext context, AppLocalizations l10n,
+      List<_Selectable> nodes, CalendarMode mode, DateTime now) {
     final selectedEntry = nodes.firstWhere((s) => s.node.id == _nodeId,
         orElse: () => nodes.first);
     final selected = selectedEntry.node;
@@ -86,54 +89,61 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
         DropdownButtonFormField<String>(
           initialValue: selected.id,
           isExpanded: true,
-          decoration: const InputDecoration(labelText: 'What are you finishing?'),
+          decoration:
+              InputDecoration(labelText: l10n.calculatorWhatFinishing),
           items: [
             for (final s in nodes)
               DropdownMenuItem(
                 value: s.node.id,
-                child: Text('${'   ' * s.depth}${s.node.name}',
+                child: Text('${'   ' * s.depth}${nodeName(l10n, s.node.node)}',
                     overflow: TextOverflow.ellipsis),
               ),
           ],
           onChanged: (v) => setState(() => _nodeId = v),
         ),
         const SizedBox(height: 8),
-        Text('${selected.remaining} of ${selected.total} left',
+        Text(l10n.calculatorRemaining(selected.remaining, selected.total),
             style: Theme.of(context).textTheme.bodyMedium),
         const SizedBox(height: 16),
         SegmentedButton<_CalcMode>(
-          segments: const [
-            ButtonSegment(value: _CalcMode.rate, label: Text('Rate')),
-            ButtonSegment(value: _CalcMode.cycle, label: Text('Cycle')),
-            ButtonSegment(value: _CalcMode.target, label: Text('By date')),
+          segments: [
+            ButtonSegment(
+                value: _CalcMode.rate, label: Text(l10n.calculatorModeRate)),
+            ButtonSegment(
+                value: _CalcMode.cycle, label: Text(l10n.calculatorModeCycle)),
+            ButtonSegment(
+                value: _CalcMode.target,
+                label: Text(l10n.calculatorModeByDate)),
           ],
           selected: {_mode},
           onSelectionChanged: (s) => setState(() => _mode = s.first),
         ),
         const SizedBox(height: 16),
-        ..._inputs(context, mode),
+        ..._inputs(context, l10n, mode),
         const SizedBox(height: 24),
-        _Result(text: _compute(selected, mode, now)),
+        _Result(text: _compute(l10n, selected, mode, now)),
       ],
     );
   }
 
-  List<Widget> _inputs(BuildContext context, CalendarMode mode) {
+  List<Widget> _inputs(
+      BuildContext context, AppLocalizations l10n, CalendarMode mode) {
     switch (_mode) {
       case _CalcMode.rate:
         return [
           TextField(
             controller: _dailyCtrl,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Amount per day'),
+            decoration:
+                InputDecoration(labelText: l10n.calculatorAmountPerDay),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: _shabbosCtrl,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-                labelText: 'Amount on Shabbos (optional)'),
+            decoration:
+                InputDecoration(labelText: l10n.calculatorAmountShabbos),
             onChanged: (_) => setState(() {}),
           ),
         ];
@@ -141,9 +151,9 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
         return [
           TextField(
             controller: _cycleCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Cycle amounts (comma-separated, one per day)',
-              helperText: 'e.g. "5, 5, 5, 5, 5, 0, 10" is a 7-day cycle',
+            decoration: InputDecoration(
+              labelText: l10n.calculatorCycleAmounts,
+              helperText: l10n.calculatorCycleAmountsHelper,
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -151,9 +161,9 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
           TextField(
             controller: _cycleStartCtrl,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Which cycle-day is today?',
-              helperText: '1 = first amount above; 4 = you are on day 4',
+            decoration: InputDecoration(
+              labelText: l10n.calculatorCycleDay,
+              helperText: l10n.calculatorCycleDayHelper,
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -162,7 +172,9 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
         return [
           Row(
             children: [
-              Expanded(child: Text('Target: ${DateDisplay.format(_target, mode)}')),
+              Expanded(
+                  child: Text(l10n.calculatorTarget(
+                      DateDisplay.format(_target, mode)))),
               TextButton(
                 onPressed: () async {
                   final picked = await showDatePicker(
@@ -173,7 +185,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                   );
                   if (picked != null) setState(() => _target = picked);
                 },
-                child: const Text('Pick date'),
+                child: Text(l10n.calculatorPickDate),
               ),
             ],
           ),
@@ -181,15 +193,16 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     }
   }
 
-  String _compute(ProgressNode selected, CalendarMode mode, DateTime now) {
+  String _compute(AppLocalizations l10n, ProgressNode selected,
+      CalendarMode mode, DateTime now) {
     final remaining = selected.remaining;
-    if (remaining <= 0) return 'Already finished! 🎉';
+    if (remaining <= 0) return l10n.calculatorAlreadyFinished;
     final today = DateTime(now.year, now.month, now.day);
 
     switch (_mode) {
       case _CalcMode.rate:
         final daily = double.tryParse(_dailyCtrl.text.trim()) ?? 0;
-        if (daily <= 0) return 'Enter a daily amount above 0.';
+        if (daily <= 0) return l10n.calculatorEnterDailyAmount;
         final shabbos = double.tryParse(_shabbosCtrl.text.trim());
         final date = shabbos == null
             ? Predictor.finishDateWithCycle(
@@ -199,14 +212,14 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                 weekdayAmount: daily,
                 shabbosAmount: shabbos,
                 from: now);
-        return _finishText(date, mode, today);
+        return _finishText(l10n, date, mode, today);
 
       case _CalcMode.cycle:
         final amounts = _cycleCtrl.text
             .split(',')
             .map((s) => double.tryParse(s.trim()) ?? 0)
             .toList();
-        if (amounts.isEmpty) return 'Enter amounts, e.g. "5, 5, 0, 10".';
+        if (amounts.isEmpty) return l10n.calculatorEnterAmounts;
         final startDay = int.tryParse(_cycleStartCtrl.text.trim()) ?? 1;
         final date = Predictor.finishDateWithCycle(
           remaining: remaining,
@@ -214,24 +227,24 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
           startIndex: startDay - 1,
           from: now,
         );
-        if (date == null) return 'That cycle never finishes (all zeros).';
-        return '${_finishText(date, mode, today)}'
-            '\nCycle length: ${amounts.length} days.';
+        if (date == null) return l10n.calculatorCycleNeverFinishes;
+        return _finishText(l10n, date, mode, today) +
+            l10n.calculatorCycleLength(amounts.length);
 
       case _CalcMode.target:
         final rate = Predictor.requiredPerDay(
             remaining: remaining, from: now, target: _target);
-        if (rate == double.infinity) return 'Pick a date in the future.';
-        return 'Learn ${rate.toStringAsFixed(2)} per day to finish by\n'
-            '${DateDisplay.format(_target, mode)}.';
+        if (rate == double.infinity) return l10n.calculatorPickFutureDate;
+        return l10n.calculatorRequiredRate(
+            rate.toStringAsFixed(2), DateDisplay.format(_target, mode));
     }
   }
 
-  String _finishText(DateTime? date, CalendarMode mode, DateTime today) {
-    if (date == null) return 'At that rate you never finish.';
+  String _finishText(AppLocalizations l10n, DateTime? date, CalendarMode mode,
+      DateTime today) {
+    if (date == null) return l10n.calculatorNeverFinish;
     final days = date.difference(today).inDays;
-    return 'You will finish on ${DateDisplay.format(date, mode)}\n'
-        '(about $days days from today).';
+    return l10n.calculatorFinishOn(DateDisplay.format(date, mode), days);
   }
 }
 

@@ -5,7 +5,9 @@ import '../../application/goals.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
+import '../common/naming.dart';
 
 class GoalsScreen extends ConsumerWidget {
   const GoalsScreen({super.key});
@@ -14,15 +16,16 @@ class GoalsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final goals = ref.watch(goalsProvider);
     final mode = ref.watch(settingsProvider).calendar;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Goals')),
+      appBar: AppBar(title: Text(l10n.goalsTitle)),
       body: goals.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
+                padding: const EdgeInsets.all(32),
                 child: Text(
-                  'No goals yet.\nOpen any sefer and tap the flag to set a target date.',
+                  l10n.goalsEmpty,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -47,6 +50,7 @@ class _GoalRow extends ConsumerWidget {
     final node = ref.watch(catalogNodeProvider(nodeId));
     final status = ref.watch(goalStatusProvider(nodeId));
     final target = ref.watch(goalsProvider)[nodeId];
+    final l10n = AppLocalizations.of(context);
     if (node == null || status == null || target == null) {
       return const SizedBox.shrink();
     }
@@ -59,15 +63,18 @@ class _GoalRow extends ConsumerWidget {
       leading: Icon(status.achieved
           ? Icons.emoji_events
           : (ok ? Icons.trending_up : Icons.trending_down), color: color),
-      title: Text(node.name),
+      title: Text(nodeName(l10n, node)),
       subtitle: Text(status.achieved
-          ? 'Reached!'
-          : 'By ${DateDisplay.format(target, mode)} · '
-              'need ${status.requiredPerDay.toStringAsFixed(2)}/day · '
-              '${ok ? 'on track' : 'behind'}'),
+          ? l10n.goalRowReached
+          : l10n.goalRowStatus(
+              DateDisplay.format(target, mode),
+              status.requiredPerDay.toStringAsFixed(2),
+              ok ? l10n.goalOnTrack : l10n.goalBehind,
+            )),
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline),
-        onPressed: () => _remove(context, ref, node.name, target),
+        tooltip: l10n.tooltipRemoveGoal,
+        onPressed: () => _remove(context, ref, nodeName(l10n, node), target),
       ),
     );
   }
@@ -76,14 +83,15 @@ class _GoalRow extends ConsumerWidget {
       BuildContext context, WidgetRef ref, String name, DateTime target) async {
     final goals = ref.read(goalsProvider.notifier);
     final guard = WriteGuard.of(context, ref);
+    final l10n = AppLocalizations.of(context);
     await guard.run(
       () => goals.removeGoal(nodeId),
-      what: 'Removing the goal for "$name"',
-      success: 'Goal for "$name" removed',
+      what: l10n.whatRemovingGoal(name),
+      success: l10n.goalRemovedFor(name),
       undo: SnackBarAction(
-        label: 'Undo',
+        label: l10n.actionUndo,
         onPressed: () => guard.run(() => goals.setGoal(nodeId, target),
-            what: 'Restoring the goal for "$name"'),
+            what: l10n.whatRestoringGoal(name)),
       ),
     );
   }

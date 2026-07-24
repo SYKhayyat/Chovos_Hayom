@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../common/missing_item.dart';
+import '../common/naming.dart';
 import '../dashboard/progress_tile.dart';
 
 /// Shows the progress subtree rooted at a single node (used by search results
@@ -22,17 +24,17 @@ class NodeScreen extends ConsumerWidget {
     final catalogReady = ref.watch(mergedCatalogProvider).hasValue;
     final eventsReady = ref.watch(eventsProvider).hasValue;
     final node = ref.watch(progressNodeProvider(nodeId));
+    final l10n = AppLocalizations.of(context);
 
     if (node == null) {
       return MissingItemScreen(
         loading: !catalogReady || !eventsReady,
-        message: 'This item no longer exists.\n'
-            'It may have been removed or renamed.',
+        message: l10n.itemMissingRenamed,
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(node.name)),
+      appBar: AppBar(title: Text(nodeName(l10n, node.node))),
       body: ListView(children: [ProgressTile(node: node)]),
     );
   }

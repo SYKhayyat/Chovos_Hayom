@@ -5,9 +5,10 @@ import '../../app/routes.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
-import '../../domain/entities/catalog.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/learning_event.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../common/naming.dart';
 
 /// A single haara paired with where it was written.
 class _JournalEntry {
@@ -15,14 +16,36 @@ class _JournalEntry {
   final LearningEvent event;
   final CatalogNode? node;
 
-  String get location {
+  /// Where the haara was written, in the reader's language.
+  ///
+  /// A method rather than a getter because naming a unit needs the locale, and
+  /// this list is built by a provider that has no `BuildContext`. The provider
+  /// still does the expensive half — collecting and sorting — once per change;
+  /// only the words are deferred to the widget that has the localizations.
+  String location(AppLocalizations l10n) {
     final n = node;
-    if (n == null) return 'Unknown item';
-    // `unitHeading` so a named unit reads as its name (Parshas Noach) rather
+    if (n == null) return l10n.journalUnknownItem;
+    // `nodeAndUnit` so a named unit reads as its name (Parshas Noach) rather
     // than its index — the same thing the grid and the sheets show.
-    return '${n.name} · ${n.unitHeading(event.unitIndex)}';
+    return nodeAndUnit(l10n, n, event.unitIndex);
   }
 }
+
+/// Every haara-bearing event, paired with its node and sorted newest-first.
+///
+/// Built once per (log, catalog) change and shared, so typing in the search box
+/// only *filters* this list — it used to filter the whole event log and re-sort
+/// it on every keystroke, work that doesn't depend on the query and is the same
+/// each time. The search is a cheap linear scan over the result.
+final _journalEntriesProvider = Provider<List<_JournalEntry>>((ref) {
+  final events = ref.watch(eventsProvider).asData?.value ?? const [];
+  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+  return <_JournalEntry>[
+    for (final e in events)
+      if (e.note != null && e.note!.trim().isNotEmpty)
+        _JournalEntry(e, catalog?.byId(e.nodeId)),
+  ]..sort((a, b) => b.event.occurredAt.compareTo(a.event.occurredAt));
+});
 
 /// The **Notes Journal**: every haara you've written, newest first, each showing
 /// where it belongs and tapping through to that unit. There is one note field per
@@ -44,31 +67,27 @@ class _NotesJournalScreenState extends ConsumerState<NotesJournalScreen> {
     super.dispose();
   }
 
-  List<_JournalEntry> _entries(List<LearningEvent> events, Catalog? catalog) {
-    final entries = <_JournalEntry>[
-      for (final e in events)
-        if (e.note != null && e.note!.trim().isNotEmpty)
-          _JournalEntry(e, catalog?.byId(e.nodeId)),
-    ]..sort((a, b) => b.event.occurredAt.compareTo(a.event.occurredAt));
-
+  /// Filter the pre-built, pre-sorted list by the current query. No sort here —
+  /// that already happened once in [_journalEntriesProvider].
+  List<_JournalEntry> _filter(List<_JournalEntry> all, AppLocalizations l10n) {
     final q = _query.trim().toLowerCase();
-    if (q.isEmpty) return entries;
-    return entries
-        .where((e) =>
-            e.event.note!.toLowerCase().contains(q) ||
-            e.location.toLowerCase().contains(q))
-        .toList();
+    if (q.isEmpty) return all;
+    return [
+      for (final e in all)
+        if (e.event.note!.toLowerCase().contains(q) ||
+            e.location(l10n).toLowerCase().contains(q))
+          e,
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
-    final events = ref.watch(eventsProvider).asData?.value ?? const [];
-    final catalog = ref.watch(mergedCatalogProvider).asData?.value;
     final mode = ref.watch(settingsProvider).calendar;
-    final entries = _entries(events, catalog);
+    final l10n = AppLocalizations.of(context);
+    final entries = _filter(ref.watch(_journalEntriesProvider), l10n);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Notes Journal')),
+      appBar: AppBar(title: Text(l10n.journalTitle)),
       body: Column(
         children: [
           Padding(
@@ -78,7 +97,7 @@ class _NotesJournalScreenState extends ConsumerState<NotesJournalScreen> {
               onChanged: (v) => setState(() => _query = v),
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
-                hintText: 'Search haaros…',
+                hintText: l10n.journalSearchHint,
                 isDense: true,
                 border: const OutlineInputBorder(),
                 suffixIcon: _query.isEmpty
@@ -100,9 +119,8 @@ class _NotesJournalScreenState extends ConsumerState<NotesJournalScreen> {
                       padding: const EdgeInsets.all(24),
                       child: Text(
                         _query.isEmpty
-                            ? 'No haaros yet.\nAdd one when you log or edit a daf — '
-                                'the "Haara" field lands here.'
-                            : 'No haaros match “$_query”.',
+                            ? l10n.journalEmpty
+                            : l10n.journalNoMatches(_query),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
@@ -117,10 +135,10 @@ class _NotesJournalScreenState extends ConsumerState<NotesJournalScreen> {
                       return ListTile(
                         leading: const Icon(Icons.lightbulb_outline),
                         title: Text(entry.event.note!.trim()),
-                        subtitle: Text(
-                          '${entry.location} · '
-                          '${DateDisplay.format(entry.event.occurredAt, mode)}',
-                        ),
+                        subtitle: Text(l10n.journalSubtitle(
+                          entry.location(l10n),
+                          DateDisplay.format(entry.event.occurredAt, mode),
+                        )),
                         onTap: node != null && node.isLeaf
                             ? () => Navigator.pushNamed(
                                 context, Routes.sefer(node.id))

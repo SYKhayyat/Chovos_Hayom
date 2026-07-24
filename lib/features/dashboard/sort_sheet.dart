@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/settings.dart';
 import '../../application/sorting.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
+import '../common/naming.dart';
 
 /// Bottom sheet to choose how the tree's children are ordered: a metric, a
 /// direction, and which generation the sort applies to.
@@ -24,6 +26,7 @@ class _SortSheet extends ConsumerWidget {
     final config = ref.watch(settingsProvider.select((s) => s.sort));
     final notifier = ref.read(settingsProvider.notifier);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -33,7 +36,7 @@ class _SortSheet extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Sort the tree', style: theme.textTheme.titleLarge),
+              Text(l10n.sortSheetTitle, style: theme.textTheme.titleLarge),
               const SizedBox(height: 8),
               RadioGroup<SortMetric>(
                 groupValue: config.metric,
@@ -41,7 +44,7 @@ class _SortSheet extends ConsumerWidget {
                   if (v == null) return;
                   guarded(context, ref,
                       () => notifier.setSort(config.copyWith(metric: v)),
-                      what: 'Saving the sort order');
+                      what: l10n.whatSavingSortOrder);
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -50,7 +53,7 @@ class _SortSheet extends ConsumerWidget {
                       RadioListTile<SortMetric>(
                         contentPadding: EdgeInsets.zero,
                         dense: true,
-                        title: Text(m.label),
+                        title: Text(sortMetricLabel(l10n, m)),
                         value: m,
                       ),
                   ],
@@ -59,25 +62,25 @@ class _SortSheet extends ConsumerWidget {
               const Divider(),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Descending'),
-                subtitle: const Text('Highest / latest first'),
+                title: Text(l10n.sortDescending),
+                subtitle: Text(l10n.sortDescendingSubtitle),
                 value: config.descending,
                 onChanged: config.active
                     ? (v) => guarded(context, ref,
                         () => notifier.setSort(config.copyWith(descending: v)),
-                        what: 'Saving the sort order')
+                        what: l10n.whatSavingSortOrder)
                     : null,
               ),
               const SizedBox(height: 4),
-              Text('Apply to', style: theme.textTheme.labelLarge),
+              Text(l10n.sortApplyTo, style: theme.textTheme.labelLarge),
               const SizedBox(height: 4),
               Wrap(
                 spacing: 8,
                 children: [
-                  _levelChip(context, ref, config, null, 'All levels'),
+                  _levelChip(context, ref, config, null, l10n.sortAllLevels),
                   for (var l = 1; l <= 5; l++)
                     _levelChip(context, ref, config, l,
-                        l == 1 ? 'Children' : 'Level $l'),
+                        l == 1 ? l10n.sortChildren : l10n.sortLevel(l)),
                 ],
               ),
             ],
@@ -99,7 +102,7 @@ class _SortSheet extends ConsumerWidget {
               () => ref
                   .read(settingsProvider.notifier)
                   .setSort(config.copyWith(level: level)),
-              what: 'Saving the sort order')
+              what: AppLocalizations.of(context).whatSavingSortOrder)
           : null,
     );
   }

@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/providers.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
+import '../common/naming.dart';
 import 'unit_grid_screen.dart';
 
 /// Per-unit meforish checklist: toggle each required (and any already-learned)
@@ -35,6 +37,7 @@ class _UnitLayersSheet extends ConsumerWidget {
     final view = ref.watch(unitLayerViewProvider);
     final allLayers = ref.watch(allLayersProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     final completed = fold?.completedLayers(node.id, unit) ?? const {};
     final requiredSet = view.requiredFor(node.id, unit);
@@ -58,12 +61,14 @@ class _UnitLayersSheet extends ConsumerWidget {
     // Captured here rather than per-callback: "Clear this unit" pops the sheet
     // and then writes, so by then this context is gone.
     final guard = WriteGuard.of(context, ref);
-    final heading = '${node.name} · ${node.unitHeading(unit)}';
+    final heading = nodeAndUnit(l10n, node, unit);
 
     // An id with no matching meforish means one was deleted after this unit was
     // marked. Name it as such — a raw UUID in a checkbox is unreadable.
-    Layer layerOf(String id) => allLayers.firstWhere((l) => l.id == id,
-        orElse: () => Layer(id: id, name: 'Deleted meforish'));
+    String nameOf(String id) => layerName(
+        l10n,
+        allLayers.firstWhere((l) => l.id == id,
+            orElse: () => Layer(id: id, name: l10n.deletedMeforish)));
 
     return SafeArea(
       child: Padding(
@@ -73,12 +78,11 @@ class _UnitLayersSheet extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${node.name} · ${node.unitHeading(unit)}',
-                  style: theme.textTheme.titleLarge),
+              Text(heading, style: theme.textTheme.titleLarge),
               Text(
                 missing == 0
-                    ? 'Complete — all required mefarshim learned.'
-                    : '$missing of ${requiredSet.length} required still to learn.',
+                    ? l10n.layersComplete
+                    : l10n.layersRemaining(missing, requiredSet.length),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: missing == 0 ? Colors.green : theme.colorScheme.primary,
                 ),
@@ -89,16 +93,17 @@ class _UnitLayersSheet extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                   dense: true,
                   value: completed.contains(id),
-                  title: Text(layerOf(id).name),
+                  title: Text(nameOf(id)),
                   subtitle: requiredSet.contains(id)
-                      ? const Text('Required')
-                      : const Text('Optional'),
+                      ? Text(l10n.labelRequired)
+                      : Text(l10n.labelOptional),
                   onChanged: (v) => guard.run(
                     () => v == true
                         ? logger.markDone(node.id, unit, layers: [id])
                         : logger.markUndone(node.id, unit, layers: [id]),
-                    what: '${v == true ? 'Marking' : 'Un-marking'} '
-                        '${layerOf(id).name} on $heading',
+                    what: v == true
+                        ? l10n.whatMarkingLayer(nameOf(id), heading)
+                        : l10n.whatUnmarkingLayer(nameOf(id), heading),
                   ),
                 ),
               const Divider(),
@@ -106,7 +111,7 @@ class _UnitLayersSheet extends ConsumerWidget {
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
                   icon: const Icon(Icons.done_all, size: 18),
-                  label: const Text('Mark all required learned'),
+                  label: Text(l10n.markAllRequiredLearned),
                   onPressed: () {
                     final toAdd = requiredSet
                         .where((l) => !completed.contains(l))
@@ -114,7 +119,7 @@ class _UnitLayersSheet extends ConsumerWidget {
                     if (toAdd.isEmpty) return;
                     guard.run(
                       () => logger.markDone(node.id, unit, layers: toAdd),
-                      what: 'Marking every required meforish on $heading',
+                      what: l10n.whatMarkingEveryRequired(heading),
                     );
                   },
                 ),
@@ -127,7 +132,7 @@ class _UnitLayersSheet extends ConsumerWidget {
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
                   icon: const Icon(Icons.edit_calendar, size: 18),
-                  label: const Text('Log with date / duration / haara…'),
+                  label: Text(l10n.logWithDateDurationHaara),
                   onPressed: () {
                     Navigator.pop(context);
                     logWithDetails(context, ref, node: node, unit: unit);
@@ -139,13 +144,13 @@ class _UnitLayersSheet extends ConsumerWidget {
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
                     icon: const Icon(Icons.undo, size: 18),
-                    label: const Text('Clear this unit'),
+                    label: Text(l10n.clearThisUnit),
                     onPressed: () {
                       Navigator.pop(context);
                       guard.run(
                         () => logger.markUndone(node.id, unit,
                             layers: completed.toList()),
-                        what: 'Clearing $heading',
+                        what: l10n.whatClearingUnit(heading),
                       );
                     },
                   ),

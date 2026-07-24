@@ -17,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/fake_catalog.dart';
 import '../support/failing_progress_repository.dart';
 import '../support/in_memory_progress_repository.dart';
+import '../support/localized_app.dart';
 import '../support/recording_crash_log.dart';
 
 /// A button that runs one guarded write — the smallest thing that exercises the
@@ -61,8 +62,10 @@ void main() {
         ],
         // The router is wired because the guard's *Details* action pushes a
         // named route — the app always has it, so a harness without it would be
-        // testing something the app never does.
-        child: MaterialApp(
+        // testing something the app never does. Likewise the localizations: the
+        // guard now resolves its failure sentence and its *Details* label from
+        // them, so a harness without them tests a guard the app never builds.
+        child: localizedApp(
           home: child,
           onGenerateRoute: AppRouter.onGenerateRoute,
           onUnknownRoute: AppRouter.onUnknownRoute,
