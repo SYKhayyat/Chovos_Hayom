@@ -838,9 +838,13 @@ pass (was 293); Windows release builds and launches in both locales with no new 
   noise. One tap on the banner turns it off, says where to turn it back on, and offers Undo.
 - **A use-after-dispose**, found by the new meforish-edit test: the dialog's controllers were
   disposed as soon as `showDialog` returned, while the route's exit animation still referenced them.
-  The dialog is now a `StatefulWidget` that owns them. The same shape exists in
-  `profiles_screen._promptForName` and `settings_screen._editIntervals` — untested and unreported,
-  but the same latent bug.
+  The same shape turned out to be in four more dialogs — renaming a profile, the chazara intervals,
+  the backup interval and the clipboard import, three of them wearing a tidy-looking `try`/`finally`.
+  All five now go through `features/common/text_prompt.dart`, one `StatefulWidget` that owns its
+  controller. It had never surfaced because no test drove any of these dialogs to completion, and
+  because the throw lands one frame *after* the pop — a test that stopped at `pump()` would have
+  missed it too. `text_prompt_test.dart` confirms each dialog and then pumps the animation out; it
+  was checked by reintroducing the bug and watching it fail with the exact error.
 
 **Then, from looking at it in Hebrew**
 

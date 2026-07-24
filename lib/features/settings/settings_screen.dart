@@ -21,6 +21,7 @@ import '../../domain/usecases/fold_log.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
+import '../common/text_prompt.dart';
 
 /// What a restore would change, in the terms the user actually sees.
 ///
@@ -306,35 +307,15 @@ class SettingsScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, List<int> current) async {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
-    final ctrl = TextEditingController(text: current.join(', '));
-    final text = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.settingsIntervalsTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(l10n.settingsIntervalsBody),
-            const SizedBox(height: 8),
-            TextField(
-              controller: ctrl,
-              keyboardType: TextInputType.text,
-              decoration:
-                  InputDecoration(hintText: l10n.settingsIntervalsHint),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(l10n.actionCancel)),
-          FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, ctrl.text),
-              child: Text(l10n.actionSave)),
-        ],
-      ),
+    final text = await promptForText(
+      context,
+      title: l10n.settingsIntervalsTitle,
+      body: l10n.settingsIntervalsBody,
+      hintText: l10n.settingsIntervalsHint,
+      initialValue: current.join(', '),
+      confirmLabel: l10n.actionSave,
+      cancelLabel: l10n.actionCancel,
     );
-    ctrl.dispose();
     if (text == null) return;
     final intervals = [
       for (final part in text.split(','))
@@ -349,40 +330,16 @@ class SettingsScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, int current) async {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
-    final ctrl = TextEditingController(text: current.toString());
-    final String? text;
-    try {
-      text = await showDialog<String>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(l10n.settingsBackupInterval),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(l10n.settingsBackupIntervalBody),
-              const SizedBox(height: 8),
-              TextField(
-                controller: ctrl,
-                autofocus: true,
-                keyboardType: TextInputType.number,
-                decoration:
-                    InputDecoration(labelText: l10n.settingsBackupIntervalLabel),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: Text(l10n.actionCancel)),
-            FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, ctrl.text),
-                child: Text(l10n.actionSave)),
-          ],
-        ),
-      );
-    } finally {
-      ctrl.dispose();
-    }
+    final text = await promptForText(
+      context,
+      title: l10n.settingsBackupInterval,
+      body: l10n.settingsBackupIntervalBody,
+      label: l10n.settingsBackupIntervalLabel,
+      initialValue: current.toString(),
+      keyboardType: TextInputType.number,
+      confirmLabel: l10n.actionSave,
+      cancelLabel: l10n.actionCancel,
+    );
     if (text == null) return;
     final days = int.tryParse(text.trim()) ?? 0;
     if (days <= 0) {
@@ -693,31 +650,14 @@ class SettingsScreen extends ConsumerWidget {
   Future<void> _import(BuildContext context, WidgetRef ref) async {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
-    final ctrl = TextEditingController();
-    final String? text;
-    try {
-      text = await showDialog<String>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(l10n.backupImportTitle),
-          content: TextField(
-            controller: ctrl,
-            maxLines: 6,
-            decoration: InputDecoration(hintText: l10n.backupImportHint),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: Text(l10n.actionCancel)),
-            FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, ctrl.text.trim()),
-                child: Text(l10n.actionImport)),
-          ],
-        ),
-      );
-    } finally {
-      ctrl.dispose();
-    }
+    final text = await promptForText(
+      context,
+      title: l10n.backupImportTitle,
+      hintText: l10n.backupImportHint,
+      maxLines: 6,
+      confirmLabel: l10n.actionImport,
+      cancelLabel: l10n.actionCancel,
+    );
     final payload = text ?? '';
     if (payload.isEmpty) return;
 

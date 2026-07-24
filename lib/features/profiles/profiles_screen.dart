@@ -5,6 +5,7 @@ import '../../application/providers.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/error_view.dart';
 import '../common/guarded.dart';
+import '../common/text_prompt.dart';
 
 class ProfilesScreen extends ConsumerWidget {
   const ProfilesScreen({super.key});
@@ -140,30 +141,13 @@ class ProfilesScreen extends ConsumerWidget {
     String initial = '',
   }) async {
     final l10n = AppLocalizations.of(context);
-    final ctrl = TextEditingController(text: initial);
-    try {
-      return await showDialog<String>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(title),
-          content: TextField(
-            controller: ctrl,
-            autofocus: true,
-            decoration: InputDecoration(labelText: l10n.labelName),
-            onSubmitted: (v) => Navigator.pop(dialogContext, v.trim()),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: Text(l10n.actionCancel)),
-            FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, ctrl.text.trim()),
-                child: Text(action)),
-          ],
-        ),
-      );
-    } finally {
-      ctrl.dispose();
-    }
+    return promptForText(
+      context,
+      title: title,
+      label: l10n.labelName,
+      initialValue: initial,
+      confirmLabel: action,
+      cancelLabel: l10n.actionCancel,
+    );
   }
 }

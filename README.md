@@ -197,7 +197,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   sefer's grid with the dashboard behind it, and a path the app doesn't serve says so rather than
   showing a blank screen. (A private scheme, not an `https` App Link — claiming a domain you don't
   own is how a link ends up opening someone else's app.)
-- 344 tests covering the engine, layer fold + required/offered-set resolution (including that
+- 352 tests covering the engine, layer fold + required/offered-set resolution (including that
   un-ticking one meforish never wipes the rest of a unit's history), per-meforish roll-up,
   bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
   reminders, backup validation (including override-row parent cycles), chazara scheduling (complete
@@ -265,7 +265,7 @@ build. The user-facing name is the window title in `windows/runner/main.cpp`.
 flutter pub get               # also runs gen-l10n (pubspec: generate: true)
 dart run build_runner build   # generates Drift code
 flutter analyze               # clean
-flutter test                  # 344 tests, all green
+flutter test                  # 352 tests, all green
 ```
 
 CI runs all of the above on every push and pull request, plus a release APK build. It fails if the
