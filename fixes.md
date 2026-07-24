@@ -787,8 +787,14 @@ The foundation is sound enough that all eight of these are contained changes, no
 
 ## Round three — 2026-07-24
 
-Assessed at the working tree above `5e92c26`. Analyzer clean under `--fatal-infos`; **329 tests**
+Assessed at the working tree above `5e92c26`. Analyzer clean under `--fatal-infos`; **352 tests**
 pass (was 293); Windows release builds and launches in both locales with no new crash-log entries.
+
+**The first blocker is closed.** The original assessment's number-one item was that none of this was
+in version control or had been through CI — 85 uncommitted files and 6 unpushed commits, with a
+workflow that existed but had never run against the code it was supposed to guard. It is now all
+committed, pushed, and **CI is green on `master`**, with the toolchain pinned so a Flutter release
+cannot silently change what it tests.
 
 **Done**
 

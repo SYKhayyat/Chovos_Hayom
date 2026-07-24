@@ -212,12 +212,13 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
 
 ## Platform status
 
-Both target platforms are built and run-verified:
+Both target platforms are built and run-verified, and CI enforces it on every push:
 
 | Platform | Build | Runtime |
 |---|---|---|
-| **Windows** | `flutter build windows` ✅ | Launches, loads the catalog, no crash-log entries ✅ |
+| **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36; tree renders 0 / 12,092 and expands ✅ |
+| **CI** | analyze `--fatal-infos`, 352 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `master` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher
@@ -268,13 +269,16 @@ flutter analyze               # clean
 flutter test                  # 352 tests, all green
 ```
 
-CI runs all of the above on every push and pull request, plus a release APK build. It fails if the
-generated Drift/Riverpod code is stale, if the generated localizations are stale, if any shipped
-locale is missing a string, or if R8 didn't actually run on the release build. The Flutter version
-is **pinned** (`FLUTTER_VERSION` in the workflow) rather than tracking `stable`: two dependencies
-are held back precisely because of that version (see *Toolchain notes*), so following `stable` would
-mean CI silently testing — and releasing — a combination nobody chose. Bump it deliberately, with
-those pins reviewed alongside.
+CI runs all of the above on every push and pull request, plus a release APK build, and is **green on
+`master`** — which is worth stating, because for a long time it wasn't running at all: the workflow
+existed while the work sat uncommitted, so nothing it promised was actually being enforced. It fails
+if the generated Drift/Riverpod code is stale, if the generated localizations are stale, if any
+shipped locale is missing a string, or if R8 didn't actually run on the release build.
+
+The Flutter version is **pinned** (`FLUTTER_VERSION` in the workflow) rather than tracking `stable`:
+two dependencies are held back precisely because of that version (see *Toolchain notes*), so
+following `stable` would mean CI silently testing — and releasing — a combination nobody chose. Bump
+it deliberately, with those pins reviewed alongside.
 
 ### Translating
 
