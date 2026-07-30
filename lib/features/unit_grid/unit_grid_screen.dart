@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/goals.dart';
@@ -383,7 +384,15 @@ class _GoalBanner extends ConsumerWidget {
   }
 }
 
-class _UnitCell extends StatelessWidget {
+/// One square of the grid.
+///
+/// Stateful only to know whether it holds keyboard focus. That is not a detail:
+/// the cell is an `InkWell` inside a filled `Container` inside a `ClipRRect`, so
+/// the InkWell's own focus highlight paints *underneath* the fill and is
+/// invisible. Measured on the desktop build — five Tabs and Enter marked daf 7,
+/// and no screenshot before the Enter showed focus anywhere. A keyboard user was
+/// marking blind.
+class _UnitCell extends StatefulWidget {
   const _UnitCell({
     required this.label,
     required this.semanticLabel,
@@ -408,18 +417,33 @@ class _UnitCell extends StatelessWidget {
   final int reviewCount;
   final bool hasDetails;
   final VoidCallback onTap;
+
+  /// Opens the cell menu. Reached by long-press, by right-click, and — since
+  /// there was no keyboard route to it at all — by the context-menu key or
+  /// Shift+F10 while the cell is focused.
   final VoidCallback onLongPress;
+
+  @override
+  State<_UnitCell> createState() => _UnitCellState();
+}
+
+class _UnitCellState extends State<_UnitCell> {
+  bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDone = widget.isDone;
+    final fraction = widget.fraction;
+    final reviewCount = widget.reviewCount;
+    final label = widget.label;
     final partial = !isDone && fraction > 0;
     // The label wraps the InkWell rather than replacing its semantics: the
     // InkWell is what advertises the cell as focusable and enabled, which is how
     // a reader reaches it in the first place. `checked` adds the state the
     // colour was carrying alone.
     return Semantics(
-      label: semanticLabel,
+      label: widget.semanticLabel,
       // An InkWell announces itself as focusable and tappable but not as a
       // *button*, and carries no enabled state; both are added here so the cell
       // reads as the control it is. `checked` carries the completion the fill
@@ -427,78 +451,113 @@ class _UnitCell extends StatelessWidget {
       button: true,
       enabled: true,
       checked: isDone,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        // Right-click / secondary-tap opens the same menu — desktop-friendly, no
-        // touchscreen required.
-        onSecondaryTap: onLongPress,
-        borderRadius: BorderRadius.circular(8),
-        // The number, the ↻ badge and the note glyph are all already inside the
-        // label above, as a sentence rather than three loose fragments — so the
-        // visuals contribute nothing further to what is read out.
-        child: ExcludeSemantics(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDone ? scheme.primary : scheme.surfaceContainerHighest,
-              ),
-              alignment: Alignment.center,
-              child: Stack(
+      child: CallbackShortcuts(
+        // The keyboard route to the cell menu. Right-click reaches it and the
+        // comment below used to call that "desktop-friendly, no touchscreen
+        // required" — true of a *mouse*. With a keyboard alone you could toggle
+        // "learned" and nothing else: no duration, no haara, no chazara, no
+        // details. Measured: Shift+F10 did nothing, because `lib/` contained no
+        // key handling of any kind.
+        //
+        // Both conventional keys, since which one a keyboard has varies:
+        // Shift+F10 works everywhere, the dedicated context-menu key exists on
+        // most full-size Windows keyboards and no laptop.
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.f10, shift: true):
+              widget.onLongPress,
+          const SingleActivator(LogicalKeyboardKey.contextMenu):
+              widget.onLongPress,
+        },
+        child: InkWell(
+          onTap: widget.onTap,
+          onLongPress: widget.onLongPress,
+          // Right-click / secondary-tap opens the same menu — desktop-friendly,
+          // no touchscreen required.
+          onSecondaryTap: widget.onLongPress,
+          // Drives the ring below. The InkWell's own `focusColor` cannot be seen
+          // here: it paints behind the filled container this cell is made of.
+          onFocusChange: (focused) => setState(() => _focused = focused),
+          borderRadius: BorderRadius.circular(8),
+          // The number, the ↻ badge and the note glyph are all already inside
+          // the label above, as a sentence rather than three loose fragments —
+          // so the visuals contribute nothing further to what is read out.
+          child: ExcludeSemantics(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                decoration: BoxDecoration(
+                  color:
+                      isDone ? scheme.primary : scheme.surfaceContainerHighest,
+                  // The focus ring. Drawn against the cell's *own* background,
+                  // so it takes that background's "on" colour and is legible on
+                  // a filled cell and an empty one alike — the default highlight
+                  // is not, which is how a keyboard user came to be marking
+                  // dapim with nothing on screen telling them which.
+                  border: _focused
+                      ? Border.all(
+                          width: 2,
+                          color:
+                              isDone ? scheme.onPrimary : scheme.onSurface)
+                      : null,
+                ),
                 alignment: Alignment.center,
-                children: [
-                  // Partial-completion fill rising from the bottom.
-                  if (partial)
-                    Positioned.fill(
-                      child: Align(
-                        alignment: Alignment.bottomCenter,
-                        child: FractionallySizedBox(
-                          heightFactor: fraction.clamp(0.05, 1),
-                          child: Container(
-                            color: scheme.primary.withValues(alpha: 0.35),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Partial-completion fill rising from the bottom.
+                    if (partial)
+                      Positioned.fill(
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: FractionallySizedBox(
+                            heightFactor: fraction.clamp(0.05, 1),
+                            child: Container(
+                              color: scheme.primary.withValues(alpha: 0.35),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        // Shrink long named-unit labels so they still fit.
-                        fontSize: label.length > 3 ? 10 : 14,
-                        color:
-                            isDone ? scheme.onPrimary : scheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          // Shrink long named-unit labels so they still fit.
+                          fontSize: label.length > 3 ? 10 : 14,
+                          color: isDone
+                              ? scheme.onPrimary
+                              : scheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                  if (reviewCount > 0)
-                    // Directional: the chazara count belongs in the trailing
-                    // top corner and the note glyph in the leading bottom one,
-                    // which swap sides under a right-to-left layout.
-                    PositionedDirectional(
-                      end: 4,
-                      top: 2,
-                      child: Text('↻$reviewCount',
-                          style: TextStyle(
-                              fontSize: 10,
-                              color:
-                                  isDone ? scheme.onPrimary : scheme.primary)),
-                    ),
-                  if (hasDetails)
-                    PositionedDirectional(
-                      start: 5,
-                      bottom: 4,
-                      child: Icon(Icons.sticky_note_2,
-                          size: 11,
-                          color: isDone ? scheme.onPrimary : scheme.primary),
-                    ),
-                ],
+                    if (reviewCount > 0)
+                      // Directional: the chazara count belongs in the trailing
+                      // top corner and the note glyph in the leading bottom one,
+                      // which swap sides under a right-to-left layout.
+                      PositionedDirectional(
+                        end: 4,
+                        top: 2,
+                        child: Text('↻$reviewCount',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: isDone
+                                    ? scheme.onPrimary
+                                    : scheme.primary)),
+                      ),
+                    if (widget.hasDetails)
+                      PositionedDirectional(
+                        start: 5,
+                        bottom: 4,
+                        child: Icon(Icons.sticky_note_2,
+                            size: 11,
+                            color: isDone ? scheme.onPrimary : scheme.primary),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
