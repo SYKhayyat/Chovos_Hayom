@@ -982,7 +982,11 @@
     "description": "{reason} is the validator's own sentence, which names the bad field.",
     "placeholders": { "reason": { "type": "String" } }
   },
-  "backupImportUnreadable": "Import failed: the file could not be read.",
+  "backupImportUnreadable": "Import failed: the file could not be read — it is not text.",
+  "backupImportAppFailure": "Import failed inside the app, not in your file. Keep the file — it is fine. Details says what went wrong.",
+  "@backupImportAppFailure": {
+    "description": "For a failure that is the app's own. It must not suggest the backup is at fault: the export is the user's only copy, and 'the file could not be read' invites them to delete it and make another, which fails identically."
+  },
   "backupImported": "{count, plural, =1{Imported 1 new event} other{Imported {count} new events}}",
   "@backupImported": {
     "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }

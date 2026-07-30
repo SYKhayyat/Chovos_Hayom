@@ -208,7 +208,7 @@ class BackupService {
         : const <String>[];
 
     await _repo.transaction(() async {
-      if (stale.isNotEmpty) await _repo.removeEvents(stale);
+      if (stale.isNotEmpty) await _repo.removeEvents(targetProfileId, stale);
       await _repo.addEvents(added);
       for (final n in data.customNodes) {
         await _repo.addCustomNode(targetProfileId, n);

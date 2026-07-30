@@ -16,9 +16,16 @@ import 'package:chovos_hayom/domain/usecases/layer_requirements.dart';
 /// scaffolding, so it lives with the tests.
 ///
 /// It is still a faithful implementation rather than a stub — [transaction] gives
-/// the same all-or-nothing guarantee SQLite does, and the streams emit on the
-/// same writes — because a test double that is easier to satisfy than the real
-/// repository proves nothing about the real repository.
+/// the same all-or-nothing guarantee SQLite does, the streams emit on the same
+/// writes, and an event insert enforces the real table's `{profileId, id}` key —
+/// because a test double that is easier to satisfy than the real repository
+/// proves nothing about the real repository.
+///
+/// It once claimed that while storing events in a `Map<profileId, List<…>>` with
+/// no uniqueness check at all, which is exactly why the cross-profile import
+/// collision could not fail in any test that used it. The claim is only worth
+/// making about constraints the double actually enforces, so: the event key is
+/// enforced, and the remaining primary keys are upserts here as they are there.
 class InMemoryProgressRepository implements ProgressRepository {
   final Map<String, List<LearningEvent>> _events = {};
   final List<Profile> _profiles = [];
@@ -53,9 +60,23 @@ class InMemoryProgressRepository implements ProgressRepository {
   Future<List<LearningEvent>> getEvents(String profileId) async =>
       _snapshot(profileId);
 
+  /// The real table's primary key is `{profileId, id}`, so an insert that repeats
+  /// one throws `SqliteException(1555)`. Enforcing it here is the difference
+  /// between a double and a stub: while this map merely appended, a whole class
+  /// of uniqueness bug — including the cross-profile import collision — could
+  /// not fail in any test that used it.
+  void _insert(LearningEvent event) {
+    final list = _events[event.profileId] ??= [];
+    if (list.any((e) => e.id == event.id)) {
+      throw StateError('UNIQUE constraint failed: learning_events.profile_id, '
+          'learning_events.id (${event.profileId}, ${event.id})');
+    }
+    list.add(event);
+  }
+
   @override
   Future<void> addEvent(LearningEvent event) async {
-    (_events[event.profileId] ??= []).add(event);
+    _insert(event);
     _emit(event.profileId);
   }
 
@@ -64,7 +85,7 @@ class InMemoryProgressRepository implements ProgressRepository {
     if (events.isEmpty) return;
     final touched = <String>{};
     for (final event in events) {
-      (_events[event.profileId] ??= []).add(event);
+      _insert(event);
       touched.add(event.profileId);
     }
     for (final p in touched) {
@@ -73,14 +94,14 @@ class InMemoryProgressRepository implements ProgressRepository {
   }
 
   @override
-  Future<void> removeEvents(List<String> eventIds) async {
+  Future<void> removeEvents(String profileId, List<String> eventIds) async {
     if (eventIds.isEmpty) return;
+    final list = _events[profileId];
+    if (list == null) return;
     final ids = eventIds.toSet();
-    for (final entry in _events.entries) {
-      final before = entry.value.length;
-      entry.value.removeWhere((e) => ids.contains(e.id));
-      if (entry.value.length != before) _emit(entry.key);
-    }
+    final before = list.length;
+    list.removeWhere((e) => ids.contains(e.id));
+    if (list.length != before) _emit(profileId);
   }
 
   @override
@@ -169,15 +190,6 @@ class InMemoryProgressRepository implements ProgressRepository {
     if (i == -1) return;
     list[i] = event;
     _emit(event.profileId);
-  }
-
-  @override
-  Future<void> removeEvent(String eventId) async {
-    for (final entry in _events.entries) {
-      final before = entry.value.length;
-      entry.value.removeWhere((e) => e.id == eventId);
-      if (entry.value.length != before) _emit(entry.key);
-    }
   }
 
   @override

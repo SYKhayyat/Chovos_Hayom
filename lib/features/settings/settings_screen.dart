@@ -439,10 +439,21 @@ class SettingsScreen extends ConsumerWidget {
   ///
   /// The validator's own message is still English: it names a field of the
   /// backup format, and the format is not translated. Everything around it is.
-  static String importError(AppLocalizations l10n, Object e) =>
-      e is BackupFormatException
-          ? l10n.backupImportFailed(e.message)
-          : l10n.backupImportUnreadable;
+  ///
+  /// Three causes, three sentences — and they must not collapse. This was a
+  /// two-branch conditional whose else-arm said "the file could not be read", so
+  /// a `SqliteException` from our own schema told the user their only backup was
+  /// unreadable. The reasonable response to that is to delete the file and make
+  /// another, which would fail the same way: a message that costs the user the
+  /// thing it is describing. A failure that is ours says so, and the *Details*
+  /// action on the same snackbar carries the stack.
+  static String importError(AppLocalizations l10n, Object e) => switch (e) {
+        BackupFormatException() => l10n.backupImportFailed(e.message),
+        // The bytes were not text at all — the one failure the file really is
+        // to blame for, raised by the decode in [_importFromFile].
+        FormatException() => l10n.backupImportUnreadable,
+        _ => l10n.backupImportAppFailure,
+      };
 
   /// Backup and restore report through the same guard as every other write.
   /// They keep their own *success* wording only because "cancelled" is neither a
@@ -524,7 +535,17 @@ class SettingsScreen extends ConsumerWidget {
           : l10n.backupImportCancelled);
       return;
     }
-    final json = utf8.decode(bytes);
+    // Decoding is the only step where "the file could not be read" is a true
+    // sentence, so it is the only step allowed to say it. Left uncaught, a
+    // half-copied or binary file threw past every handler here and arrived as a
+    // bare crash-log entry with no message at all.
+    final String json;
+    try {
+      json = utf8.decode(bytes);
+    } on FormatException catch (e) {
+      guard.report(importError(l10n, e));
+      return;
+    }
 
     // A restore undoes learning, so it says exactly what it will change before
     // it does — computed from the file the user just chose, not estimated.

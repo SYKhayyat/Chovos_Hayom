@@ -3083,8 +3083,14 @@ abstract class AppLocalizations {
   /// No description provided for @backupImportUnreadable.
   ///
   /// In en, this message translates to:
-  /// **'Import failed: the file could not be read.'**
+  /// **'Import failed: the file could not be read — it is not text.'**
   String get backupImportUnreadable;
+
+  /// For a failure that is the app's own. It must not suggest the backup is at fault: the export is the user's only copy, and 'the file could not be read' invites them to delete it and make another, which fails identically.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed inside the app, not in your file. Keep the file — it is fine. Details says what went wrong.'**
+  String get backupImportAppFailure;
 
   /// No description provided for @backupImported.
   ///

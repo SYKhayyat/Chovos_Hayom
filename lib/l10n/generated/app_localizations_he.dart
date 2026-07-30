@@ -2076,7 +2076,11 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get backupImportUnreadable =>
-      'הייבוא נכשל: לא ניתן היה לקרוא את הקובץ.';
+      'הייבוא נכשל: לא ניתן היה לקרוא את הקובץ — הוא אינו טקסט.';
+
+  @override
+  String get backupImportAppFailure =>
+      'הייבוא נכשל בתוך האפליקציה, לא בקובץ שלך. שמור על הקובץ — הוא תקין. ב״פרטים״ מופיעה הסיבה.';
 
   @override
   String backupImported(int count) {

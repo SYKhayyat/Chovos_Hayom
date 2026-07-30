@@ -6,6 +6,13 @@ import '../usecases/layer_requirements.dart';
 
 /// Persists the append-only event log, profiles, and user-defined custom nodes.
 /// The log is the single source of truth; nothing derived is stored here.
+///
+/// **Event ids are unique within a profile, not across the store.** The same
+/// backup imported into two profiles puts the same ids in both — that is the
+/// feature — so every operation that names an event also names the profile it
+/// belongs to. There is deliberately no find-by-id-alone anywhere in this
+/// interface; one existed, and it deleted from whichever profile happened to
+/// hold a matching row.
 abstract interface class ProgressRepository {
   /// Reactive stream of all events for [profileId], emitting on every change.
   Stream<List<LearningEvent>> watchEvents(String profileId);
@@ -20,8 +27,11 @@ abstract interface class ProgressRepository {
   /// (finish-all / clear-all). No-op on an empty list.
   Future<void> addEvents(List<LearningEvent> events);
 
-  /// Remove many events by id in one transaction — used to undo a bulk action.
-  Future<void> removeEvents(List<String> eventIds);
+  /// Remove many of [profileId]'s events by id in one transaction — used to undo
+  /// a bulk action, and to drop the events a restore does not contain. Ids
+  /// belonging to another profile are not this profile's to remove and are
+  /// ignored.
+  Future<void> removeEvents(String profileId, List<String> eventIds);
 
   /// Remove every event of one bulk batch, returning how many rows went. Undo by
   /// batch id rather than by a list of ids the caller has to have kept, so a bulk
@@ -36,12 +46,9 @@ abstract interface class ProgressRepository {
   /// Edit the *annotations* of an existing event in place — its [occurredAt]
   /// (when it was learned), [durationMin], and [note]. The event's identity and
   /// action are unchanged, so the folded done-set is unaffected; this lets the
-  /// user correct or fill in details of an item after the fact. No-op if the id
-  /// doesn't exist.
+  /// user correct or fill in details of an item after the fact. Scoped to
+  /// [LearningEvent.profileId]; a no-op if that profile has no such id.
   Future<void> updateEvent(LearningEvent event);
-
-  /// Remove a single event by id (used by undo).
-  Future<void> removeEvent(String eventId);
 
   Future<List<Profile>> getProfiles();
   Future<void> addProfile(Profile profile);

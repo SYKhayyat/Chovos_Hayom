@@ -120,7 +120,7 @@ void main() {
   test('undo removes exactly the events a bulk action added', () async {
     final result = await (await marker())
         .finish(nodeId: 'cat', selection: const RequiredLayerSelection());
-    await repo.removeEvents(result.addedEventIds);
+    await repo.removeEvents('p', result.addedEventIds);
 
     final fold = await currentFold();
     expect(fold.doneUnits('a'), isEmpty);

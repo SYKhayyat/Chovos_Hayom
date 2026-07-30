@@ -2087,7 +2087,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupImportUnreadable =>
-      'Import failed: the file could not be read.';
+      'Import failed: the file could not be read — it is not text.';
+
+  @override
+  String get backupImportAppFailure =>
+      'Import failed inside the app, not in your file. Keep the file — it is fine. Details says what went wrong.';
 
   @override
   String backupImported(int count) {

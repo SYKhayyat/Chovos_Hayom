@@ -45,9 +45,11 @@ class DriftProgressRepository implements ProgressRepository {
   }
 
   @override
-  Future<void> removeEvents(List<String> eventIds) async {
+  Future<void> removeEvents(String profileId, List<String> eventIds) async {
     if (eventIds.isEmpty) return;
-    await (_db.delete(_db.learningEvents)..where((t) => t.id.isIn(eventIds))).go();
+    await (_db.delete(_db.learningEvents)
+          ..where((t) => t.profileId.equals(profileId) & t.id.isIn(eventIds)))
+        .go();
   }
 
   @override
@@ -79,19 +81,16 @@ class DriftProgressRepository implements ProgressRepository {
   @override
   Future<void> updateEvent(LearningEvent e) async {
     // Only the annotation columns are mutable; identity/action are immutable.
-    await (_db.update(_db.learningEvents)..where((t) => t.id.equals(e.id))).write(
+    // Both halves of the key, or this edits whichever profile's row matched.
+    await (_db.update(_db.learningEvents)
+          ..where((t) => t.profileId.equals(e.profileId) & t.id.equals(e.id)))
+        .write(
       LearningEventsCompanion(
         occurredAt: Value(e.occurredAt),
         durationMin: Value(e.durationMin),
         note: Value(e.note),
       ),
     );
-  }
-
-  @override
-  Future<void> removeEvent(String eventId) async {
-    await (_db.delete(_db.learningEvents)..where((t) => t.id.equals(eventId)))
-        .go();
   }
 
   @override

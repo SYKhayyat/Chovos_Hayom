@@ -121,7 +121,7 @@ void main() {
 
     expect(columns, isNot(contains('haara')));
     expect(columns, contains('note'));
-    expect(version, 10);
+    expect(version, 11);
   });
 
   test('a half-migrated database still opens instead of bricking', () async {
@@ -175,7 +175,7 @@ void main() {
     db.close();
 
     expect(nodes.map((r) => r['id']), ['n1']);
-    expect(version, 10);
+    expect(version, 11);
   });
 
   test('v8 -> v9 adds batch_id and its index without touching existing rows',
@@ -227,7 +227,8 @@ void main() {
     expect(batchIds, [null], reason: 'events written before batches have none');
   });
 
-  test('a v7 database upgrades all the way to v9 in one run', () async {
+  test('a v7 database upgrades all the way to the current schema in one run',
+      () async {
     // The ordering trap this covers: v8 rebuilds learning_events from the
     // current Dart definition, which now carries `batch_id`. If the v9 column
     // were added after that rebuild rather than before it, the rebuild's
@@ -257,7 +258,73 @@ void main() {
     expect(columns, isNot(contains('haara')));
     expect(indexes, contains('learning_events_batch'),
         reason: 'the index must outlive the v8 table rebuild');
-    expect(version, 10);
+    expect(version, 11);
+  });
+
+  test('v10 -> v11 re-keys learning_events by profile, losing nothing',
+      () async {
+    // The v10 shape: profile-blind primary key, which is what made the same
+    // backup unimportable into a second profile.
+    seed([
+      '''
+      CREATE TABLE learning_events (
+        id TEXT NOT NULL,
+        profile_id TEXT NOT NULL,
+        node_id TEXT NOT NULL,
+        unit_index INTEGER NOT NULL,
+        action INTEGER NOT NULL,
+        occurred_at INTEGER NOT NULL,
+        logged_at INTEGER NOT NULL,
+        duration_min INTEGER NULL,
+        note TEXT NULL,
+        layers_json TEXT NULL,
+        batch_id TEXT NULL,
+        PRIMARY KEY (id)
+      )
+      ''',
+      'CREATE INDEX learning_events_batch '
+          'ON learning_events (profile_id, batch_id)',
+      '''
+      INSERT INTO learning_events
+        (id, profile_id, node_id, unit_index, action, occurred_at, logged_at, note)
+      VALUES ('x', 'p1', 'berachos', 2, 0, 1750000000, 1750000000, 'years of it')
+      ''',
+    ], userVersion: 10);
+
+    final notes = await openAndReadNotes();
+    expect(notes['x'], 'years of it', reason: 'no learning is lost re-keying');
+
+    final db = raw.sqlite3.open(path);
+    final key = db
+        .select('PRAGMA table_info(learning_events)')
+        .where((r) => (r['pk'] as int) > 0)
+        .map((r) => r['name'] as String)
+        .toSet();
+    final indexes = db
+        .select("SELECT name FROM sqlite_master WHERE type = 'index'")
+        .map((r) => r['name'] as String)
+        .toSet();
+    final version = db.select('PRAGMA user_version').first['user_version'] as int;
+
+    // The whole point, exercised rather than inferred from the schema: the same
+    // event id under a second profile now inserts instead of throwing 1555.
+    db.execute('''
+      INSERT INTO learning_events
+        (id, profile_id, node_id, unit_index, action, occurred_at, logged_at)
+      VALUES ('x', 'p2', 'berachos', 2, 0, 1750000000, 1750000000)
+    ''');
+    final ids = db
+        .select('SELECT profile_id FROM learning_events ORDER BY profile_id')
+        .map((r) => r['profile_id'])
+        .toList();
+    db.close();
+
+    expect(key, {'profile_id', 'id'});
+    expect(indexes, contains('learning_events_batch'),
+        reason: 'the rebuild drops the table and its indexes with it, so the '
+            'index has to be recreated after it — not before');
+    expect(ids, ['p1', 'p2']);
+    expect(version, 11);
   });
 
   test('v9 -> v10 drops the dead settings_json column, keeping profiles',

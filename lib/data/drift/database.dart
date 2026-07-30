@@ -44,8 +44,19 @@ class LearningEvents extends Table {
   /// the undo list groups the whole log by it.
   TextColumn get batchId => text().nullable()();
 
+  // Events are profile-scoped, exactly like custom_nodes below: the same backup
+  // imported into two profiles carries the same event ids into both, so a
+  // profile-blind key makes the second import throw a uniqueness violation
+  // (SqliteException 1555) and the whole feature unusable. That reasoning was
+  // written on `CustomNodes` and never generalised — this table was the one of
+  // six that omitted profileId.
+  //
+  // The consequence for every reader: an event id is only unique *within* a
+  // profile, so no query may find an event by id alone. See
+  // [ProgressRepository.removeEvents] and its siblings, which all take the
+  // profile they act in.
   @override
-  Set<Column> get primaryKey => {id};
+  Set<Column> get primaryKey => {profileId, id};
 }
 
 /// User-defined mefarshim (learning layers), on top of the built-in list. Custom
@@ -146,7 +157,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'chovos_hayom'));
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   /// Every schema change must extend [MigrationStrategy.onUpgrade]. Without this,
   /// bumping [schemaVersion] silently does nothing on existing installs and
@@ -239,13 +250,6 @@ class AppDatabase extends _$AppDatabase {
             // longer has `haara` — every surviving column is copied across.
             await m.alterTable(TableMigration(learningEvents));
           }
-          // The batch index goes last: the v8 rebuild drops and recreates
-          // learning_events, which would take any index created before it.
-          if (from < 9) {
-            await _createIndexIfMissing('learning_events_batch',
-                'CREATE INDEX learning_events_batch '
-                    'ON learning_events (profile_id, batch_id)');
-          }
           // v9 -> v10: drop `profiles.settings_json`. It was written on create
           // and never read once — the shape of a per-profile settings store that
           // was never built. Settings are now per-profile in preferences (where
@@ -254,6 +258,38 @@ class AppDatabase extends _$AppDatabase {
           if (from < 10 &&
               (await _columnsOf('profiles')).contains('settings_json')) {
             await m.alterTable(TableMigration(profiles));
+          }
+          // v10 -> v11: learning_events primary key {id} -> {profileId, id}, the
+          // same change custom_nodes got at v2 and for the same reason — see the
+          // comment on the table. Rebuilds the physical table from the current
+          // Dart definition, preserving every row, so no learning is lost.
+          //
+          // Guarded on the live schema rather than on `from` alone, because a run
+          // that dies after the rebuild but before user_version is bumped would
+          // otherwise replay it. Last, per the additive-before-rebuild rule: the
+          // rebuild copies the columns the Dart definition has, so batch_id must
+          // already exist on the physical table by now (it does — v9, above).
+          //
+          // The table-exists check is not ceremony: `_isPartOfPrimaryKey`
+          // answers false both for "the key lacks this column" and for "there is
+          // no such table", and rebuilding a table that isn't there throws
+          // during `beforeOpen` — which is the one failure the user cannot get
+          // out of. Every step below the rebuild has to be as suspicious.
+          final hasEvents = await _tableExists('learning_events');
+          if (from < 11 &&
+              hasEvents &&
+              !await _isPartOfPrimaryKey('learning_events', 'profile_id')) {
+            await m.alterTable(TableMigration(learningEvents));
+          }
+          // The batch index goes last, and unconditionally: every rebuild of
+          // learning_events (v8's, and v11's above) drops the table and takes
+          // its indexes with it, so an index created earlier in this same run
+          // would silently vanish. Idempotent, so it is a no-op when the index
+          // survived — which is the common case.
+          if (hasEvents) {
+            await _createIndexIfMissing('learning_events_batch',
+                'CREATE INDEX learning_events_batch '
+                    'ON learning_events (profile_id, batch_id)');
           }
         },
       );
