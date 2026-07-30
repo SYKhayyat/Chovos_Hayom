@@ -21,7 +21,12 @@ Future<void> showAddChazaraSheet(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
-    builder: (_) => _AddChazaraSheet(node: node, unit: unit),
+    // The nav-bar inset — see [showLogUnitSheet], which had the identical defect
+    // for the identical reason. Measured on a phone, "Log chazara" landed its
+    // confirm button on exactly the same dead y-range.
+    builder: (_) => SafeArea(
+      child: _AddChazaraSheet(node: node, unit: unit),
+    ),
   );
 }
 
@@ -76,6 +81,7 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
         allLayers.firstWhere((l) => l.id == id,
             orElse: () => Layer(id: id, name: l10n.deletedMeforish)));
 
+    // The keyboard only; the nav bar is the `SafeArea` in [showAddChazaraSheet].
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + bottomInset),

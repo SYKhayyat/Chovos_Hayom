@@ -61,16 +61,31 @@ Future<LogUnitResult?> showLogUnitSheet(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => _LogUnitSheet(
-      title: title,
-      initialOccurredAt: initialOccurredAt,
-      initialDurationMin: initialDurationMin,
-      initialNote: initialNote,
-      saveLabel: saveLabel,
-      layerOptions: layerOptions,
-      initialLayers: initialLayers,
-      nodeId: nodeId,
-      unitIndex: unitIndex,
+    // The nav-bar inset, the same way the other sheets get it. Without it the
+    // confirm button was laid out *underneath* the system navigation bar, where
+    // a tap belongs to the system and never reaches the app: measured on a phone
+    // (1220x2712, 135px nav bar), two thirds of "Mark learned" was dead, and
+    // aiming at it opened Recents. Of the nine sheets in the app, the two that
+    // reached for `viewInsets.bottom` — this one and "Log chazara" — were exactly
+    // the two that broke, because the keyboard inset was written in place of the
+    // nav-bar inset rather than in addition to it.
+    //
+    // The two compose rather than double up: `SafeArea` reads MediaQuery's
+    // `padding`, whose bottom Flutter already zeroes while the keyboard covers
+    // it, and the keyboard is added inside. Android 15+ enforces edge-to-edge,
+    // so this is every current phone, not an exotic configuration.
+    builder: (_) => SafeArea(
+      child: _LogUnitSheet(
+        title: title,
+        initialOccurredAt: initialOccurredAt,
+        initialDurationMin: initialDurationMin,
+        initialNote: initialNote,
+        saveLabel: saveLabel,
+        layerOptions: layerOptions,
+        initialLayers: initialLayers,
+        nodeId: nodeId,
+        unitIndex: unitIndex,
+      ),
     ),
   );
 }
@@ -226,6 +241,9 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // The keyboard only. The system navigation bar is the *other* inset, and it
+    // is handled by the `SafeArea` this sheet is built inside — see
+    // [showLogUnitSheet].
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final session = ref.watch(sessionTimerProvider);
     final elapsed = session.elapsedAt(_now);
