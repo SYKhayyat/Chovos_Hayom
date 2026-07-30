@@ -158,6 +158,14 @@
   "unitLabelPluralCustom": "units",
   "unitLabelPluralUnknown": "units",
   "nodeAndUnit": "{node} · {unit}",
+  "nodeWithPath": "{name} — {path}",
+  "@nodeWithPath": {
+    "description": "A node named with where it sits, for flat lists that have no tree around them: 'Shabbos — Shas · Moed'. The qualifier is derived from the node's ancestors rather than typed into its name.",
+    "placeholders": {
+      "name": { "type": "String" },
+      "path": { "type": "String" }
+    }
+  },
   "@nodeAndUnit": {
     "description": "A unit qualified by its sefer, e.g. 'Shabbos · daf 12'.",
     "placeholders": {

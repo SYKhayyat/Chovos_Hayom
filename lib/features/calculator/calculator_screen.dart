@@ -5,6 +5,7 @@ import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
+import '../../domain/entities/catalog.dart';
 import '../../domain/entities/progress_node.dart';
 import '../../domain/usecases/predictor.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -66,19 +67,20 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
   @override
   Widget build(BuildContext context) {
     final forest = ref.watch(progressForestProvider).asData?.value;
+    final catalog = ref.watch(mergedCatalogProvider).asData?.value;
     final mode = ref.watch(settingsProvider).calendar;
     final now = ref.watch(clockProvider)();
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.calculatorTitle)),
-      body: forest == null
+      body: forest == null || catalog == null
           ? const Center(child: CircularProgressIndicator())
-          : _body(context, l10n, _selectable(forest), mode, now),
+          : _body(context, l10n, catalog, _selectable(forest), mode, now),
     );
   }
 
-  Widget _body(BuildContext context, AppLocalizations l10n,
+  Widget _body(BuildContext context, AppLocalizations l10n, Catalog catalog,
       List<_Selectable> nodes, CalendarMode mode, DateTime now) {
     final selectedEntry = nodes.firstWhere((s) => s.node.id == _nodeId,
         orElse: () => nodes.first);
@@ -95,7 +97,13 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
             for (final s in nodes)
               DropdownMenuItem(
                 value: s.node.id,
-                child: Text('${'   ' * s.depth}${nodeName(l10n, s.node.node)}',
+                // Qualified, because a closed dropdown shows one line with no
+                // indentation and no neighbours: "Shabbos" alone could be the
+                // Bavli, the Yerushalmi, the Mishnayos or the Rambam. The
+                // indentation still carries the tree while the list is open.
+                child: Text(
+                    '${'   ' * s.depth}'
+                    '${qualifiedNodeName(l10n, catalog, s.node.node)}',
                     overflow: TextOverflow.ellipsis),
               ),
           ],

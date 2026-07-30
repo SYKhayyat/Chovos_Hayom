@@ -89,6 +89,7 @@
   "unitLabelPluralCustom": "יחידות",
   "unitLabelPluralUnknown": "יחידות",
   "nodeAndUnit": "{node} · {unit}",
+  "nodeWithPath": "{name} — {path}",
 
   "tooltipBulkActions": "סיום הכול / ניקוי הכול",
   "tooltipMefarshim": "מפרשים",

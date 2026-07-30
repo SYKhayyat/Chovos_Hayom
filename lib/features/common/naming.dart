@@ -1,5 +1,6 @@
 import '../../application/sorting.dart';
 import '../../core/daf_yomi.dart';
+import '../../domain/entities/catalog.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/enums.dart';
 import '../../domain/entities/layer.dart';
@@ -66,6 +67,42 @@ String nodeName(AppLocalizations l10n, CatalogNode node) {
     return hebrew;
   }
   return node.name;
+}
+
+/// Where [node] sits, named in the reader's language: `"Shas · Moed"`.
+///
+/// Empty for a root and for anything directly under one, because "Kol HaTorah
+/// Kula" qualifies nothing — every node is under it.
+///
+/// This is the qualifier that used to be *typed into the data*: 120 of the 312
+/// catalog names carried a hard-coded "(Shas)", "(Yerushalmi)", "(Rambam)". That
+/// made every row inside Shas read "Moed (Shas) → Shabbos (Shas)", where the
+/// suffix is pure noise, while Mishnayos masechtos were left bare — so a search
+/// for "shabbos" returned four rows of which the *first*, plain "Shabbos", was
+/// the one you could not identify. A qualifier that is derived is right for every
+/// node, including the ones nobody thought to annotate and the ones a user adds.
+String nodePath(AppLocalizations l10n, Catalog catalog, CatalogNode node) {
+  final parts = <String>[];
+  var current =
+      node.parentId == null ? null : catalog.byId(node.parentId!);
+  // Bounded: the per-profile override layer can (via a hand-edited import)
+  // contain a parent cycle, and this runs while building a list.
+  for (var depth = 0; current != null && depth < 16; depth++) {
+    if (current.parentId == null) break; // the root names nothing useful
+    parts.add(nodeName(l10n, current));
+    current = catalog.byId(current.parentId!);
+  }
+  return parts.reversed.join(' · ');
+}
+
+/// [node]'s name with [nodePath] appended when there is one — for the flat lists
+/// (search results, the calculator's dropdown, the two cycle pickers) that have
+/// no tree around them to supply the context.
+String qualifiedNodeName(
+    AppLocalizations l10n, Catalog catalog, CatalogNode node) {
+  final path = nodePath(l10n, catalog, node);
+  final name = nodeName(l10n, node);
+  return path.isEmpty ? name : l10n.nodeWithPath(name, path);
 }
 
 /// A meforish's name in the reader's language.

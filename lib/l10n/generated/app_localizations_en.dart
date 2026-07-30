@@ -307,6 +307,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String nodeWithPath(String name, String path) {
+    return '$name — $path';
+  }
+
+  @override
   String get tooltipBulkActions => 'Finish all / clear all';
 
   @override

@@ -149,90 +149,90 @@
     {
       "id": "zeraimShas",
       "parentId": "shas",
-      "name": "Zeraim (Shas)",
+      "name": "Zeraim",
       "kind": "category",
       "sortOrder": 0,
-      "nameHebrew": "זרעים (ש״ס)"
+      "nameHebrew": "זרעים"
     },
     {
       "id": "moedShas",
       "parentId": "shas",
-      "name": "Moed (Shas)",
+      "name": "Moed",
       "kind": "category",
       "sortOrder": 1,
-      "nameHebrew": "מועד (ש״ס)"
+      "nameHebrew": "מועד"
     },
     {
       "id": "nashimShas",
       "parentId": "shas",
-      "name": "Nashim (Shas)",
+      "name": "Nashim",
       "kind": "category",
       "sortOrder": 2,
-      "nameHebrew": "נשים (ש״ס)"
+      "nameHebrew": "נשים"
     },
     {
       "id": "nezikinShas",
       "parentId": "shas",
-      "name": "Nezikin (Shas)",
+      "name": "Nezikin",
       "kind": "category",
       "sortOrder": 3,
-      "nameHebrew": "נזיקין (ש״ס)"
+      "nameHebrew": "נזיקין"
     },
     {
       "id": "kodshimShas",
       "parentId": "shas",
-      "name": "Kodshim (Shas)",
+      "name": "Kodshim",
       "kind": "category",
       "sortOrder": 4,
-      "nameHebrew": "קדשים (ש״ס)"
+      "nameHebrew": "קדשים"
     },
     {
       "id": "taharosShas",
       "parentId": "shas",
-      "name": "Taharos (Shas)",
+      "name": "Taharos",
       "kind": "category",
       "sortOrder": 5,
-      "nameHebrew": "טהרות (ש״ס)"
+      "nameHebrew": "טהרות"
     },
     {
       "id": "zeraimYerushalmi",
       "parentId": "yerushalmi",
-      "name": "Zeraim (Yerushalmi)",
+      "name": "Zeraim",
       "kind": "category",
       "sortOrder": 0,
-      "nameHebrew": "זרעים (ירושלמי)"
+      "nameHebrew": "זרעים"
     },
     {
       "id": "moedYerushalmi",
       "parentId": "yerushalmi",
-      "name": "Moed (Yerushalmi)",
+      "name": "Moed",
       "kind": "category",
       "sortOrder": 1,
-      "nameHebrew": "מועד (ירושלמי)"
+      "nameHebrew": "מועד"
     },
     {
       "id": "nashimYerushalmi",
       "parentId": "yerushalmi",
-      "name": "Nashim (Yerushalmi)",
+      "name": "Nashim",
       "kind": "category",
       "sortOrder": 2,
-      "nameHebrew": "נשים (ירושלמי)"
+      "nameHebrew": "נשים"
     },
     {
       "id": "nezikinYerushalmi",
       "parentId": "yerushalmi",
-      "name": "Nezikin (Yerushalmi)",
+      "name": "Nezikin",
       "kind": "category",
       "sortOrder": 3,
-      "nameHebrew": "נזיקין (ירושלמי)"
+      "nameHebrew": "נזיקין"
     },
     {
       "id": "taharosYerushalmi",
       "parentId": "yerushalmi",
-      "name": "Taharos (Yerushalmi)",
+      "name": "Taharos",
       "kind": "category",
       "sortOrder": 4,
-      "nameHebrew": "טהרות (ירושלמי)"
+      "nameHebrew": "טהרות"
     },
     {
       "id": "seferHamitzvos",
@@ -272,7 +272,7 @@
       "name": "Nashim",
       "kind": "category",
       "sortOrder": 4,
-      "nameHebrew": "נשים (רמב״ם)"
+      "nameHebrew": "נשים"
     },
     {
       "id": "kedusha",
@@ -293,10 +293,10 @@
     {
       "id": "zeraimRambam",
       "parentId": "rambam",
-      "name": "Zeraim (Rambam)",
+      "name": "Zeraim",
       "kind": "category",
       "sortOrder": 7,
-      "nameHebrew": "זרעים (רמב״ם)"
+      "nameHebrew": "זרעים"
     },
     {
       "id": "avodah",
@@ -325,10 +325,10 @@
     {
       "id": "nezikinRambam",
       "parentId": "rambam",
-      "name": "Nezikin (Rambam)",
+      "name": "Nezikin",
       "kind": "category",
       "sortOrder": 11,
-      "nameHebrew": "נזיקין (רמב״ם)"
+      "nameHebrew": "נזיקין"
     },
     {
       "id": "kinyan",
@@ -349,10 +349,10 @@
     {
       "id": "shoftimRambam",
       "parentId": "rambam",
-      "name": "Shoftim (Rambam)",
+      "name": "Shoftim",
       "kind": "category",
       "sortOrder": 14,
-      "nameHebrew": "שופטים (רמב״ם)"
+      "nameHebrew": "שופטים"
     },
     {
       "id": "bereishis",
@@ -1270,13 +1270,13 @@
     {
       "id": "taharosMesechta",
       "parentId": "taharos",
-      "name": "Taharos (Mesechta)",
+      "name": "Taharos",
       "kind": "leaf",
       "sortOrder": 4,
       "unitCount": 10,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "טהרות (מסכת)"
+      "nameHebrew": "טהרות"
     },
     {
       "id": "mikvaos",
@@ -1358,838 +1358,838 @@
     {
       "id": "berachosShas",
       "parentId": "zeraimShas",
-      "name": "Berachos (Shas)",
+      "name": "Berachos",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 63,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "ברכות (ש״ס)"
+      "nameHebrew": "ברכות"
     },
     {
       "id": "shabbosShas",
       "parentId": "moedShas",
-      "name": "Shabbos (Shas)",
+      "name": "Shabbos",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 156,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "שבת (ש״ס)"
+      "nameHebrew": "שבת"
     },
     {
       "id": "eruvinShas",
       "parentId": "moedShas",
-      "name": "Eruvin (Shas)",
+      "name": "Eruvin",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 104,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "עירובין (ש״ס)"
+      "nameHebrew": "עירובין"
     },
     {
       "id": "pesachimShas",
       "parentId": "moedShas",
-      "name": "Pesachim (Shas)",
+      "name": "Pesachim",
       "kind": "leaf",
       "sortOrder": 2,
       "unitCount": 120,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "פסחים (ש״ס)"
+      "nameHebrew": "פסחים"
     },
     {
       "id": "roshHashanaShas",
       "parentId": "moedShas",
-      "name": "Rosh Hashana (Shas)",
+      "name": "Rosh Hashana",
       "kind": "leaf",
       "sortOrder": 3,
       "unitCount": 34,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "ראש השנה (ש״ס)"
+      "nameHebrew": "ראש השנה"
     },
     {
       "id": "yomaShas",
       "parentId": "moedShas",
-      "name": "Yoma (Shas)",
+      "name": "Yoma",
       "kind": "leaf",
       "sortOrder": 4,
       "unitCount": 87,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "יומא (ש״ס)"
+      "nameHebrew": "יומא"
     },
     {
       "id": "sukkahShas",
       "parentId": "moedShas",
-      "name": "Sukkah (Shas)",
+      "name": "Sukkah",
       "kind": "leaf",
       "sortOrder": 5,
       "unitCount": 55,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "סוכה (ש״ס)"
+      "nameHebrew": "סוכה"
     },
     {
       "id": "beitzaShas",
       "parentId": "moedShas",
-      "name": "Beitza (Shas)",
+      "name": "Beitza",
       "kind": "leaf",
       "sortOrder": 6,
       "unitCount": 39,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "ביצה (ש״ס)"
+      "nameHebrew": "ביצה"
     },
     {
       "id": "taanisShas",
       "parentId": "moedShas",
-      "name": "Taanis (Shas)",
+      "name": "Taanis",
       "kind": "leaf",
       "sortOrder": 7,
       "unitCount": 30,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "תענית (ש״ס)"
+      "nameHebrew": "תענית"
     },
     {
       "id": "megillaShas",
       "parentId": "moedShas",
-      "name": "Megilla (Shas)",
+      "name": "Megilla",
       "kind": "leaf",
       "sortOrder": 8,
       "unitCount": 31,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "מגילה (ש״ס)"
+      "nameHebrew": "מגילה"
     },
     {
       "id": "moedKatanShas",
       "parentId": "moedShas",
-      "name": "Moed Katan (Shas)",
+      "name": "Moed Katan",
       "kind": "leaf",
       "sortOrder": 9,
       "unitCount": 28,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "מועד קטן (ש״ס)"
+      "nameHebrew": "מועד קטן"
     },
     {
       "id": "chagigaShas",
       "parentId": "moedShas",
-      "name": "Chagiga (Shas)",
+      "name": "Chagiga",
       "kind": "leaf",
       "sortOrder": 10,
       "unitCount": 26,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "חגיגה (ש״ס)"
+      "nameHebrew": "חגיגה"
     },
     {
       "id": "yevamosShas",
       "parentId": "nashimShas",
-      "name": "Yevamos (Shas)",
+      "name": "Yevamos",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 121,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "יבמות (ש״ס)"
+      "nameHebrew": "יבמות"
     },
     {
       "id": "kesuvosShas",
       "parentId": "nashimShas",
-      "name": "Kesuvos (Shas)",
+      "name": "Kesuvos",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 111,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "כתובות (ש״ס)"
+      "nameHebrew": "כתובות"
     },
     {
       "id": "nedarimShas",
       "parentId": "nashimShas",
-      "name": "Nedarim (Shas)",
+      "name": "Nedarim",
       "kind": "leaf",
       "sortOrder": 2,
       "unitCount": 90,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "נדרים (ש״ס)"
+      "nameHebrew": "נדרים"
     },
     {
       "id": "nazirShas",
       "parentId": "nashimShas",
-      "name": "Nazir (Shas)",
+      "name": "Nazir",
       "kind": "leaf",
       "sortOrder": 3,
       "unitCount": 65,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "נזיר (ש״ס)"
+      "nameHebrew": "נזיר"
     },
     {
       "id": "sotahShas",
       "parentId": "nashimShas",
-      "name": "Sotah (Shas)",
+      "name": "Sotah",
       "kind": "leaf",
       "sortOrder": 4,
       "unitCount": 48,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "סוטה (ש״ס)"
+      "nameHebrew": "סוטה"
     },
     {
       "id": "gittinShas",
       "parentId": "nashimShas",
-      "name": "Gittin (Shas)",
+      "name": "Gittin",
       "kind": "leaf",
       "sortOrder": 5,
       "unitCount": 89,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "גיטין (ש״ס)"
+      "nameHebrew": "גיטין"
     },
     {
       "id": "kiddushinShas",
       "parentId": "nashimShas",
-      "name": "Kiddushin (Shas)",
+      "name": "Kiddushin",
       "kind": "leaf",
       "sortOrder": 6,
       "unitCount": 81,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "קידושין (ש״ס)"
+      "nameHebrew": "קידושין"
     },
     {
       "id": "bavaKamaShas",
       "parentId": "nezikinShas",
-      "name": "Bava Kama (Shas)",
+      "name": "Bava Kama",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 118,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "בבא קמא (ש״ס)"
+      "nameHebrew": "בבא קמא"
     },
     {
       "id": "bavaMetziaShas",
       "parentId": "nezikinShas",
-      "name": "Bava Metzia (Shas)",
+      "name": "Bava Metzia",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 118,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "בבא מציעא (ש״ס)"
+      "nameHebrew": "בבא מציעא"
     },
     {
       "id": "bavaBasraShas",
       "parentId": "nezikinShas",
-      "name": "Bava Basra (Shas)",
+      "name": "Bava Basra",
       "kind": "leaf",
       "sortOrder": 2,
       "unitCount": 175,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "בבא בתרא (ש״ס)"
+      "nameHebrew": "בבא בתרא"
     },
     {
       "id": "sanhedrinShas",
       "parentId": "nezikinShas",
-      "name": "Sanhedrin (Shas)",
+      "name": "Sanhedrin",
       "kind": "leaf",
       "sortOrder": 3,
       "unitCount": 112,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "סנהדרין (ש״ס)"
+      "nameHebrew": "סנהדרין"
     },
     {
       "id": "makkosShas",
       "parentId": "nezikinShas",
-      "name": "Makkos (Shas)",
+      "name": "Makkos",
       "kind": "leaf",
       "sortOrder": 4,
       "unitCount": 23,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "מכות (ש״ס)"
+      "nameHebrew": "מכות"
     },
     {
       "id": "shevuosShas",
       "parentId": "nezikinShas",
-      "name": "Shevuos (Shas)",
+      "name": "Shevuos",
       "kind": "leaf",
       "sortOrder": 5,
       "unitCount": 48,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "שבועות (ש״ס)"
+      "nameHebrew": "שבועות"
     },
     {
       "id": "avodahZarahShas",
       "parentId": "nezikinShas",
-      "name": "Avodah Zarah (Shas)",
+      "name": "Avodah Zarah",
       "kind": "leaf",
       "sortOrder": 6,
       "unitCount": 75,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "עבודה זרה (ש״ס)"
+      "nameHebrew": "עבודה זרה"
     },
     {
       "id": "horayosShas",
       "parentId": "nezikinShas",
-      "name": "Horayos (Shas)",
+      "name": "Horayos",
       "kind": "leaf",
       "sortOrder": 7,
       "unitCount": 13,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "הוריות (ש״ס)"
+      "nameHebrew": "הוריות"
     },
     {
       "id": "zevachimShas",
       "parentId": "kodshimShas",
-      "name": "Zevachim (Shas)",
+      "name": "Zevachim",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 119,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "זבחים (ש״ס)"
+      "nameHebrew": "זבחים"
     },
     {
       "id": "menachosShas",
       "parentId": "kodshimShas",
-      "name": "Menachos (Shas)",
+      "name": "Menachos",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 109,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "מנחות (ש״ס)"
+      "nameHebrew": "מנחות"
     },
     {
       "id": "chullinShas",
       "parentId": "kodshimShas",
-      "name": "Chullin (Shas)",
+      "name": "Chullin",
       "kind": "leaf",
       "sortOrder": 2,
       "unitCount": 141,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "חולין (ש״ס)"
+      "nameHebrew": "חולין"
     },
     {
       "id": "bechorosShas",
       "parentId": "kodshimShas",
-      "name": "Bechoros (Shas)",
+      "name": "Bechoros",
       "kind": "leaf",
       "sortOrder": 3,
       "unitCount": 60,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "בכורות (ש״ס)"
+      "nameHebrew": "בכורות"
     },
     {
       "id": "erchinShas",
       "parentId": "kodshimShas",
-      "name": "Erchin (Shas)",
+      "name": "Erchin",
       "kind": "leaf",
       "sortOrder": 4,
       "unitCount": 33,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "ערכין (ש״ס)"
+      "nameHebrew": "ערכין"
     },
     {
       "id": "temurahShas",
       "parentId": "kodshimShas",
-      "name": "Temurah (Shas)",
+      "name": "Temurah",
       "kind": "leaf",
       "sortOrder": 5,
       "unitCount": 33,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "תמורה (ש״ס)"
+      "nameHebrew": "תמורה"
     },
     {
       "id": "kerisosShas",
       "parentId": "kodshimShas",
-      "name": "Kerisos (Shas)",
+      "name": "Kerisos",
       "kind": "leaf",
       "sortOrder": 6,
       "unitCount": 27,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "כריתות (ש״ס)"
+      "nameHebrew": "כריתות"
     },
     {
       "id": "meilahShas",
       "parentId": "kodshimShas",
-      "name": "Meilah (Shas)",
+      "name": "Meilah",
       "kind": "leaf",
       "sortOrder": 7,
       "unitCount": 21,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "מעילה (ש״ס)"
+      "nameHebrew": "מעילה"
     },
     {
       "id": "tamidShas",
       "parentId": "kodshimShas",
-      "name": "Tamid (Shas)",
+      "name": "Tamid",
       "kind": "leaf",
       "sortOrder": 8,
       "unitCount": 9,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "תמיד (ש״ס)"
+      "nameHebrew": "תמיד"
     },
     {
       "id": "niddahShas",
       "parentId": "taharosShas",
-      "name": "Niddah (Shas)",
+      "name": "Niddah",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 72,
       "unitOffset": 2,
       "unitLabel": "daf",
-      "nameHebrew": "נדה (ש״ס)"
+      "nameHebrew": "נדה"
     },
     {
       "id": "berachosYerushalmi",
       "parentId": "zeraimYerushalmi",
-      "name": "Berachos (Yerushalmi)",
+      "name": "Berachos",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 58,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "ברכות (ירושלמי)"
+      "nameHebrew": "ברכות"
     },
     {
       "id": "peahYerushalmi",
       "parentId": "zeraimYerushalmi",
-      "name": "Peah (Yerushalmi)",
+      "name": "Peah",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 55,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "פאה (ירושלמי)"
+      "nameHebrew": "פאה"
     },
     {
       "id": "demaiYerushalmi",
       "parentId": "zeraimYerushalmi",
-      "name": "Demai (Yerushalmi)",
+      "name": "Demai",
       "kind": "leaf",
       "sortOrder": 2,
       "unitCount": 44,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "דמאי (ירושלמי)"
+      "nameHebrew": "דמאי"
     },
     {
       "id": "kilayimYerushalmi",
       "parentId": "zeraimYerushalmi",
-      "name": "Kilayim (Yerushalmi)",
+      "name": "Kilayim",
       "kind": "leaf",
       "sortOrder": 3,
       "unitCount": 56,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "כלאים (ירושלמי)"
+      "nameHebrew": "כלאים"
     },
     {
       "id": "shviisYerushalmi",
       "parentId": "zeraimYerushalmi",
-      "name": "Shviis (Yerushalmi)",
+      "name": "Shviis",
       "kind": "leaf",
       "sortOrder": 4,
       "unitCount": 56,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "שביעית (ירושלמי)"
+      "nameHebrew": "שביעית"
     },
     {
       "id": "terumosYerushalmi",
       "parentId": "zeraimYerushalmi",
-      "name": "Terumos (Yerushalmi)",
+      "name": "Terumos",
       "kind": "leaf",
       "sortOrder": 5,
       "unitCount": 48,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "תרומות (ירושלמי)"
+      "nameHebrew": "תרומות"
     },
     {
       "id": "maasrosYerushalmi",
       "parentId": "zeraimYerushalmi",
-      "name": "Maasros (Yerushalmi)",
+      "name": "Maasros",
       "kind": "leaf",
       "sortOrder": 6,
       "unitCount": 20,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "מעשרות (ירושלמי)"
+      "nameHebrew": "מעשרות"
     },
     {
       "id": "maaserSheniYerushalmi",
       "parentId": "zeraimYerushalmi",
-      "name": "Maaser Sheni (Yerushalmi)",
+      "name": "Maaser Sheni",
       "kind": "leaf",
       "sortOrder": 7,
       "unitCount": 24,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "מעשר שני (ירושלמי)"
+      "nameHebrew": "מעשר שני"
     },
     {
       "id": "challahYerushalmi",
       "parentId": "zeraimYerushalmi",
-      "name": "Challah (Yerushalmi)",
+      "name": "Challah",
       "kind": "leaf",
       "sortOrder": 8,
       "unitCount": 19,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "חלה (ירושלמי)"
+      "nameHebrew": "חלה"
     },
     {
       "id": "orlahYerushalmi",
       "parentId": "zeraimYerushalmi",
-      "name": "Orlah (Yerushalmi)",
+      "name": "Orlah",
       "kind": "leaf",
       "sortOrder": 9,
       "unitCount": 21,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "ערלה (ירושלמי)"
+      "nameHebrew": "ערלה"
     },
     {
       "id": "bikkurimYerushalmi",
       "parentId": "zeraimYerushalmi",
-      "name": "Bikkurim (Yerushalmi)",
+      "name": "Bikkurim",
       "kind": "leaf",
       "sortOrder": 10,
       "unitCount": 21,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "ביכורים (ירושלמי)"
+      "nameHebrew": "ביכורים"
     },
     {
       "id": "shabbosYerushalmi",
       "parentId": "moedYerushalmi",
-      "name": "Shabbos (Yerushalmi)",
+      "name": "Shabbos",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 141,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "שבת (ירושלמי)"
+      "nameHebrew": "שבת"
     },
     {
       "id": "eruvinYerushalmi",
       "parentId": "moedYerushalmi",
-      "name": "Eruvin (Yerushalmi)",
+      "name": "Eruvin",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 94,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "עירובין (ירושלמי)"
+      "nameHebrew": "עירובין"
     },
     {
       "id": "pesachimYerushalmi",
       "parentId": "moedYerushalmi",
-      "name": "Pesachim (Yerushalmi)",
+      "name": "Pesachim",
       "kind": "leaf",
       "sortOrder": 2,
       "unitCount": 86,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "פסחים (ירושלמי)"
+      "nameHebrew": "פסחים"
     },
     {
       "id": "yomaYerushalmi",
       "parentId": "moedYerushalmi",
-      "name": "Yoma (Yerushalmi)",
+      "name": "Yoma",
       "kind": "leaf",
       "sortOrder": 3,
       "unitCount": 51,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "יומא (ירושלמי)"
+      "nameHebrew": "יומא"
     },
     {
       "id": "shekalimYerushalmi",
       "parentId": "moedYerushalmi",
-      "name": "Shekalim (Yerushalmi)",
+      "name": "Shekalim",
       "kind": "leaf",
       "sortOrder": 4,
       "unitCount": 32,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "שקלים (ירושלמי)"
+      "nameHebrew": "שקלים"
     },
     {
       "id": "sukkahYerushalmi",
       "parentId": "moedYerushalmi",
-      "name": "Sukkah (Yerushalmi)",
+      "name": "Sukkah",
       "kind": "leaf",
       "sortOrder": 5,
       "unitCount": 49,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "סוכה (ירושלמי)"
+      "nameHebrew": "סוכה"
     },
     {
       "id": "roshHashanaYerushalmi",
       "parentId": "moedYerushalmi",
-      "name": "Rosh Hashana (Yerushalmi)",
+      "name": "Rosh Hashana",
       "kind": "leaf",
       "sortOrder": 6,
       "unitCount": 36,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "ראש השנה (ירושלמי)"
+      "nameHebrew": "ראש השנה"
     },
     {
       "id": "beitzaYerushalmi",
       "parentId": "moedYerushalmi",
-      "name": "Beitza (Yerushalmi)",
+      "name": "Beitza",
       "kind": "leaf",
       "sortOrder": 7,
       "unitCount": 46,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "ביצה (ירושלמי)"
+      "nameHebrew": "ביצה"
     },
     {
       "id": "taanisYerushalmi",
       "parentId": "moedYerushalmi",
-      "name": "Taanis (Yerushalmi)",
+      "name": "Taanis",
       "kind": "leaf",
       "sortOrder": 8,
       "unitCount": 40,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "תענית (ירושלמי)"
+      "nameHebrew": "תענית"
     },
     {
       "id": "megillahYerushalmi",
       "parentId": "moedYerushalmi",
-      "name": "Megillah (Yerushalmi)",
+      "name": "Megillah",
       "kind": "leaf",
       "sortOrder": 9,
       "unitCount": 38,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "מגילה (ירושלמי)"
+      "nameHebrew": "מגילה"
     },
     {
       "id": "chagigahYerushalmi",
       "parentId": "moedYerushalmi",
-      "name": "Chagigah (Yerushalmi)",
+      "name": "Chagigah",
       "kind": "leaf",
       "sortOrder": 10,
       "unitCount": 23,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "חגיגה (ירושלמי)"
+      "nameHebrew": "חגיגה"
     },
     {
       "id": "moedKatanYerushalmi",
       "parentId": "moedYerushalmi",
-      "name": "Moed Katan (Yerushalmi)",
+      "name": "Moed Katan",
       "kind": "leaf",
       "sortOrder": 11,
       "unitCount": 24,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "מועד קטן (ירושלמי)"
+      "nameHebrew": "מועד קטן"
     },
     {
       "id": "yevamosYerushalmi",
       "parentId": "nashimYerushalmi",
-      "name": "Yevamos (Yerushalmi)",
+      "name": "Yevamos",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 143,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "יבמות (ירושלמי)"
+      "nameHebrew": "יבמות"
     },
     {
       "id": "sotahYerushalmi",
       "parentId": "nashimYerushalmi",
-      "name": "Sotah (Yerushalmi)",
+      "name": "Sotah",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 73,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "סוטה (ירושלמי)"
+      "nameHebrew": "סוטה"
     },
     {
       "id": "kesuvosYerushalmi",
       "parentId": "nashimYerushalmi",
-      "name": "Kesuvos (Yerushalmi)",
+      "name": "Kesuvos",
       "kind": "leaf",
       "sortOrder": 2,
       "unitCount": 121,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "כתובות (ירושלמי)"
+      "nameHebrew": "כתובות"
     },
     {
       "id": "nedarimYerushalmi",
       "parentId": "nashimYerushalmi",
-      "name": "Nedarim (Yerushalmi)",
+      "name": "Nedarim",
       "kind": "leaf",
       "sortOrder": 3,
       "unitCount": 94,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "נדרים (ירושלמי)"
+      "nameHebrew": "נדרים"
     },
     {
       "id": "nazirYerushalmi",
       "parentId": "nashimYerushalmi",
-      "name": "Nazir (Yerushalmi)",
+      "name": "Nazir",
       "kind": "leaf",
       "sortOrder": 4,
       "unitCount": 55,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "נזיר (ירושלמי)"
+      "nameHebrew": "נזיר"
     },
     {
       "id": "gittinYerushalmi",
       "parentId": "nashimYerushalmi",
-      "name": "Gittin (Yerushalmi)",
+      "name": "Gittin",
       "kind": "leaf",
       "sortOrder": 5,
       "unitCount": 75,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "גיטין (ירושלמי)"
+      "nameHebrew": "גיטין"
     },
     {
       "id": "kidushinYerushalmi",
       "parentId": "nashimYerushalmi",
-      "name": "Kidushin (Yerushalmi)",
+      "name": "Kidushin",
       "kind": "leaf",
       "sortOrder": 6,
       "unitCount": 43,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "קידושין (ירושלמי)"
+      "nameHebrew": "קידושין"
     },
     {
       "id": "bavaKamaYerushalmi",
       "parentId": "nezikinYerushalmi",
-      "name": "Bava Kama (Yerushalmi)",
+      "name": "Bava Kama",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 85,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "בבא קמא (ירושלמי)"
+      "nameHebrew": "בבא קמא"
     },
     {
       "id": "bavaMetziaYerushalmi",
       "parentId": "nezikinYerushalmi",
-      "name": "Bava Metzia (Yerushalmi)",
+      "name": "Bava Metzia",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 84,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "בבא מציעא (ירושלמי)"
+      "nameHebrew": "בבא מציעא"
     },
     {
       "id": "bavaBasraYerushalmi",
       "parentId": "nezikinYerushalmi",
-      "name": "Bava Basra (Yerushalmi)",
+      "name": "Bava Basra",
       "kind": "leaf",
       "sortOrder": 2,
       "unitCount": 76,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "בבא בתרא (ירושלמי)"
+      "nameHebrew": "בבא בתרא"
     },
     {
       "id": "sanhedrinYerushalmi",
       "parentId": "nezikinYerushalmi",
-      "name": "Sanhedrin (Yerushalmi)",
+      "name": "Sanhedrin",
       "kind": "leaf",
       "sortOrder": 3,
       "unitCount": 89,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "סנהדרין (ירושלמי)"
+      "nameHebrew": "סנהדרין"
     },
     {
       "id": "shevuosYerushalmi",
       "parentId": "nezikinYerushalmi",
-      "name": "Shevuos (Yerushalmi)",
+      "name": "Shevuos",
       "kind": "leaf",
       "sortOrder": 4,
       "unitCount": 58,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "שבועות (ירושלמי)"
+      "nameHebrew": "שבועות"
     },
     {
       "id": "avodahZarahYerushalmi",
       "parentId": "nezikinYerushalmi",
-      "name": "Avodah Zarah (Yerushalmi)",
+      "name": "Avodah Zarah",
       "kind": "leaf",
       "sortOrder": 5,
       "unitCount": 60,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "עבודה זרה (ירושלמי)"
+      "nameHebrew": "עבודה זרה"
     },
     {
       "id": "makkosYerushalmi",
       "parentId": "nezikinYerushalmi",
-      "name": "Makkos (Yerushalmi)",
+      "name": "Makkos",
       "kind": "leaf",
       "sortOrder": 6,
       "unitCount": 28,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "מכות (ירושלמי)"
+      "nameHebrew": "מכות"
     },
     {
       "id": "horayosYerushalmi",
       "parentId": "nezikinYerushalmi",
-      "name": "Horayos (Yerushalmi)",
+      "name": "Horayos",
       "kind": "leaf",
       "sortOrder": 7,
       "unitCount": 20,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "הוריות (ירושלמי)"
+      "nameHebrew": "הוריות"
     },
     {
       "id": "niddahYerushalmi",
       "parentId": "taharosYerushalmi",
-      "name": "Niddah (Yerushalmi)",
+      "name": "Niddah",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 25,
       "unitOffset": 1,
       "unitLabel": "daf",
-      "nameHebrew": "נדה (ירושלמי)"
+      "nameHebrew": "נדה"
     },
     {
       "id": "shorashim",
@@ -2260,13 +2260,13 @@
     {
       "id": "avodahZaraRambam",
       "parentId": "maddah",
-      "name": "Avodah Zarah (Rambam)",
+      "name": "Avodah Zarah",
       "kind": "leaf",
       "sortOrder": 3,
       "unitCount": 12,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "עבודה זרה (רמב״ם)"
+      "nameHebrew": "עבודה זרה"
     },
     {
       "id": "teshuva",
@@ -2326,13 +2326,13 @@
     {
       "id": "berachosRambam",
       "parentId": "ahava",
-      "name": "Berachos (Rambam)",
+      "name": "Berachos",
       "kind": "leaf",
       "sortOrder": 4,
       "unitCount": 11,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "ברכות (רמב״ם)"
+      "nameHebrew": "ברכות"
     },
     {
       "id": "milah",
@@ -2359,24 +2359,24 @@
     {
       "id": "shabbosRambam",
       "parentId": "zemanim",
-      "name": "Shabbos (Rambam)",
+      "name": "Shabbos",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 30,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "שבת (רמב״ם)"
+      "nameHebrew": "שבת"
     },
     {
       "id": "eiruvinRambam",
       "parentId": "zemanim",
-      "name": "Eiruvin (Rambam)",
+      "name": "Eiruvin",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 8,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "עירובין (רמב״ם)"
+      "nameHebrew": "עירובין"
     },
     {
       "id": "shvisasAssor",
@@ -2425,13 +2425,13 @@
     {
       "id": "shekalimRambam",
       "parentId": "zemanim",
-      "name": "Shekalim (Rambam)",
+      "name": "Shekalim",
       "kind": "leaf",
       "sortOrder": 6,
       "unitCount": 4,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "שקלים (רמב״ם)"
+      "nameHebrew": "שקלים"
     },
     {
       "id": "kiduchHachodesh",
@@ -2447,13 +2447,13 @@
     {
       "id": "taanisRambam",
       "parentId": "zemanim",
-      "name": "Taanis (Rambam)",
+      "name": "Taanis",
       "kind": "leaf",
       "sortOrder": 8,
       "unitCount": 5,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "תענית (רמב״ם)"
+      "nameHebrew": "תענית"
     },
     {
       "id": "megillahChanukah",
@@ -2513,13 +2513,13 @@
     {
       "id": "sotahRambam",
       "parentId": "nashimRambam",
-      "name": "Sotah (Rambam)",
+      "name": "Sotah",
       "kind": "leaf",
       "sortOrder": 4,
       "unitCount": 4,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "סוטה (רמב״ם)"
+      "nameHebrew": "סוטה"
     },
     {
       "id": "issureiBiah",
@@ -2557,24 +2557,24 @@
     {
       "id": "shevuosRambam",
       "parentId": "haflaah",
-      "name": "Shevuos (Rambam)",
+      "name": "Shevuos",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 12,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "שבועות (רמב״ם)"
+      "nameHebrew": "שבועות"
     },
     {
       "id": "nedarimRambam",
       "parentId": "haflaah",
-      "name": "Nedarim (Rambam)",
+      "name": "Nedarim",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 13,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "נדרים (רמב״ם)"
+      "nameHebrew": "נדרים"
     },
     {
       "id": "nezirus",
@@ -2590,24 +2590,24 @@
     {
       "id": "erchinRambam",
       "parentId": "haflaah",
-      "name": "Erchin (Rambam)",
+      "name": "Erchin",
       "kind": "leaf",
       "sortOrder": 3,
       "unitCount": 8,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "ערכין (רמב״ם)"
+      "nameHebrew": "ערכין"
     },
     {
       "id": "kelayimRambam",
       "parentId": "zeraimRambam",
-      "name": "Kelayim (Rambam)",
+      "name": "Kelayim",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 10,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "כלאים (רמב״ם)"
+      "nameHebrew": "כלאים"
     },
     {
       "id": "matnosAniim",
@@ -2623,13 +2623,13 @@
     {
       "id": "terumosRambam",
       "parentId": "zeraimRambam",
-      "name": "Terumos (Rambam)",
+      "name": "Terumos",
       "kind": "leaf",
       "sortOrder": 2,
       "unitCount": 15,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "תרומות (רמב״ם)"
+      "nameHebrew": "תרומות"
     },
     {
       "id": "maaser",
@@ -2722,13 +2722,13 @@
     {
       "id": "korbanosRambam",
       "parentId": "avodah",
-      "name": "Korbanos (Rambam)",
+      "name": "Korbanos",
       "kind": "leaf",
       "sortOrder": 4,
       "unitCount": 19,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "קרבנות (רמב״ם)"
+      "nameHebrew": "קרבנות"
     },
     {
       "id": "tmidim",
@@ -2766,13 +2766,13 @@
     {
       "id": "meilahRambam",
       "parentId": "avodah",
-      "name": "Meilah (Rambam)",
+      "name": "Meilah",
       "kind": "leaf",
       "sortOrder": 8,
       "unitCount": 8,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "מעילה (רמב״ם)"
+      "nameHebrew": "מעילה"
     },
     {
       "id": "pesach",
@@ -2788,24 +2788,24 @@
     {
       "id": "chagigahRambam",
       "parentId": "korbanos",
-      "name": "Chagigah (Rambam)",
+      "name": "Chagigah",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 3,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "חגיגה (רמב״ם)"
+      "nameHebrew": "חגיגה"
     },
     {
       "id": "bechorosRambam",
       "parentId": "korbanos",
-      "name": "Bechoros (Rambam)",
+      "name": "Bechoros",
       "kind": "leaf",
       "sortOrder": 2,
       "unitCount": 8,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "בכורות (רמב״ם)"
+      "nameHebrew": "בכורות"
     },
     {
       "id": "shegagos",
@@ -2832,13 +2832,13 @@
     {
       "id": "temurahRambam",
       "parentId": "korbanos",
-      "name": "Temurah (Rambam)",
+      "name": "Temurah",
       "kind": "leaf",
       "sortOrder": 5,
       "unitCount": 4,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "תמורה (רמב״ם)"
+      "nameHebrew": "תמורה"
     },
     {
       "id": "tumasMeis",
@@ -2854,13 +2854,13 @@
     {
       "id": "parahRambam",
       "parentId": "tahara",
-      "name": "Parah (Rambam)",
+      "name": "Parah",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 15,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "פרה (רמב״ם)"
+      "nameHebrew": "פרה"
     },
     {
       "id": "tzaraas",
@@ -2909,24 +2909,24 @@
     {
       "id": "keilimRambam",
       "parentId": "tahara",
-      "name": "Keilim (Rambam)",
+      "name": "Keilim",
       "kind": "leaf",
       "sortOrder": 6,
       "unitCount": 28,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "כלים (רמב״ם)"
+      "nameHebrew": "כלים"
     },
     {
       "id": "mikvaosRambam",
       "parentId": "tahara",
-      "name": "Mikva'os (Rambam)",
+      "name": "Mikva'os",
       "kind": "leaf",
       "sortOrder": 7,
       "unitCount": 11,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "מקוואות (רמב״ם)"
+      "nameHebrew": "מקוואות"
     },
     {
       "id": "mamon",
@@ -3096,13 +3096,13 @@
     {
       "id": "sanhedrinRambam",
       "parentId": "shoftimRambam",
-      "name": "Sanhedrin (Rambam)",
+      "name": "Sanhedrin",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 26,
       "unitOffset": 1,
       "unitLabel": "perek",
-      "nameHebrew": "סנהדרין (רמב״ם)"
+      "nameHebrew": "סנהדרין"
     },
     {
       "id": "eidus",
@@ -3151,90 +3151,90 @@
     {
       "id": "orachChaim",
       "parentId": "tur",
-      "name": "Orech Chaim (Tur)",
+      "name": "Orech Chaim",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 697,
       "unitOffset": 1,
       "unitLabel": "siman",
-      "nameHebrew": "אורח חיים (טור)"
+      "nameHebrew": "אורח חיים"
     },
     {
       "id": "yorehDeah",
       "parentId": "tur",
-      "name": "Yoreh Deah (Tur)",
+      "name": "Yoreh Deah",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 403,
       "unitOffset": 1,
       "unitLabel": "siman",
-      "nameHebrew": "יורה דעה (טור)"
+      "nameHebrew": "יורה דעה"
     },
     {
       "id": "choshenMishpat",
       "parentId": "tur",
-      "name": "Choshen Mishpat (Tur)",
+      "name": "Choshen Mishpat",
       "kind": "leaf",
       "sortOrder": 2,
       "unitCount": 427,
       "unitOffset": 1,
       "unitLabel": "siman",
-      "nameHebrew": "חושן משפט (טור)"
+      "nameHebrew": "חושן משפט"
     },
     {
       "id": "evenHaezer",
       "parentId": "tur",
-      "name": "Even Haezer (Tur)",
+      "name": "Even Haezer",
       "kind": "leaf",
       "sortOrder": 3,
       "unitCount": 178,
       "unitOffset": 1,
       "unitLabel": "siman",
-      "nameHebrew": "אבן העזר (טור)"
+      "nameHebrew": "אבן העזר"
     },
     {
       "id": "orachChaimSA",
       "parentId": "shulchanAruch",
-      "name": "Orech Chaim (Shulchan Aruch)",
+      "name": "Orech Chaim",
       "kind": "leaf",
       "sortOrder": 0,
       "unitCount": 697,
       "unitOffset": 1,
       "unitLabel": "siman",
-      "nameHebrew": "אורח חיים (שולחן ערוך)"
+      "nameHebrew": "אורח חיים"
     },
     {
       "id": "yorehDeahSA",
       "parentId": "shulchanAruch",
-      "name": "Yoreh Deah (Shulchan Aruch)",
+      "name": "Yoreh Deah",
       "kind": "leaf",
       "sortOrder": 1,
       "unitCount": 403,
       "unitOffset": 1,
       "unitLabel": "siman",
-      "nameHebrew": "יורה דעה (שולחן ערוך)"
+      "nameHebrew": "יורה דעה"
     },
     {
       "id": "choshenMishpatSA",
       "parentId": "shulchanAruch",
-      "name": "Choshen Mishpat (Shulchan Aruch)",
+      "name": "Choshen Mishpat",
       "kind": "leaf",
       "sortOrder": 2,
       "unitCount": 427,
       "unitOffset": 1,
       "unitLabel": "siman",
-      "nameHebrew": "חושן משפט (שולחן ערוך)"
+      "nameHebrew": "חושן משפט"
     },
     {
       "id": "evenHaezerSA",
       "parentId": "shulchanAruch",
-      "name": "Even Haezer (Shulchan Aruch)",
+      "name": "Even Haezer",
       "kind": "leaf",
       "sortOrder": 3,
       "unitCount": 178,
       "unitOffset": 1,
       "unitLabel": "siman",
-      "nameHebrew": "אבן העזר (שולחן ערוך)"
+      "nameHebrew": "אבן העזר"
     },
     {
       "id": "chelek1",

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:chovos_hayom/data/catalog/json_catalog_repository.dart';
 import 'package:chovos_hayom/domain/entities/catalog.dart';
+import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -36,24 +37,60 @@ void main() {
       expect(unnamed, isEmpty, reason: 'no Hebrew name for: $unnamed');
     });
 
-    test('Hebrew names are unique, so a flat list stays unambiguous', () {
-      // The English disambiguates a mesechta that appears in Mishnayos, Shas,
-      // Yerushalmi and Rambam with a "(Shas)"-style suffix. Search results, the
-      // calculator's dropdown and the cycle-linking picker are all flat lists
-      // with no tree around them to supply the context, so the Hebrew has to
-      // disambiguate too.
-      final seen = <String, String>{};
-      final clashes = <String>[];
-      for (final n in all) {
-        final hebrew = n.nameHebrew!;
-        final first = seen[hebrew];
-        if (first != null) {
-          clashes.add('$hebrew: $first and ${n.id}');
-        } else {
-          seen[hebrew] = n.id;
+    test('a node and its ancestors identify it uniquely, in both languages', () {
+      // This *was* "names are unique", held up by a "(Shas)"-style suffix typed
+      // into 120 of the 312 names. That made every row inside Shas read "Moed
+      // (Shas)", where the suffix says nothing, while Mishnayos masechtos were
+      // left bare — and a name is not where a node's position belongs. The
+      // suffixes are gone and the qualifier is derived from the ancestors, so
+      // the property the flat lists (search results, the calculator's dropdown,
+      // both cycle pickers) actually need is this one: name *plus path* is
+      // unique. Asserted in both languages, since the Hebrew is what a Hebrew
+      // reader disambiguates by.
+      String path(CatalogNode n, String Function(CatalogNode) name) {
+        final parts = <String>[];
+        var current = n.parentId == null ? null : catalog.byId(n.parentId!);
+        while (current != null && current.parentId != null) {
+          parts.add(name(current));
+          current = catalog.byId(current.parentId!);
         }
+        return parts.reversed.join(' · ');
       }
-      expect(clashes, isEmpty);
+
+      for (final name in <String Function(CatalogNode)>[
+        (n) => n.name,
+        (n) => n.nameHebrew!,
+      ]) {
+        final seen = <String, String>{};
+        final clashes = <String>[];
+        for (final n in all) {
+          final key = '${name(n)} — ${path(n, name)}';
+          final first = seen[key];
+          if (first != null) {
+            clashes.add('$key: $first and ${n.id}');
+          } else {
+            seen[key] = n.id;
+          }
+        }
+        expect(clashes, isEmpty);
+      }
+    });
+
+    test('no name carries its own position as a suffix', () {
+      // The specific thing that was removed, asserted so it cannot creep back in
+      // one node at a time. A parenthetical naming an ancestor is the data doing
+      // the display layer's job.
+      final corpora = {
+        for (final n in all)
+          if (n.parentId == null || catalog.byId(n.parentId!)?.parentId == null)
+            n.name,
+      };
+      final offenders = [
+        for (final n in all)
+          for (final corpus in corpora)
+            if (n.name.endsWith('($corpus)')) '${n.id}: ${n.name}',
+      ];
+      expect(offenders, isEmpty);
     });
 
     test('every non-root parentId resolves to an existing node', () {

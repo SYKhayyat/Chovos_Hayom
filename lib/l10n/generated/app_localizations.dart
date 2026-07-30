@@ -596,6 +596,12 @@ abstract class AppLocalizations {
   /// **'{node} · {unit}'**
   String nodeAndUnit(String node, String unit);
 
+  /// A node named with where it sits, for flat lists that have no tree around them: 'Shabbos — Shas · Moed'. The qualifier is derived from the node's ancestors rather than typed into its name.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} — {path}'**
+  String nodeWithPath(String name, String path);
+
   /// No description provided for @tooltipBulkActions.
   ///
   /// In en, this message translates to:

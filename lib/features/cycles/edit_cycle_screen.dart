@@ -248,7 +248,8 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
                 final n = choices[i];
                 return ListTile(
                   leading: Icon(n.isLeaf ? Icons.menu_book : Icons.folder),
-                  title: Text(nodeName(l10n, n)),
+                  // Qualified: a flat, alphabetical list of the whole catalog.
+                  title: Text(qualifiedNodeName(l10n, catalog, n)),
                   subtitle: Text(n.isLeaf
                       ? unitCount(l10n, n.unitCount, n.unitLabel)
                       : l10n.editCycleEverythingUnderneath),

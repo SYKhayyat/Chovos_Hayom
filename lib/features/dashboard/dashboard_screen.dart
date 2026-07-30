@@ -162,7 +162,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ? null
                 : () => showSearch(
                       context: context,
-                      delegate: CatalogSearchDelegate(catalog.all.toList()),
+                      delegate: CatalogSearchDelegate(catalog),
                     ),
           ),
         ],

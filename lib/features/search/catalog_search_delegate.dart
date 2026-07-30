@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../../app/routes.dart';
+import '../../domain/entities/catalog.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/naming.dart';
 
 /// Global search across every catalog + custom node by name.
 class CatalogSearchDelegate extends SearchDelegate<void> {
-  CatalogSearchDelegate(this.nodes);
+  CatalogSearchDelegate(this.catalog);
 
-  final List<CatalogNode> nodes;
+  /// The whole merged tree, not a flat list of nodes: a result has to say *where*
+  /// it is, and that answer lives in the node's ancestors. Four rows all reading
+  /// "Shabbos" are four rows you cannot choose between.
+  final Catalog catalog;
+
+  List<CatalogNode> get nodes => catalog.all.toList();
 
   /// Every match, in catalog order.
   ///
@@ -67,12 +73,19 @@ class CatalogSearchDelegate extends SearchDelegate<void> {
       itemCount: matches.length,
       itemBuilder: (context, i) {
         final node = matches[i];
+        // Where it sits, then how big it is. The qualifier is derived from the
+        // node's ancestors rather than read out of its name, so it is right for
+        // every result — including the custom sefarim a user adds, which nobody
+        // could have annotated in advance.
+        final where = nodePath(l10n, catalog, node);
+        final detail = [
+          if (where.isNotEmpty) where,
+          if (node.isLeaf) unitCount(l10n, node.unitCount, node.unitLabel),
+        ].join(' · ');
         return ListTile(
           leading: Icon(node.isLeaf ? Icons.menu_book : Icons.folder_outlined),
           title: Text(nodeName(l10n, node)),
-          subtitle: node.isLeaf
-              ? Text(unitCount(l10n, node.unitCount, node.unitLabel))
-              : null,
+          subtitle: detail.isEmpty ? null : Text(detail),
           onTap: () => Navigator.pushNamed(
             context,
             node.isLeaf ? Routes.sefer(node.id) : Routes.category(node.id),

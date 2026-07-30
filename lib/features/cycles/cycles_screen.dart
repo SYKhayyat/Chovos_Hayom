@@ -322,7 +322,10 @@ class _LinkPrompt extends ConsumerWidget {
             child: ListView.builder(
               itemCount: leaves.length,
               itemBuilder: (_, i) {
-                final primary = nodeName(l10n, leaves[i]);
+                // Qualified: this list is every leaf in the catalog, flat and
+                // alphabetical, so four rows read "Shabbos" with nothing to
+                // choose between them until the ancestor is named.
+                final primary = qualifiedNodeName(l10n, catalog, leaves[i]);
                 final secondary = primary == leaves[i].name
                     ? leaves[i].nameHebrew
                     : leaves[i].name;
