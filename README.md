@@ -42,6 +42,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
 | **8 — Shipping it** | Partial-un-mark data-loss fix, backup covers every per-profile key, profile-delete cleanup, override-cycle validation, day-ordinal series keying, lazy tree rendering, real restore-from-backup — and the app actually **built and run** on Windows and Android | ✅ Done |
 | **9 — Speaking Hebrew** | Full English/Hebrew localization (the toggle translates rather than mirrors), `nameHebrew` finally displayed, screen-reader labels on the unit grid, a real error view with retry behind every failed read, and CI that pins its toolchain and fails on a stale or incomplete string table | ✅ Done |
 | **10 — Not losing it** | A backup reminder that counts what is genuinely at risk, so the "everything stays on your device" promise stops being a silent single point of failure | ✅ Done |
+| **11 — What a phone found** | Twelve defects from two independent adversarial gradings, three of which no test could have seen and one minute on a phone showed immediately: a confirm button under the navigation bar, a progress fraction reading backwards in Hebrew, a green tick over a backup that did not exist. Plus the cross-profile import that never worked, a restore split into the two things it was pretending to be, a calculator that walked 200,000 days inside `build()`, and a grid a keyboard could only half reach | ✅ Done |
 
 ### What works today
 - Expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur, Shulchan
@@ -87,11 +88,21 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   re-importing a backup you already have reports "already up to date" rather than a bare "0". But the
   log is append-only: un-marking a daf *appends* an `undone`, it doesn't delete the `done`. So a
   merge can never undo something you did after the backup — every id in the file is already present,
-  and your later `undone` still wins. *Restore* is the one that puts it back: it makes the profile
-  exactly match the backup, removing what was recorded since. Both report in the terms you can see —
-  "1 unit is marked again; 1 unit is no longer marked" — and restore tells you exactly what it will
-  change *before* it changes it, because putting a daf back is done by deleting an event, so an
-  event-level tally would read "removed 2, added 0" while a completion visibly returns.
+  and your later `undone` still wins. *Restore* is the one that puts it back, and it comes in two
+  sizes, because "undo my learning back to this backup" and "throw away everything this profile has
+  become since" are different intentions and only one of them deletes a sefer. **Restore learning**
+  reconciles the log and keeps your custom sefarim, mefarshim and settings; **Restore everything**
+  makes the whole profile match the file and deletes the customisations it does not contain. All of
+  them report in the terms you can see — "1 unit is marked again; 1 unit is no longer marked" — and
+  both restores tell you exactly what they will change *before* they change it, counting the sefarim
+  as well as the units, because putting a daf back is done by deleting an event, so an event-level
+  tally would read "removed 2, added 0" while a completion visibly returns.
+- **A backup imports into a second profile.** It never did: event ids were unique across the whole
+  database rather than within a profile, so the same file imported twice collided with itself and
+  the import died on a constraint — and the message blamed the *file*, which is the one thing that
+  was not at fault and the only copy of that learning. The key is now the profile plus the id, like
+  every other table, and a failure that is the app's own says so instead of inviting you to delete
+  your backup and make another.
 - **Full data management**: **file** (and clipboard) export/import, **delete/rename profiles**,
   **delete custom sefarim**, undo on goal removal, and expand-all / collapse-all for the tree
   (which now starts collapsed).
@@ -100,9 +111,16 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   lays the app out right-to-left. It used to flip the direction and localize Material's own date
   pickers while leaving the app's own text in English, which is a mirror, not a translation.
   **All 312 sefarim** carry their real names (ברכות, בבא מציעא, שולחן ערוך), as do the built-in
-  mefarshim (רש״י, תוספות) — a mesechta that appears in Mishnayos, Shas, Yerushalmi and Rambam is
-  disambiguated in Hebrew the way it always was in English, so a search result or a dropdown with no
-  tree around it still tells you which one you're looking at. Anything **you** add takes both names
+  mefarshim (רש״י, תוספות). A mesechta that appears in Mishnayos, Shas, Yerushalmi and Rambam is
+  disambiguated by **where it sits**, derived from its ancestors — "Shabbos · Shas · Moed" — rather
+  than by a "(Shas)" typed into 120 of the names, which was noise on every row inside Shas, missing
+  from every Mishnayos masechta, and impossible for a sefer you add yourself. The four places that
+  show a flat list with no tree around it (search results, the calculator's dropdown, both cycle
+  pickers) all say which one you are looking at, in either language.
+- **Numbers read the right way round in Hebrew.** "0 / 929" was painting as "929 / 0" on every row
+  of the tree: digits are weak-left-to-right and a space-padded slash is neutral, so the bidi
+  algorithm reversed the whole run and swapped the operands. The numeric templates are wrapped in a
+  Unicode isolate, so the line still sits on the right and its contents still read left to right. Anything **you** add takes both names
   too: the custom-sefer and custom-meforish forms offer an English field and a Hebrew one side by
   side, either alone is enough, and a custom meforish can be renamed afterwards — which it could
   not before, so a Hebrew name you didn't type at creation used to be unreachable. Alongside the
@@ -190,6 +208,11 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   50%"), including its chazara count and whether it carries recorded details, and announces as a
   checked button you can reach by keyboard. Progress bars are marked decorative, since the count
   beside them already carries the number in words.
+- **The grid answers a keyboard.** Tab reaches the cells, Enter marks the focused one — and the
+  focused one is now *visible*, which it was not: the cell is a filled container and the default
+  focus highlight paints behind it, so a keyboard user was marking dapim blind. Shift+F10 or the
+  context-menu key opens the same menu right-click does, so logging with a date, a duration, a haara
+  or a chazara no longer needs a pointing device.
 - **Every screen has an address.** Screens are named routes that carry ids (`/sefer/<id>`), never
   widget objects — which is what makes deep links, notification taps and Android's state
   restoration possible at all, and what makes a rename show up on a screen that is already open.
@@ -197,7 +220,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   sefer's grid with the dashboard behind it, and a path the app doesn't serve says so rather than
   showing a blank screen. (A private scheme, not an `https` App Link — claiming a domain you don't
   own is how a link ends up opening someone else's app.)
-- 352 tests covering the engine, layer fold + required/offered-set resolution (including that
+- 410 tests covering the engine, layer fold + required/offered-set resolution (including that
   un-ticking one meforish never wipes the rest of a unit's history), per-meforish roll-up,
   bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
   reminders, backup validation (including override-row parent cycles), chazara scheduling (complete
@@ -209,6 +232,14 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   does not re-log the same failure), the grid's screen-reader labels, the backup reminder (that a failed export never stamps the profile as safe, that units are counted rather than log entries, and that a profile with nothing unsaved is left alone), and translation — that Hebrew
   changes the *words* and not only the direction, that both locales are key-for-key complete, and
   that reports read correctly in each.
+- The 58 added in phase 11 are mostly about the half of the app a unit test cannot see, and each one
+  was watched fail first: the real Drift repository under test at last (it had none, and both of its
+  defects were about profile scope), every modal sheet laid out on a phone that has a navigation bar
+  — with a control sheet the same assertion must *reject*, since a geometry check that cannot fail is
+  what let a dead button ship — the grid driven by keyboard alone, the app bar measured at 1.6x font
+  scale, the finish-date predictor checked against a written-out day-by-day walk over nine cycle
+  shapes, the backup tile across all four corners of exported x learned, and the restore preview's
+  arithmetic against a backup whose mefarshim requirements differ from the profile's.
 
 ## Platform status
 
@@ -216,9 +247,9 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 
 | Platform | Build | Runtime |
 |---|---|---|
-| **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ |
+| **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the release binary has now upgraded a real v10 database to the v11 schema in place, keeping every event ✅ |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36; tree renders 0 / 12,092 and expands ✅ |
-| **CI** | analyze `--fatal-infos`, 352 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `master` ✅ |
+| **CI** | analyze `--fatal-infos`, 410 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `master` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher
