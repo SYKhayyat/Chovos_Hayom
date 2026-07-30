@@ -42,7 +42,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
 | **8 — Shipping it** | Partial-un-mark data-loss fix, backup covers every per-profile key, profile-delete cleanup, override-cycle validation, day-ordinal series keying, lazy tree rendering, real restore-from-backup — and the app actually **built and run** on Windows and Android | ✅ Done |
 | **9 — Speaking Hebrew** | Full English/Hebrew localization (the toggle translates rather than mirrors), `nameHebrew` finally displayed, screen-reader labels on the unit grid, a real error view with retry behind every failed read, and CI that pins its toolchain and fails on a stale or incomplete string table | ✅ Done |
 | **10 — Not losing it** | A backup reminder that counts what is genuinely at risk, so the "everything stays on your device" promise stops being a silent single point of failure | ✅ Done |
-| **11 — What a phone found** | Twelve defects from two independent adversarial gradings, three of which no test could have seen and one minute on a phone showed immediately: a confirm button under the navigation bar, a progress fraction reading backwards in Hebrew, a green tick over a backup that did not exist. Plus the cross-profile import that never worked, a restore split into the two things it was pretending to be, a calculator that walked 200,000 days inside `build()`, and a grid a keyboard could only half reach | ✅ Done |
+| **11 — What a phone found** | Twelve defects from two independent adversarial gradings, three of which no test could have seen and one minute on a phone showed immediately: a confirm button under the navigation bar, a progress fraction reading backwards in Hebrew, a green tick over a backup that did not exist. Plus the cross-profile import that never worked, a restore split into the two things it was pretending to be, a calculator that walked 200,000 days inside `build()`, and a grid a keyboard could only half reach. Then the phone was plugged in and found a thirteenth: a deep link that opened the right screen from cold and "Not found" when the app was already running | ✅ Done |
 
 ### What works today
 - Expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur, Shulchan
@@ -218,9 +218,11 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   restoration possible at all, and what makes a rename show up on a screen that is already open.
   On Android those addresses are reachable from outside: `chovoshayom://sefer/<id>` opens that
   sefer's grid with the dashboard behind it, and a path the app doesn't serve says so rather than
-  showing a blank screen. (A private scheme, not an `https` App Link — claiming a domain you don't
+  showing a blank screen — **whether or not the app was already open**, which is not free: a link
+  delivered to a running app arrives on a different channel, and the framework's default handler
+  drops the part of the URI that says *which kind* of screen is wanted. (A private scheme, not an `https` App Link — claiming a domain you don't
   own is how a link ends up opening someone else's app.)
-- 410 tests covering the engine, layer fold + required/offered-set resolution (including that
+- 413 tests covering the engine, layer fold + required/offered-set resolution (including that
   un-ticking one meforish never wipes the rest of a unit's history), per-meforish roll-up,
   bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
   reminders, backup validation (including override-row parent cycles), chazara scheduling (complete
@@ -248,8 +250,8 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 | Platform | Build | Runtime |
 |---|---|---|
 | **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the release binary has now upgraded a real v10 database to the v11 schema in place, keeping every event ✅ |
-| **Android** | debug + `--release` (R8) ✅ | Runs on API 36; tree renders 0 / 12,092 and expands ✅ |
-| **CI** | analyze `--fatal-infos`, 410 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `master` ✅ |
+| **Android** | debug + `--release` (R8) ✅ | Runs on API 36 (moto g stylus 2025). Measured on the device: the logging sheet's confirm button clears the navigation bar by 45px and a tap at its bottom edge registers, the Hebrew progress fraction paints `0 / 12,092  (0.0%)` in that order, the app bar fits `Chovos Hayom`, and a deep link opens the same screen whether the app was running or not ✅ |
+| **CI** | analyze `--fatal-infos`, 413 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `master` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher
