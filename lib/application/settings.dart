@@ -85,16 +85,21 @@ class SettingsNotifier extends Notifier<SettingsState> {
   SettingsState build() {
     _profileId = ref.watch(activeProfileProvider);
     _migrateDeviceWideSettings();
+    _migrateChromeBackToTheDevice();
     return _load();
   }
 
-  /// Reads a per-profile setting.
-  String? _get(String key) =>
-      ref.read(appPreferencesProvider).getString(PrefKeys.scoped(_profileId, key));
+  /// Where [key] lives: bare for the three device-wide settings, prefixed with
+  /// the profile for everything else. One place decides, so a reader and a
+  /// writer cannot disagree about which store a setting is in.
+  String _keyFor(String key) =>
+      PrefKeys.deviceWide.contains(key) ? key : PrefKeys.scoped(_profileId, key);
 
-  Future<void> _set(String key, String value) => ref
-      .read(appPreferencesProvider)
-      .setString(PrefKeys.scoped(_profileId, key), value);
+  String? _get(String key) =>
+      ref.read(appPreferencesProvider).getString(_keyFor(key));
+
+  Future<void> _set(String key, String value) =>
+      ref.read(appPreferencesProvider).setString(_keyFor(key), value);
 
   /// One-time move of the old device-wide settings onto whichever profile was
   /// active when the app upgraded.
@@ -113,6 +118,32 @@ class SettingsNotifier extends Notifier<SettingsState> {
       prefs.remove(key);
     }
     prefs.setString(PrefKeys.settingsScopedMigrated, 'true');
+  }
+
+  /// The other half of that move, undone for three of the keys.
+  ///
+  /// Language, theme and calendar went per-profile with everything else, and
+  /// that was wrong for them: switching profiles switched the app's language, so
+  /// a Hebrew-only user creating a profile for their son landed in an English,
+  /// left-to-right settings screen and had to find the toggle back without being
+  /// able to read it.
+  ///
+  /// Whoever was active when the app upgraded keeps their three settings, and
+  /// they become the device's. Their scoped copies are removed so the bare key is
+  /// the only answer; the *other* profiles' scoped copies are simply never read
+  /// again — [AppPreferences] cannot enumerate keys, so they cannot be found to
+  /// delete, and a stale key nothing reads is inert.
+  void _migrateChromeBackToTheDevice() {
+    final prefs = ref.read(appPreferencesProvider);
+    if (prefs.getString(PrefKeys.deviceWideMigrated) == 'true') return;
+    for (final key in PrefKeys.deviceWide) {
+      final scoped = prefs.getString(PrefKeys.scoped(_profileId, key));
+      if (scoped != null) {
+        prefs.setString(key, scoped);
+        prefs.remove(PrefKeys.scoped(_profileId, key));
+      }
+    }
+    prefs.setString(PrefKeys.deviceWideMigrated, 'true');
   }
 
   SettingsState _load() {
@@ -224,11 +255,13 @@ class SettingsNotifier extends Notifier<SettingsState> {
   /// per-profile setting that silently doesn't survive export → clear → import.
   /// `settings_test.dart` asserts the coverage so the next key added here can't
   /// be forgotten — cycles were, once.
+  ///
+  /// [PrefKeys.deviceWide] is deliberately absent: language, theme and calendar
+  /// describe this device, not this learner's progress. A backup carried to
+  /// someone else's phone must not flip their app into a language they do not
+  /// read.
   Map<String, dynamic> toBackup() => {
-        PrefKeys.calendarMode: state.calendar.name,
-        PrefKeys.themeMode: state.themeMode.name,
         PrefKeys.reminderEnabled: state.reminderEnabled.toString(),
-        PrefKeys.hebrewLayout: state.hebrewLayout.toString(),
         PrefKeys.sortMetric: state.sort.metric.name,
         PrefKeys.sortDescending: state.sort.descending.toString(),
         PrefKeys.sortLevel: state.sort.level?.toString() ?? '',
@@ -249,9 +282,15 @@ class SettingsNotifier extends Notifier<SettingsState> {
   /// Apply a serialised preferences map (from an imported backup) to the active
   /// profile. Backups store bare keys, so importing one into a different profile
   /// lands on that profile rather than on the device.
+  /// Older backups (and this one, before language/theme/calendar became the
+  /// device's) carry those three keys. They are skipped rather than applied:
+  /// importing a file must not change how this device presents itself, and a
+  /// backup from a Hebrew reader's phone must not leave an English reader
+  /// looking for a toggle they can no longer read.
   Future<void> applyBackup(Map<String, dynamic> settings) async {
     if (settings.isEmpty) return;
     for (final entry in settings.entries) {
+      if (PrefKeys.deviceWide.contains(entry.key)) continue;
       await _set(entry.key, entry.value.toString());
     }
     state = _load();
@@ -260,12 +299,17 @@ class SettingsNotifier extends Notifier<SettingsState> {
   /// Reset this profile's preferences to their defaults, leaving other profiles
   /// alone. Removing the keys rather than writing default *values* means a later
   /// change to a default is actually picked up.
+  ///
+  /// Language, theme and calendar survive: they belong to the device, and this
+  /// action resets one profile. Resetting them would also mean a Hebrew reader
+  /// pressing "Clear settings" ends up in English — a reset that changes what
+  /// language you are reading is not one anybody asked for.
   Future<void> clearAll() async {
     final prefs = ref.read(appPreferencesProvider);
     for (final key in PrefKeys.perProfile) {
       await prefs.remove(PrefKeys.scoped(_profileId, key));
     }
-    state = const SettingsState();
+    state = _load();
   }
 }
 

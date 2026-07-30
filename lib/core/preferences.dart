@@ -75,12 +75,27 @@ class PrefKeys {
   /// whole interval at the exact moment a user has just reset things.
   static const lastBackupAt = 'lastBackupAt';
 
+  /// The three settings that belong to the **device**, not to a learner.
+  ///
+  /// Language, theme and calendar were per-profile like everything else, which
+  /// meant creating a second profile flipped the whole app to English and
+  /// left-to-right: a Hebrew-only user setting up a profile for their son landed
+  /// in an English settings screen to find the toggle back, unable to read the
+  /// way out. They are chrome — how this device presents itself — rather than
+  /// facts about someone's learning, and they are shared.
+  ///
+  /// Consequences, all deliberate: they do not ride in a backup (a file from
+  /// someone else's phone must not change your language), and *Clear settings*,
+  /// which resets one profile, leaves them alone.
+  static const deviceWide = [calendarMode, themeMode, hebrewLayout];
+
+  /// Set once the one-time move of language/theme/calendar out of the active
+  /// profile has run. See `SettingsNotifier`.
+  static const deviceWideMigrated = 'deviceWideSettingsMigrated';
+
   /// Every setting that belongs to a profile rather than the device.
   static const perProfile = [
-    calendarMode,
-    themeMode,
     reminderEnabled,
-    hebrewLayout,
     sortMetric,
     sortDescending,
     sortLevel,

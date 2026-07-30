@@ -7,9 +7,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Settings used to be device-wide while the data they described was
-/// per-profile: switching profiles kept the previous user's calendar, theme,
-/// RTL, sort, chazara intervals and meforish bars.
+/// Which settings belong to a *learner* and which belong to the *device*.
+///
+/// Both halves were wrong once, in opposite directions. Settings began
+/// device-wide while the data they described was per-profile, so switching
+/// profiles kept the previous user's sort, chazara intervals and meforish bars.
+/// Making all of them per-profile then over-corrected: switching profiles also
+/// flipped the app's *language*, so a Hebrew-only user creating a profile for
+/// their son landed in an English, left-to-right settings screen and had to find
+/// the toggle back without being able to read it.
+///
+/// The line now: language, theme and calendar describe the device; everything
+/// else describes the learner.
 void main() {
   late InMemoryPreferences prefs;
   late ProviderContainer container;
@@ -32,39 +41,62 @@ void main() {
   SettingsState settings() => container.read(settingsProvider);
 
   test('one profile’s settings do not follow you to another', () async {
-    await notifier().setThemeMode(ThemeMode.dark);
-    await notifier().setCalendar(CalendarMode.hebrew);
     await notifier().setChazaraIntervals([2, 4, 8]);
-
-    await switchTo('other');
-
-    expect(settings().themeMode, ThemeMode.system);
-    expect(settings().calendar, CalendarMode.gregorian);
-    expect(settings().chazaraIntervals, isNot([2, 4, 8]));
-  });
-
-  test('switching back restores the first profile’s settings', () async {
-    await notifier().setHebrewLayout(true);
     await notifier().setSort(const SortConfig(metric: SortMetric.percent));
 
     await switchTo('other');
-    await notifier().setHebrewLayout(false);
+
+    expect(settings().chazaraIntervals, isNot([2, 4, 8]));
+    expect(settings().sort.metric, SortMetric.catalog);
+  });
+
+  test('but the language, theme and calendar do', () async {
+    // The defect: these three followed the profile too, so creating a second
+    // profile threw a Hebrew reader into an English app to look for the switch
+    // back. They are chrome — how this device presents itself — not facts about
+    // anyone's learning.
+    await notifier().setHebrewLayout(true);
+    await notifier().setThemeMode(ThemeMode.dark);
+    await notifier().setCalendar(CalendarMode.hebrew);
+
+    await switchTo('other');
+
+    expect(settings().hebrewLayout, isTrue,
+        reason: 'a new profile must not silently change the language');
+    expect(settings().themeMode, ThemeMode.dark);
+    expect(settings().calendar, CalendarMode.hebrew);
+  });
+
+  test('switching back restores the first profile’s settings', () async {
+    await notifier().setSort(const SortConfig(metric: SortMetric.percent));
+
+    await switchTo('other');
+    await notifier().setSort(const SortConfig(metric: SortMetric.learned));
     await switchTo('default');
 
-    expect(settings().hebrewLayout, isTrue);
     expect(settings().sort.metric, SortMetric.percent);
   });
 
   test('clearing settings only clears the active profile', () async {
-    await notifier().setThemeMode(ThemeMode.dark);
+    await notifier().setChazaraIntervals([2, 4, 8]);
     await switchTo('other');
-    await notifier().setThemeMode(ThemeMode.light);
+    await notifier().setChazaraIntervals([3, 6, 9]);
 
     await notifier().clearAll();
-    expect(settings().themeMode, ThemeMode.system);
+    expect(settings().chazaraIntervals, isNot([3, 6, 9]));
 
     await switchTo('default');
-    expect(settings().themeMode, ThemeMode.dark, reason: 'untouched');
+    expect(settings().chazaraIntervals, [2, 4, 8], reason: 'untouched');
+  });
+
+  test('clearing settings leaves the device’s language alone', () async {
+    await notifier().setHebrewLayout(true);
+
+    await notifier().clearAll();
+
+    expect(settings().hebrewLayout, isTrue,
+        reason: 'resetting one profile must not change what language the '
+            'person is reading');
   });
 
   test('meforish bar visibility is per-profile', () async {
@@ -87,30 +119,63 @@ void main() {
       container.dispose();
       container = build();
 
-      // The person those settings belong to keeps them...
+      // Everything survives the upgrade for the person it belonged to...
       expect(settings().themeMode, ThemeMode.dark);
       expect(settings().calendar, CalendarMode.hebrew);
       expect(settings().chazaraIntervals, [2, 4, 8]);
 
-      // ...and nobody else inherits them.
+      // ...and only the learner's half is theirs alone. Theme and calendar
+      // belong to the device, so the next profile keeps looking the same —
+      // which is the whole point of the second migration.
       await switchTo('someone-else');
-      expect(settings().themeMode, ThemeMode.system);
-      expect(settings().calendar, CalendarMode.gregorian);
+      expect(settings().chazaraIntervals, isNot([2, 4, 8]));
+      expect(settings().themeMode, ThemeMode.dark);
+      expect(settings().calendar, CalendarMode.hebrew);
     });
 
     test('the legacy keys are removed so it cannot run twice', () async {
-      prefs = InMemoryPreferences({PrefKeys.themeMode: 'dark'});
+      prefs = InMemoryPreferences({
+        PrefKeys.themeMode: 'dark',
+        PrefKeys.chazaraIntervals: '2,4,8',
+      });
       container.dispose();
       container = build();
       container.read(settingsProvider); // force the notifier to build
 
-      expect(prefs.getString(PrefKeys.themeMode), isNull);
+      // The learner's key moved into the profile; the bare one is gone.
+      expect(prefs.getString(PrefKeys.chazaraIntervals), isNull);
+      expect(
+          prefs.getString(PrefKeys.scoped('default', PrefKeys.chazaraIntervals)),
+          '2,4,8');
       expect(prefs.getString(PrefKeys.settingsScopedMigrated), 'true');
+      // The device's key went into the profile and straight back out, so the
+      // bare key is where it lives and the scoped copy is gone.
+      expect(prefs.getString(PrefKeys.themeMode), 'dark');
+      expect(
+          prefs.getString(PrefKeys.scoped('default', PrefKeys.themeMode)), isNull);
+      expect(prefs.getString(PrefKeys.deviceWideMigrated), 'true');
 
       // A later profile switch must not re-import anything.
       await switchTo('other');
-      expect(settings().themeMode, ThemeMode.system);
+      expect(settings().chazaraIntervals, isNot([2, 4, 8]));
     });
+  });
+
+  test('an imported backup cannot change the device’s language', () async {
+    // Old backups carry these three keys, and a file from someone else's phone
+    // must not flip this one into a language its owner does not read.
+    await notifier().setHebrewLayout(true);
+
+    await notifier().applyBackup({
+      PrefKeys.hebrewLayout: 'false',
+      PrefKeys.themeMode: 'light',
+      PrefKeys.chazaraIntervals: '5,10',
+    });
+
+    expect(settings().hebrewLayout, isTrue);
+    expect(settings().themeMode, ThemeMode.system);
+    expect(settings().chazaraIntervals, [5, 10],
+        reason: 'the learner’s own settings still import');
   });
 
   test('an imported backup applies to the active profile only', () async {

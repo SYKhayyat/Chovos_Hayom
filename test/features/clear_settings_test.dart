@@ -51,7 +51,8 @@ void main() {
     final prefs = InMemoryPreferences({
       PrefKeys.goalsFor('default'):
           jsonEncode({'shas.moed.shabbos': '2027-01-01T00:00:00.000'}),
-      PrefKeys.scoped('default', PrefKeys.themeMode): 'dark',
+      PrefKeys.themeMode: 'dark',
+      PrefKeys.scoped('default', PrefKeys.chazaraIntervals): '2,4,8',
     });
 
     await tester.pumpWidget(ProviderScope(
@@ -67,7 +68,7 @@ void main() {
     final container =
         ProviderScope.containerOf(tester.element(find.byType(SettingsScreen)));
     expect(container.read(goalsProvider), isNotEmpty);
-    expect(container.read(settingsProvider).themeMode, ThemeMode.dark);
+    expect(container.read(settingsProvider).chazaraIntervals, [2, 4, 8]);
 
     await tester.scrollUntilVisible(find.text('Clear settings'), 200);
     // scrollUntilVisible stops the moment the target is attached, which can
@@ -83,7 +84,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(goalsProvider), isEmpty);
-    expect(container.read(settingsProvider).themeMode, ThemeMode.system);
+    expect(container.read(settingsProvider).chazaraIntervals,
+        isNot([2, 4, 8]));
+    // The theme is the *device's*, and this resets one profile. A reset that
+    // changes what language or theme you are looking at is not one anybody
+    // asked for — and for a Hebrew reader it would mean pressing "Clear
+    // settings" and landing in English.
+    expect(container.read(settingsProvider).themeMode, ThemeMode.dark);
     // Asked of the repository, not of `customNodesProvider` — nothing on this
     // screen keeps that provider alive, so it is still loading here. Which is
     // the whole reason the clear reads the repository directly: reading the
