@@ -11,14 +11,25 @@ class CatalogSearchDelegate extends SearchDelegate<void> {
 
   final List<CatalogNode> nodes;
 
-  List<CatalogNode> _matches() {
+  /// Every match, in catalog order.
+  ///
+  /// There was a `.take(50)` here with nothing to say it had happened, so a
+  /// search for a common word showed fifty rows and silently dropped the rest —
+  /// including, potentially, the one being looked for. A cap the user cannot see
+  /// is indistinguishable from an incomplete catalog.
+  ///
+  /// Nothing replaces it: the whole catalog is ~312 nodes plus a profile's custom
+  /// ones, the filter is one pass over a list already in memory, and the results
+  /// go into a `ListView.builder`, which only ever builds the rows on screen. The
+  /// cap was buying nothing and costing correctness.
+  @visibleForTesting
+  List<CatalogNode> matches() {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return const [];
     return nodes
         .where((n) =>
             n.name.toLowerCase().contains(q) ||
             (n.nameHebrew?.contains(query.trim()) ?? false))
-        .take(50)
         .toList();
   }
 
@@ -45,7 +56,7 @@ class CatalogSearchDelegate extends SearchDelegate<void> {
 
   Widget _list(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final matches = _matches();
+    final matches = this.matches();
     if (query.trim().isEmpty) {
       return Center(child: Text(l10n.searchPrompt));
     }
