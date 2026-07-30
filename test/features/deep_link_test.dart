@@ -2,6 +2,7 @@ import 'package:chovos_hayom/app/routes.dart';
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -55,6 +56,57 @@ void main() {
       (tester) async {
     // The shape Android actually delivers from the manifest's intent filter.
     await pumpApp(tester, initialRoute: 'chovoshayom://sefer/shas.moed.shabbos');
+    expect(find.text('Shabbos'), findsOneWidget);
+  });
+
+  /// A link delivered to an app that is *already running*.
+  ///
+  /// Android sends the second one through `onNewIntent` (the activity is
+  /// `singleTop`), which reaches the framework as a `pushRouteInformation` on
+  /// the navigation channel rather than as an initial route name. Every test
+  /// above drives the cold path only, and so did the hardware check that signed
+  /// deep links off — which is how this survived: the *same link* opens the grid
+  /// from cold and lands on "Not found" when the app is already open.
+  Future<void> deliverWhileRunning(WidgetTester tester, String uri) async {
+    await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+      'flutter/navigation',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall('pushRouteInformation', <String, dynamic>{'location': uri}),
+      ),
+      (_) {},
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('a link that arrives while the app is running opens the same '
+      'screen as a cold one', (tester) async {
+    await pumpApp(tester);
+    expect(find.text('Chovos Hayom'), findsOneWidget);
+
+    await deliverWhileRunning(tester, 'chovoshayom://sefer/shas.moed.shabbos');
+
+    expect(find.text('Shabbos'), findsOneWidget,
+        reason: 'the screen type lives in the URI authority, and the '
+            'framework default rebuilds the route from path + query alone — so '
+            'this arrived as "/shas.moed.shabbos" and missed the table');
+  });
+
+  testWidgets('a running app still says so for a link it does not serve',
+      (tester) async {
+    await pumpApp(tester);
+    await deliverWhileRunning(tester, 'chovoshayom://nonsense/xyz');
+
+    expect(find.text('Not found'), findsOneWidget);
+    expect(find.textContaining('chovoshayom://nonsense/xyz'), findsOneWidget,
+        reason: 'and it quotes back what it was actually asked for');
+  });
+
+  testWidgets('a bare path delivered while running still works', (tester) async {
+    // The in-app shape, and what the platform sends for a link with no
+    // authority. Both have to keep working through the same handler.
+    await pumpApp(tester);
+    await deliverWhileRunning(tester, Routes.sefer('shas.moed.shabbos'));
+
     expect(find.text('Shabbos'), findsOneWidget);
   });
 

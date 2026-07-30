@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -41,8 +43,13 @@ class ChovosHayomApp extends ConsumerStatefulWidget {
   ConsumerState<ChovosHayomApp> createState() => _ChovosHayomAppState();
 }
 
-class _ChovosHayomAppState extends ConsumerState<ChovosHayomApp> {
+class _ChovosHayomAppState extends ConsumerState<ChovosHayomApp>
+    with WidgetsBindingObserver {
   late final AppLifecycleListener _lifecycle;
+
+  /// Needed only so a link arriving from outside has a navigator to push onto —
+  /// see [didPushRouteInformation].
+  final _navigator = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -51,12 +58,43 @@ class _ChovosHayomAppState extends ConsumerState<ChovosHayomApp> {
     // entirely — on a phone that is the normal case. Re-deriving on resume is
     // what makes "today" mean today after the app has been away.
     _lifecycle = AppLifecycleListener(onResume: () => invalidateClock(ref));
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _lifecycle.dispose();
     super.dispose();
+  }
+
+  /// A deep link that arrives while the app is **already running**.
+  ///
+  /// Found on a phone: `chovoshayom://sefer/shabbosShas` opens the grid from
+  /// cold and lands on "Not found" when the app is open — the same link, two
+  /// answers. Android delivers the second one through `onNewIntent` (the
+  /// activity is `singleTop`), which reaches the framework as
+  /// `pushRouteInformation`, and the framework's default handler rebuilds the
+  /// route name from **path + query + fragment only**. This app puts the screen
+  /// *type* in the URI's authority — `sefer` in `chovoshayom://sefer/<id>` — so
+  /// the default drops it and `/shabbosShas` matches nothing in the table.
+  ///
+  /// Passing the whole URI through is all that is needed: `AppRouter` already
+  /// folds an authority in as a leading segment precisely so one table serves
+  /// both shapes, and a bare `/sefer/<id>` still parses as it always did.
+  ///
+  /// Returning true claims the notification, which is what stops `WidgetsApp`'s
+  /// own lossy handler from running afterwards.
+  @override
+  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
+    final navigator = _navigator.currentState;
+    if (navigator == null) return false;
+    // `unawaited` on purpose, and not the fire-and-forget the analyzer is
+    // usually right to flag: a push's future completes when the route is
+    // *popped*, so awaiting it would leave this handler open for as long as the
+    // user stays on the screen.
+    unawaited(navigator.pushNamed(routeInformation.uri.toString()));
+    return true;
   }
 
   @override
@@ -74,6 +112,7 @@ class _ChovosHayomAppState extends ConsumerState<ChovosHayomApp> {
       // in the background, which it can only do because every route's arguments
       // live in its name.
       restorationScopeId: 'chovos_hayom',
+      navigatorKey: _navigator,
       initialRoute: Routes.dashboard,
       onGenerateRoute: AppRouter.onGenerateRoute,
       onGenerateInitialRoutes: AppRouter.onGenerateInitialRoutes,
