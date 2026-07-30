@@ -124,7 +124,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Scaffold(
       drawer: const _AppDrawer(),
       appBar: AppBar(
-        title: Text(l10n.appTitle),
+        // Scaled down rather than cut off. On a 1220px phone in English this bar
+        // read "Chovos …", and "Chovo…" at 1.6x font scale — the first thing
+        // every English user sees, and the app could not fit its own name in it.
+        // (Hebrew fits, so nobody testing in Hebrew would ever meet it.)
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(l10n.appTitle),
+        ),
+        // Three actions, and the rule they follow: the app bar holds what acts on
+        // *this* tree — expand, sort, search — and the drawer holds every route
+        // to somewhere else. Statistics and the Siyum calculator were the two
+        // exceptions and are now drawer entries with names on them, which is both
+        // more discoverable than an unlabelled icon and what left room for the
+        // title. Nothing is removed; two things moved to where their nine
+        // siblings already live.
         actions: [
           IconButton(
             icon: Icon(
@@ -149,16 +164,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       context: context,
                       delegate: CatalogSearchDelegate(catalog.all.toList()),
                     ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.insights),
-            tooltip: l10n.tooltipStatistics,
-            onPressed: () => Navigator.pushNamed(context, Routes.stats),
-          ),
-          IconButton(
-            icon: const Icon(Icons.calculate),
-            tooltip: l10n.tooltipSiyumCalculator,
-            onPressed: () => Navigator.pushNamed(context, Routes.calculator),
           ),
         ],
       ),
@@ -388,6 +393,19 @@ class _AppDrawer extends ConsumerWidget {
             leading: const Icon(Icons.emoji_events),
             title: Text(l10n.navSiyumim),
             onTap: () => _go(context, Routes.siyumim),
+          ),
+          // These two were app-bar icons until the bar ran out of room for the
+          // app's own name. They are destinations like everything else here, and
+          // a named row is easier to find than an unlabelled icon.
+          ListTile(
+            leading: const Icon(Icons.insights),
+            title: Text(l10n.navStatistics),
+            onTap: () => _go(context, Routes.stats),
+          ),
+          ListTile(
+            leading: const Icon(Icons.calculate),
+            title: Text(l10n.navSiyumCalculator),
+            onTap: () => _go(context, Routes.calculator),
           ),
           ListTile(
             leading: const Icon(Icons.menu_book_outlined),

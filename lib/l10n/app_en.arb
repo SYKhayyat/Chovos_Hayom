@@ -62,8 +62,8 @@
     "placeholders": { "metric": { "type": "String" } }
   },
   "tooltipSearch": "Search",
-  "tooltipStatistics": "Statistics",
-  "tooltipSiyumCalculator": "Siyum calculator",
+  "navStatistics": "Statistics",
+  "navSiyumCalculator": "Siyum calculator",
   "tooltipAddCustomSefer": "Add custom sefer",
   "nudgeHaventLearnedToday": "You haven't learned yet today — pick something below!",
   "drawerProfile": "Profile: {name}",

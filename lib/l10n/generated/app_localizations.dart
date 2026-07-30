@@ -296,17 +296,17 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get tooltipSearch;
 
-  /// No description provided for @tooltipStatistics.
+  /// No description provided for @navStatistics.
   ///
   /// In en, this message translates to:
   /// **'Statistics'**
-  String get tooltipStatistics;
+  String get navStatistics;
 
-  /// No description provided for @tooltipSiyumCalculator.
+  /// No description provided for @navSiyumCalculator.
   ///
   /// In en, this message translates to:
   /// **'Siyum calculator'**
-  String get tooltipSiyumCalculator;
+  String get navSiyumCalculator;
 
   /// No description provided for @tooltipAddCustomSefer.
   ///

@@ -115,10 +115,10 @@ class AppLocalizationsHe extends AppLocalizations {
   String get tooltipSearch => 'חיפוש';
 
   @override
-  String get tooltipStatistics => 'סטטיסטיקה';
+  String get navStatistics => 'סטטיסטיקה';
 
   @override
-  String get tooltipSiyumCalculator => 'מחשבון סיום';
+  String get navSiyumCalculator => 'מחשבון סיום';
 
   @override
   String get tooltipAddCustomSefer => 'הוספת ספר משלך';
