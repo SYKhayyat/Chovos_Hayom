@@ -9,6 +9,26 @@
 class Predictor {
   const Predictor._();
 
+  /// How far ahead a finish date is worth predicting: ~547 years past [from].
+  ///
+  /// Beyond this the honest answer is "not at this pace" rather than a date in
+  /// the fourth millennium, so every method here returns null past it.
+  ///
+  /// One constant, shared, because this used to be an *iteration cap* and there
+  /// were two of them — 200,000 in the cycle walk, 50,000 in the Shabbos one —
+  /// which meant the same pace could be "never" to one method and a date to
+  /// another, and a flat pace had no cap at all: the dashboard would happily
+  /// project the year 3027 while the calculator said the same rate never
+  /// finishes.
+  static const maxHorizonDays = 200000;
+
+  /// Slack for comparing an accumulated total against [remaining].
+  ///
+  /// A cycle of `0.1` cannot be summed exactly in binary, and without this a
+  /// residue of 1e-17 pushes the answer a whole day out. Nine decimal places of
+  /// a daf is not a quantity anyone is tracking.
+  static const _epsilon = 1e-9;
+
   /// Whole days to finish [remaining] units at [perDay] (> 0). Rounds up.
   static int daysToFinish({required int remaining, required double perDay}) {
     if (remaining <= 0) return 0;
@@ -30,6 +50,10 @@ class Predictor {
     final days = daysToFinish(remaining: remaining, perDay: perDay);
     if (days < 0) return null;
     if (days == 0) return _dayKey(from);
+    // Same horizon as the cycle version, measured the same way (days *after*
+    // `from`), so a flat pace and its length-1 cycle agree about "never" as well
+    // as about every date.
+    if (days - 1 > maxHorizonDays) return null;
     return _dayKey(from).add(Duration(days: days - 1));
   }
 
@@ -47,36 +71,47 @@ class Predictor {
   }
 
   /// Weekday/Shabbos-aware finish date: [weekdayAmount] on Sun–Fri,
-  /// [shabbosAmount] on Shabbos (Saturday). Iterates day by day from [from]
-  /// (the first learning day) until [remaining] is exhausted.
+  /// [shabbosAmount] on Shabbos (Saturday), starting on [from] (the first
+  /// learning day).
+  ///
+  /// This *is* a 7-day cycle, so it is one — built aligned to [from]'s weekday
+  /// and handed to [finishDateWithCycle]. It used to be a second day-by-day walk
+  /// with its own cap and its own off-by-one risk; two implementations of one
+  /// calculation is how they came to disagree about when a pace never finishes.
   static DateTime? finishDateWithShabbos({
     required int remaining,
     required double weekdayAmount,
     required double shabbosAmount,
     required DateTime from,
   }) {
-    if (remaining <= 0) return _dayKey(from);
-    final weeklyRate = weekdayAmount * 6 + shabbosAmount;
-    if (weeklyRate <= 0) return null; // never
-
-    var left = remaining.toDouble();
-    var day = _dayKey(from);
-    // Hard cap to avoid pathological loops (~137 years).
-    for (var i = 0; i < 50000; i++) {
-      final amount =
-          day.weekday == DateTime.saturday ? shabbosAmount : weekdayAmount;
-      left -= amount;
-      if (left <= 0) return day;
-      day = day.add(const Duration(days: 1));
-    }
-    return null;
+    final start = _dayKey(from);
+    return finishDateWithCycle(
+      remaining: remaining,
+      amounts: [
+        for (var i = 0; i < 7; i++)
+          start.add(Duration(days: i)).weekday == DateTime.saturday
+              ? shabbosAmount
+              : weekdayAmount,
+      ],
+      startIndex: 0,
+      from: start,
+    );
   }
 
   /// Finish date under a repeating [amounts] cycle of any length, where
   /// [startIndex] is the cycle position of [from] (0-based, e.g. day 4 of a
   /// 7-day cycle -> 3). Generalises the flat ([amounts] of length 1) and
   /// weekday/Shabbos (length 7) cases. Returns null if the cycle never
-  /// progresses (all amounts <= 0).
+  /// progresses (all amounts <= 0) or if the answer is past [maxHorizonDays].
+  ///
+  /// **Cost is the length of the cycle, not the length of the answer.** This
+  /// walked one day at a time, allocating a `DateTime` per day, up to 200,000
+  /// times — and it ran inside `CalculatorScreen.build`, off the text field, on
+  /// every keystroke. Typing `0.05` into "amount per day" therefore cost ~80 ms
+  /// per character on a phone (measured, AOT; ~3 s in the test VM) before
+  /// answering "you will never finish". Nothing about a repeating cycle needs
+  /// iterating: the whole cycles are one division, and only the remainder — at
+  /// most one cycle — has to be walked.
   static DateTime? finishDateWithCycle({
     required int remaining,
     required List<double> amounts,
@@ -85,17 +120,40 @@ class Predictor {
   }) {
     if (remaining <= 0) return _dayKey(from);
     final n = amounts.length;
-    if (n == 0 || amounts.every((a) => a <= 0)) return null;
+    if (n == 0) return null;
 
-    final start = ((startIndex % n) + n) % n; // normalize into [0, n)
-    var left = remaining.toDouble();
-    var day = _dayKey(from);
-    // Cap well above any realistic horizon; a positive cycle sum guarantees exit.
-    for (var i = 0; i < 200000; i++) {
-      final amt = amounts[(start + i) % n];
-      if (amt > 0) left -= amt;
-      if (left <= 0) return day;
-      day = day.add(const Duration(days: 1));
+    // Rotated so index 0 is [from], and clamped: a negative amount means "did
+    // not learn", never "un-learned", which is what the old `if (amt > 0)`
+    // guard was doing one day at a time.
+    final start = ((startIndex % n) + n) % n;
+    final perDay = [
+      for (var i = 0; i < n; i++)
+        amounts[(start + i) % n] > 0 ? amounts[(start + i) % n] : 0.0,
+    ];
+    var cycleSum = 0.0;
+    for (final a in perDay) {
+      cycleSum += a;
+    }
+    if (cycleSum <= 0) return null; // never progresses
+
+    // The largest number of whole cycles that still leaves something to learn.
+    // Checked against the horizon *before* multiplying by the cycle length, so a
+    // hopeless pace costs one division rather than 27 million iterations.
+    final wholeCycles = (remaining / cycleSum).ceil() - 1;
+    if (wholeCycles > maxHorizonDays) return null;
+
+    var offset = wholeCycles > 0 ? wholeCycles * n : 0;
+    var left = remaining - (wholeCycles > 0 ? wholeCycles * cycleSum : 0);
+    // At most one cycle is left by construction; the second time round is there
+    // only so a floating-point residue cannot walk off the end of the list.
+    for (var i = 0; i < 2 * n; i++) {
+      left -= perDay[i % n];
+      if (left <= _epsilon) {
+        return offset > maxHorizonDays
+            ? null
+            : _dayKey(from).add(Duration(days: offset));
+      }
+      offset++;
     }
     return null;
   }
