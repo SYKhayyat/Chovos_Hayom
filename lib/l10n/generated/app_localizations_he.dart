@@ -1866,7 +1866,14 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get settingsRestoreFileSubtitle =>
-      'התאמת הפרופיל הזה לגיבוי במדויק, תוך ביטול כל מה שנרשם מאז';
+      'התאמת היסטוריית הלימוד שלך לגיבוי במדויק, תוך ביטול כל מה שנרשם מאז. ספרים מיוחדים, מפרשים והגדרות נשמרים.';
+
+  @override
+  String get settingsRestoreEverything => 'שחזור הכול מקובץ';
+
+  @override
+  String get settingsRestoreEverythingSubtitle =>
+      'התאמת כל הפרופיל הזה לגיבוי — וגם מחיקת הספרים המיוחדים, המפרשים והגדרות המפרשים שהוספת מאז';
 
   @override
   String get settingsExportClipboard => 'ייצוא ללוח';
@@ -2122,7 +2129,42 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get restoreConfirmIntro =>
-      'פעולה זו מתאימה את הפרופיל לגיבוי במדויק, ומבטלת כל מה שנרשם מאז.';
+      'פעולה זו מתאימה את היסטוריית הלימוד שלך לגיבוי במדויק, ומבטלת כל מה שנרשם מאז.';
+
+  @override
+  String get restoreConfirmIntroEverything =>
+      'פעולה זו מתאימה את כל הפרופיל לגיבוי, ומבטלת כל מה שנרשם מאז — כולל הספרים וההגדרות שהוספת.';
+
+  @override
+  String restoreConfirmLosingCustom(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$countString ספרים מיוחדים, מפרשים והגדרות מפרשים שהוספת מאז הגיבוי יימחקו.',
+      one: 'ספר מיוחד, מפרש או הגדרת מפרשים אחת שהוספת מאז הגיבוי יימחקו.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreSummaryDeletedCustom(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString ספרים מיוחדים והגדרות נמחקו',
+      one: 'ספר מיוחד או הגדרה אחת נמחקו',
+    );
+    return '$_temp0';
+  }
 
   @override
   String restoreConfirmLosing(int count) {

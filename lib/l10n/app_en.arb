@@ -907,8 +907,10 @@
   "settingsExportFileSubtitle": "Save all progress as a JSON file",
   "settingsImportFile": "Import from file",
   "settingsImportFileSubtitle": "Merge a saved JSON file in — adds anything missing, keeps everything you already have",
-  "settingsRestoreFile": "Restore from file",
-  "settingsRestoreFileSubtitle": "Make this profile exactly match a backup, undoing anything recorded since it",
+  "settingsRestoreFile": "Restore learning from file",
+  "settingsRestoreFileSubtitle": "Make your learning history exactly match a backup, undoing anything logged since it. Custom sefarim, mefarshim and settings are kept.",
+  "settingsRestoreEverything": "Restore everything from file",
+  "settingsRestoreEverythingSubtitle": "Make this whole profile match a backup — and delete the custom sefarim, mefarshim and mefarshim settings you have added since it",
   "settingsExportClipboard": "Export to clipboard",
   "settingsExportClipboardSubtitle": "Copy all progress as JSON",
   "settingsImportClipboard": "Import from clipboard",
@@ -1002,7 +1004,16 @@
   },
   "restoreConfirmTitle": "Restore from this backup?",
   "restoreConfirmNoChange": "This profile already matches the backup — nothing will change.",
-  "restoreConfirmIntro": "This makes the profile exactly match the backup, undoing everything recorded since it.",
+  "restoreConfirmIntro": "This makes your learning history exactly match the backup, undoing everything logged since it.",
+  "restoreConfirmIntroEverything": "This makes the whole profile match the backup, undoing everything recorded since it — including the sefarim and settings you have added.",
+  "restoreConfirmLosingCustom": "{count, plural, =1{1 custom sefer, meforish or mefarshim setting added since the backup will be deleted.} other{{count} custom sefarim, mefarshim and mefarshim settings added since the backup will be deleted.}}",
+  "@restoreConfirmLosingCustom": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "restoreSummaryDeletedCustom": "{count, plural, =1{1 custom sefer or setting deleted} other{{count} custom sefarim and settings deleted}}",
+  "@restoreSummaryDeletedCustom": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
   "restoreConfirmLosing": "{count, plural, =1{1 unit you have marked since the backup will no longer be marked.} other{{count} units you have marked since the backup will no longer be marked.}}",
   "@restoreConfirmLosing": {
     "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }

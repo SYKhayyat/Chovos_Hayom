@@ -1870,11 +1870,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Merge a saved JSON file in — adds anything missing, keeps everything you already have';
 
   @override
-  String get settingsRestoreFile => 'Restore from file';
+  String get settingsRestoreFile => 'Restore learning from file';
 
   @override
   String get settingsRestoreFileSubtitle =>
-      'Make this profile exactly match a backup, undoing anything recorded since it';
+      'Make your learning history exactly match a backup, undoing anything logged since it. Custom sefarim, mefarshim and settings are kept.';
+
+  @override
+  String get settingsRestoreEverything => 'Restore everything from file';
+
+  @override
+  String get settingsRestoreEverythingSubtitle =>
+      'Make this whole profile match a backup — and delete the custom sefarim, mefarshim and mefarshim settings you have added since it';
 
   @override
   String get settingsExportClipboard => 'Export to clipboard';
@@ -2133,7 +2140,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restoreConfirmIntro =>
-      'This makes the profile exactly match the backup, undoing everything recorded since it.';
+      'This makes your learning history exactly match the backup, undoing everything logged since it.';
+
+  @override
+  String get restoreConfirmIntroEverything =>
+      'This makes the whole profile match the backup, undoing everything recorded since it — including the sefarim and settings you have added.';
+
+  @override
+  String restoreConfirmLosingCustom(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$countString custom sefarim, mefarshim and mefarshim settings added since the backup will be deleted.',
+      one:
+          '1 custom sefer, meforish or mefarshim setting added since the backup will be deleted.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreSummaryDeletedCustom(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString custom sefarim and settings deleted',
+      one: '1 custom sefer or setting deleted',
+    );
+    return '$_temp0';
+  }
 
   @override
   String restoreConfirmLosing(int count) {

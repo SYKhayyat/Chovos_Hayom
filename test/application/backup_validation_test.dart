@@ -228,8 +228,8 @@ void main() {
 
     test('a restore removes the later undone, so the unit is marked again',
         () async {
-      final data =
-          await BackupService(repo).importInto('a', json, replace: true);
+      final data = await BackupService(repo)
+          .importInto('a', json, mode: ImportMode.restoreLog);
 
       expect(data.removedEvents, 1);
       final events = await repo.getEvents('a');
@@ -239,9 +239,9 @@ void main() {
     });
 
     test('restoring twice is a no-op the second time', () async {
-      await BackupService(repo).importInto('a', json, replace: true);
-      final again =
-          await BackupService(repo).importInto('a', json, replace: true);
+      await BackupService(repo).importInto('a', json, mode: ImportMode.restoreLog);
+      final again = await BackupService(repo)
+          .importInto('a', json, mode: ImportMode.restoreLog);
 
       expect(again.removedEvents, 0);
       expect(again.events, isEmpty);
@@ -258,7 +258,7 @@ void main() {
         loggedAt: DateTime(2026, 7, 24, 10),
       ));
 
-      await BackupService(repo).importInto('a', json, replace: true);
+      await BackupService(repo).importInto('a', json, mode: ImportMode.restoreLog);
 
       expect((await repo.getEvents('b')).map((e) => e.id), ['other-1']);
     });

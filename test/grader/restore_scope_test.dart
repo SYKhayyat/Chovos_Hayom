@@ -25,6 +25,14 @@ import 'package:chovos_hayom/domain/entities/profile.dart';
 /// So a custom sefer invented after the backup survives the restore that said it
 /// would undo it. `backup_service_test.dart` covers the merge and the replace of
 /// *events*; nothing asserts on the non-event rows under `replace: true`.
+///
+/// **BUILDER NOTE (W5).** The owner's ruling on the gap was neither of the two
+/// options the grade offered: keep today's narrow restore *and* add a wide one,
+/// as separate actions, because "undo my learning back to this backup" and
+/// "throw away everything this profile has become" are different intentions and
+/// only one of them deletes a sefer. So `bool replace` became [ImportMode], and
+/// this probe now pins both halves — the wide mode deletes the sefer, and the
+/// narrow one is asserted to keep it, which is the promise its copy now makes.
 void main() {
   late AppDatabase db;
   late DriftProgressRepository repo;
@@ -36,15 +44,11 @@ void main() {
 
   tearDown(() => db.close());
 
-  test('restoring undoes a custom sefer added after the backup', () async {
+  /// Takes a backup of a clean profile, then invents a sefer the user regrets.
+  Future<String> backupThenAddASefer() async {
     await repo.addProfile(
         Profile(id: 'p1', name: 'Reuven', createdAt: DateTime(2026)));
-
-    // A backup is taken while the profile is clean.
-    final service = BackupService(repo);
-    final backup = await service.export('p1', customNodes: const []);
-
-    // Afterwards the user invents a sefer they later regret.
+    final backup = await BackupService(repo).export('p1', customNodes: const []);
     await repo.addCustomNode(
       'p1',
       const CatalogNode(
@@ -56,12 +60,32 @@ void main() {
       ),
     );
     expect((await repo.watchCustomNodes('p1').first).length, 1);
+    return backup;
+  }
 
-    // "Restore from file" — "undoing anything recorded since it".
-    await service.importInto('p1', backup, replace: true);
+  test('"Restore everything" undoes a custom sefer added after the backup',
+      () async {
+    final backup = await backupThenAddASefer();
+
+    final result = await BackupService(repo)
+        .importInto('p1', backup, mode: ImportMode.restoreEverything);
 
     expect(await repo.watchCustomNodes('p1').first, isEmpty,
-        reason: 'the restore promised to undo everything recorded since the '
-            'backup, but only the event log was reconciled');
+        reason: 'this is the restore that promises to undo everything recorded '
+            'since the backup');
+    expect(result.removedCustomisations, 1,
+        reason: 'and it has to be able to say how much, before it does it');
+  });
+
+  test('"Restore learning" keeps it, which is what its copy now says', () async {
+    final backup = await backupThenAddASefer();
+
+    final result = await BackupService(repo)
+        .importInto('p1', backup, mode: ImportMode.restoreLog);
+
+    expect((await repo.watchCustomNodes('p1').first).single.id, 'custom.oops',
+        reason: 'the narrow restore reconciles the log and nothing else — '
+            '"Custom sefarim, mefarshim and settings are kept"');
+    expect(result.removedCustomisations, 0);
   });
 }

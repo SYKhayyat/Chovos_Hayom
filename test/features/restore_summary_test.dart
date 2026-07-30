@@ -63,6 +63,28 @@ void main() {
     expect(msg, contains('no change to which units are marked'));
   });
 
+  test('a wide restore reports what it deleted, not what it predicted', () {
+    // The count comes from the import's own return value rather than from the
+    // diff, so these two numbers are allowed to differ — and if they ever do, it
+    // is the outcome that gets reported.
+    final msg = SettingsScreen.restoreSummary(
+      en,
+      const RestoreDiff(
+          restored: 0, removed: 0, staleEvents: 0, customisations: 9),
+      deletedCustomisations: 2,
+    );
+
+    expect(msg, contains('2 custom sefarim and settings deleted'));
+    expect(msg, isNot(contains('9')));
+  });
+
+  test('a narrow restore that deleted nothing says nothing about sefarim', () {
+    final msg = SettingsScreen.restoreSummary(
+        en, const RestoreDiff(restored: 1, removed: 0, staleEvents: 1));
+
+    expect(msg, isNot(contains('deleted')));
+  });
+
   group('Hebrew', () {
     // The same behaviours in the other shipped locale. Without this the Hebrew
     // table could lose a plural case, or an ICU placeholder could be mistyped,

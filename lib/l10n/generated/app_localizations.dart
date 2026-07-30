@@ -2789,14 +2789,26 @@ abstract class AppLocalizations {
   /// No description provided for @settingsRestoreFile.
   ///
   /// In en, this message translates to:
-  /// **'Restore from file'**
+  /// **'Restore learning from file'**
   String get settingsRestoreFile;
 
   /// No description provided for @settingsRestoreFileSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Make this profile exactly match a backup, undoing anything recorded since it'**
+  /// **'Make your learning history exactly match a backup, undoing anything logged since it. Custom sefarim, mefarshim and settings are kept.'**
   String get settingsRestoreFileSubtitle;
+
+  /// No description provided for @settingsRestoreEverything.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore everything from file'**
+  String get settingsRestoreEverything;
+
+  /// No description provided for @settingsRestoreEverythingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Make this whole profile match a backup — and delete the custom sefarim, mefarshim and mefarshim settings you have added since it'**
+  String get settingsRestoreEverythingSubtitle;
 
   /// No description provided for @settingsExportClipboard.
   ///
@@ -3131,8 +3143,26 @@ abstract class AppLocalizations {
   /// No description provided for @restoreConfirmIntro.
   ///
   /// In en, this message translates to:
-  /// **'This makes the profile exactly match the backup, undoing everything recorded since it.'**
+  /// **'This makes your learning history exactly match the backup, undoing everything logged since it.'**
   String get restoreConfirmIntro;
+
+  /// No description provided for @restoreConfirmIntroEverything.
+  ///
+  /// In en, this message translates to:
+  /// **'This makes the whole profile match the backup, undoing everything recorded since it — including the sefarim and settings you have added.'**
+  String get restoreConfirmIntroEverything;
+
+  /// No description provided for @restoreConfirmLosingCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 custom sefer, meforish or mefarshim setting added since the backup will be deleted.} other{{count} custom sefarim, mefarshim and mefarshim settings added since the backup will be deleted.}}'**
+  String restoreConfirmLosingCustom(int count);
+
+  /// No description provided for @restoreSummaryDeletedCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 custom sefer or setting deleted} other{{count} custom sefarim and settings deleted}}'**
+  String restoreSummaryDeletedCustom(int count);
 
   /// No description provided for @restoreConfirmLosing.
   ///

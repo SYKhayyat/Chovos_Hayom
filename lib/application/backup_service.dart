@@ -16,6 +16,40 @@ class BackupFormatException implements Exception {
   String toString() => message;
 }
 
+/// How much of the profile an import is allowed to change.
+///
+/// There used to be a `bool replace`, and the two things it could mean were not
+/// the same size. "Make this profile exactly match a backup" was what the UI
+/// promised; reconciling the event log was what the code did. Custom sefarim,
+/// custom mefarshim and every layer setting made since the backup survived a
+/// restore that said it would undo them.
+///
+/// Rather than pick one, both exist and each says which it is. The narrow one is
+/// what most people want after an accidental bulk action; the wide one is what
+/// "exactly match" means, and it deletes things, so it is a separate button with
+/// its own confirmation.
+enum ImportMode {
+  /// Add what the profile does not have. Remove nothing. Re-importing a backup
+  /// into the profile it came from is a no-op.
+  merge,
+
+  /// Make the **log** match the backup: events the backup does not contain are
+  /// deleted, so un-marks and re-logs recorded since it are undone. Custom
+  /// sefarim, mefarshim and layer settings are merged in, never removed.
+  restoreLog,
+
+  /// Make the **whole profile** match the backup: [restoreLog], and in addition
+  /// delete the custom sefarim, custom mefarshim and required/offered layer
+  /// settings the backup does not contain.
+  restoreEverything;
+
+  /// Whether the log is reconciled rather than merged.
+  bool get replacesLog => this != ImportMode.merge;
+
+  /// Whether everything outside the log is reconciled too.
+  bool get replacesCustomisation => this == ImportMode.restoreEverything;
+}
+
 /// Parsed backup payload. Newer fields ([customLayers], [requirements],
 /// [offered], [settings], [goals]) are absent in older backups and default to
 /// empty.
@@ -30,12 +64,18 @@ class BackupData {
     this.settings = const {},
     this.goals = const {},
     this.removedEvents = 0,
+    this.removedCustomisations = 0,
   });
 
   /// How many events a *restore* deleted because the backup doesn't contain
   /// them. Always 0 for a merge. Set on the value [BackupService.importInto]
   /// returns, so the caller can report what it actually did.
   final int removedEvents;
+
+  /// How many custom sefarim, custom mefarshim and layer settings a
+  /// [ImportMode.restoreEverything] deleted for the same reason. Always 0 for
+  /// the other two modes — which is the whole difference between them.
+  final int removedCustomisations;
 
   final int version;
   final List<LearningEvent> events;
@@ -174,21 +214,20 @@ class BackupService {
   /// Returns the parsed data (so the caller can apply settings and goals, which
   /// live outside the repository) with [BackupData.events] holding only the
   /// newly-added events.
-  /// With [replace] the import is a **restore**: the profile's log is made to
-  /// match the backup exactly, which means dropping events the backup does not
-  /// contain.
+  /// [mode] decides how much is reconciled rather than merged — see [ImportMode].
   ///
-  /// That deletion is the whole point, and merging cannot substitute for it. The
-  /// log is append-only, so un-marking a unit *adds* an `undone` event rather
-  /// than removing the `done`. Re-importing a backup taken before the un-mark
-  /// adds nothing (every id in it is already present) while the later `undone`
-  /// still wins — so the unit stays un-marked and the "restore" restores
-  /// nothing. Only removing the events recorded since the backup puts it back.
+  /// Deleting the events the backup does not contain is the whole point of a
+  /// restore, and merging cannot substitute for it. The log is append-only, so
+  /// un-marking a unit *adds* an `undone` event rather than removing the `done`.
+  /// Re-importing a backup taken before the un-mark adds nothing (every id in it
+  /// is already present) while the later `undone` still wins — so the unit stays
+  /// un-marked and the "restore" restores nothing. Only removing the events
+  /// recorded since the backup puts it back.
   Future<BackupData> importInto(
     String targetProfileId,
     String jsonStr, {
     Map<String, String?> knownParents = const {},
-    bool replace = false,
+    ImportMode mode = ImportMode.merge,
   }) async {
     final data = parse(jsonStr);
     BackupValidator.validate(data, knownParents: knownParents);
@@ -200,12 +239,20 @@ class BackupService {
         if (!existing.contains(e.id)) _rescope(e, targetProfileId),
     ];
     final backupIds = data.events.map((e) => e.id).toSet();
-    final stale = replace
+    final stale = mode.replacesLog
         ? [
             for (final e in existingEvents)
               if (!backupIds.contains(e.id)) e.id,
           ]
         : const <String>[];
+
+    // Everything outside the log that the backup does not contain, read *before*
+    // the transaction — the same order `_clearSettings` uses, because these are
+    // streams and a stream read from inside a transaction is a read of a
+    // different world.
+    final teardown = mode.replacesCustomisation
+        ? await _customisationsToRemove(targetProfileId, data)
+        : const _Teardown.empty();
 
     await _repo.transaction(() async {
       if (stale.isNotEmpty) await _repo.removeEvents(targetProfileId, stale);
@@ -222,6 +269,21 @@ class BackupService {
       for (final o in data.offered) {
         await _repo.setOfferedLayers(targetProfileId, o);
       }
+      // Deletions last: a node the backup also contains has just been written in
+      // its backup shape, and removing first then re-adding would make the same
+      // row briefly absent for no reason.
+      for (final id in teardown.nodeIds) {
+        await _repo.removeCustomNode(targetProfileId, id);
+      }
+      for (final id in teardown.layerIds) {
+        await _repo.removeCustomLayer(targetProfileId, id);
+      }
+      for (final (nodeId, unitIndex) in teardown.requirements) {
+        await _repo.clearLayerRequirement(targetProfileId, nodeId, unitIndex);
+      }
+      for (final (nodeId, unitIndex) in teardown.offered) {
+        await _repo.clearOfferedLayers(targetProfileId, nodeId, unitIndex);
+      }
     });
 
     return BackupData(
@@ -234,8 +296,59 @@ class BackupService {
       settings: data.settings,
       goals: data.goals,
       removedEvents: stale.length,
+      removedCustomisations: teardown.count,
     );
   }
+
+  /// What a [ImportMode.restoreEverything] into [profileId] would delete.
+  ///
+  /// Public in spirit and used twice: once by the import itself, and once by the
+  /// confirmation dialog, which must be able to say *how much* it is about to
+  /// destroy without performing it. Two computations of one answer is how a
+  /// preview comes to disagree with the outcome.
+  Future<_Teardown> _customisationsToRemove(
+      String profileId, BackupData data) async {
+    final nodes = await _repo.watchCustomNodes(profileId).first;
+    final layers = await _repo.watchCustomLayers(profileId).first;
+    final requirements = await _repo.watchLayerRequirements(profileId).first;
+    final offered = await _repo.watchOfferedLayers(profileId).first;
+
+    final keepNodes = {for (final n in data.customNodes) n.id};
+    final keepLayers = {for (final l in data.customLayers) l.id};
+    final keepRequirements = {
+      for (final r in data.requirements) (r.nodeId, r.unitIndex)
+    };
+    final keepOffered = {
+      for (final o in data.offered) (o.nodeId, o.unitIndex)
+    };
+
+    return _Teardown(
+      nodeIds: [
+        for (final n in nodes)
+          if (!keepNodes.contains(n.id)) n.id,
+      ],
+      layerIds: [
+        for (final l in layers)
+          if (!keepLayers.contains(l.id)) l.id,
+      ],
+      requirements: [
+        for (final r in requirements)
+          if (!keepRequirements.contains((r.nodeId, r.unitIndex)))
+            (r.nodeId, r.unitIndex),
+      ],
+      offered: [
+        for (final o in offered)
+          if (!keepOffered.contains((o.nodeId, o.unitIndex)))
+            (o.nodeId, o.unitIndex),
+      ],
+    );
+  }
+
+  /// How many customisations a [ImportMode.restoreEverything] of [jsonStr] would
+  /// delete from [profileId] — the number the confirmation has to show, computed
+  /// by the same code that will do the deleting.
+  Future<int> customisationsAtRisk(String profileId, String jsonStr) async =>
+      (await _customisationsToRemove(profileId, parse(jsonStr))).count;
 
   static LearningEvent _rescope(LearningEvent e, String profileId) =>
       LearningEvent(
@@ -251,6 +364,33 @@ class BackupService {
         layers: e.layers,
         batchId: e.batchId,
       );
+}
+
+/// The rows a [ImportMode.restoreEverything] has to delete, by kind.
+///
+/// Kept as one value rather than four lists threaded through two methods, so the
+/// count the user is shown and the deletions performed cannot come apart.
+class _Teardown {
+  const _Teardown({
+    required this.nodeIds,
+    required this.layerIds,
+    required this.requirements,
+    required this.offered,
+  });
+
+  const _Teardown.empty()
+      : nodeIds = const [],
+        layerIds = const [],
+        requirements = const [],
+        offered = const [];
+
+  final List<String> nodeIds;
+  final List<String> layerIds;
+  final List<(String, int)> requirements;
+  final List<(String, int)> offered;
+
+  int get count =>
+      nodeIds.length + layerIds.length + requirements.length + offered.length;
 }
 
 /// Checks a parsed backup for anything that would corrupt the app if persisted.

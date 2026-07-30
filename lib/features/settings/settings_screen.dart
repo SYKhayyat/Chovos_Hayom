@@ -35,7 +35,13 @@ class RestoreDiff {
     required this.restored,
     required this.removed,
     required this.staleEvents,
+    this.customisations = 0,
   });
+
+  /// Custom sefarim, custom mefarshim and layer settings a
+  /// [ImportMode.restoreEverything] would delete. Zero for the narrower restore,
+  /// which is exactly what makes the two different.
+  final int customisations;
 
   /// Units the backup has marked that this profile currently does not.
   final int restored;
@@ -46,7 +52,8 @@ class RestoreDiff {
   /// Log entries recorded since the backup, which the restore deletes.
   final int staleEvents;
 
-  bool get changesNothing => restored == 0 && removed == 0 && staleEvents == 0;
+  bool get changesNothing =>
+      restored == 0 && removed == 0 && staleEvents == 0 && customisations == 0;
 }
 
 class SettingsScreen extends ConsumerWidget {
@@ -199,7 +206,20 @@ class SettingsScreen extends ConsumerWidget {
             leading: const Icon(Icons.settings_backup_restore),
             title: Text(l10n.settingsRestoreFile),
             subtitle: Text(l10n.settingsRestoreFileSubtitle),
-            onTap: () => _importFromFile(context, ref, replace: true),
+            onTap: () => _importFromFile(context, ref,
+                mode: ImportMode.restoreLog),
+          ),
+          // The wider one, kept separate rather than folded into the tile above.
+          // "Undo my learning back to this backup" and "throw away everything
+          // this profile has become since this backup" are different intentions,
+          // and the second one deletes sefarim the first one keeps.
+          ListTile(
+            leading: Icon(Icons.restore_page_outlined,
+                color: Theme.of(context).colorScheme.error),
+            title: Text(l10n.settingsRestoreEverything),
+            subtitle: Text(l10n.settingsRestoreEverythingSubtitle),
+            onTap: () => _importFromFile(context, ref,
+                mode: ImportMode.restoreEverything),
           ),
           ListTile(
             leading: const Icon(Icons.upload),
@@ -386,7 +406,7 @@ class SettingsScreen extends ConsumerWidget {
   /// which of the two it was.
   Future<String> _applyImport(
       WidgetRef ref, AppLocalizations l10n, String jsonStr,
-      {bool replace = false, RestoreDiff? diff}) async {
+      {ImportMode mode = ImportMode.merge, RestoreDiff? diff}) async {
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
     // The catalog's ids, so a custom sefer filed under a built-in one validates
@@ -399,7 +419,7 @@ class SettingsScreen extends ConsumerWidget {
         if (catalog != null)
           for (final n in catalog.all) n.id: n.parentId,
       },
-      replace: replace,
+      mode: mode,
     );
     await ref.read(settingsProvider.notifier).applyBackup(data.settings);
     await ref.read(goalsProvider.notifier).applyBackup(data.goals);
@@ -409,10 +429,13 @@ class SettingsScreen extends ConsumerWidget {
     // cycles are on disk but not on screen until the next launch.
     ref.invalidate(cyclesConfigProvider);
 
-    if (replace) {
+    if (mode.replacesLog) {
       // Reported in units, not events. A restore that puts a daf back does it by
       // *deleting* the later `undone`, so an event-level tally reads "removed 2,
       // added 0" while the user watches a completion return.
+      //
+      // The customisation count comes from what the import actually deleted, not
+      // from the preview, so the sentence is a report rather than a repetition.
       return restoreSummary(
           l10n,
           diff ??
@@ -420,7 +443,8 @@ class SettingsScreen extends ConsumerWidget {
                 restored: 0,
                 removed: 0,
                 staleEvents: data.removedEvents,
-              ));
+              ),
+          deletedCustomisations: data.removedCustomisations);
     }
     final added = data.events.length;
     if (added > 0) return l10n.backupImported(added);
@@ -518,9 +542,10 @@ class SettingsScreen extends ConsumerWidget {
       .record(ref.read(clockProvider)());
 
   Future<void> _importFromFile(BuildContext context, WidgetRef ref,
-      {bool replace = false}) async {
+      {ImportMode mode = ImportMode.merge}) async {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
+    final replace = mode.replacesLog;
     final result = await FilePicker.platform.pickFiles(
       dialogTitle:
           replace ? l10n.backupChooseRestoreFile : l10n.backupChooseFile,
@@ -552,19 +577,19 @@ class SettingsScreen extends ConsumerWidget {
     RestoreDiff? diff;
     if (replace) {
       try {
-        diff = await _restoreDiff(ref, json);
+        diff = await _restoreDiff(ref, json, mode: mode);
       } catch (e) {
         guard.report(importError(l10n, e));
         return;
       }
       if (!context.mounted) return;
-      if (!await _confirmRestore(context, diff)) return;
+      if (!await _confirmRestore(context, diff, mode)) return;
     }
 
     String? outcome;
     await guard.run(
       () async => outcome =
-          await _applyImport(ref, l10n, json, replace: replace, diff: diff),
+          await _applyImport(ref, l10n, json, mode: mode, diff: diff),
       what: replace ? l10n.whatRestoringBackup : l10n.whatImportingBackup,
       describe: (e) => importError(l10n, e),
     );
@@ -578,7 +603,8 @@ class SettingsScreen extends ConsumerWidget {
   /// events *is* the state afterwards — the prediction and the outcome are the
   /// same numbers, which is why one calculation serves both the warning and the
   /// report.
-  Future<RestoreDiff> _restoreDiff(WidgetRef ref, String json) async {
+  Future<RestoreDiff> _restoreDiff(WidgetRef ref, String json,
+      {required ImportMode mode}) async {
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
     final required = ref.read(layerRequirementsProvider);
@@ -600,15 +626,29 @@ class SettingsScreen extends ConsumerWidget {
       restored: restored.difference(now).length,
       removed: now.difference(restored).length,
       staleEvents: current.where((e) => !backupIds.contains(e.id)).length,
+      // Counted by the same method that will do the deleting, so the warning and
+      // the outcome cannot disagree.
+      customisations: mode.replacesCustomisation
+          ? await BackupService(repo).customisationsAtRisk(profileId, json)
+          : 0,
     );
   }
 
   /// A sentence describing [diff] in units, for the report after a restore.
-  static String restoreSummary(AppLocalizations l10n, RestoreDiff diff) {
-    if (diff.changesNothing) return l10n.restoreAlreadyMatched;
+  ///
+  /// [deletedCustomisations] is what the import *did* delete, which is why it is
+  /// a separate argument rather than read off [diff]: the diff is a prediction,
+  /// and a report that echoes the prediction cannot notice when they differ.
+  static String restoreSummary(AppLocalizations l10n, RestoreDiff diff,
+      {int deletedCustomisations = 0}) {
+    if (diff.changesNothing && deletedCustomisations == 0) {
+      return l10n.restoreAlreadyMatched;
+    }
     final parts = [
       if (diff.restored > 0) l10n.restoreSummaryRestored(diff.restored),
       if (diff.removed > 0) l10n.restoreSummaryRemoved(diff.removed),
+      if (deletedCustomisations > 0)
+        l10n.restoreSummaryDeletedCustom(deletedCustomisations),
     ];
     return parts.isEmpty
         // The log changed but nothing you can see did — e.g. only a re-log of
@@ -619,9 +659,14 @@ class SettingsScreen extends ConsumerWidget {
 
   /// Confirms a restore, describing what it will change. Returns false if the
   /// file is unreadable (the error is shown) or the user backs out.
-  Future<bool> _confirmRestore(BuildContext context, RestoreDiff diff) async {
+  Future<bool> _confirmRestore(
+      BuildContext context, RestoreDiff diff, ImportMode mode) async {
     final l10n = AppLocalizations.of(context);
+    // What this restore is about to destroy — marked units, and for the wide one
+    // the customisations too. Both feed the red button: a dialog that colours
+    // itself by units alone would look harmless while deleting a sefer.
     final losing = diff.removed;
+    final destructive = losing > 0 || diff.customisations > 0;
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -629,8 +674,12 @@ class SettingsScreen extends ConsumerWidget {
         content: Text(diff.changesNothing
             ? l10n.restoreConfirmNoChange
             : [
-                l10n.restoreConfirmIntro,
+                mode.replacesCustomisation
+                    ? l10n.restoreConfirmIntroEverything
+                    : l10n.restoreConfirmIntro,
                 if (losing > 0) l10n.restoreConfirmLosing(losing),
+                if (diff.customisations > 0)
+                  l10n.restoreConfirmLosingCustom(diff.customisations),
                 if (diff.restored > 0)
                   l10n.restoreConfirmGaining(diff.restored),
                 l10n.restoreConfirmBackupFirst,
@@ -641,7 +690,7 @@ class SettingsScreen extends ConsumerWidget {
               child: Text(l10n.actionCancel)),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            style: losing == 0
+            style: !destructive
                 ? null
                 : FilledButton.styleFrom(
                     backgroundColor: Theme.of(dialogContext).colorScheme.error,
