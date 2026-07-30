@@ -188,10 +188,12 @@ void main() {
         );
       }
       sw.stop();
-      // A thousand of the worst case, well inside a single frame. The budget is
-      // loose on purpose — it is here to catch a return to iterating, which would
-      // miss it by four orders of magnitude, not to measure this machine.
-      expect(sw.elapsedMilliseconds, lessThan(100),
+      // 500ms for a thousand of the worst case: 0.5ms each, thirty frames of
+      // headroom, and deliberately loose. `flutter test` runs files in parallel,
+      // so a tight wall-clock bound measures the scheduler rather than the code —
+      // a return to per-day iteration would miss this by four orders of
+      // magnitude, not by a factor.
+      expect(sw.elapsedMilliseconds, lessThan(500),
           reason: '1000 hopeless-pace answers took ${sw.elapsedMilliseconds}ms');
     });
 
@@ -210,7 +212,7 @@ void main() {
       // 40x against a release build, so the number here is not a user-facing
       // latency — it is a tripwire for a return to per-day iteration, which would
       // miss it by orders of magnitude rather than by a factor.
-      expect(sw.elapsedMilliseconds, lessThan(100),
+      expect(sw.elapsedMilliseconds, lessThan(500),
           reason: '100 year-long-cycle answers took ${sw.elapsedMilliseconds}ms');
     });
 

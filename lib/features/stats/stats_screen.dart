@@ -68,7 +68,10 @@ class _SummaryGrid extends StatelessWidget {
             value: l10n.statsPercentValue(stats.percent.toStringAsFixed(1))),
         _StatTile(
             label: l10n.statsLearned,
-            value: l10n.statsLearnedValue(stats.learned, stats.total)),
+            // The space-padded fraction reverses under Hebrew — see
+            // [ltrNumerals].
+            value: ltrNumerals(
+                l10n.statsLearnedValue(stats.learned, stats.total))),
         _StatTile(
             label: l10n.statsStreak,
             value: l10n.statsStreakValue(stats.streak)),

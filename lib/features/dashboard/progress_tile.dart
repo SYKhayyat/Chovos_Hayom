@@ -220,8 +220,10 @@ class _ProgressBar extends ConsumerWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            l10n.progressCount(
-                node.learned, node.total, node.percent.toStringAsFixed(1)),
+            // Isolated, or Hebrew paints "0 / 929" as "929 / 0" — see
+            // [ltrNumerals]. This is the most-read number in the app.
+            ltrNumerals(l10n.progressCount(
+                node.learned, node.total, node.percent.toStringAsFixed(1))),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           ..._meforishBars(context, ref),
@@ -319,7 +321,10 @@ class _MeforishBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Text(l10n.meforishCoverage(learned, total),
+            // Safe as spelled (an unspaced slash joins the numeric run) and
+            // isolated anyway: see [ltrNumerals] on why "it happens to be safe"
+            // is not a property to leave a string table depending on.
+            Text(ltrNumerals(l10n.meforishCoverage(learned, total)),
                 style: Theme.of(context)
                     .textTheme
                     .labelSmall

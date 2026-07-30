@@ -15,6 +15,41 @@ import '../../l10n/generated/app_localizations.dart';
 /// data ([CatalogNode.unitDisplay] — a unit's own name, or its number), and
 /// everything that depends on what language the reader speaks is here.
 
+/// [text] wrapped in a Unicode LTR isolate, so a numeric expression keeps its
+/// own reading order inside a Hebrew sentence.
+///
+/// Digits are weak-LTR and `/`, `(`, `%` are neutral, so under a Hebrew
+/// `Directionality` the bidi algorithm resolves the neutrals from the paragraph
+/// and reverses the whole run: `0 / 929  (0.0%)` painted as `(0.0%)  929 / 0`,
+/// on every row of the dashboard. Measured on a real screen, on two platforms —
+/// the operands *swap*, which reports a different number rather than merely
+/// looking odd.
+///
+/// An isolate (U+2066 … U+2069) rather than flipping the widget's
+/// `textDirection`: the line must still *sit* on the right in Hebrew, and only
+/// its contents read left to right. Forcing the paragraph LTR would move the
+/// whole line to the left margin to fix the digits.
+///
+/// Applied in every locale, not only Hebrew. In an LTR paragraph an LTR isolate
+/// changes nothing, and a rule with a locale condition in it is a rule that gets
+/// tested in one locale.
+///
+/// Not needed for a bare `7/100` — a slash directly between two digits is a
+/// Common Separator and joins the numeric run, which is why `meforishCoverage`
+/// was safe while the space-padded templates were not. It is applied there
+/// anyway: "safe because of where the spaces are" is not a property anyone
+/// editing a string table should have to know.
+String ltrNumerals(String text) => '$_ltrIsolate$text$_popIsolate';
+
+/// **U+2066 LEFT-TO-RIGHT ISOLATE** and **U+2069 POP DIRECTIONAL ISOLATE**, as
+/// escape sequences and under names: they render as nothing, so a bare one pasted
+/// into an expression is a character nobody can see and nobody would notice
+/// deleting. (The analyzer agrees — `text_direction_code_point_in_literal`
+/// rejects the literal form outright.) `bidi_numerals_test.dart` is what notices
+/// if they go missing anyway.
+const _ltrIsolate = '\u2066';
+const _popIsolate = '\u2069';
+
 /// A node's name in the reader's language: its Hebrew name under a Hebrew
 /// locale, its primary name otherwise.
 ///
