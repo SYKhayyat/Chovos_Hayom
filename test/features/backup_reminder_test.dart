@@ -131,6 +131,100 @@ void main() {
         contains(FailingProgressRepository.message));
   });
 
+  /// All four corners of the standing tile.
+  ///
+  /// Its title read off `neverBackedUp` and its icon and subtitle read off
+  /// `unsavedUnits == 0`, with nothing reconciling them — so a brand-new profile
+  /// (both true) got "Never exported" under a green tick reading "Everything you
+  /// have learned is in that backup", about a backup that did not exist. Three of
+  /// these four states were always right, which is why a test for one state would
+  /// not have found it: the defect is in the *combination*, so the table is the
+  /// test.
+  group('the backup standing tile', () {
+    const stamp = 'lastBackupAt';
+
+    Future<Finder> pumpTile(
+      WidgetTester tester, {
+      required bool exported,
+      required int learned,
+    }) async {
+      final repo = InMemoryProgressRepository();
+      for (var i = 0; i < learned; i++) {
+        await repo.addEvent(done(2 + i, DateTime(2026, 2, 20)));
+      }
+      final prefs = InMemoryPreferences({
+        if (exported)
+          PrefKeys.scoped('default', stamp): DateTime(2026, 2, 10)
+              .toIso8601String(),
+      });
+
+      await tester.pumpWidget(settings(repo, prefs));
+      await tester.pumpAndSettle();
+      final title = find.textContaining('exported');
+      await tester.scrollUntilVisible(title, 200);
+      await tester.pumpAndSettle();
+      return title;
+    }
+
+    testWidgets('a new profile is neither reassured nor alarmed',
+        (tester) async {
+      final title = await pumpTile(tester, exported: false, learned: 0);
+
+      expect(tester.widget<Text>(title).data, 'Never exported');
+      expect(find.text('Nothing to back up yet — export as soon as you have '
+          'learned something'), findsOneWidget);
+      expect(find.text('Everything you have learned is in that backup'),
+          findsNothing,
+          reason: 'there is no "that backup" for the learning to be in');
+      expect(find.byIcon(Icons.verified_outlined), findsNothing,
+          reason: 'a green tick here is the same all-clear a covered profile '
+              'gets');
+    });
+
+    testWidgets('learning with no export at all is named as at risk',
+        (tester) async {
+      final title = await pumpTile(tester, exported: false, learned: 1);
+
+      expect(tester.widget<Text>(title).data, 'Never exported');
+      expect(
+          find.text(
+              '1 unit learned since — it exists only on this device'),
+          findsOneWidget);
+      expect(find.byIcon(Icons.shield_outlined), findsOneWidget);
+    });
+
+    testWidgets('a fully-exported profile is the one that gets the tick',
+        (tester) async {
+      // Exported after the learning: nothing outstanding.
+      final repo = InMemoryProgressRepository();
+      await repo.addEvent(done(2, DateTime(2026, 2, 1)));
+      final prefs = InMemoryPreferences({
+        PrefKeys.scoped('default', stamp):
+            DateTime(2026, 2, 20).toIso8601String(),
+      });
+      await tester.pumpWidget(settings(repo, prefs));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.textContaining('exported'), 200);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Last exported'), findsOneWidget);
+      expect(find.text('Everything you have learned is in that backup'),
+          findsOneWidget);
+      expect(find.byIcon(Icons.verified_outlined), findsOneWidget);
+    });
+
+    testWidgets('learning since the last export is counted', (tester) async {
+      final title = await pumpTile(tester, exported: true, learned: 2);
+
+      expect(tester.widget<Text>(title).data, startsWith('Last exported'));
+      expect(
+          find.text(
+              '2 units learned since — they exist only on this device'),
+          findsOneWidget);
+      expect(find.byIcon(Icons.verified_outlined), findsNothing);
+    });
+  });
+
   testWidgets('the dashboard warns when learning has never been backed up',
       (tester) async {
     final repo = InMemoryProgressRepository();

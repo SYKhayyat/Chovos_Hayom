@@ -1959,6 +1959,10 @@ class AppLocalizationsHe extends AppLocalizations {
   String get backupNothingUnsaved => 'כל מה שלמדת נמצא בגיבוי הזה';
 
   @override
+  String get backupNothingToSaveYet =>
+      'אין עדיין מה לגבות — ייצא גיבוי מיד כשתלמד משהו';
+
+  @override
   String backupUnsavedUnits(int count) {
     final intl.NumberFormat countNumberFormat =
         intl.NumberFormat.decimalPattern(localeName);

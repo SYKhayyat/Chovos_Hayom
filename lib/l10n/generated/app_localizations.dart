@@ -2948,6 +2948,12 @@ abstract class AppLocalizations {
   /// **'Everything you have learned is in that backup'**
   String get backupNothingUnsaved;
 
+  /// Never exported *and* nothing learned: a new profile. Distinct from backupNothingUnsaved, which promises a backup that in this state does not exist.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to back up yet — export as soon as you have learned something'**
+  String get backupNothingToSaveYet;
+
   /// No description provided for @backupUnsavedUnits.
   ///
   /// In en, this message translates to:

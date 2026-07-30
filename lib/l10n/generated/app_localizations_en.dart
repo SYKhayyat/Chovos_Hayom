@@ -1969,6 +1969,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Everything you have learned is in that backup';
 
   @override
+  String get backupNothingToSaveYet =>
+      'Nothing to back up yet — export as soon as you have learned something';
+
+  @override
   String backupUnsavedUnits(int count) {
     final intl.NumberFormat countNumberFormat =
         intl.NumberFormat.decimalPattern(localeName);

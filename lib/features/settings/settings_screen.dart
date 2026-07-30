@@ -705,20 +705,38 @@ class _BackupStandingTile extends ConsumerWidget {
     final status = ref.watch(backupStatusProvider);
     final mode = ref.watch(settingsProvider).calendar;
     final scheme = Theme.of(context).colorScheme;
-    final safe = status.unsavedUnits == 0;
+
+    // Three states, not two. The title used to key off `neverBackedUp` while the
+    // icon and subtitle keyed off `unsavedUnits == 0`, and nothing reconciled
+    // them — so both-true, which is every profile on its first day, read
+    // "Never exported" under a green tick saying "Everything you have learned is
+    // in that backup". "That backup" did not exist. `BackupReminder` is right:
+    // with no events nothing is unsaved. The tile drew the wrong conclusion from
+    // it, because "nothing to lose" and "nothing at risk" are the same
+    // arithmetic and different sentences.
+    final atRisk = status.unsavedUnits > 0;
+    final safe = !atRisk && !status.neverBackedUp;
 
     return ListTile(
       leading: Icon(
         safe ? Icons.verified_outlined : Icons.shield_outlined,
-        color: safe ? Colors.green : scheme.error,
+        // Reassurance is reserved for a profile that really is covered; a fresh
+        // profile is neither safe nor in danger, so it gets neither colour.
+        color: safe
+            ? Colors.green
+            : atRisk
+                ? scheme.error
+                : scheme.onSurfaceVariant,
       ),
       title: Text(status.neverBackedUp
           ? l10n.backupNeverExported
           : l10n.backupLastExported(
               DateDisplay.format(status.lastBackupAt!, mode))),
-      subtitle: Text(safe
-          ? l10n.backupNothingUnsaved
-          : l10n.backupUnsavedUnits(status.unsavedUnits)),
+      subtitle: Text(atRisk
+          ? l10n.backupUnsavedUnits(status.unsavedUnits)
+          : status.neverBackedUp
+              ? l10n.backupNothingToSaveYet
+              : l10n.backupNothingUnsaved),
     );
   }
 }

@@ -942,6 +942,10 @@
     "placeholders": { "date": { "type": "String" } }
   },
   "backupNothingUnsaved": "Everything you have learned is in that backup",
+  "backupNothingToSaveYet": "Nothing to back up yet — export as soon as you have learned something",
+  "@backupNothingToSaveYet": {
+    "description": "Never exported *and* nothing learned: a new profile. Distinct from backupNothingUnsaved, which promises a backup that in this state does not exist."
+  },
   "backupUnsavedUnits": "{count, plural, =1{1 unit learned since — it exists only on this device} other{{count} units learned since — they exist only on this device}}",
   "@backupUnsavedUnits": {
     "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }

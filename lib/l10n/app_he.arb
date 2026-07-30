@@ -506,6 +506,7 @@
   "backupNeverExported": "מעולם לא יוצא",
   "backupLastExported": "יוצא לאחרונה ב־{date}",
   "backupNothingUnsaved": "כל מה שלמדת נמצא בגיבוי הזה",
+  "backupNothingToSaveYet": "אין עדיין מה לגבות — ייצא גיבוי מיד כשתלמד משהו",
   "backupUnsavedUnits": "{count, plural, =1{יחידה אחת נלמדה מאז — היא קיימת רק על המכשיר הזה} other{{count} יחידות נלמדו מאז — הן קיימות רק על המכשיר הזה}}",
   "backupBannerNever": "{count, plural, =1{יחידה אחת מהלימוד שלך מעולם לא גובתה.} other{{count} יחידות מהלימוד שלך מעולם לא גובו.}}",
   "backupBannerStale": "{count, plural, =1{יחידה אחת נלמדה מאז הגיבוי האחרון} other{{count} יחידות נלמדו מאז הגיבוי האחרון}} {days, plural, =1{לפני יום אחד} other{לפני {days} ימים}}.",
