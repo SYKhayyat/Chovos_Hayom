@@ -55,6 +55,31 @@ class LayerRequirements {
           defaultSet: _defaultRequired,
         );
 
+  /// Build the resolver from stored entries — the shape both the repository and a
+  /// backup hold them in.
+  ///
+  /// The provider used to split entries into node/unit maps inline, and so did
+  /// anything else that needed a resolver for a *different* set of entries than
+  /// the live one (the restore preview, which has to answer "what will be marked
+  /// once these requirements land"). Two copies of one transformation is how a
+  /// preview and an outcome come to disagree, so there is one.
+  factory LayerRequirements.fromEntries(
+    Iterable<LayerConfigEntry> entries, {
+    Map<String, String?> parentOf = const {},
+  }) {
+    final nodeConfig = <String, Set<String>>{};
+    final unitConfig = <String, Map<int, Set<String>>>{};
+    for (final e in entries) {
+      if (e.isNodeLevel) {
+        nodeConfig[e.nodeId] = e.layers;
+      } else {
+        (unitConfig[e.nodeId] ??= {})[e.unitIndex] = e.layers;
+      }
+    }
+    return LayerRequirements(
+        nodeConfig: nodeConfig, unitConfig: unitConfig, parentOf: parentOf);
+  }
+
   final InheritedLayerSet _set;
 
   static const _defaultRequired = <String>{mainLayerId};

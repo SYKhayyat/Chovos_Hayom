@@ -17,7 +17,9 @@ import '../../application/stats.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/entities/learning_event.dart';
+import '../../domain/repositories/progress_repository.dart';
 import '../../domain/usecases/fold_log.dart';
+import '../../domain/usecases/layer_requirements.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
@@ -599,19 +601,64 @@ class SettingsScreen extends ConsumerWidget {
 
   /// What restoring [json] would do to this profile, in units.
   ///
-  /// Restoring makes the log exactly match the backup, so folding the backup's
-  /// events *is* the state afterwards — the prediction and the outcome are the
-  /// same numbers, which is why one calculation serves both the warning and the
-  /// report.
+  /// Restoring makes the log match the backup, so folding the backup's events
+  /// *is* the state afterwards — which is why one calculation serves both the
+  /// warning and the report.
+  ///
+  /// The subtlety that made this wrong: whether a unit counts as marked depends
+  /// on the *required-layer sets*, and an import overwrites those from the
+  /// backup too. Folding both sides against the current sets predicted the new
+  /// log under the old rules — numbers belonging to a state that never exists.
+  /// So each side is folded against the requirements that really apply to it:
+  /// today's for today, and for the outcome the sets the chosen [mode] will
+  /// leave behind (the backup's alone for a full restore; the backup's overlaid
+  /// on what is here for the narrower one, which upserts rather than replaces).
   Future<RestoreDiff> _restoreDiff(WidgetRef ref, String json,
-      {required ImportMode mode}) async {
-    final repo = ref.read(progressRepositoryProvider);
-    final profileId = ref.read(activeProfileProvider);
-    final required = ref.read(layerRequirementsProvider);
+          {required ImportMode mode}) =>
+      restoreDiff(
+        repo: ref.read(progressRepositoryProvider),
+        profileId: ref.read(activeProfileProvider),
+        currentRequired: ref.read(layerRequirementsProvider),
+        catalogParents:
+            parentsOf(ref.read(mergedCatalogProvider).asData?.value),
+        json: json,
+        mode: mode,
+      );
+
+  /// The same calculation with its inputs passed in rather than read off a
+  /// `WidgetRef` — so the arithmetic that decides what a destructive action
+  /// reports can be tested without a file picker, the way [restoreSummary] and
+  /// [importError] already are.
+  @visibleForTesting
+  static Future<RestoreDiff> restoreDiff({
+    required ProgressRepository repo,
+    required String profileId,
+    required LayerRequirements currentRequired,
+    required Map<String, String?> catalogParents,
+    required String json,
+    required ImportMode mode,
+  }) async {
     final backup = BackupService.parse(json);
     final current = await repo.getEvents(profileId);
 
-    Set<String> marked(Iterable<LearningEvent> events) {
+    // Inheritance walks the tree, and the backup may bring nodes of its own, so
+    // the parent map is the merged catalog with the backup's rows laid over it —
+    // the tree that will exist when the fold below is what the user sees.
+    final parentOf = {
+      ...catalogParents,
+      for (final n in backup.customNodes) n.id: n.parentId,
+    };
+    final byKey = {
+      if (!mode.replacesCustomisation)
+        for (final e in await repo.watchLayerRequirements(profileId).first)
+          (e.nodeId, e.unitIndex): e,
+      for (final e in backup.requirements) (e.nodeId, e.unitIndex): e,
+    };
+    final restoredRequired =
+        LayerRequirements.fromEntries(byKey.values, parentOf: parentOf);
+
+    Set<String> marked(
+        Iterable<LearningEvent> events, LayerRequirements required) {
       final fold = FoldLog.fold(events);
       return {
         for (final nodeId in fold.completedByNode.keys)
@@ -619,8 +666,8 @@ class SettingsScreen extends ConsumerWidget {
       };
     }
 
-    final now = marked(current);
-    final restored = marked(backup.events);
+    final now = marked(current, currentRequired);
+    final restored = marked(backup.events, restoredRequired);
     final backupIds = backup.events.map((e) => e.id).toSet();
     return RestoreDiff(
       restored: restored.difference(now).length,

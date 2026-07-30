@@ -1,5 +1,6 @@
 import '../entities/layer.dart';
 import 'inherited_layer_set.dart';
+import 'layer_requirements.dart' show LayerConfigEntry;
 
 /// Resolves which layers are *offered* on a unit — the mefarshim you may check
 /// off there, independent of whether they gate completion.
@@ -20,6 +21,26 @@ class OfferedLayers {
           parentOf: parentOf,
           defaultSet: _defaultOffered,
         );
+
+  /// Build the resolver from stored entries — see
+  /// [LayerRequirements.fromEntries], which this mirrors deliberately: the two
+  /// sets differ in meaning, not in how they are assembled.
+  factory OfferedLayers.fromEntries(
+    Iterable<LayerConfigEntry> entries, {
+    Map<String, String?> parentOf = const {},
+  }) {
+    final nodeConfig = <String, Set<String>>{};
+    final unitConfig = <String, Map<int, Set<String>>>{};
+    for (final e in entries) {
+      if (e.isNodeLevel) {
+        nodeConfig[e.nodeId] = e.layers;
+      } else {
+        (unitConfig[e.nodeId] ??= {})[e.unitIndex] = e.layers;
+      }
+    }
+    return OfferedLayers(
+        nodeConfig: nodeConfig, unitConfig: unitConfig, parentOf: parentOf);
+  }
 
   final InheritedLayerSet _set;
 

@@ -245,23 +245,7 @@ final layerRequirementsProvider = Provider<LayerRequirements>((ref) {
   final catalog = ref.watch(mergedCatalogProvider).asData?.value;
   final entries = ref.watch(layerConfigProvider).asData?.value ?? const [];
 
-  final parentOf = <String, String?>{};
-  if (catalog != null) {
-    for (final n in catalog.all) {
-      parentOf[n.id] = n.parentId;
-    }
-  }
-  final nodeConfig = <String, Set<String>>{};
-  final unitConfig = <String, Map<int, Set<String>>>{};
-  for (final e in entries) {
-    if (e.isNodeLevel) {
-      nodeConfig[e.nodeId] = e.layers;
-    } else {
-      (unitConfig[e.nodeId] ??= {})[e.unitIndex] = e.layers;
-    }
-  }
-  return LayerRequirements(
-      nodeConfig: nodeConfig, unitConfig: unitConfig, parentOf: parentOf);
+  return LayerRequirements.fromEntries(entries, parentOf: parentsOf(catalog));
 });
 
 /// The resolver that answers "which mefarshim may this unit check off?" — the
@@ -271,24 +255,16 @@ final offeredLayersProvider = Provider<OfferedLayers>((ref) {
   final catalog = ref.watch(mergedCatalogProvider).asData?.value;
   final entries = ref.watch(offeredConfigProvider).asData?.value ?? const [];
 
-  final parentOf = <String, String?>{};
-  if (catalog != null) {
-    for (final n in catalog.all) {
-      parentOf[n.id] = n.parentId;
-    }
-  }
-  final nodeConfig = <String, Set<String>>{};
-  final unitConfig = <String, Map<int, Set<String>>>{};
-  for (final e in entries) {
-    if (e.isNodeLevel) {
-      nodeConfig[e.nodeId] = e.layers;
-    } else {
-      (unitConfig[e.nodeId] ??= {})[e.unitIndex] = e.layers;
-    }
-  }
-  return OfferedLayers(
-      nodeConfig: nodeConfig, unitConfig: unitConfig, parentOf: parentOf);
+  return OfferedLayers.fromEntries(entries, parentOf: parentsOf(catalog));
 });
+
+/// Every node's parent, which is all [InheritedLayerSet] needs of the catalog.
+/// Null catalog (still loading) yields an empty map: inheritance then resolves to
+/// the default, which is the same answer an unconfigured tree gives.
+Map<String, String?> parentsOf(Catalog? catalog) => {
+      if (catalog != null)
+        for (final n in catalog.all) n.id: n.parentId,
+    };
 
 /// Reconciles required + offered into per-unit answers (checkable set, layered?,
 /// fraction). The one place the UI and bulk logic consult for layer questions.
