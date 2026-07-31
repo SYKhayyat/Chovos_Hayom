@@ -240,8 +240,11 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
         title: Text(l10n.editCycleAddDialogTitle),
         children: [
           SizedBox(
-            width: 340,
-            height: 420,
+            // See the same clamp in cycles_screen.dart: a fixed 340 overflows
+            // a 240dp screen outright.
+            width: (MediaQuery.sizeOf(context).width - 80).clamp(200.0, 340.0),
+            height:
+                (MediaQuery.sizeOf(context).height - 160).clamp(200.0, 420.0),
             child: ListView.builder(
               itemCount: choices.length,
               itemBuilder: (_, i) {

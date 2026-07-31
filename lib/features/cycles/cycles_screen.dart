@@ -317,8 +317,13 @@ class _LinkPrompt extends ConsumerWidget {
         title: Text(l10n.cycleLinkTitle(seferName)),
         children: [
           SizedBox(
-            width: 320,
-            height: 400,
+            // Clamped, not fixed: 320 is wider than the whole 240dp Sonim
+            // screen, and a dialog wider than the display is one whose right
+            // edge — where a "choose" row's chevron lives — cannot be seen.
+            // The 80/64 leave room for the dialog's own insets and title.
+            width: (MediaQuery.sizeOf(context).width - 80).clamp(200.0, 320.0),
+            height:
+                (MediaQuery.sizeOf(context).height - 160).clamp(200.0, 400.0),
             child: ListView.builder(
               itemCount: leaves.length,
               itemBuilder: (_, i) {

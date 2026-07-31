@@ -123,68 +123,36 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     SortConfig sort,
     Catalog? catalog,
   ) {
-    final scheme = Theme.of(context).colorScheme;
     final expanding = _expanded.isEmpty;
-    void search() => showSearch(
-          context: context,
-          delegate: CatalogSearchDelegate(catalog!),
-        );
-
-    final entries = <({IconData icon, String label, VoidCallback? onPressed})>[
-      (
-        icon: expanding ? Icons.unfold_more : Icons.unfold_less,
-        label: expanding ? l10n.expandAll : l10n.collapseAll,
-        onPressed: () => _setExpanded(expanding),
-      ),
-      (
-        icon: Icons.sort,
-        label: sort.active
-            ? l10n.tooltipSortActive(sortMetricLabel(l10n, sort.metric))
-            : l10n.tooltipSort,
-        onPressed: () => showSortSheet(context, ref),
-      ),
-      (
-        icon: Icons.search,
-        label: l10n.tooltipSearch,
-        onPressed: catalog == null ? null : search,
-      ),
-    ];
-
-    if (!isCompact(context)) {
-      return [
-        for (final e in entries)
-          IconButton(
-            icon: Icon(e.icon),
-            // The sort button keeps its "a sort is active" colour; the others
-            // never had one.
-            color: e.icon == Icons.sort && sort.active ? scheme.primary : null,
-            tooltip: e.label,
-            onPressed: e.onPressed,
-          ),
-      ];
-    }
-    return [
-      PopupMenuButton<int>(
-        icon: Icon(
-          Icons.more_vert,
-          color: sort.active ? scheme.primary : null,
+    return barActions(
+      context,
+      [
+        BarAction(
+          icon: expanding ? Icons.unfold_more : Icons.unfold_less,
+          label: expanding ? l10n.expandAll : l10n.collapseAll,
+          onPressed: () => _setExpanded(expanding),
         ),
-        tooltip: l10n.tooltipMore,
-        onSelected: (i) => entries[i].onPressed?.call(),
-        itemBuilder: (context) => [
-          for (var i = 0; i < entries.length; i++)
-            PopupMenuItem<int>(
-              value: i,
-              enabled: entries[i].onPressed != null,
-              child: ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(entries[i].icon),
-                title: Text(entries[i].label),
-              ),
-            ),
-        ],
-      ),
-    ];
+        BarAction(
+          icon: Icons.sort,
+          label: sort.active
+              ? l10n.tooltipSortActive(sortMetricLabel(l10n, sort.metric))
+              : l10n.tooltipSort,
+          tint: sort.active ? Theme.of(context).colorScheme.primary : null,
+          onPressed: () => showSortSheet(context, ref),
+        ),
+        BarAction(
+          icon: Icons.search,
+          label: l10n.tooltipSearch,
+          onPressed: catalog == null
+              ? null
+              : () => showSearch(
+                    context: context,
+                    delegate: CatalogSearchDelegate(catalog),
+                  ),
+        ),
+      ],
+      moreTooltip: l10n.tooltipMore,
+    );
   }
 
   @override

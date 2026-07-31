@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/goals.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
+import '../../core/keypad.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/usecases/fold_log.dart';
@@ -116,23 +116,31 @@ class _UnitGrid extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(name),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.checklist),
-            tooltip: l10n.tooltipBulkActions,
-            onPressed: () => showBulkActionsSheet(context, ref, node: node),
-          ),
-          IconButton(
-            icon: const Icon(Icons.auto_stories_outlined),
-            tooltip: l10n.tooltipMefarshim,
-            onPressed: () => showMefarshimConfigSheet(context, ref, node: node),
-          ),
-          IconButton(
-            icon: const Icon(Icons.flag_outlined),
-            tooltip: l10n.tooltipSetGoalDate,
-            onPressed: () => _setGoal(context, ref),
-          ),
-        ],
+        // Three actions plus a back button on a 240dp bar left the sefer's own
+        // name no room, so the grid showed a screenful of numbered cells and
+        // nothing saying which sefer they belonged to. See [barActions].
+        actions: barActions(
+          context,
+          [
+            BarAction(
+              icon: Icons.checklist,
+              label: l10n.tooltipBulkActions,
+              onPressed: () => showBulkActionsSheet(context, ref, node: node),
+            ),
+            BarAction(
+              icon: Icons.auto_stories_outlined,
+              label: l10n.tooltipMefarshim,
+              onPressed: () =>
+                  showMefarshimConfigSheet(context, ref, node: node),
+            ),
+            BarAction(
+              icon: Icons.flag_outlined,
+              label: l10n.tooltipSetGoalDate,
+              onPressed: () => _setGoal(context, ref),
+            ),
+          ],
+          moreTooltip: l10n.tooltipMore,
+        ),
       ),
       body: Column(
         children: [
@@ -462,12 +470,13 @@ class _UnitCellState extends State<_UnitCell> {
         // Both conventional keys, since which one a keyboard has varies:
         // Shift+F10 works everywhere, the dedicated context-menu key exists on
         // most full-size Windows keyboards and no laptop.
-        bindings: {
-          const SingleActivator(LogicalKeyboardKey.f10, shift: true):
-              widget.onLongPress,
-          const SingleActivator(LogicalKeyboardKey.contextMenu):
-              widget.onLongPress,
-        },
+        //
+        // On the Sonim these turn out to already be the right bindings: Android
+        // delivers its `KEYCODE_MENU` — the keypad's left soft key — as
+        // [LogicalKeyboardKey.contextMenu], the same logical key a Windows menu
+        // key sends. The keyboard route added for desktop reached the phone
+        // unchanged.
+        bindings: contextMenuBindings(widget.onLongPress),
         child: InkWell(
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
