@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
+import '../../core/keypad.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/naming.dart';
 
@@ -20,23 +21,39 @@ class StatsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.statsTitle)),
+      // Nothing on this screen can hold focus — it is entirely figures — so a
+      // D-pad had no way to move it and the list never scrolled at all. Verified
+      // on the Sonim: the chart and the heatmap below the fold could not be
+      // reached by any sequence of keys. [DpadScroll] turns up and down into
+      // scrolling for exactly this case.
       body: stats == null
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _SummaryGrid(stats: stats, mode: mode),
-                const SizedBox(height: 24),
-                Text(l10n.statsProgressOverTime,
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                SizedBox(height: 200, child: _ProgressChart(stats: stats)),
-                const SizedBox(height: 24),
-                Text(l10n.statsActivity,
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                _Heatmap(activity: stats.dailyActivity, now: now),
-              ],
+          : DpadScroll(
+              builder: (context, controller) => ListView(
+                controller: controller,
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _SummaryGrid(stats: stats, mode: mode),
+                  const SizedBox(height: 24),
+                  Text(l10n.statsProgressOverTime,
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  // A fifth of a 324dp screen is a chart you cannot read a value
+                  // off; a fixed 200 left room for nothing else. Tied to the
+                  // viewport so it stays a readable share of whatever screen it
+                  // lands on.
+                  SizedBox(
+                    height: (MediaQuery.sizeOf(context).height * 0.42)
+                        .clamp(140.0, 220.0),
+                    child: _ProgressChart(stats: stats),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(l10n.statsActivity,
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  _Heatmap(activity: stats.dailyActivity, now: now),
+                ],
+              ),
             ),
     );
   }
@@ -55,37 +72,61 @@ class _SummaryGrid extends StatelessWidget {
         : DateDisplay.format(stats.projectedFinish!, mode);
     String time(int minutes) =>
         minutes <= 0 ? l10n.statsNone : formatMinutes(l10n, minutes);
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 2.4,
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      children: [
-        _StatTile(
-            label: l10n.statsOverall,
-            value: l10n.statsPercentValue(stats.percent.toStringAsFixed(1))),
-        _StatTile(
-            label: l10n.statsLearned,
-            // The space-padded fraction reverses under Hebrew — see
-            // [ltrNumerals].
-            value: ltrNumerals(
-                l10n.statsLearnedValue(stats.learned, stats.total))),
-        _StatTile(
-            label: l10n.statsStreak,
-            value: l10n.statsStreakValue(stats.streak)),
-        _StatTile(
-            label: l10n.statsAvgPerDay,
-            value: stats.avgPerDay.toStringAsFixed(2)),
-        _StatTile(
-            label: l10n.statsTimeLearned, value: time(stats.totalMinutes)),
-        _StatTile(
-            label: l10n.statsTimeThisMonth,
-            value: time(stats.minutesThisMonth)),
-        _StatTile(
-            label: l10n.statsProjectedSiyum, value: finish, wide: true),
-      ],
+    // Laid out by wrapping, not by a grid with a fixed aspect ratio.
+    //
+    // This was `GridView.count(crossAxisCount: 2, childAspectRatio: 2.4)`, which
+    // fixes each tile's *height* as a fraction of its width. On the 240dp Sonim
+    // screen that is a 100x41 tile holding a label and a bold number that need
+    // about 55 — so every value spilled out of its own card and over the one
+    // below it, which is what "the statistics screen looks very glitchy" was.
+    // The same would happen on any phone at a large enough font scale.
+    //
+    // Wrapping sizes each tile to its content instead, so there is no ratio left
+    // to be wrong, and it is what finally gives `wide` a meaning: the parameter
+    // existed and was read by nothing, because a `GridView.count` cell cannot
+    // span two columns.
+    final tiles = <_StatTile>[
+      _StatTile(
+          label: l10n.statsOverall,
+          value: l10n.statsPercentValue(stats.percent.toStringAsFixed(1))),
+      _StatTile(
+          label: l10n.statsLearned,
+          // The space-padded fraction reverses under Hebrew — see
+          // [ltrNumerals].
+          value:
+              ltrNumerals(l10n.statsLearnedValue(stats.learned, stats.total))),
+      _StatTile(
+          label: l10n.statsStreak, value: l10n.statsStreakValue(stats.streak)),
+      _StatTile(
+          label: l10n.statsAvgPerDay,
+          value: stats.avgPerDay.toStringAsFixed(2)),
+      _StatTile(label: l10n.statsTimeLearned, value: time(stats.totalMinutes)),
+      _StatTile(
+          label: l10n.statsTimeThisMonth,
+          value: time(stats.minutesThisMonth)),
+      _StatTile(
+          label: l10n.statsProjectedSiyum, value: finish, wide: true),
+    ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 8.0;
+        // One column on a keypad phone. Two 100dp cards side by side turn every
+        // label into two wrapped lines and every value into an ellipsis; one
+        // full-width card per figure is both readable and shorter overall.
+        final columns = constraints.maxWidth < kCompactWidth ? 1 : 2;
+        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final tile in tiles)
+              SizedBox(
+                width: tile.wide || columns == 1 ? constraints.maxWidth : width,
+                child: tile,
+              ),
+          ],
+        );
+      },
     );
   }
 }

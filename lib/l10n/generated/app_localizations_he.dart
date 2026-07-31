@@ -115,6 +115,9 @@ class AppLocalizationsHe extends AppLocalizations {
   String get tooltipSearch => 'חיפוש';
 
   @override
+  String get tooltipMore => 'פעולות נוספות';
+
+  @override
   String get navStatistics => 'סטטיסטיקה';
 
   @override

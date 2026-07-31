@@ -8,6 +8,8 @@ import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/sorting.dart';
 import '../../application/stats.dart';
+import '../../core/keypad.dart';
+import '../../domain/entities/catalog.dart';
 import '../../domain/entities/progress_node.dart';
 import '../../domain/usecases/reminders_policy.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -101,6 +103,90 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return rows;
   }
 
+  /// The app bar's three actions — expand/collapse, sort, search — as separate
+  /// buttons where there is room, and folded into one overflow menu where there
+  /// is not.
+  ///
+  /// Measured on the 240dp Sonim screen: a drawer button and three actions leave
+  /// the title about ten pixels, and because the title is a [FittedBox] (chosen
+  /// so a long name scales rather than truncates) it obligingly shrank "Chovos
+  /// Hayom" down to an illegible dash. Nothing was broken enough to notice — the
+  /// bar simply had no name in it, on every screen, and the unit grid likewise
+  /// never said which sefer you were in.
+  ///
+  /// Folding the actions away is the ordinary Material answer and it costs
+  /// nothing: a menu entry carries a *label* as well as an icon, so on the phone
+  /// these three become more discoverable than they were, not less.
+  List<Widget> _barActions(
+    BuildContext context,
+    AppLocalizations l10n,
+    SortConfig sort,
+    Catalog? catalog,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    final expanding = _expanded.isEmpty;
+    void search() => showSearch(
+          context: context,
+          delegate: CatalogSearchDelegate(catalog!),
+        );
+
+    final entries = <({IconData icon, String label, VoidCallback? onPressed})>[
+      (
+        icon: expanding ? Icons.unfold_more : Icons.unfold_less,
+        label: expanding ? l10n.expandAll : l10n.collapseAll,
+        onPressed: () => _setExpanded(expanding),
+      ),
+      (
+        icon: Icons.sort,
+        label: sort.active
+            ? l10n.tooltipSortActive(sortMetricLabel(l10n, sort.metric))
+            : l10n.tooltipSort,
+        onPressed: () => showSortSheet(context, ref),
+      ),
+      (
+        icon: Icons.search,
+        label: l10n.tooltipSearch,
+        onPressed: catalog == null ? null : search,
+      ),
+    ];
+
+    if (!isCompact(context)) {
+      return [
+        for (final e in entries)
+          IconButton(
+            icon: Icon(e.icon),
+            // The sort button keeps its "a sort is active" colour; the others
+            // never had one.
+            color: e.icon == Icons.sort && sort.active ? scheme.primary : null,
+            tooltip: e.label,
+            onPressed: e.onPressed,
+          ),
+      ];
+    }
+    return [
+      PopupMenuButton<int>(
+        icon: Icon(
+          Icons.more_vert,
+          color: sort.active ? scheme.primary : null,
+        ),
+        tooltip: l10n.tooltipMore,
+        onSelected: (i) => entries[i].onPressed?.call(),
+        itemBuilder: (context) => [
+          for (var i = 0; i < entries.length; i++)
+            PopupMenuItem<int>(
+              value: i,
+              enabled: entries[i].onPressed != null,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(entries[i].icon),
+                title: Text(entries[i].label),
+              ),
+            ),
+        ],
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final forest = ref.watch(progressForestProvider);
@@ -140,38 +226,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         // more discoverable than an unlabelled icon and what left room for the
         // title. Nothing is removed; two things moved to where their nine
         // siblings already live.
-        actions: [
-          IconButton(
-            icon: Icon(
-                _expanded.isEmpty ? Icons.unfold_more : Icons.unfold_less),
-            tooltip: _expanded.isEmpty ? l10n.expandAll : l10n.collapseAll,
-            onPressed: () => _setExpanded(_expanded.isEmpty),
-          ),
-          IconButton(
-            icon: const Icon(Icons.sort),
-            color: sort.active ? Theme.of(context).colorScheme.primary : null,
-            tooltip: sort.active
-                ? l10n.tooltipSortActive(sortMetricLabel(l10n, sort.metric))
-                : l10n.tooltipSort,
-            onPressed: () => showSortSheet(context, ref),
-          ),
-          IconButton(
-            icon: const Icon(Icons.search),
-            tooltip: l10n.tooltipSearch,
-            onPressed: catalog == null
-                ? null
-                : () => showSearch(
-                      context: context,
-                      delegate: CatalogSearchDelegate(catalog),
-                    ),
-          ),
-        ],
+        actions: _barActions(context, l10n, sort, catalog),
       ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: l10n.tooltipAddCustomSefer,
-        onPressed: () => Navigator.pushNamed(context, Routes.addItem),
-        child: const Icon(Icons.add),
-      ),
+      // No floating button on a keypad phone.
+      //
+      // A FAB assumes a thumb: it floats *over* the content, which on a 324dp
+      // screen means permanently covering part of the third row, and it is a
+      // detached target that directional focus reaches awkwardly if at all.
+      // Nothing is lost by dropping it here — the drawer has carried the same
+      // "add custom sefer" entry all along, with a name on it.
+      floatingActionButton: isCompact(context)
+          ? null
+          : FloatingActionButton(
+              tooltip: l10n.tooltipAddCustomSefer,
+              onPressed: () => Navigator.pushNamed(context, Routes.addItem),
+              child: const Icon(Icons.add),
+            ),
       body: forest.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         // The forest is the catalog folded over the log, so a failure here is
@@ -344,95 +414,121 @@ class _AppDrawer extends ConsumerWidget {
         profiles.where((p) => p.id == active).map((p) => p.name).firstOrNull ??
             'Default';
 
+    // The drawer is the app's only route to nine screens, so on the phone it
+    // matters more than anywhere else that it is all reachable.
+    //
+    // Two things were wrong at 240x324. A `DrawerHeader` is 160dp tall before
+    // its margin, which is half the screen spent on the app's own name, leaving
+    // room for two entries. And the list scrolled its items up *under* the
+    // translucent status bar, so "Learning cycles" was overprinted by the signal
+    // and battery icons — measured on the device, not a theoretical concern.
+    final compact = isCompact(context);
+    final scheme = Theme.of(context).colorScheme;
+    final headerText = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(l10n.appTitle,
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(color: scheme.onPrimary)),
+        Text(l10n.drawerProfile(activeName),
+            style: TextStyle(color: scheme.onPrimary)),
+      ],
+    );
+
     return Drawer(
-      child: ListView(
-        children: [
-          DrawerHeader(
-            decoration:
-                BoxDecoration(color: Theme.of(context).colorScheme.primary),
-            child: Align(
-              alignment: AlignmentDirectional.bottomStart,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(l10n.appTitle,
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
-                          ?.copyWith(color: Theme.of(context).colorScheme.onPrimary)),
-                  Text(l10n.drawerProfile(activeName),
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary)),
-                ],
+      child: SafeArea(
+        // Nothing slides under the status bar any more. On a screen this size
+        // the 24dp that costs is worth less than one unreadable row.
+        bottom: false,
+        child: ListView(
+          children: [
+            // A band the height of its own two lines on the phone, and
+            // Material's 160dp panel everywhere else.
+            if (compact)
+              Container(
+                width: double.infinity,
+                color: scheme.primary,
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                child: headerText,
+              )
+            else
+              DrawerHeader(
+                decoration: BoxDecoration(color: scheme.primary),
+                child: Align(
+                  alignment: AlignmentDirectional.bottomStart,
+                  child: headerText,
+                ),
               ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: Text(l10n.navLearningCycles),
+              onTap: () => _go(context, Routes.cycles),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.calendar_today),
-            title: Text(l10n.navLearningCycles),
-            onTap: () => _go(context, Routes.cycles),
-          ),
-          ListTile(
-            leading: const Icon(Icons.flag),
-            title: Text(l10n.navGoals),
-            onTap: () => _go(context, Routes.goals),
-          ),
-          Consumer(builder: (context, ref, _) {
-            final dueCount = ref.watch(chazaraDueProvider).length;
-            return ListTile(
-              leading: const Icon(Icons.refresh),
-              title: Text(l10n.navChazaraDue),
-              trailing: dueCount == 0
-                  ? null
-                  : Badge(label: Text('$dueCount')),
-              onTap: () => _go(context, Routes.chazara),
-            );
-          }),
-          ListTile(
-            leading: const Icon(Icons.emoji_events),
-            title: Text(l10n.navSiyumim),
-            onTap: () => _go(context, Routes.siyumim),
-          ),
-          // These two were app-bar icons until the bar ran out of room for the
-          // app's own name. They are destinations like everything else here, and
-          // a named row is easier to find than an unlabelled icon.
-          ListTile(
-            leading: const Icon(Icons.insights),
-            title: Text(l10n.navStatistics),
-            onTap: () => _go(context, Routes.stats),
-          ),
-          ListTile(
-            leading: const Icon(Icons.calculate),
-            title: Text(l10n.navSiyumCalculator),
-            onTap: () => _go(context, Routes.calculator),
-          ),
-          ListTile(
-            leading: const Icon(Icons.menu_book_outlined),
-            title: Text(l10n.navNotesJournal),
-            onTap: () => _go(context, Routes.journal),
-          ),
-          ListTile(
-            leading: const Icon(Icons.layers_outlined),
-            title: Text(l10n.navMefarshimProgress),
-            onTap: () => _go(context, Routes.mefarshim),
-          ),
-          ListTile(
-            leading: const Icon(Icons.people),
-            title: Text(l10n.navProfiles),
-            onTap: () => _go(context, Routes.profiles),
-          ),
-          ListTile(
-            leading: const Icon(Icons.add_box_outlined),
-            title: Text(l10n.navAddCustomSefer),
-            onTap: () => _go(context, Routes.addItem),
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: Text(l10n.navSettings),
-            onTap: () => _go(context, Routes.settings),
-          ),
-        ],
+            ListTile(
+              leading: const Icon(Icons.flag),
+              title: Text(l10n.navGoals),
+              onTap: () => _go(context, Routes.goals),
+            ),
+            Consumer(builder: (context, ref, _) {
+              final dueCount = ref.watch(chazaraDueProvider).length;
+              return ListTile(
+                leading: const Icon(Icons.refresh),
+                title: Text(l10n.navChazaraDue),
+                trailing: dueCount == 0
+                    ? null
+                    : Badge(label: Text('$dueCount')),
+                onTap: () => _go(context, Routes.chazara),
+              );
+            }),
+            ListTile(
+              leading: const Icon(Icons.emoji_events),
+              title: Text(l10n.navSiyumim),
+              onTap: () => _go(context, Routes.siyumim),
+            ),
+            // These two were app-bar icons until the bar ran out of room for the
+            // app's own name. They are destinations like everything else here, and
+            // a named row is easier to find than an unlabelled icon.
+            ListTile(
+              leading: const Icon(Icons.insights),
+              title: Text(l10n.navStatistics),
+              onTap: () => _go(context, Routes.stats),
+            ),
+            ListTile(
+              leading: const Icon(Icons.calculate),
+              title: Text(l10n.navSiyumCalculator),
+              onTap: () => _go(context, Routes.calculator),
+            ),
+            ListTile(
+              leading: const Icon(Icons.menu_book_outlined),
+              title: Text(l10n.navNotesJournal),
+              onTap: () => _go(context, Routes.journal),
+            ),
+            ListTile(
+              leading: const Icon(Icons.layers_outlined),
+              title: Text(l10n.navMefarshimProgress),
+              onTap: () => _go(context, Routes.mefarshim),
+            ),
+            ListTile(
+              leading: const Icon(Icons.people),
+              title: Text(l10n.navProfiles),
+              onTap: () => _go(context, Routes.profiles),
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_box_outlined),
+              title: Text(l10n.navAddCustomSefer),
+              onTap: () => _go(context, Routes.addItem),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: Text(l10n.navSettings),
+              onTap: () => _go(context, Routes.settings),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -62,6 +62,7 @@
     "placeholders": { "metric": { "type": "String" } }
   },
   "tooltipSearch": "Search",
+  "tooltipMore": "More actions",
   "navStatistics": "Statistics",
   "navSiyumCalculator": "Siyum calculator",
   "tooltipAddCustomSefer": "Add custom sefer",

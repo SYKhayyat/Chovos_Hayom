@@ -115,6 +115,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tooltipSearch => 'Search';
 
   @override
+  String get tooltipMore => 'More actions';
+
+  @override
   String get navStatistics => 'Statistics';
 
   @override
