@@ -453,9 +453,19 @@ class _AppDrawer extends ConsumerWidget {
 
     return Drawer(
       child: SafeArea(
-        // Nothing slides under the status bar any more. On a screen this size
-        // the 24dp that costs is worth less than one unreadable row.
+        // Only on the keypad phone, and only at the top. There the list scrolls
+        // its rows up under the translucent status bar and "Learning cycles"
+        // gets overprinted by the signal and battery icons, and the 24dp this
+        // costs is worth less than one unreadable row.
+        //
+        // Everywhere else it is deliberately inert: a `DrawerHeader` is *meant*
+        // to run up behind the status bar, and switching this on unconditionally
+        // put a black strip above it on the moto — caught by looking, since no
+        // test asserts what the drawer looks like above the fold.
+        top: compact,
         bottom: false,
+        left: false,
+        right: false,
         child: ListView(
           children: [
             // A band the height of its own two lines on the phone, and
