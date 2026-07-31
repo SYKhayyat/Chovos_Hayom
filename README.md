@@ -213,6 +213,22 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   focus highlight paints behind it, so a keyboard user was marking dapim blind. Shift+F10 or the
   context-menu key opens the same menu right-click does, so logging with a date, a duration, a haara
   or a chazara no longer needs a pointing device.
+- **It works on a phone with no touchscreen.** Not a scaled-down mode — the whole app, on a Sonim
+  XP5s: Android 7.1, a 240 x 324dp screen (Material's smallest target is 320x480), a D-pad and a
+  numeric keypad. It already *ran* there, and already answered the D-pad, because the keyboard
+  support above costs nothing extra on a device whose keys arrive as key events — the phone's MENU
+  soft key even reaches the unit menu as `LogicalKeyboardKey.contextMenu`, the binding added for
+  desktop. What it did not do was ever say **what was selected**: pressing the centre key on the
+  unit grid opened "Bulk actions", because focus had started on an app bar icon and nothing on
+  screen said so; one more press would have marked a whole sefer learned. A focus ring now follows
+  whatever holds focus, anywhere in the app. Screens made only of figures — Statistics, Siyumim,
+  Mefarshim progress — could not be scrolled *at all*, holding no focusable widget for the D-pad to
+  move to, so everything below the fold was unreachable by any sequence of keys; they scroll now.
+  App bars fold their actions into a named menu rather than scaling the app's own name down to an
+  illegible dash, floating buttons that sat on top of the content give way to bar actions, and the
+  statistics tiles size to their contents instead of to a fixed 2.4 aspect ratio that made every
+  figure overflow the card below it. All of it keys off screen *width*, so a phone with a
+  touchscreen is pixel-identical to what it was — asserted by tests, not hoped for.
 - **Every screen has an address.** Screens are named routes that carry ids (`/sefer/<id>`), never
   widget objects — which is what makes deep links, notification taps and Android's state
   restoration possible at all, and what makes a rename show up on a screen that is already open.
@@ -251,7 +267,8 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 |---|---|---|
 | **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the release binary has now upgraded a real v10 database to the v11 schema in place, keeping every event ✅ |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36 (moto g stylus 2025). Measured on the device: the logging sheet's confirm button clears the navigation bar by 45px and a tap at its bottom edge registers, the Hebrew progress fraction paints `0 / 12,092  (0.0%)` in that order, the app bar fits `Chovos Hayom`, a backup exported from one profile imports into another, and a deep link opens the same screen whether the app was running or not ✅ |
-| **CI** | analyze `--fatal-infos`, 413 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `master` ✅ |
+| **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, Statistics and Siyumim scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search ✅ |
+| **CI** | analyze `--fatal-infos`, 422 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `master` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher

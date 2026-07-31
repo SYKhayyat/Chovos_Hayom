@@ -278,51 +278,95 @@ class _BackupBanner extends ConsumerWidget {
       color: scheme.errorContainer,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(Icons.shield_outlined, color: scheme.onErrorContainer),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    status.neverBackedUp
-                        ? l10n.backupBannerNever(status.unsavedUnits)
-                        : l10n.backupBannerStale(
-                            status.unsavedUnits, status.daysSinceBackup ?? 0),
-                    style: TextStyle(color: scheme.onErrorContainer),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(l10n.backupBannerWhy,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: scheme.onErrorContainer)),
-                ],
+        child: _layout(
+          context,
+          icon: Icon(Icons.shield_outlined, color: scheme.onErrorContainer),
+          text: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                status.neverBackedUp
+                    ? l10n.backupBannerNever(status.unsavedUnits)
+                    : l10n.backupBannerStale(
+                        status.unsavedUnits, status.daysSinceBackup ?? 0),
+                style: TextStyle(color: scheme.onErrorContainer),
               ),
-            ),
-            const SizedBox(width: 8),
-            FilledButton(
-              onPressed: () => Navigator.pushNamed(context, Routes.settings),
-              child: Text(l10n.backupBannerAction),
-            ),
-            // Dismissable from where the annoyance is.
-            //
-            // The switch has always existed in Settings, but a warning you can
-            // only silence by hunting through a screen you may not read is a
-            // warning that just becomes noise. Turning it off here is one tap,
-            // says where to turn it back on, and offers Undo — so a mis-tap on a
-            // safety feature costs nothing.
-            IconButton(
-              icon: const Icon(Icons.close, size: 20),
-              tooltip: l10n.backupBannerDismiss,
-              color: scheme.onErrorContainer,
-              onPressed: () => _dismiss(context, ref, l10n),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(l10n.backupBannerWhy,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: scheme.onErrorContainer)),
+            ],
+          ),
+          action: FilledButton(
+            onPressed: () => Navigator.pushNamed(context, Routes.settings),
+            child: Text(l10n.backupBannerAction),
+          ),
+          // Dismissable from where the annoyance is.
+          //
+          // The switch has always existed in Settings, but a warning you can
+          // only silence by hunting through a screen you may not read is a
+          // warning that just becomes noise. Turning it off here is one tap,
+          // says where to turn it back on, and offers Undo — so a mis-tap on a
+          // safety feature costs nothing.
+          dismiss: IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            tooltip: l10n.backupBannerDismiss,
+            color: scheme.onErrorContainer,
+            onPressed: () => _dismiss(context, ref, l10n),
+          ),
         ),
       ),
+    );
+  }
+
+  /// The banner's parts on one line, or stacked where one line will not hold
+  /// them.
+  ///
+  /// A shield, two lines of prose, a "Back up" button and a close button want
+  /// roughly 202dp of the 184 a 240dp screen leaves inside this card, so the
+  /// `Expanded` around the prose was handed what was left — nothing — and wrapped
+  /// its text to one character per line. A column of single red letters, on the
+  /// banner whose whole job is to be read.
+  Widget _layout(
+    BuildContext context, {
+    required Widget icon,
+    required Widget text,
+    required Widget action,
+    required Widget dismiss,
+  }) {
+    if (!isCompact(context)) {
+      return Row(
+        children: [
+          icon,
+          const SizedBox(width: 12),
+          Expanded(child: text),
+          const SizedBox(width: 8),
+          action,
+          dismiss,
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [icon, const SizedBox(width: 12), Expanded(child: text)],
+        ),
+        const SizedBox(height: 8),
+        // Wrapped rather than a Row: "Back up" and the close button together
+        // come to 11px more than a 240dp card has, and a Row would simply
+        // overflow — which is the whole family of bug this banner is being
+        // fixed for. A translation can only make the button wider, so the
+        // layout that cannot overflow is the one to use.
+        Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [action, dismiss],
+        ),
+      ],
     );
   }
 

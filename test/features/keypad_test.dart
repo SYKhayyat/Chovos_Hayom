@@ -2,6 +2,8 @@ import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/stats.dart';
 import 'package:chovos_hayom/core/keypad.dart';
 import 'package:chovos_hayom/core/preferences.dart';
+import 'package:chovos_hayom/domain/entities/enums.dart';
+import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/features/dashboard/dashboard_screen.dart';
 import 'package:chovos_hayom/features/stats/stats_screen.dart';
 import 'package:flutter/material.dart';
@@ -204,6 +206,50 @@ void main() {
       // getting a clearer indicator than Material's default wash, rather than
       // anything new.
       expect(find.byKey(focusRingKey), findsOneWidget);
+    });
+  });
+
+  group('the backup banner', () {
+    testWidgets('gets a readable width for its prose on a 240dp screen',
+        (tester) async {
+      sized(tester, kSonim);
+      final repo = InMemoryProgressRepository();
+      await repo.addEvent(LearningEvent(
+        id: 'e1',
+        profileId: 'default',
+        nodeId: 'shas.moed.shabbos',
+        unitIndex: 2,
+        action: EventAction.done,
+        occurredAt: DateTime(2026, 1, 10),
+        loggedAt: DateTime(2026, 1, 10),
+      ));
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+          progressRepositoryProvider.overrideWithValue(repo),
+          // No lastBackupAt, so the learning above is genuinely at risk and the
+          // banner is due.
+          appPreferencesProvider.overrideWithValue(InMemoryPreferences({})),
+          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+        ],
+        child: localizedApp(home: const DashboardScreen()),
+      ));
+      await tester.pumpAndSettle();
+
+      final why = find.text(
+          'It lives only on this device — nothing is copied anywhere '
+          'automatically.');
+      expect(why, findsOneWidget);
+
+      // A shield, this prose, a "Back up" button and a close button want about
+      // 202dp of the 184 the card leaves at this width, so the `Expanded` around
+      // the prose got what was left — nothing — and wrapped it to ONE CHARACTER
+      // PER LINE. A column of single red letters, on the banner whose entire job
+      // is to be read. Stacking the parts is what gives it its width back.
+      final paragraph = tester.renderObject<RenderBox>(why);
+      expect(paragraph.size.width, greaterThan(120),
+          reason: 'the banner text collapsed to a narrow column again');
     });
   });
 
