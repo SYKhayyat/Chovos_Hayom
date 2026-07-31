@@ -296,6 +296,12 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get tooltipSearch;
 
+  /// No description provided for @tooltipMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get tooltipMore;
+
   /// No description provided for @navStatistics.
   ///
   /// In en, this message translates to:

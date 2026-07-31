@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/routes.dart';
 import 'application/crash_log.dart';
+import 'core/keypad.dart';
 import 'application/providers.dart';
 import 'application/settings.dart';
 import 'application/stats.dart';
@@ -34,6 +35,25 @@ Future<void> main() async {
       ),
     );
   });
+}
+
+/// The one theme, in both brightnesses.
+///
+/// The focus colour is raised well above Material's default wash. That default
+/// is tuned for a desktop pointer beside a keyboard, where focus is a hint;
+/// on a phone with no touchscreen it is the *only* thing telling you which
+/// control you are about to press, and at 240dp wide the default could not be
+/// seen on the device at all.
+ThemeData _theme(Brightness brightness) {
+  final scheme = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF3B5BA5),
+    brightness: brightness,
+  );
+  return ThemeData(
+    colorScheme: scheme,
+    useMaterial3: true,
+    focusColor: scheme.primary.withValues(alpha: 0.22),
+  );
 }
 
 class ChovosHayomApp extends ConsumerStatefulWidget {
@@ -125,15 +145,16 @@ class _ChovosHayomAppState extends ConsumerState<ChovosHayomApp>
       locale: hebrewLayout ? const Locale('he') : null,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF3B5BA5),
-        useMaterial3: true,
+      // Every route gets the focus ring, which is why it is installed here
+      // rather than per screen: a screen added later takes part without
+      // knowing it exists. `builder` wraps the navigator, so the ring is drawn
+      // above the page and below nothing — dialogs and sheets included.
+      builder: (context, child) => compactTheme(
+        context,
+        FocusRingOverlay(child: child ?? const SizedBox.shrink()),
       ),
-      darkTheme: ThemeData(
-        colorSchemeSeed: const Color(0xFF3B5BA5),
-        brightness: Brightness.dark,
-        useMaterial3: true,
-      ),
+      theme: _theme(Brightness.light),
+      darkTheme: _theme(Brightness.dark),
     );
   }
 }

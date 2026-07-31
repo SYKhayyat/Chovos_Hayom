@@ -8,6 +8,7 @@ import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
 import '../../core/daf_yomi.dart';
+import '../../core/keypad.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
@@ -36,19 +37,36 @@ class CyclesScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.cyclesTitle),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.tune),
-            tooltip: l10n.cyclesWhichToShow,
-            onPressed: () => _showBuiltInPicker(context, ref),
-          ),
-        ],
+        actions: barActions(
+          context,
+          [
+            BarAction(
+              icon: Icons.tune,
+              label: l10n.cyclesWhichToShow,
+              onPressed: () => _showBuiltInPicker(context, ref),
+            ),
+            // On a keypad phone "New cycle" moves up here from the floating
+            // button below, which on a 324dp screen sat squarely on top of the
+            // first cycle's card. Unlike the dashboard's, this action has no
+            // drawer entry to fall back on, so it has to land somewhere rather
+            // than simply go.
+            if (isCompact(context))
+              BarAction(
+                icon: Icons.add,
+                label: l10n.cyclesNew,
+                onPressed: () => Navigator.pushNamed(context, Routes.newCycle),
+              ),
+          ],
+          moreTooltip: l10n.tooltipMore,
+        ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.add),
-        label: Text(l10n.cyclesNew),
-        onPressed: () => Navigator.pushNamed(context, Routes.newCycle),
-      ),
+      floatingActionButton: isCompact(context)
+          ? null
+          : FloatingActionButton.extended(
+              icon: const Icon(Icons.add),
+              label: Text(l10n.cyclesNew),
+              onPressed: () => Navigator.pushNamed(context, Routes.newCycle),
+            ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
         children: [
@@ -317,8 +335,13 @@ class _LinkPrompt extends ConsumerWidget {
         title: Text(l10n.cycleLinkTitle(seferName)),
         children: [
           SizedBox(
-            width: 320,
-            height: 400,
+            // Clamped, not fixed: 320 is wider than the whole 240dp Sonim
+            // screen, and a dialog wider than the display is one whose right
+            // edge — where a "choose" row's chevron lives — cannot be seen.
+            // The 80/64 leave room for the dialog's own insets and title.
+            width: (MediaQuery.sizeOf(context).width - 80).clamp(200.0, 320.0),
+            height:
+                (MediaQuery.sizeOf(context).height - 160).clamp(200.0, 400.0),
             child: ListView.builder(
               itemCount: leaves.length,
               itemBuilder: (_, i) {

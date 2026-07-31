@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
+import '../../core/keypad.dart';
 import '../../domain/entities/layer.dart';
 import '../../l10n/generated/app_localizations.dart';
 
@@ -37,7 +38,12 @@ class MefarshimProgressScreen extends ConsumerWidget {
                 ),
               ),
             )
-          : ListView.separated(
+          // Rows of bars and figures, none of them focusable, so a D-pad had
+          // nothing to move focus to and this list never scrolled a pixel on a
+          // keypad phone. See [DpadScroll], and Statistics, which had the same.
+          : DpadScroll(
+              builder: (context, controller) => ListView.separated(
+              controller: controller,
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: stats.length,
               separatorBuilder: (_, _) => const Divider(height: 1),
@@ -65,6 +71,7 @@ class MefarshimProgressScreen extends ConsumerWidget {
                       style: theme.textTheme.titleMedium),
                 );
               },
+              ),
             ),
     );
   }

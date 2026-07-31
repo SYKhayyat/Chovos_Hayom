@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
+import '../../core/keypad.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/error_view.dart';
 import '../common/guarded.dart';
@@ -17,12 +18,31 @@ class ProfilesScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.profilesTitle)),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.person_add),
-        label: Text(l10n.profilesNew),
-        onPressed: () => _createDialog(context, ref),
+      appBar: AppBar(
+        title: Text(l10n.profilesTitle),
+        // Same move as the cycles screen: the floating button covers the last
+        // profile in the list on a 324dp screen, and creating a profile exists
+        // nowhere else, so it becomes the bar's one action instead.
+        actions: barActions(
+          context,
+          [
+            if (isCompact(context))
+              BarAction(
+                icon: Icons.person_add,
+                label: l10n.profilesNew,
+                onPressed: () => _createDialog(context, ref),
+              ),
+          ],
+          moreTooltip: l10n.tooltipMore,
+        ),
       ),
+      floatingActionButton: isCompact(context)
+          ? null
+          : FloatingActionButton.extended(
+              icon: const Icon(Icons.person_add),
+              label: Text(l10n.profilesNew),
+              onPressed: () => _createDialog(context, ref),
+            ),
       body: profiles.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, stack) => ErrorView(

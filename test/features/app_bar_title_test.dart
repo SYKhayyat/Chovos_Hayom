@@ -27,9 +27,17 @@ void main() {
           clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
         ],
         child: localizedApp(
-          home: MediaQuery(
-            data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
-            child: const DashboardScreen(),
+          // Built from the surrounding MediaQuery rather than from scratch. A
+          // bare `MediaQueryData(textScaler: …)` also sets `size` to zero, and
+          // the bar now asks how wide it is (below ~300dp it folds its actions
+          // into an overflow menu), so a zero-width query made every test here
+          // render the phone-sized bar while claiming to be 407 wide.
+          home: Builder(
+            builder: (context) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(textScale)),
+              child: const DashboardScreen(),
+            ),
           ),
         ),
       );

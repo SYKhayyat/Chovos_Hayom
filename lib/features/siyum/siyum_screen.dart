@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
+import '../../core/keypad.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/naming.dart';
 
@@ -31,7 +32,13 @@ class SiyumScreen extends ConsumerWidget {
                 child: Text(l10n.siyumEmpty, textAlign: TextAlign.center),
               ),
             )
-          : ListView(
+          // A roll of honour, not a menu: every row here is a `ListTile` with no
+          // `onTap`, so none of them can hold focus and a D-pad had nothing to
+          // move to. Without this the list was frozen at whatever the first
+          // screenful happened to be. Same defect as Statistics.
+          : DpadScroll(
+              builder: (context, controller) => ListView(
+              controller: controller,
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -65,6 +72,7 @@ class SiyumScreen extends ConsumerWidget {
                                 : '')),
                   ),
               ],
+              ),
             ),
     );
   }

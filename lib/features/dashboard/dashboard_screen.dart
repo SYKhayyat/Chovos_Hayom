@@ -8,6 +8,8 @@ import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/sorting.dart';
 import '../../application/stats.dart';
+import '../../core/keypad.dart';
+import '../../domain/entities/catalog.dart';
 import '../../domain/entities/progress_node.dart';
 import '../../domain/usecases/reminders_policy.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -101,6 +103,58 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return rows;
   }
 
+  /// The app bar's three actions — expand/collapse, sort, search — as separate
+  /// buttons where there is room, and folded into one overflow menu where there
+  /// is not.
+  ///
+  /// Measured on the 240dp Sonim screen: a drawer button and three actions leave
+  /// the title about ten pixels, and because the title is a [FittedBox] (chosen
+  /// so a long name scales rather than truncates) it obligingly shrank "Chovos
+  /// Hayom" down to an illegible dash. Nothing was broken enough to notice — the
+  /// bar simply had no name in it, on every screen, and the unit grid likewise
+  /// never said which sefer you were in.
+  ///
+  /// Folding the actions away is the ordinary Material answer and it costs
+  /// nothing: a menu entry carries a *label* as well as an icon, so on the phone
+  /// these three become more discoverable than they were, not less.
+  List<Widget> _barActions(
+    BuildContext context,
+    AppLocalizations l10n,
+    SortConfig sort,
+    Catalog? catalog,
+  ) {
+    final expanding = _expanded.isEmpty;
+    return barActions(
+      context,
+      [
+        BarAction(
+          icon: expanding ? Icons.unfold_more : Icons.unfold_less,
+          label: expanding ? l10n.expandAll : l10n.collapseAll,
+          onPressed: () => _setExpanded(expanding),
+        ),
+        BarAction(
+          icon: Icons.sort,
+          label: sort.active
+              ? l10n.tooltipSortActive(sortMetricLabel(l10n, sort.metric))
+              : l10n.tooltipSort,
+          tint: sort.active ? Theme.of(context).colorScheme.primary : null,
+          onPressed: () => showSortSheet(context, ref),
+        ),
+        BarAction(
+          icon: Icons.search,
+          label: l10n.tooltipSearch,
+          onPressed: catalog == null
+              ? null
+              : () => showSearch(
+                    context: context,
+                    delegate: CatalogSearchDelegate(catalog),
+                  ),
+        ),
+      ],
+      moreTooltip: l10n.tooltipMore,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final forest = ref.watch(progressForestProvider);
@@ -140,38 +194,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         // more discoverable than an unlabelled icon and what left room for the
         // title. Nothing is removed; two things moved to where their nine
         // siblings already live.
-        actions: [
-          IconButton(
-            icon: Icon(
-                _expanded.isEmpty ? Icons.unfold_more : Icons.unfold_less),
-            tooltip: _expanded.isEmpty ? l10n.expandAll : l10n.collapseAll,
-            onPressed: () => _setExpanded(_expanded.isEmpty),
-          ),
-          IconButton(
-            icon: const Icon(Icons.sort),
-            color: sort.active ? Theme.of(context).colorScheme.primary : null,
-            tooltip: sort.active
-                ? l10n.tooltipSortActive(sortMetricLabel(l10n, sort.metric))
-                : l10n.tooltipSort,
-            onPressed: () => showSortSheet(context, ref),
-          ),
-          IconButton(
-            icon: const Icon(Icons.search),
-            tooltip: l10n.tooltipSearch,
-            onPressed: catalog == null
-                ? null
-                : () => showSearch(
-                      context: context,
-                      delegate: CatalogSearchDelegate(catalog),
-                    ),
-          ),
-        ],
+        actions: _barActions(context, l10n, sort, catalog),
       ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: l10n.tooltipAddCustomSefer,
-        onPressed: () => Navigator.pushNamed(context, Routes.addItem),
-        child: const Icon(Icons.add),
-      ),
+      // No floating button on a keypad phone.
+      //
+      // A FAB assumes a thumb: it floats *over* the content, which on a 324dp
+      // screen means permanently covering part of the third row, and it is a
+      // detached target that directional focus reaches awkwardly if at all.
+      // Nothing is lost by dropping it here — the drawer has carried the same
+      // "add custom sefer" entry all along, with a name on it.
+      floatingActionButton: isCompact(context)
+          ? null
+          : FloatingActionButton(
+              tooltip: l10n.tooltipAddCustomSefer,
+              onPressed: () => Navigator.pushNamed(context, Routes.addItem),
+              child: const Icon(Icons.add),
+            ),
       body: forest.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         // The forest is the catalog folded over the log, so a failure here is
@@ -240,51 +278,95 @@ class _BackupBanner extends ConsumerWidget {
       color: scheme.errorContainer,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(Icons.shield_outlined, color: scheme.onErrorContainer),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    status.neverBackedUp
-                        ? l10n.backupBannerNever(status.unsavedUnits)
-                        : l10n.backupBannerStale(
-                            status.unsavedUnits, status.daysSinceBackup ?? 0),
-                    style: TextStyle(color: scheme.onErrorContainer),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(l10n.backupBannerWhy,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: scheme.onErrorContainer)),
-                ],
+        child: _layout(
+          context,
+          icon: Icon(Icons.shield_outlined, color: scheme.onErrorContainer),
+          text: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                status.neverBackedUp
+                    ? l10n.backupBannerNever(status.unsavedUnits)
+                    : l10n.backupBannerStale(
+                        status.unsavedUnits, status.daysSinceBackup ?? 0),
+                style: TextStyle(color: scheme.onErrorContainer),
               ),
-            ),
-            const SizedBox(width: 8),
-            FilledButton(
-              onPressed: () => Navigator.pushNamed(context, Routes.settings),
-              child: Text(l10n.backupBannerAction),
-            ),
-            // Dismissable from where the annoyance is.
-            //
-            // The switch has always existed in Settings, but a warning you can
-            // only silence by hunting through a screen you may not read is a
-            // warning that just becomes noise. Turning it off here is one tap,
-            // says where to turn it back on, and offers Undo — so a mis-tap on a
-            // safety feature costs nothing.
-            IconButton(
-              icon: const Icon(Icons.close, size: 20),
-              tooltip: l10n.backupBannerDismiss,
-              color: scheme.onErrorContainer,
-              onPressed: () => _dismiss(context, ref, l10n),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(l10n.backupBannerWhy,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: scheme.onErrorContainer)),
+            ],
+          ),
+          action: FilledButton(
+            onPressed: () => Navigator.pushNamed(context, Routes.settings),
+            child: Text(l10n.backupBannerAction),
+          ),
+          // Dismissable from where the annoyance is.
+          //
+          // The switch has always existed in Settings, but a warning you can
+          // only silence by hunting through a screen you may not read is a
+          // warning that just becomes noise. Turning it off here is one tap,
+          // says where to turn it back on, and offers Undo — so a mis-tap on a
+          // safety feature costs nothing.
+          dismiss: IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            tooltip: l10n.backupBannerDismiss,
+            color: scheme.onErrorContainer,
+            onPressed: () => _dismiss(context, ref, l10n),
+          ),
         ),
       ),
+    );
+  }
+
+  /// The banner's parts on one line, or stacked where one line will not hold
+  /// them.
+  ///
+  /// A shield, two lines of prose, a "Back up" button and a close button want
+  /// roughly 202dp of the 184 a 240dp screen leaves inside this card, so the
+  /// `Expanded` around the prose was handed what was left — nothing — and wrapped
+  /// its text to one character per line. A column of single red letters, on the
+  /// banner whose whole job is to be read.
+  Widget _layout(
+    BuildContext context, {
+    required Widget icon,
+    required Widget text,
+    required Widget action,
+    required Widget dismiss,
+  }) {
+    if (!isCompact(context)) {
+      return Row(
+        children: [
+          icon,
+          const SizedBox(width: 12),
+          Expanded(child: text),
+          const SizedBox(width: 8),
+          action,
+          dismiss,
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [icon, const SizedBox(width: 12), Expanded(child: text)],
+        ),
+        const SizedBox(height: 8),
+        // Wrapped rather than a Row: "Back up" and the close button together
+        // come to 11px more than a 240dp card has, and a Row would simply
+        // overflow — which is the whole family of bug this banner is being
+        // fixed for. A translation can only make the button wider, so the
+        // layout that cannot overflow is the one to use.
+        Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [action, dismiss],
+        ),
+      ],
     );
   }
 
@@ -344,95 +426,131 @@ class _AppDrawer extends ConsumerWidget {
         profiles.where((p) => p.id == active).map((p) => p.name).firstOrNull ??
             'Default';
 
+    // The drawer is the app's only route to nine screens, so on the phone it
+    // matters more than anywhere else that it is all reachable.
+    //
+    // Two things were wrong at 240x324. A `DrawerHeader` is 160dp tall before
+    // its margin, which is half the screen spent on the app's own name, leaving
+    // room for two entries. And the list scrolled its items up *under* the
+    // translucent status bar, so "Learning cycles" was overprinted by the signal
+    // and battery icons — measured on the device, not a theoretical concern.
+    final compact = isCompact(context);
+    final scheme = Theme.of(context).colorScheme;
+    final headerText = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(l10n.appTitle,
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(color: scheme.onPrimary)),
+        Text(l10n.drawerProfile(activeName),
+            style: TextStyle(color: scheme.onPrimary)),
+      ],
+    );
+
     return Drawer(
-      child: ListView(
-        children: [
-          DrawerHeader(
-            decoration:
-                BoxDecoration(color: Theme.of(context).colorScheme.primary),
-            child: Align(
-              alignment: AlignmentDirectional.bottomStart,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(l10n.appTitle,
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
-                          ?.copyWith(color: Theme.of(context).colorScheme.onPrimary)),
-                  Text(l10n.drawerProfile(activeName),
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary)),
-                ],
+      child: SafeArea(
+        // Only on the keypad phone, and only at the top. There the list scrolls
+        // its rows up under the translucent status bar and "Learning cycles"
+        // gets overprinted by the signal and battery icons, and the 24dp this
+        // costs is worth less than one unreadable row.
+        //
+        // Everywhere else it is deliberately inert: a `DrawerHeader` is *meant*
+        // to run up behind the status bar, and switching this on unconditionally
+        // put a black strip above it on the moto — caught by looking, since no
+        // test asserts what the drawer looks like above the fold.
+        top: compact,
+        bottom: false,
+        left: false,
+        right: false,
+        child: ListView(
+          children: [
+            // A band the height of its own two lines on the phone, and
+            // Material's 160dp panel everywhere else.
+            if (compact)
+              Container(
+                width: double.infinity,
+                color: scheme.primary,
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                child: headerText,
+              )
+            else
+              DrawerHeader(
+                decoration: BoxDecoration(color: scheme.primary),
+                child: Align(
+                  alignment: AlignmentDirectional.bottomStart,
+                  child: headerText,
+                ),
               ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: Text(l10n.navLearningCycles),
+              onTap: () => _go(context, Routes.cycles),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.calendar_today),
-            title: Text(l10n.navLearningCycles),
-            onTap: () => _go(context, Routes.cycles),
-          ),
-          ListTile(
-            leading: const Icon(Icons.flag),
-            title: Text(l10n.navGoals),
-            onTap: () => _go(context, Routes.goals),
-          ),
-          Consumer(builder: (context, ref, _) {
-            final dueCount = ref.watch(chazaraDueProvider).length;
-            return ListTile(
-              leading: const Icon(Icons.refresh),
-              title: Text(l10n.navChazaraDue),
-              trailing: dueCount == 0
-                  ? null
-                  : Badge(label: Text('$dueCount')),
-              onTap: () => _go(context, Routes.chazara),
-            );
-          }),
-          ListTile(
-            leading: const Icon(Icons.emoji_events),
-            title: Text(l10n.navSiyumim),
-            onTap: () => _go(context, Routes.siyumim),
-          ),
-          // These two were app-bar icons until the bar ran out of room for the
-          // app's own name. They are destinations like everything else here, and
-          // a named row is easier to find than an unlabelled icon.
-          ListTile(
-            leading: const Icon(Icons.insights),
-            title: Text(l10n.navStatistics),
-            onTap: () => _go(context, Routes.stats),
-          ),
-          ListTile(
-            leading: const Icon(Icons.calculate),
-            title: Text(l10n.navSiyumCalculator),
-            onTap: () => _go(context, Routes.calculator),
-          ),
-          ListTile(
-            leading: const Icon(Icons.menu_book_outlined),
-            title: Text(l10n.navNotesJournal),
-            onTap: () => _go(context, Routes.journal),
-          ),
-          ListTile(
-            leading: const Icon(Icons.layers_outlined),
-            title: Text(l10n.navMefarshimProgress),
-            onTap: () => _go(context, Routes.mefarshim),
-          ),
-          ListTile(
-            leading: const Icon(Icons.people),
-            title: Text(l10n.navProfiles),
-            onTap: () => _go(context, Routes.profiles),
-          ),
-          ListTile(
-            leading: const Icon(Icons.add_box_outlined),
-            title: Text(l10n.navAddCustomSefer),
-            onTap: () => _go(context, Routes.addItem),
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: Text(l10n.navSettings),
-            onTap: () => _go(context, Routes.settings),
-          ),
-        ],
+            ListTile(
+              leading: const Icon(Icons.flag),
+              title: Text(l10n.navGoals),
+              onTap: () => _go(context, Routes.goals),
+            ),
+            Consumer(builder: (context, ref, _) {
+              final dueCount = ref.watch(chazaraDueProvider).length;
+              return ListTile(
+                leading: const Icon(Icons.refresh),
+                title: Text(l10n.navChazaraDue),
+                trailing: dueCount == 0
+                    ? null
+                    : Badge(label: Text('$dueCount')),
+                onTap: () => _go(context, Routes.chazara),
+              );
+            }),
+            ListTile(
+              leading: const Icon(Icons.emoji_events),
+              title: Text(l10n.navSiyumim),
+              onTap: () => _go(context, Routes.siyumim),
+            ),
+            // These two were app-bar icons until the bar ran out of room for the
+            // app's own name. They are destinations like everything else here, and
+            // a named row is easier to find than an unlabelled icon.
+            ListTile(
+              leading: const Icon(Icons.insights),
+              title: Text(l10n.navStatistics),
+              onTap: () => _go(context, Routes.stats),
+            ),
+            ListTile(
+              leading: const Icon(Icons.calculate),
+              title: Text(l10n.navSiyumCalculator),
+              onTap: () => _go(context, Routes.calculator),
+            ),
+            ListTile(
+              leading: const Icon(Icons.menu_book_outlined),
+              title: Text(l10n.navNotesJournal),
+              onTap: () => _go(context, Routes.journal),
+            ),
+            ListTile(
+              leading: const Icon(Icons.layers_outlined),
+              title: Text(l10n.navMefarshimProgress),
+              onTap: () => _go(context, Routes.mefarshim),
+            ),
+            ListTile(
+              leading: const Icon(Icons.people),
+              title: Text(l10n.navProfiles),
+              onTap: () => _go(context, Routes.profiles),
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_box_outlined),
+              title: Text(l10n.navAddCustomSefer),
+              onTap: () => _go(context, Routes.addItem),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: Text(l10n.navSettings),
+              onTap: () => _go(context, Routes.settings),
+            ),
+          ],
+        ),
       ),
     );
   }

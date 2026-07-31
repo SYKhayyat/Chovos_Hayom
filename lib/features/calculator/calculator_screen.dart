@@ -5,6 +5,7 @@ import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
+import '../../core/keypad.dart';
 import '../../domain/entities/catalog.dart';
 import '../../domain/entities/progress_node.dart';
 import '../../domain/usecases/predictor.dart';
@@ -124,6 +125,11 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                 label: Text(l10n.calculatorModeByDate)),
           ],
           selected: {_mode},
+          // The tick beside the selected segment costs about 24dp, and on a
+          // 240dp screen that is the difference between "Rate" and a column of
+          // letters reading R-a-t-e. The segment is already filled to show
+          // which one is chosen, so the tick was saying it twice.
+          showSelectedIcon: !isCompact(context),
           onSelectionChanged: (s) => setState(() => _mode = s.first),
         ),
         const SizedBox(height: 16),
