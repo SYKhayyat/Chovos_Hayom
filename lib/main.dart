@@ -149,8 +149,10 @@ class _ChovosHayomAppState extends ConsumerState<ChovosHayomApp>
       // rather than per screen: a screen added later takes part without
       // knowing it exists. `builder` wraps the navigator, so the ring is drawn
       // above the page and below nothing — dialogs and sheets included.
-      builder: (context, child) =>
-          FocusRingOverlay(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => compactTheme(
+        context,
+        FocusRingOverlay(child: child ?? const SizedBox.shrink()),
+      ),
       theme: _theme(Brightness.light),
       darkTheme: _theme(Brightness.dark),
     );

@@ -42,6 +42,32 @@ Map<ShortcutActivator, VoidCallback> contextMenuBindings(VoidCallback open) => {
       const SingleActivator(LogicalKeyboardKey.contextMenu): open,
     };
 
+/// Applies the handful of theme tweaks a 240dp screen needs, or nothing at all
+/// on any other screen.
+///
+/// This sits in `MaterialApp.builder` rather than in the `ThemeData` itself
+/// because the decision needs a `MediaQuery`, which does not exist yet where the
+/// theme is built.
+Widget compactTheme(BuildContext context, Widget child) {
+  if (!isCompact(context)) return child;
+  final theme = Theme.of(context);
+  return Theme(
+    data: theme.copyWith(
+      appBarTheme: theme.appBarTheme.copyWith(
+        // Material's 22sp title needs about 160dp for two ordinary words, and
+        // "Learning cycles" was arriving as "Learning…" on a bar that had the
+        // room and was just asking for too much of it. One step down, plus half
+        // the usual gap after the back button, fits the longest title this app
+        // has — and it is still the largest text on the screen.
+        titleTextStyle: theme.textTheme.titleMedium
+            ?.copyWith(color: theme.colorScheme.onSurface),
+        titleSpacing: 8,
+      ),
+    ),
+    child: child,
+  );
+}
+
 /// One app bar action, described rather than built, so the same list can be
 /// rendered either as icons or as rows in a menu.
 class BarAction {
@@ -82,7 +108,10 @@ List<Widget> barActions(
   List<BarAction> actions, {
   required String moreTooltip,
 }) {
-  if (!isCompact(context)) {
+  // A single action is left alone even on the phone: a back button, a title and
+  // one icon fit in 240dp, and burying one item under a menu costs a key press
+  // to reveal what the icon already said.
+  if (!isCompact(context) || actions.length <= 1) {
     return [
       for (final a in actions)
         IconButton(
