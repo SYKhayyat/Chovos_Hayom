@@ -332,6 +332,12 @@ abstract class AppLocalizations {
   /// **'Profile: {name}'**
   String drawerProfile(String name);
 
+  /// No description provided for @navLearningTree.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning tree'**
+  String get navLearningTree;
+
   /// No description provided for @navLearningCycles.
   ///
   /// In en, this message translates to:

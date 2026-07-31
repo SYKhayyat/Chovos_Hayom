@@ -229,6 +229,20 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   statistics tiles size to their contents instead of to a fixed 2.4 aspect ratio that made every
   figure overflow the card below it. All of it keys off screen *width*, so a phone with a
   touchscreen is pixel-identical to what it was — asserted by tests, not hoped for.
+- **Nothing on it is a dead end.** Three things that were only dead ends on a device with no
+  touchscreen, all found by using one. A `SnackBar` carrying an action never dismisses itself —
+  Flutter defaults `persist` to `action != null`, so the way it leaves is a *swipe* — which meant
+  turning off the backup reminder replaced the banner with a permanent black slab across the bottom
+  third of the screen; every message the app shows now times out again, with a longer window when
+  there is an Undo to walk a D-pad over to. The banner's own dismiss was a bare ✕ beside "Back up",
+  reachable only by pressing *right* (plain down skipped it for the tree) and explained only in a
+  tooltip, which needs a pointer the phone does not have; on a narrow screen it is a named button
+  under the other one. And the drawer listed ten destinations and no way back, so opening it stranded
+  you off the tree — the tree is now the first row in it.
+- **It opens on the tree.** The catalog is one root with everything under it, and the tree started
+  fully collapsed, so the app opened on a *single row* — "Kol HaTorah Kula, 0 / 12,092" — above an
+  empty screen. The first generation opens itself now, on every device; it is one row's worth of
+  work, since the visible tree is flattened and built lazily.
 - **Every screen has an address.** Screens are named routes that carry ids (`/sefer/<id>`), never
   widget objects — which is what makes deep links, notification taps and Android's state
   restoration possible at all, and what makes a rename show up on a screen that is already open.
@@ -267,8 +281,8 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 |---|---|---|
 | **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the release binary has now upgraded a real v10 database to the v11 schema in place, keeping every event ✅ |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36 (moto g stylus 2025). Measured on the device: the logging sheet's confirm button clears the navigation bar by 45px and a tap at its bottom edge registers, the Hebrew progress fraction paints `0 / 12,092  (0.0%)` in that order, the app bar fits `Chovos Hayom`, a backup exported from one profile imports into another, and a deep link opens the same screen whether the app was running or not ✅ |
-| **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, Statistics and Siyumim scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search ✅ |
-| **CI** | analyze `--fatal-infos`, 422 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `master` ✅ |
+| **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, Statistics and Siyumim scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search. Also walked key by key: the app opens on the tree's first generation, three presses of *down* reach the backup banner's named dismiss, the message that replaces it leaves on its own within ten seconds, and the drawer's first row returns to the tree ✅ |
+| **CI** | analyze `--fatal-infos`, 430 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `master` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher

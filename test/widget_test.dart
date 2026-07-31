@@ -21,9 +21,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Drill root -> Shas -> Moed, then open the Shabbos leaf's grid.
-    await tester.tap(find.text('Kol HaTorah Kula'));
-    await tester.pumpAndSettle();
+    // Drill Shas -> Moed, then open the Shabbos leaf's grid. The root above
+    // them opens itself, so the app never lands on a single closed row.
     await tester.tap(find.text('Shas'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Moed'));

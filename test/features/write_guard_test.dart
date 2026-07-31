@@ -23,16 +23,20 @@ import '../support/recording_crash_log.dart';
 /// A button that runs one guarded write — the smallest thing that exercises the
 /// policy without a whole screen around it.
 class _GuardedButton extends ConsumerWidget {
-  const _GuardedButton({required this.write});
+  const _GuardedButton({required this.write, this.undo});
 
   final Future<void> Function() write;
+
+  /// The optional Undo the success message carries — which is what decides
+  /// whether that message can ever go away on its own.
+  final SnackBarAction? undo;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => Scaffold(
         body: Center(
           child: ElevatedButton(
             onPressed: () => guarded(context, ref, write,
-                what: 'Marking this daf learned', success: 'Marked'),
+                what: 'Marking this daf learned', success: 'Marked', undo: undo),
             child: const Text('go'),
           ),
         ),
@@ -123,6 +127,41 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Crash log'), findsOneWidget);
       expect(find.textContaining('no disk'), findsOneWidget);
+    });
+
+    /// Every message this app shows goes out through the guard, so this is the
+    /// one place the rule can be stated.
+    ///
+    /// Flutter defaults `SnackBar.persist` to `action != null`: a bar carrying
+    /// an Undo or a Details button stays up until *something* takes it away, and
+    /// on a touchscreen that something is a swipe. A keypad phone has no swipe.
+    /// Measured on the Sonim, dismissing the backup banner replaced it with
+    /// "Backup reminder off — turn it back on in Settings → Backup" across the
+    /// bottom third of the screen, and it was still there a minute later with no
+    /// key on the device that would remove it. The user's report — that the
+    /// warning could not be dismissed — was exactly right: dismissing it
+    /// produced something permanent.
+    testWidgets('a message carrying an action still goes away by itself',
+        (tester) async {
+      await tester.pumpWidget(wrap(_GuardedButton(
+        write: () async {},
+        undo: SnackBarAction(label: 'Undo', onPressed: () {}),
+      )));
+      await tester.tap(find.text('go'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 750));
+      expect(find.text('Marked'), findsOneWidget);
+
+      // Long enough to walk a D-pad over to Undo...
+      await tester.pump(const Duration(seconds: 5));
+      expect(find.text('Marked'), findsOneWidget,
+          reason: 'an Undo nobody can reach in time is not an Undo');
+
+      // ...and then it leaves on its own, which on that phone is the only way
+      // it can leave at all.
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pumpAndSettle();
+      expect(find.text('Marked'), findsNothing);
     });
   });
 

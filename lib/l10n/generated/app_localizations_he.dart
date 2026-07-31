@@ -136,6 +136,9 @@ class AppLocalizationsHe extends AppLocalizations {
   }
 
   @override
+  String get navLearningTree => 'עץ הלימוד';
+
+  @override
   String get navLearningCycles => 'מחזורי לימוד';
 
   @override

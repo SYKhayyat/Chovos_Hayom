@@ -71,6 +71,7 @@
   "@drawerProfile": {
     "placeholders": { "name": { "type": "String" } }
   },
+  "navLearningTree": "Learning tree",
   "navLearningCycles": "Learning cycles",
   "navGoals": "Goals",
   "navChazaraDue": "Chazara due",

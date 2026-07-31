@@ -35,13 +35,12 @@ void main() {
         child: localizedApp(home: const DashboardScreen(), locale: locale),
       );
 
-  /// Opens root → Shas so there are three generations on screen at once.
+  /// Opens root → Shas so there are three generations on screen at once. The
+  /// root opens itself on arrival, so only Shas is left to press.
   /// The fake catalog carries no Hebrew names, so the titles stay findable by
   /// their English text in either locale — which is what lets one helper serve
   /// both tests.
   Future<void> expandTwoLevels(WidgetTester tester) async {
-    await tester.tap(find.text('Kol HaTorah Kula'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Shas'));
     await tester.pumpAndSettle();
   }

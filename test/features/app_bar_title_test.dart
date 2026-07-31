@@ -72,7 +72,8 @@ void main() {
     await title(tester);
 
     // Expand, sort, search: three things that do something to *this* tree.
-    expect(find.byTooltip('Expand all'), findsOneWidget);
+    // (It reads "Collapse all" on arrival — the tree opens its top level.)
+    expect(find.byTooltip('Collapse all'), findsOneWidget);
     expect(find.byTooltip('Sort'), findsOneWidget);
     expect(find.byTooltip('Search'), findsOneWidget);
     // The two that were navigation wearing an action's clothes.
@@ -90,5 +91,23 @@ void main() {
     // and reappeared nowhere is a feature removed rather than moved.
     expect(find.widgetWithText(ListTile, 'Statistics'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Siyum calculator'), findsOneWidget);
+  });
+
+  testWidgets('and the drawer names the way back to the tree', (tester) async {
+    // Every other row in it goes somewhere else. On a phone with no touchscreen
+    // the scrim cannot be tapped, so an opened drawer had exactly one exit —
+    // a hardware Back key that nothing on screen mentions.
+    await title(tester);
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(ListTile, 'Settings'), findsOneWidget,
+        reason: 'the drawer is open');
+
+    await tester.tap(find.widgetWithText(ListTile, 'Learning tree'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kol HaTorah Kula'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Settings'), findsNothing,
+        reason: 'the drawer closed rather than merely scrolling');
   });
 }

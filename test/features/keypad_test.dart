@@ -85,8 +85,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Folding an action away must not be the same as deleting it. On this
-      // screen they gained labels they never had as bare icons.
-      expect(find.text('Expand all'), findsOneWidget);
+      // screen they gained labels they never had as bare icons. ("Collapse all"
+      // rather than "Expand all" because the dashboard now opens with its top
+      // level already open — see dashboard_lazy_test.)
+      expect(find.text('Collapse all'), findsOneWidget);
       expect(find.text('Sort'), findsOneWidget);
       expect(find.text('Search'), findsOneWidget);
     });
@@ -97,7 +99,7 @@ void main() {
       await tester.pumpWidget(dashboard());
       await tester.pumpAndSettle();
 
-      expect(find.byTooltip('Expand all'), findsOneWidget);
+      expect(find.byTooltip('Collapse all'), findsOneWidget);
       expect(find.byTooltip('Sort'), findsOneWidget);
       expect(find.byTooltip('Search'), findsOneWidget);
       expect(find.byTooltip('More actions'), findsNothing);
@@ -210,9 +212,10 @@ void main() {
   });
 
   group('the backup banner', () {
-    testWidgets('gets a readable width for its prose on a 240dp screen',
-        (tester) async {
-      sized(tester, kSonim);
+    /// The dashboard at [size] with one unit learned and no export — so the
+    /// banner is genuinely due rather than merely rendered.
+    Future<void> pumpBanner(WidgetTester tester, Size size) async {
+      sized(tester, size);
       final repo = InMemoryProgressRepository();
       await repo.addEvent(LearningEvent(
         id: 'e1',
@@ -228,28 +231,79 @@ void main() {
         overrides: [
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
           progressRepositoryProvider.overrideWithValue(repo),
-          // No lastBackupAt, so the learning above is genuinely at risk and the
-          // banner is due.
           appPreferencesProvider.overrideWithValue(InMemoryPreferences({})),
           clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
         ],
         child: localizedApp(home: const DashboardScreen()),
       ));
       await tester.pumpAndSettle();
+    }
 
-      final why = find.text(
-          'It lives only on this device — nothing is copied anywhere '
-          'automatically.');
-      expect(why, findsOneWidget);
+    testWidgets('gets a readable width for its prose on a 240dp screen',
+        (tester) async {
+      await pumpBanner(tester, kSonim);
+
+      final headline =
+          find.text('1 unit of your learning has never been backed up.');
+      expect(headline, findsOneWidget);
 
       // A shield, this prose, a "Back up" button and a close button want about
       // 202dp of the 184 the card leaves at this width, so the `Expanded` around
       // the prose got what was left — nothing — and wrapped it to ONE CHARACTER
       // PER LINE. A column of single red letters, on the banner whose entire job
       // is to be read. Stacking the parts is what gives it its width back.
-      final paragraph = tester.renderObject<RenderBox>(why);
+      final paragraph = tester.renderObject<RenderBox>(headline);
       expect(paragraph.size.width, greaterThan(120),
           reason: 'the banner text collapsed to a narrow column again');
+    });
+
+    testWidgets('names its dismiss control instead of hiding it in an icon',
+        (tester) async {
+      await pumpBanner(tester, kSonim);
+
+      // On the device the ✕ was reachable only by pressing *right* from "Back
+      // up" — plain down skipped it for the tree — and what it did was written
+      // in a tooltip, which needs a pointer this phone does not have. The one
+      // control that silences the warning was both unlabelled and off the path.
+      expect(find.text('Turn off this reminder'), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsNothing);
+
+      await tester.tap(find.text('Turn off this reminder'));
+      await tester.pumpAndSettle();
+      expect(find.text('Back up'), findsNothing);
+    });
+
+    testWidgets('and keeps the close icon on a screen that can hover it',
+        (tester) async {
+      await pumpBanner(tester, kPhone);
+
+      expect(find.byTooltip('Turn off this reminder'), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsOneWidget);
+    });
+
+    testWidgets('drops its second paragraph where there is no room for it',
+        (tester) async {
+      await pumpBanner(tester, kSonim);
+
+      // Headline, reasoning and two buttons come to more than the 244dp the
+      // dashboard has under its app bar, so the app opened on a card that filled
+      // the screen with the tree entirely below the fold — and nothing to say
+      // there was anything under it. What goes is the explanatory sentence; it
+      // is still on the Settings screen this banner's own button leads to, under
+      // the switch that controls the reminder.
+      //
+      // Asserted as a rule rather than as a height: widget tests draw in a font
+      // whose every glyph is a square em, so a measurement here says more about
+      // the test font than about the phone. The height itself was checked on the
+      // device.
+      expect(find.textContaining('It lives only on this device'), findsNothing);
+      expect(find.textContaining('never been backed up'), findsOneWidget);
+    });
+
+    testWidgets('and keeps it on a screen with the room', (tester) async {
+      await pumpBanner(tester, kPhone);
+      expect(find.textContaining('It lives only on this device'),
+          findsOneWidget);
     });
   });
 

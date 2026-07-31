@@ -47,6 +47,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   /// deliberately destroyed.
   final Set<String> _expanded = <String>{};
 
+  /// Whether [_seed] has run. Once only, so *Collapse all* stays collapsed.
+  bool _seeded = false;
+
+  /// Opens the top level the first time the tree arrives.
+  ///
+  /// The catalog is one root — "Kol HaTorah Kula" — with Tanach, Mishnayos, Shas
+  /// and the rest hanging off it, and the tree started fully collapsed. So the
+  /// app opened on a **single row** reading "Kol HaTorah Kula, 0 / 12,092" above
+  /// an empty screen, with no indication that it was a tree at all or that the
+  /// chevron at the end of that one row was the way in. Reported from the phone
+  /// as "it does not open onto the main tree and I don't know how to get there",
+  /// which is a fair description of one row and a blank page.
+  ///
+  /// Expanding only the roots costs nothing: the visible tree is flattened and
+  /// fed to a `ListView.builder`, so this builds the handful of rows that fit on
+  /// screen, not the ~312 tiles underneath them.
+  ///
+  /// Called from `build` and mutating state without a `setState`, deliberately:
+  /// it runs before anything in that build reads the set, so the frame being
+  /// built is already the one that shows the result. Once only, so *Collapse
+  /// all* means collapsed and stays that way.
+  void _seed(List<ProgressNode> roots) {
+    if (_seeded || roots.isEmpty) return;
+    _seeded = true;
+    for (final root in roots) {
+      if (root.children.isNotEmpty) _expanded.add(root.id);
+    }
+  }
+
   void _toggle(String id) => setState(() {
         if (!_expanded.remove(id)) _expanded.add(id);
       });
@@ -158,6 +187,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final forest = ref.watch(progressForestProvider);
+    // Before anything reads [_expanded] — the app bar's expand/collapse label
+    // does, and seeding further down inside `forest.when` would leave that label
+    // a frame behind the tree it describes.
+    _seed(forest.asData?.value ?? const []);
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
     final l10n = AppLocalizations.of(context);
 
@@ -273,6 +306,7 @@ class _BackupBanner extends ConsumerWidget {
     final status = ref.watch(backupStatusProvider);
     final scheme = Theme.of(context).colorScheme;
 
+    final compact = isCompact(context);
     return Card(
       margin: const EdgeInsets.fromLTRB(12, 12, 12, 4),
       color: scheme.errorContainer,
@@ -291,12 +325,21 @@ class _BackupBanner extends ConsumerWidget {
                         status.unsavedUnits, status.daysSinceBackup ?? 0),
                 style: TextStyle(color: scheme.onErrorContainer),
               ),
-              const SizedBox(height: 4),
-              Text(l10n.backupBannerWhy,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: scheme.onErrorContainer)),
+              // Why it matters, everywhere there is room to say it. On the
+              // keypad phone this card already fills the screen on its own —
+              // headline, reasoning and two buttons come to more than the 244dp
+              // the dashboard has below its app bar, so the tree the app is
+              // *for* starts entirely below the fold. The sentence that goes is
+              // the explanatory one, and it is still on the Settings screen this
+              // banner's own button leads to, under the switch that controls it.
+              if (!compact) ...[
+                const SizedBox(height: 4),
+                Text(l10n.backupBannerWhy,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: scheme.onErrorContainer)),
+              ],
             ],
           ),
           action: FilledButton(
@@ -307,15 +350,12 @@ class _BackupBanner extends ConsumerWidget {
           //
           // The switch has always existed in Settings, but a warning you can
           // only silence by hunting through a screen you may not read is a
-          // warning that just becomes noise. Turning it off here is one tap,
+          // warning that just becomes noise. Turning it off here is one press,
           // says where to turn it back on, and offers Undo — so a mis-tap on a
           // safety feature costs nothing.
-          dismiss: IconButton(
-            icon: const Icon(Icons.close, size: 20),
-            tooltip: l10n.backupBannerDismiss,
-            color: scheme.onErrorContainer,
-            onPressed: () => _dismiss(context, ref, l10n),
-          ),
+          onDismiss: () => _dismiss(context, ref, l10n),
+          dismissLabel: l10n.backupBannerDismiss,
+          tint: scheme.onErrorContainer,
         ),
       ),
     );
@@ -334,7 +374,9 @@ class _BackupBanner extends ConsumerWidget {
     required Widget icon,
     required Widget text,
     required Widget action,
-    required Widget dismiss,
+    required VoidCallback onDismiss,
+    required String dismissLabel,
+    required Color tint,
   }) {
     if (!isCompact(context)) {
       return Row(
@@ -344,10 +386,25 @@ class _BackupBanner extends ConsumerWidget {
           Expanded(child: text),
           const SizedBox(width: 8),
           action,
-          dismiss,
+          IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            tooltip: dismissLabel,
+            color: tint,
+            onPressed: onDismiss,
+          ),
         ],
       );
     }
+    // Two full-width buttons, one under the other, and the close *icon* only on
+    // the screens that can hover a tooltip out of it.
+    //
+    // Measured on the Sonim: a bare ✕ beside "Back up" is reachable only by
+    // pressing *right* from that button — plain down skips it and lands in the
+    // tree — and its tooltip, which is the only thing that ever said what it
+    // does, needs a pointer the device does not have. So the one control that
+    // silences the warning was both unlabelled and off the path anyone would
+    // walk. That is why the report was "there is no way to dismiss it": there
+    // effectively wasn't. Stacked and named, down reaches it and it says so.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -356,15 +413,18 @@ class _BackupBanner extends ConsumerWidget {
           children: [icon, const SizedBox(width: 12), Expanded(child: text)],
         ),
         const SizedBox(height: 8),
-        // Wrapped rather than a Row: "Back up" and the close button together
-        // come to 11px more than a 240dp card has, and a Row would simply
-        // overflow — which is the whole family of bug this banner is being
-        // fixed for. A translation can only make the button wider, so the
-        // layout that cannot overflow is the one to use.
-        Wrap(
-          alignment: WrapAlignment.end,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [action, dismiss],
+        // Full width rather than laid out end-to-end: "Back up" plus a named
+        // dismiss come to more than a 240dp card holds, and a translation can
+        // only make them wider. A button that owns the row cannot overflow it,
+        // and it is a larger target for a D-pad besides.
+        SizedBox(width: double.infinity, child: action),
+        SizedBox(
+          width: double.infinity,
+          child: TextButton(
+            style: TextButton.styleFrom(foregroundColor: tint),
+            onPressed: onDismiss,
+            child: Text(dismissLabel, textAlign: TextAlign.center),
+          ),
         ),
       ],
     );
@@ -485,6 +545,27 @@ class _AppDrawer extends ConsumerWidget {
                   child: headerText,
                 ),
               ),
+            // The way back, named.
+            //
+            // Ten rows, every one of them somewhere else. Reported from the
+            // phone as "from that screen where you see Notes Journal etc, I
+            // don't know how to get to the tree" — and there was no answer to
+            // give: the drawer's scrim closes it on a tap, which needs a
+            // touchscreen, and the only other way out is a hardware Back key
+            // that nothing on screen mentions. A list of destinations that omits
+            // the one you came from is a dead end with a scroll bar.
+            //
+            // It also serves the case it looks like it serves: the dashboard is
+            // the app's first route, so from a drawer opened anywhere this comes
+            // home rather than merely closing.
+            ListTile(
+              leading: const Icon(Icons.account_tree_outlined),
+              title: Text(l10n.navLearningTree),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.calendar_today),
               title: Text(l10n.navLearningCycles),

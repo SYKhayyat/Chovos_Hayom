@@ -59,6 +59,42 @@ class WriteGuard {
   /// only get one shot at reading should not be a message you can miss.
   static const failureDuration = Duration(seconds: 8);
 
+  /// How long a message carrying an action stays. Long enough to walk a D-pad
+  /// over to *Undo*, which is several presses from wherever the write left
+  /// focus.
+  static const actionDuration = Duration(seconds: 10);
+
+  /// The plain case, and Flutter's own default.
+  static const messageDuration = Duration(seconds: 4);
+
+  /// Every snack bar the app shows, built the one way.
+  ///
+  /// `persist: false` is the entire reason this exists. Flutter defaults that
+  /// flag to `action != null`, so *any* message with an Undo or a Details button
+  /// stays up until something takes it away — and on a touchscreen that
+  /// something is a swipe. A keypad phone has no swipe. Measured on the Sonim:
+  /// dismissing the backup banner put "Backup reminder off — turn it back on in
+  /// Settings → Backup" across the bottom third of a 324dp screen, where it sat
+  /// for as long as anyone cared to watch, with no key on the device that would
+  /// remove it. The user's report was that the warning could not be dismissed,
+  /// and they were right — dismissing it replaced it with something permanent.
+  ///
+  /// So these time out again, as they did before the flag existed, with a longer
+  /// window when there is an action worth reaching. Nothing changes on a
+  /// touchscreen except that a bar the user ignored now leaves by itself.
+  static SnackBar _bar(
+    String message, {
+    SnackBarAction? action,
+    Duration? duration,
+  }) =>
+      SnackBar(
+        content: Text(message),
+        action: action,
+        persist: false,
+        duration:
+            duration ?? (action == null ? messageDuration : actionDuration),
+      );
+
   /// Runs [write] and reports what happened. Returns true when it succeeded, so
   /// a caller can decide whether to close a form or leave it open with the
   /// user's input intact.
@@ -79,8 +115,8 @@ class WriteGuard {
       await write();
     } catch (error, stack) {
       await _crashLog.record(error, stack, context: what);
-      _messenger.showSnackBar(SnackBar(
-        content: Text(describe?.call(error) ?? _l10n.writeFailed(what)),
+      _messenger.showSnackBar(_bar(
+        describe?.call(error) ?? _l10n.writeFailed(what),
         duration: failureDuration,
         action: SnackBarAction(
           label: _l10n.actionDetails,
@@ -101,7 +137,7 @@ class WriteGuard {
   /// anything to write. Having it here is what stops a screen from capturing a
   /// second messenger and quietly growing a second set of conventions.
   void report(String message, {SnackBarAction? action}) =>
-      _messenger.showSnackBar(SnackBar(content: Text(message), action: action));
+      _messenger.showSnackBar(_bar(message, action: action));
 }
 
 /// [WriteGuard.of] + [WriteGuard.run] in one call — the shape almost every call

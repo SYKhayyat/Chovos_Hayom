@@ -64,10 +64,29 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('opens on the top level rather than a single collapsed root',
+      (tester) async {
+    // The catalog is one root with everything under it, so a fully collapsed
+    // tree opened the app on ONE row above an empty screen — reported from the
+    // phone as "it does not open onto the main tree and I don't know how to get
+    // there". The roots open themselves; nothing below them does.
+    await pumpDashboard(tester);
+
+    expect(find.text('Kol HaTorah Kula'), findsOneWidget);
+    expect(find.text('Category 0'), findsOneWidget);
+    expect(find.text('Sefer 0-0'), findsNothing,
+        reason: 'only the first generation opens, not the whole tree');
+    // And the app bar agrees with the tree it is sitting on, in the same frame.
+    expect(find.byTooltip('Collapse all'), findsOneWidget);
+    expect(find.byTooltip('Expand all'), findsNothing);
+  });
+
   testWidgets('expand-all reveals the tree without mounting all of it',
       (tester) async {
     await pumpDashboard(tester);
 
+    await tester.tap(find.byTooltip('Collapse all'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Expand all'));
     await tester.pumpAndSettle();
 
@@ -88,9 +107,6 @@ void main() {
 
   testWidgets('collapse-all returns to the roots', (tester) async {
     await pumpDashboard(tester);
-
-    await tester.tap(find.byTooltip('Expand all'));
-    await tester.pumpAndSettle();
     expect(find.text('Category 0'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Collapse all'));
@@ -106,9 +122,7 @@ void main() {
       (tester) async {
     await pumpDashboard(tester);
 
-    // Open the root, then a single category.
-    await tester.tap(find.text('Kol HaTorah Kula'));
-    await tester.pumpAndSettle();
+    // The root is open on arrival; open a single category under it.
     await tester.tap(find.text('Category 0'));
     await tester.pumpAndSettle();
 
