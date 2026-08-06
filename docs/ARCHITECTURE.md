@@ -177,6 +177,11 @@ foldProvider / logActivityProvider -> the two indexes of the log: what is learne
 paceProvider / goalStatusProvider -> derived analytics. The pace is one number for the
                                profile, derived once — every goal row used to scan the
                                whole log for its own copy
+backupStatusProvider        -> the third axis: distinct units recorded since an instant,
+                               keyed on loggedAt. Memoised on the log's identity inside
+                               its Notifier rather than lifted into a second provider —
+                               a derived provider between the log and the dashboard
+                               asserts on route pop (test/features/derived_flush_test.dart)
 ```
 
 Drift's reactive streams + Riverpod mean: append an event → `UnitState` updates → tree provider

@@ -29,6 +29,11 @@ class BackupStatus {
   /// midnight tick and every return to the foreground. All four fields are
   /// scalars; comparing them is cheaper than rebuilding the banner, the drawer
   /// and the Settings tile to arrive at the same pixels.
+  ///
+  /// Note what this does *not* buy, because it reads as though it does: an
+  /// equal result still costs whatever the derivation cost. That is why
+  /// [BackupReminder.unsavedUnitsSince] sits behind its own provider rather
+  /// than being recomputed here and then compared away.
   @override
   bool operator ==(Object other) =>
       other is BackupStatus &&
@@ -62,20 +67,28 @@ class BackupReminder {
   /// lose is a fortnight rather than a year.
   static const defaultIntervalDays = 14;
 
-  /// Evaluate the profile's backup standing.
+  /// How many distinct units have been recorded since [since] — the whole of
+  /// this file's claim on the raw log, and the only part of the answer that
+  /// costs a walk of it.
   ///
   /// Keyed on `loggedAt` — when a thing was *recorded* — not `occurredAt`.
   /// Backdating a session you learned last week is still a change made today
   /// that the last backup does not contain, and it is the recording that the
-  /// export would have captured.
-  static BackupStatus evaluate({
-    required bool enabled,
-    required DateTime? lastBackupAt,
-    required int intervalDays,
-    required Iterable<LearningEvent> events,
-    required DateTime now,
-  }) {
-    final since = lastBackupAt;
+  /// export would have captured. That is a boundary at an *instant*, which is
+  /// why neither day index can answer it and why this is its own axis; see
+  /// `log_pass_guard_test.dart`.
+  ///
+  /// **Separate from [evaluate] because it depends on so much less.** The
+  /// standing below is a function of this count, the clock and two settings; the
+  /// count is a function of the log and the last export alone. Kept together,
+  /// every midnight tick, every return to the foreground and every theme toggle
+  /// re-derived the whole thing and therefore walked the entire log to arrive at
+  /// a number that none of those can move. Split, the pass runs when a pass is
+  /// warranted — the log changed, or a backup was taken.
+  static int unsavedUnitsSince(
+    Iterable<LearningEvent> events,
+    DateTime? since,
+  ) {
     // Units, not events: the log is internal, and "47 events" means nothing to
     // someone deciding whether this matters. One unit marked, un-marked and
     // marked again is one thing at risk, not three.
@@ -85,7 +98,19 @@ class BackupReminder {
         touched.add('${e.nodeId} ${e.unitIndex}');
       }
     }
+    return touched.length;
+  }
 
+  /// Evaluate the profile's backup standing from [unsavedUnits] (see
+  /// [unsavedUnitsSince]) and the calendar. Scalars in, scalars out — no log.
+  static BackupStatus evaluate({
+    required bool enabled,
+    required DateTime? lastBackupAt,
+    required int intervalDays,
+    required int unsavedUnits,
+    required DateTime now,
+  }) {
+    final since = lastBackupAt;
     final days = since == null ? null : _wholeDaysBetween(since, now);
     // Nothing recorded since the last export means nothing to lose, however long
     // ago it was — a finished profile must not be nagged forever.
@@ -93,9 +118,9 @@ class BackupReminder {
 
     return BackupStatus(
       lastBackupAt: since,
-      unsavedUnits: touched.length,
+      unsavedUnits: unsavedUnits,
       daysSinceBackup: days,
-      due: enabled && touched.isNotEmpty && overdue,
+      due: enabled && unsavedUnits > 0 && overdue,
     );
   }
 

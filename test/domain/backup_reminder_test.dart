@@ -28,6 +28,11 @@ LearningEvent event(
 void main() {
   final now = DateTime(2026, 3, 1, 10);
 
+  /// The two halves as the app composes them: the pass over the log, then the
+  /// policy over its result. Kept as one call here because every case below is
+  /// about the answer rather than about which half produced it — the split is
+  /// there so the second half can re-run without the first, and
+  /// `log_pass_count_test.dart` is what holds that.
   BackupStatus evaluate({
     DateTime? lastBackupAt,
     List<LearningEvent> events = const [],
@@ -38,7 +43,7 @@ void main() {
         enabled: enabled,
         lastBackupAt: lastBackupAt,
         intervalDays: intervalDays,
-        events: events,
+        unsavedUnits: BackupReminder.unsavedUnitsSince(events, lastBackupAt),
         now: now,
       );
 

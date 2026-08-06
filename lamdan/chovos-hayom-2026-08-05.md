@@ -509,6 +509,49 @@ re-import. Delete 120 lines, seven helpers, 361 test lines.
 > and per clock tick. `batchHistoryProvider`, the Notes Journal and the unit details sheet likewise
 > ask genuinely different questions of the raw log and were left alone. And the other thirteen rows
 > of the inventory below are untouched.
+>
+> > **Since resolved — and the phrase to distrust was "and per clock tick".** The axis is real and
+> > the pass is the price of it; what was wrong was that four things paid it. The provider also
+> > watched the clock and the whole `SettingsState`, and neither the date nor any setting can move
+> > *distinct units recorded since an instant* by one unit — so every midnight, every return to the
+> > foreground and every theme toggle walked the entire log to arrive at the number already in hand.
+> > On a Sonim at year seven that is ~3,000 events, a string allocation and a set insert each, on
+> > resume, which is precisely the frame the user is watching.
+> >
+> > **Three tests said this was fine and each was answering a different question.**
+> > `provider_notify_test.dart` asserts that re-deriving the backup status over unchanged data
+> > notifies nobody — true, and the whole point of the finding above is that notifications were never
+> > the cost. `notify_guard_test.dart` exempted this file from the no-whole-`SettingsState` rule on
+> > the grounds that it "reads two of them and is itself watched through a `.select`" — but a
+> > `.select` downstream stops the *rebuild*, not the *re-derivation*, and it was the re-derivation
+> > that walked the log. And `log_pass_count_test.dart`'s own **"a midnight tick re-derives
+> > everything and re-reads nothing"** held only because the setUp deliberately excluded the one
+> > provider that re-read, in a comment calling both exclusions "one pass each and both honest". The
+> > pass was honest. Its schedule was not.
+> >
+> > **The fix that was wrong first, which is the part worth keeping.** The obvious shape is to lift
+> > the count into its own `Provider` and let Riverpod memoise it — memoising is what a provider *is*.
+> > It broke the app, in exactly the way *What the sweep could not reach* describes two paragraphs
+> > up: one derived provider between the dashboard and the log, and *drill in, mark a daf, come back*
+> > throws `setState() during build` every time. `derived_flush_test.dart` caught it on the first
+> > run, which is the second time that file has earned itself. So the memo went where it costs no
+> > hop — a `Notifier` instance outlives its own `build()`, and the log arrives as a fresh list per
+> > emission, so `identical` is a sound key for "the log I already counted". One hop, one pass per
+> > log change, zero per tick, zero per setting.
+> >
+> > **And the count now includes it**: `log_pass_count_test.dart` grew a *the backup axis* group —
+> > a tick costs zero, an unrelated setting costs zero, a log change costs exactly one — with the
+> > first two watched to fail at 1.0 before the fix. Its clock override became a builder rather than
+> > a value so a tick can be modelled by invalidating the *clock*; invalidating the provider under
+> > test disposes its element, which would throw the memo away and measure a cold start.
+> > `notify_guard_test.dart`'s allowlist is down to the one file that genuinely renders every field.
+> >
+> > **The other three were checked and are what the note says they are.** `batchHistoryProvider` and
+> > the Notes Journal are one pass per log change and only while something is listening — a
+> > kept-alive provider with no listeners is marked dirty and not recomputed, measured with the
+> > counting log rather than assumed. The unit details sheet is the weakest of the three: it filters
+> > the whole log per *build* rather than per change. It stays, because it is a modal for one unit
+> > and the only log changes while it is open are the ones made from inside it.
 
 The single largest category by volume. Each row is one idea implemented more than once, in
 places that cannot see each other:

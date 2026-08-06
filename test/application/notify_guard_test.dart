@@ -61,12 +61,17 @@ void main() {
   });
 
   test('nothing watches the whole SettingsState to read one field', () {
-    /// The two places that legitimately want the whole object: the Settings
-    /// screen renders every field, and `backupStatusProvider` reads two of them
-    /// and is itself watched through a `.select`.
+    /// The one place that legitimately wants the whole object: the Settings
+    /// screen renders every field.
+    ///
+    /// `backup_status.dart` was here too, on the grounds that it reads two
+    /// fields and is itself watched through a `.select`. That was the wrong test
+    /// — a `.select` downstream stops the *rebuild*, not the *re-derivation*,
+    /// and this provider's re-derivation walked the event log. Two fields out of
+    /// nine is exactly the case `.select` exists for, so it now uses two of them
+    /// and is off the list.
     const allowed = {
       'lib/features/settings/settings_screen.dart',
-      'lib/application/backup_status.dart',
     };
     // `ref.watch(settingsProvider)` with no `.select` before the closing paren.
     final unselected = RegExp(r'watch\(\s*settingsProvider\s*\)');

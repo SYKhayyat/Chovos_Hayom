@@ -40,7 +40,13 @@ prediction-from-actual-pace for free.
   `test/application/log_pass_count_test.dart` counts real passes through a live provider graph — ten
   goal rows must cost zero, a midnight tick must cost zero — and
   `test/domain/log_pass_guard_test.dart` fails the build if a new function takes the whole log,
-  listing the seven that legitimately do and why each is its own axis.
+  listing the seven that legitimately do and why each is its own axis. The backup reminder is one of
+  them: *distinct units recorded since an instant*, keyed on `loggedAt`, is a boundary no day index
+  can answer. Its pass is honest; **when** it ran was not. It sat in a provider that also watches the
+  clock and the settings, so every midnight, every return to the foreground and every theme toggle
+  walked every event ever recorded to arrive at a number none of them can move — and the tick
+  assertion above held only because that provider had been left out of the count. It is in the count
+  now, and the walk happens when the log changes and at no other time.
 - **Derived does not mean re-rendered.** Everything being a fold over the log is only affordable if
   the derivation *stops* where the answer stopped changing. Riverpod re-notifies whenever
   `previous != next`, and Dart compares objects by identity unless told otherwise, so every derived

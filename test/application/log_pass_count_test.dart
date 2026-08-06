@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:chovos_hayom/application/backup_status.dart';
 import 'package:chovos_hayom/application/goals.dart';
 import 'package:chovos_hayom/application/providers.dart';
+import 'package:chovos_hayom/application/settings.dart';
 import 'package:chovos_hayom/application/stats.dart';
 import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/domain/entities/catalog.dart';
@@ -10,6 +12,7 @@ import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/repositories/catalog_repository.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -88,7 +91,11 @@ void main() {
       // repository — the merged catalog and the layer roles both watch it.
       progressRepositoryProvider.overrideWithValue(memoryRepository()),
       appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-      clockProvider.overrideWithValue(() => DateTime(2026, 1, 20)),
+      // A builder rather than `overrideWithValue`, so the clock can be
+      // *invalidated* — which is what a midnight tick and an app resume both do
+      // to it, and the only way to make one happen to a provider without
+      // disposing that provider's own element.
+      clockProvider.overrideWith((ref) => () => DateTime(2026, 1, 20)),
       // The log is injected rather than written through a repository, so that
       // the thing under measurement is the only implementation detail in play.
       // A second `ProgressRepository` is banned, and rightly.
@@ -97,13 +104,14 @@ void main() {
     addTearDown(container.dispose);
 
     await container.read(catalogProvider.future);
-    // Deliberately *not* subscribed: `backupStatusProvider` and
+    // Deliberately *not* subscribed here: `backupStatusProvider` and
     // `batchHistoryProvider` also walk the log, for the two axes neither index
     // carries — "distinct units touched since an instant", keyed on `loggedAt`,
-    // and "group by batch id". Both are one pass each and both are honest; they
-    // are excluded here so the numbers below are about the day-indexed answers
-    // this file is named for, and not a total that moves when an unrelated
-    // provider is added.
+    // and "group by batch id". They are excluded from the numbers below so those
+    // stay about the day-indexed answers this file is named for, and not a total
+    // that moves when an unrelated provider is added. The backup axis gets its
+    // own group at the bottom, because "one pass each and both honest" was true
+    // of the pass and false of when it ran.
     container.listen(statsProvider, (_, _) {});
     events.add(log);
     await pumpEventQueue();
@@ -179,6 +187,76 @@ void main() {
         reason: 'neither index depends on the clock, so a date change re-reads '
             'no events. This used to cost five passes for stats plus one per '
             'goal, every midnight and every app resume');
+  });
+
+  /// The backup reminder is the third axis over the log — distinct units
+  /// recorded since an *instant*, keyed on `loggedAt`, which neither day index
+  /// can answer. One pass per change is the honest price of that, and it is not
+  /// what these are about: the provider also watched the clock and the whole
+  /// settings object, and the count it walks the log to produce depends on
+  /// neither. So a midnight tick, an app resume and every theme toggle each paid
+  /// a full walk of the log to arrive at the number they already had.
+  ///
+  /// It was invisible for the usual two reasons and one new one:
+  /// `provider_notify_test.dart` asserts a tick over unchanged data notifies
+  /// nobody, which was true and never the question; and this file's own
+  /// "a midnight tick re-derives everything and re-reads nothing" excluded the
+  /// one provider that re-read.
+  group('the backup axis', () {
+    /// What the dashboard does: it watches this from the moment the app opens,
+    /// so it is live for every tick and every settings write.
+    void watchBackup() => container.listen(backupStatusProvider, (_, _) {});
+
+    test('a midnight tick costs it nothing', () async {
+      watchBackup();
+      await pumpEventQueue();
+
+      log.reset();
+      // The *clock* is invalidated, not the provider under test — the two are
+      // not interchangeable here. Invalidating `backupStatusProvider` disposes
+      // its element, which would throw away the memo along with it and measure
+      // a cold start; a real tick only ever hands it a new `DateTime Function()`
+      // and asks again. (The fresh closure is what makes that a change at all —
+      // see the note on `clockProvider`.)
+      container.invalidate(clockProvider);
+      container.read(backupStatusProvider);
+      await pumpEventQueue();
+
+      expect(log.passes, 0,
+          reason: 'the units recorded since the last export cannot change '
+              'because the date did. Only `daysSinceBackup` moves at midnight, '
+              'and that is a subtraction');
+    });
+
+    test('changing an unrelated setting costs it nothing', () async {
+      watchBackup();
+      await pumpEventQueue();
+
+      log.reset();
+      await container.read(settingsProvider.notifier).setThemeMode(ThemeMode.dark);
+      await pumpEventQueue();
+
+      expect(log.passes, 0,
+          reason: 'it needs two scalars out of the settings object and watched '
+              'the whole of it, so switching to dark mode walked every event '
+              'ever recorded');
+    });
+
+    test('a log change costs it exactly one pass', () async {
+      watchBackup();
+      await pumpEventQueue();
+
+      final fresh = _CountingLog([...log.inner, done(82)]);
+      events.add(fresh);
+      await pumpEventQueue();
+      container.read(statsProvider);
+      container.read(backupStatusProvider);
+
+      expect(fresh.passes, 3,
+          reason: 'the fold, the day index, and the backup axis once each. This '
+              'is the number that is allowed to be non-zero — a new event '
+              'genuinely can change what is unsaved');
+    });
   });
 
   test('the counter counts what it claims to', () {
