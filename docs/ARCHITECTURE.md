@@ -65,7 +65,7 @@ Profile
   -- profile-scoped keys, because the theme must be readable synchronously
   -- before the first frame — long before this database is open. The schema
   -- did carry a `settingsJson` column that nothing ever read; it was dropped
-  -- in schema v10 rather than left as a false affordance.
+  -- rather than left as a false affordance.
 
 LearningEvent            -- append-only; NEVER updated or deleted in normal use
   id           String  (PK, uuid)

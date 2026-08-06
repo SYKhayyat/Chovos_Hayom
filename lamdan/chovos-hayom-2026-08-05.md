@@ -2,7 +2,15 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-06 (last).** **Finding 6** (*"Four report screens are Stats sections wearing
+> **Status, 2026-08-06 (last).** **Finding 4** (*"Eleven schema versions in twenty-nine days, for a
+> database that has never shipped"*) is now resolved — see the note below it, including the round
+> trip it was costed at that turned out not to be needed, the two numbers in it that had grown while
+> it waited, and the one thing the sweep could not have reached: the database it is about was not at
+> the head of the chain, so squashing without running the chain one last time would have bricked it.
+>
+> ---
+>
+> **Status, 2026-08-06 (previously last).** **Finding 6** (*"Four report screens are Stats sections wearing
 > routes"*) is now resolved — see the note below it, including the one place its arithmetic is
 > wrong (the `DpadScroll` count), the one claim that has gone stale since it was written, and the
 > keypad interaction the sweep could not have reached. Two rows of **finding 5** go with it: the
@@ -406,7 +414,70 @@ sheet's own doc-comment at `:20` promises the third.
 
 ---
 
-### 4. Eleven schema versions in twenty-nine days, for a database that has never shipped. `delete`.
+### 4. Eleven schema versions in twenty-nine days, for a database that has never shipped. `delete`. **✅ Resolved**
+
+> ### Squashed to v1 — and the round trip it was costed at turned out to be unnecessary
+>
+> **Every claim in the finding checked out, and the two numbers in it had grown.** `V1.0.0` is dated
+> `2026-01-05` and is still the only tag. The chain really had eaten itself twice, in exactly the two
+> places named. The v1 → v2 `custom_nodes` re-key really had no test of its own — the tests start at
+> `user_version = 2` — although the *half-migrated* case seeds `custom_nodes` in its pre-v2 shape and
+> reaches the step sideways, which is the closest the suite came. What has moved is the size: **230
+> lines of migration, not 120, and 649 of test, not 361**, because findings 3 and 7 each added a step
+> with its own tests. This finding's whole argument is that the number goes one way, and it did,
+> while the finding was sitting there.
+>
+> **The prescription was more expensive than the problem, and that is the part the sweep could not
+> see.** *"Export the phone's data with the app's own backup, squash, re-import"* — one round trip
+> through a feature you already trust. It is not needed. A database at the head of the chain is
+> **already** the shape `createAll()` produces at v1: same five tables, same columns, same
+> `learning_events_batch` index. Verified rather than assumed — the DDL was read straight off the
+> real Windows database that the deleted chain had produced, and a fresh v1 database matches it
+> statement for statement. So adopting a head-shaped database is *nothing*: drift calls `onUpgrade`
+> in **either** direction (`hadUpgrade` is `versionBefore != versionNow`, not `<`), the clause
+> returns, and `user_version` is stamped down to 1 on the way past. That is the only line of
+> migration code left in the file.
+>
+> **What the finding could not have known is that the one database it is about was not at head.**
+> `Documents/chovos_hayom.sqlite` on the machine this was read on was at **v11 with 35 events** —
+> the two most recent steps had never run here, because the app has not been launched on Windows
+> since 2026-07-30. So the squash *would* have bricked it, which is the sweep's point about "the
+> developer's own phone" arriving from the other side. It was carried through the chain one last
+> time with the chain still present (v11 → v13, 35 events intact, the two legacy layer tables
+> dropped, `logged_at` rescaled), and then adopted by the squashed build (v13 → v1, 35 events
+> intact). A copy of the original sits beside it as `chovos_hayom.pre-squash-backup.sqlite`.
+>
+> **A database this build cannot produce is refused rather than opened**, and that is not
+> defensiveness — a v12 file still holds `logged_at` in whole seconds, so opening one would read
+> every event as an instant in 1970 and reorder the log silently. `SchemaMismatchException` carries
+> the way out in its own text, because that text is what the user reads: `databaseProvider` throwing
+> surfaces through `ErrorView`, which prints it under *Show details* and appends it to the crash
+> log. And refusing is provably harmless to the file — drift stamps `user_version` only *after* the
+> migration callback returns, so a rejected database can still be opened by the build that wrote it,
+> which is what makes "install the older build once" a real recovery rather than a hopeful one.
+>
+> **The one rule worth keeping from the deleted chain is the one its doc comment opened with:**
+> *bumping `schemaVersion` without a step silently does nothing on an existing install.* That is why
+> the doorman throws on `from < to` as well. The next schema change in this project's life fails at
+> the door, on the first launch, instead of derailing into `no such column` three screens later.
+>
+> Resolved by `kSchemaVersion = 1`, `kPreSquashSchemaVersion` and `SchemaMismatchException` in
+> `lib/data/drift/database.dart`; the twelve-step `onUpgrade`, `_mergeLayerConfigs` and all seven
+> schema-introspection helpers deleted, along with the two imports they were the only users of.
+> `migration_test.dart` (649 lines) is replaced by `test/data/schema_test.dart` (8 tests), and the
+> suite went from 579 tests in 2m03 to 571 in 1m37.
+>
+> **And the rule is enforced rather than stated.** The claim the adoption clause rests on is that
+> v1's shape and v13's are the same shape, and the way that rots is somebody editing a column. So
+> the test compares a freshly-created database against the schema **read off the device file the old
+> chain produced**, not against the Dart definitions it is checking — watched fail by changing one
+> column default, which is exactly the moment to write a real v2 step instead. The adoption tests
+> were watched fail with the clause removed, and the refusal tests assert the file is byte-for-byte
+> where it was afterwards.
+>
+> **Not done, and still true:** the `kPreSquashSchemaVersion` clause is itself legacy — six lines
+> that exist so that upgrading costs an existing install nothing. It says in its own doc comment
+> that it should be deleted once every install has opened a post-squash build.
 
 > **Twelve now, and the count is the wrong thing to watch.** Finding 3 added v12 and deleted the v7
 > step and one line of v4 outright — they created the two tables v12 merges away, and any database
@@ -792,7 +863,9 @@ which is precisely the thing you'd want to time.
 >
 > **The cost, said plainly:** `flutter test` went from ~1m30 to ~2m40 on the same machine. That is
 > the price of every test opening a real SQLite database, and it is the right trade — but it is a
-> real one, and the squash in finding 4 is now worth slightly more than it was.
+> real one, and the squash in finding 4 is now worth slightly more than it was. **It has since been
+> collected**: deleting the twelve-step chain took the suite from 579 tests in ~2m03 to 571 in
+> ~1m37, most of it the migration tests opening a real file per case.
 >
 > **Not done, and still true:** `ProgressRepository` grew from 24 methods to 27. Finding 11's
 > "revisit whether a ~20-line delegating wrapper is a better shape than a 97-line interface, once the
@@ -1021,7 +1094,12 @@ CMake caches just as aggressively, and the CMake target-id failure that once bro
    to be a framework-error net rather than a rebuild counter, so the safety net for this was built
    rather than borrowed: `provider_notify_test.dart`, `rebuild_cost_test.dart` and
    `notify_guard_test.dart`, 29 tests, 13 of which fail on the pre-fix code.
-4. Squash the schema to v1 **before** the first release, because after it this stops being free.
+4. ~~Squash the schema to v1 **before** the first release, because after it this stops being free.~~
+   **✅ Done** — and it cost less than the finding priced it at, not more: no backup round trip was
+   needed, because a database at the head of the chain is already the shape `createAll()` produces
+   at v1. What the finding could not see is that the one database it is about was not at head — the
+   Windows file here was still v11 — so the chain was run one last time before it was deleted. See
+   the status note on finding 4.
 5. ~~Collapse required/offered to one `role` column — same deadline, same reason.~~ **✅ Done** —
    and not to a `role` column, which keeps two sets. To one role *map*, which is what this
    document's own diagnosis of finding 3 asks for; the fourth state is now unrepresentable rather
@@ -1047,7 +1125,10 @@ CMake caches just as aggressively, and the CMake target-id failure that once bro
   per-node mefarshim configuration — is defensible if someone other than the author is going to
   use this, and much less so if not. Every verdict above assumes the README's framing: one person's
   learning, on one device.
-- **Is there a release date?** Findings 4 and 3 are cheap now and expensive the day after v1 ships.
+- **Is there a release date?** ~~Findings 4 and 3 are cheap now and expensive the day after v1 ships.~~
+  Both are done, so the question has stopped being urgent — but it was the right question, and the
+  answer to finding 4 is now *the day after v1 ships is when the schema starts having a history
+  again*.
   That's a scheduling question, not a design one, and it's yours.
 - **What is being built next?** Half of what makes a design wrong is the change it is about to face,
   and that isn't in the repo. If the next thing is a second locale, finding 10 changes shape. If it

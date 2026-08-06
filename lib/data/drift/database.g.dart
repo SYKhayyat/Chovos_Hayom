@@ -555,8 +555,8 @@ class LearningEventRow extends DataClass
   /// Stored as microseconds rather than through drift's `DateTimeColumn`, which
   /// writes `millisecondsSinceEpoch ~/ 1000` and so discards everything below a
   /// second. `FoldLog` sorts by this and breaks ties on the event id — a v4
-  /// UUID — so two events one second apart in storage were ordered by a coin
-  /// flip on random text. Mark a daf and un-mark it inside the same second and
+  /// UUID — so two events that landed in the same stored second were ordered by
+  /// a coin flip on random text. Mark a daf and un-mark it in one go and
   /// the `undone` won only if its UUID happened to sort later; otherwise the
   /// daf stayed learned, permanently, because the fold re-derives from the log
   /// every time. This was invisible for as long as the tests ran against an
@@ -567,8 +567,10 @@ class LearningEventRow extends DataClass
 
   /// A **haara** — the single free-text field on an event: an insight on the daf,
   /// a question, how the seder went, whatever you want to keep. Every non-empty
-  /// one shows up in the Notes Journal. (Until v8 this was split into `note` and
-  /// a separate `haara`; the v7 -> v8 migration folds the two together here.)
+  /// one shows up in the Notes Journal. (This was once split into `note` and a
+  /// separate `haara`, which asked the user to classify a thought before writing
+  /// it. Backup files old enough to carry both are still read: see
+  /// `LearningEvent.mergeNotes`, which folds the pair into this column.)
   final String? note;
 
   /// JSON list of layer ids this event marks/unmarks (the text and/or mefarshim).

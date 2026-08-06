@@ -47,6 +47,23 @@ prediction-from-actual-pace for free.
   walked every event ever recorded to arrive at a number none of them can move — and the tick
   assertion above held only because that provider had been left out of the count. It is in the count
   now, and the walk happens when the log changes and at no other time.
+- **The schema has one version, and it is version 1.** It has had thirteen shapes; none of them
+  ever shipped. Every step in the twelve-step migration chain that used to sit under
+  [`database.dart`](lib/data/drift/database.dart) existed to carry a database on a machine the
+  author was sitting at from one afternoon's schema to the next, and a chain that long starts
+  eating itself: v3 added a column so that v8 could merge it away and drop it — so on a v2 database
+  v3 ran *only* to give v8 something to read — and v9 had to be written above v8 in the file so
+  that v8's table rebuild had a column to copy. It cost 230 lines of migration and 649 of test, and
+  the price was still rising: v13 was a one-line value fix and arrived with three migration tests
+  of its own that a squash would have carried for free. So the chain is squashed and the history is
+  in git. What is left is a doorman: a database written by the last pre-squash build is *already*
+  the shape `createAll()` produces, so adopting one is nothing at all — `test/data/schema_test.dart`
+  pins that by comparing a fresh database against the schema read off the real device file the
+  deleted chain produced, which is what fails if a column ever drifts. Anything else it refuses,
+  and refusing leaves the file untouched, because drift stamps `user_version` only after the
+  migration callback returns. The next schema change is v2, it will be the first one in this
+  project's life that defends somebody else's data, and a bump without a step fails at the door
+  rather than silently doing nothing.
 - **Derived does not mean re-rendered.** Everything being a fold over the log is only affordable if
   the derivation *stops* where the answer stopped changing. Riverpod re-notifies whenever
   `previous != next`, and Dart compares objects by identity unless told otherwise, so every derived
@@ -316,7 +333,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   reminders, backup validation (including override-row parent cycles), chazara scheduling (complete
   units only), siyumim, learning cycles, the per-profile session timer, per-profile settings + their
   backup coverage and profile-delete cleanup, restore-vs-merge (including that a merge *cannot* undo
-  an un-mark and a restore can), schema migrations, derive-engine cost — both the scans-counter and
+  an un-mark and a restore can), the schema, derive-engine cost — both the scans-counter and
   two benchmarks that catch constant-factor regressions — lazy tree rendering, the write guard
   + route table, the read-failure view (that retry re-runs the load and recovers, and that a rebuild
   does not re-log the same failure), the grid's screen-reader labels, the backup reminder (that a failed export never stamps the profile as safe, that units are counted rather than log entries, and that a profile with nothing unsaved is left alone), and translation — that Hebrew
@@ -351,7 +368,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   whole seconds, so mark-then-un-mark inside one second left the fold ordering two identical
   timestamps by their random v4 UUIDs — half the time the daf stayed learned, permanently. The
   double kept `DateTime` objects in a Dart list at full precision, so no test could see it.
-  `logged_at` now stores microseconds (schema v13), and
+  `logged_at` now stores microseconds, and
   `test/support/repository_double_guard_test.dart` fails the build if a second implementation of the
   interface, a database opened by hand, or a one-shot read off a live query stream comes back.
 - **How many times the log is walked, counted.** The notification tallies above measure where the
@@ -402,10 +419,10 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 
 | Platform | Build | Runtime |
 |---|---|---|
-| **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the release binary has now upgraded a real v10 database to the v11 schema in place, keeping every event ✅ |
+| **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the real on-disk database here, 35 events deep, has been carried through the whole migration chain and then adopted by the squashed schema, keeping every event ✅ |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36 (moto g stylus 2025). Measured on the device: the logging sheet's confirm button clears the navigation bar by 45px and a tap at its bottom edge registers, the Hebrew progress fraction paints `0 / 12,092  (0.0%)` in that order, the app bar fits `Chovos Hayom`, a backup exported from one profile imports into another, and a deep link opens the same screen whether the app was running or not ✅ |
 | **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, the report's figure-only tabs scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search. Also walked key by key: the app opens on the tree's first generation, three presses of *down* reach the backup banner's named dismiss, the message that replaces it leaves on its own within ten seconds, and the drawer's first row returns to the tree ✅ |
-| **CI** | analyze `--fatal-infos`, 579 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
+| **CI** | analyze `--fatal-infos`, 571 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher
