@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/day.dart';
 import '../core/preferences.dart';
 import '../domain/usecases/goal_evaluator.dart';
 import '../domain/usecases/pace_engine.dart';
@@ -77,10 +78,13 @@ final goalStatusProvider = Provider.family<GoalStatus?, String>((ref, nodeId) {
   if (node == null || events == null) return null;
   final now = ref.watch(clockProvider)();
   final pace = PaceEngine.averagePerDay(events, now: now, windowDays: 30);
+  // Goals persist as `DateTime` because that is what the date picker and the
+  // settings file speak; the calendar day they mean is resolved here, once, at
+  // the boundary into the domain.
   return GoalEvaluator.evaluate(
     remaining: node.remaining,
-    from: now,
-    target: target,
+    from: Day.of(now),
+    target: Day.of(target),
     currentPace: pace,
   );
 });

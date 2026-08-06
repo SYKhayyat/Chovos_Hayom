@@ -1,3 +1,4 @@
+import 'package:chovos_hayom/core/day.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
@@ -26,15 +27,15 @@ void main() {
 
     test('dailyDeltas nets done and undone, ignores reviewed', () {
       final d = ProgressSeries.dailyDeltas(events);
-      expect(d[DateTime(2026, 1, 1)], 2);
-      expect(d[DateTime(2026, 1, 3)], 0); // +1 done, -1 undone
-      expect(d.containsKey(DateTime(2026, 1, 2)), isFalse);
+      expect(d[Day.of(DateTime(2026, 1, 1))], 2);
+      expect(d[Day.of(DateTime(2026, 1, 3))], 0); // +1 done, -1 undone
+      expect(d.containsKey(Day.of(DateTime(2026, 1, 2))), isFalse);
     });
 
     test('dailyDone counts only done events', () {
       final d = ProgressSeries.dailyDone(events);
-      expect(d[DateTime(2026, 1, 1)], 2);
-      expect(d[DateTime(2026, 1, 3)], 1);
+      expect(d[Day.of(DateTime(2026, 1, 1))], 2);
+      expect(d[Day.of(DateTime(2026, 1, 3))], 1);
     });
 
     test('cumulative is a monotonic total of currently-held units by learn-date', () {
@@ -42,8 +43,8 @@ void main() {
       // reflects only units 3 (Jan 1) and 4 (Jan 3) that are still done.
       final series = ProgressSeries.cumulative(FoldLog.fold(events));
       expect(series.map((p) => p.cumulative).toList(), [1, 2]);
-      expect(series.first.day, DateTime(2026, 1, 1));
-      expect(series.last.day, DateTime(2026, 1, 3));
+      expect(series.first.day, Day.of(DateTime(2026, 1, 1)));
+      expect(series.last.day, Day.of(DateTime(2026, 1, 3)));
     });
 
     test('final cumulative equals the current learned count after a backdated re-log', () {
@@ -78,25 +79,25 @@ void main() {
       expect(ProgressSeries.cumulative(FoldLog.fold(const [])), isEmpty);
     });
 
-    // The helpers now group on the cheap UTC day-ordinal and materialise a
-    // DateTime once per distinct day (constructing a *local* DateTime per event
-    // was ~230× slower and made the Statistics screen take a second to open).
-    // These pin the behaviour that refactor must preserve: events at different
-    // times of the same calendar day still collapse to one local-midnight key.
-    test('events at different times of one day collapse to that day’s midnight', () {
+    // The helpers group on `Day`, whose identity is a cheap int ordinal
+    // (constructing a *local* DateTime per event was ~230× slower and made the
+    // Statistics screen take a second to open). These pin the behaviour that
+    // both that refactor and the later move to `Day` had to preserve: events at
+    // different times of the same calendar day still collapse to one key.
+    test('events at different times of one day collapse to that one day', () {
       final events = [
         ev(DateTime(2026, 3, 9, 0, 30), EventAction.done, unit: 2),
         ev(DateTime(2026, 3, 9, 23, 45), EventAction.done, unit: 3),
       ];
       final done = ProgressSeries.dailyDone(events);
-      expect(done.keys, [DateTime(2026, 3, 9)]);
-      expect(done[DateTime(2026, 3, 9)], 2);
+      expect(done.keys, [Day.of(DateTime(2026, 3, 9))]);
+      expect(done[Day.of(DateTime(2026, 3, 9))], 2);
 
       final deltas = ProgressSeries.dailyDeltas(events);
-      expect(deltas[DateTime(2026, 3, 9)], 2);
+      expect(deltas[Day.of(DateTime(2026, 3, 9))], 2);
     });
 
-    test('cumulative keys each distinct learned-day at local midnight', () {
+    test('cumulative keys each distinct learned-day exactly once', () {
       final events = [
         ev(DateTime(2026, 3, 9, 8), EventAction.done, unit: 2),
         ev(DateTime(2026, 3, 9, 20), EventAction.done, unit: 3),
@@ -104,7 +105,7 @@ void main() {
       ];
       final series = ProgressSeries.cumulative(FoldLog.fold(events));
       expect(series.map((p) => p.day).toList(),
-          [DateTime(2026, 3, 9), DateTime(2026, 3, 11)]);
+          [Day.of(DateTime(2026, 3, 9)), Day.of(DateTime(2026, 3, 11))]);
       expect(series.map((p) => p.cumulative).toList(), [2, 3]);
     });
   });

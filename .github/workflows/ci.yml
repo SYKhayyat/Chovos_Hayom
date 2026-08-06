@@ -4,7 +4,7 @@ name: CI
 # regression could land and stay landed. This runs on every push and PR.
 on:
   push:
-    branches: [master, main]
+    branches: [main]
   pull_request:
 
 concurrency:

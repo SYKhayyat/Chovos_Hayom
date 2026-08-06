@@ -1,3 +1,4 @@
+import '../../core/day.dart';
 import '../entities/learning_event.dart';
 
 /// What is at stake if this device is lost right now.
@@ -87,10 +88,14 @@ class BackupReminder {
   /// Compared by calendar date rather than by elapsed hours, so "yesterday" is
   /// one day regardless of the clock time, and a backup taken this morning is
   /// zero days old rather than rounding up overnight.
+  ///
+  /// That promise used to be false one day a year: this took the difference of
+  /// two local midnights and read `.inDays`, and the spring-forward day is 23
+  /// hours long, which truncates to zero. A backup exactly at the interval read
+  /// as a day younger and the reminder went quiet for a day. [Day] subtraction
+  /// is integer arithmetic on a day count, so there is no hour to lose.
   static int _wholeDaysBetween(DateTime from, DateTime to) {
-    final a = DateTime(from.year, from.month, from.day);
-    final b = DateTime(to.year, to.month, to.day);
-    final days = b.difference(a).inDays;
+    final days = Day.of(to).difference(Day.of(from));
     return days < 0 ? 0 : days;
   }
 }

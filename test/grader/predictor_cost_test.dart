@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:chovos_hayom/core/day.dart';
 import 'package:chovos_hayom/domain/usecases/predictor.dart';
 
 /// GRADER PROBE — the cost of the "never finishes" answer.
@@ -23,14 +24,15 @@ import 'package:chovos_hayom/domain/usecases/predictor.dart';
 void main() {
   test('an amount of 0.0001/day answers within a frame budget', () {
     const calls = 1000;
-    DateTime? date;
+    Day? date;
+    final from = Day.of(DateTime(2026, 7, 29));
     final sw = Stopwatch()..start();
     for (var i = 0; i < calls; i++) {
       date = Predictor.finishDateWithCycle(
         remaining: 2711, // Shas
         amounts: const [0.0001], // "a tenth of a thousandth of a daf a day"
         startIndex: 0,
-        from: DateTime(2026, 7, 29),
+        from: from,
       );
     }
     sw.stop();

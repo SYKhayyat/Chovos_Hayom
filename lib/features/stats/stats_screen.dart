@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
+import '../../core/day.dart';
 import '../../core/keypad.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/naming.dart';
@@ -69,7 +70,7 @@ class _SummaryGrid extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final finish = stats.projectedFinish == null
         ? l10n.statsNone
-        : DateDisplay.format(stats.projectedFinish!, mode);
+        : DateDisplay.format(stats.projectedFinish!.midnight, mode);
     String time(int minutes) =>
         minutes <= 0 ? l10n.statsNone : formatMinutes(l10n, minutes);
     // Laid out by wrapping, not by a grid with a fixed aspect ratio.
@@ -176,7 +177,7 @@ class _ProgressChart extends StatelessWidget {
     final first = stats.series.first.day;
     final spots = [
       for (final p in stats.series)
-        FlSpot(p.day.difference(first).inDays.toDouble(), p.cumulative.toDouble()),
+        FlSpot(p.day.difference(first).toDouble(), p.cumulative.toDouble()),
     ];
     final scheme = Theme.of(context).colorScheme;
     return LineChart(
@@ -207,13 +208,13 @@ class _ProgressChart extends StatelessWidget {
 
 class _Heatmap extends StatelessWidget {
   const _Heatmap({required this.activity, required this.now});
-  final Map<DateTime, int> activity;
+  final Map<Day, int> activity;
   final DateTime now;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final today = DateTime(now.year, now.month, now.day);
+    final today = Day.of(now);
     const weeks = 12;
     const days = weeks * 7;
     final maxCount =
@@ -230,15 +231,14 @@ class _Heatmap extends StatelessWidget {
               children: [
                 for (var d = 0; d < 7; d++)
                   Builder(builder: (_) {
-                    // Step by calendar day through the DateTime constructor,
-                    // which normalises an out-of-range day to the right local
-                    // midnight. Adding a `Duration(days:)` to a local DateTime
-                    // instead shifts by an hour across a DST boundary, and the
-                    // midnight normalisation afterwards then skips or repeats a
-                    // column twice a year.
-                    final day = DateTime(
-                        today.year, today.month, today.day - (days - 1) + w * 7 + d);
-                    if (day.isAfter(today)) {
+                    // Counting in calendar days is what `Day` is for; this used
+                    // to hand-roll the same guarantee through the DateTime
+                    // constructor's out-of-range normalisation, because adding
+                    // a `Duration(days:)` to a local DateTime shifts by an hour
+                    // across a DST boundary and skips or repeats a column twice
+                    // a year.
+                    final day = today - (days - 1) + w * 7 + d;
+                    if (day > today) {
                       return const SizedBox(width: 16, height: 16);
                     }
                     final count = activity[day] ?? 0;

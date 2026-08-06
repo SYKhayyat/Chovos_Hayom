@@ -18,6 +18,14 @@ prediction-from-actual-pace for free.
 - **Progress** — a per-profile append-only event log (*what you learned, and when*), in SQLite.
 - **Everything derived** — counts, percentages, roll-ups, pace, and predictions are folds over the
   log, never stored.
+- **One answer to "which calendar day is this"** — [`lib/core/day.dart`](lib/core/day.dart). A
+  `Day` is a whole-day count, so "one day later" and "how many days apart" stay integer
+  arithmetic. A local-midnight `DateTime` cannot do that: a `Duration` is elapsed time and a
+  calendar day is 23, 24 or 25 hours of it, so `.add(Duration(days: 1))` and
+  `.difference(…).inDays` are both wrong twice a year. Everything date-shaped — pace, streaks,
+  chazara spacing, cycle position, the finish-date projection, the heatmap, the midnight tick —
+  counts in `Day`, and `test/core/day_math_guard_test.dart` fails the build if a second copy of
+  that arithmetic appears anywhere in `lib/`.
 
 Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Drift + JSON) ·
 `application/` (Riverpod) · `features/` (UI) · `app/` (the route table). Full design in
@@ -252,7 +260,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   delivered to a running app arrives on a different channel, and the framework's default handler
   drops the part of the URI that says *which kind* of screen is wanted. (A private scheme, not an `https` App Link — claiming a domain you don't
   own is how a link ends up opening someone else's app.)
-- 413 tests covering the engine, layer fold + required/offered-set resolution (including that
+- Tests covering the engine, layer fold + required/offered-set resolution (including that
   un-ticking one meforish never wipes the rest of a unit's history), per-meforish roll-up,
   bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
   reminders, backup validation (including override-row parent cycles), chazara scheduling (complete
@@ -264,6 +272,14 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   does not re-log the same failure), the grid's screen-reader labels, the backup reminder (that a failed export never stamps the profile as safe, that units are counted rather than log entries, and that a profile with nothing unsaved is left alone), and translation — that Hebrew
   changes the *words* and not only the direction, that both locales are key-for-key complete, and
   that reports read correctly in each.
+- Calendar-day arithmetic is pinned by a sweep over **every consecutive pair of days in a year, in
+  whatever timezone the runner is in** — so a host that observes DST exercises both transitions, and
+  a UTC host still runs the property. The sweep is paired with a negative control that asserts the
+  local-`DateTime` forms it replaced *do* disagree with it on such a host: a DST test that quietly
+  passes everywhere is a DST test that has stopped working. A source-scanning guard
+  (`test/core/day_math_guard_test.dart`) then fails the build if the arithmetic reappears outside
+  `lib/core/day.dart`, with a `// day-math: ok — <reason>` escape hatch for the line that genuinely
+  needs it.
 - The 58 added in phase 11 are mostly about the half of the app a unit test cannot see, and each one
   was watched fail first: the real Drift repository under test at last (it had none, and both of its
   defects were about profile scope), every modal sheet laid out on a phone that has a navigation bar
@@ -282,7 +298,7 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 | **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the release binary has now upgraded a real v10 database to the v11 schema in place, keeping every event ✅ |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36 (moto g stylus 2025). Measured on the device: the logging sheet's confirm button clears the navigation bar by 45px and a tap at its bottom edge registers, the Hebrew progress fraction paints `0 / 12,092  (0.0%)` in that order, the app bar fits `Chovos Hayom`, a backup exported from one profile imports into another, and a deep link opens the same screen whether the app was running or not ✅ |
 | **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, Statistics and Siyumim scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search. Also walked key by key: the app opens on the tree's first generation, three presses of *down* reach the backup banner's named dismiss, the message that replaces it leaves on its own within ten seconds, and the drawer's first row returns to the tree ✅ |
-| **CI** | analyze `--fatal-infos`, 430 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `master` ✅ |
+| **CI** | analyze `--fatal-infos`, 451 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher
@@ -330,11 +346,11 @@ build. The user-facing name is the window title in `windows/runner/main.cpp`.
 flutter pub get               # also runs gen-l10n (pubspec: generate: true)
 dart run build_runner build   # generates Drift code
 flutter analyze               # clean
-flutter test                  # 352 tests, all green
+flutter test                  # all green (CI publishes the count)
 ```
 
 CI runs all of the above on every push and pull request, plus a release APK build, and is **green on
-`master`** — which is worth stating, because for a long time it wasn't running at all: the workflow
+`main`** — which is worth stating, because for a long time it wasn't running at all: the workflow
 existed while the work sat uncommitted, so nothing it promised was actually being enforced. It fails
 if the generated Drift/Riverpod code is stale, if the generated localizations are stale, if any
 shipped locale is missing a string, or if R8 didn't actually run on the release build.

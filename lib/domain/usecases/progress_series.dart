@@ -1,3 +1,4 @@
+import '../../core/day.dart';
 import '../entities/enums.dart';
 import '../entities/learning_event.dart';
 import 'fold_log.dart';
@@ -6,34 +7,27 @@ import 'fold_log.dart';
 /// units learned up to and including that day.
 class SeriesPoint {
   const SeriesPoint(this.day, this.cumulative);
-  final DateTime day;
+  final Day day;
   final int cumulative;
 }
 
 /// Derives time-series views of the log for charts and heatmaps. Pure.
+///
+/// Everything here groups on [Day], whose identity is an `int` ordinal, so a
+/// `Map<Day, …>` costs what a `Map<int, …>` costs. That matters: these helpers
+/// once keyed on a local-midnight `DateTime` built per *event*, and a local
+/// `DateTime` costs a timezone conversion (~230× the UTC form), so a multi-year
+/// user paid about a second of it opening the Statistics screen. Grouping on
+/// `Day` keeps that fix and drops the parallel `ordinal -> DateTime` side-maps
+/// the previous version needed to carry alongside every result — the day is the
+/// key now, so it no longer has to be remembered separately from it.
 class ProgressSeries {
   const ProgressSeries._();
 
-  /// Whole-day ordinal in UTC — a DST-safe integer key for a local calendar day,
-  /// the same key `PaceEngine` and `ChazaraSchedule` use. Grouping by this int
-  /// rather than by a local `DateTime(y, m, d)` is the whole performance story
-  /// here: constructing a *local* DateTime forces a timezone conversion (~230×
-  /// slower than the UTC form), and these helpers built one per event, so a
-  /// multi-year user paid a second of it opening the Statistics screen. We group
-  /// on the cheap ordinal and materialise a DateTime once per *distinct day*.
-  static int _dayNumber(DateTime d) =>
-      DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch ~/ 86400000;
-
-  /// Local midnight for [d]'s calendar day — the representation the chart and
-  /// heatmap expect. The expensive call, made once per distinct day, not once
-  /// per event.
-  static DateTime _localMidnight(DateTime d) => DateTime(d.year, d.month, d.day);
-
   /// Net units learned per calendar day (done = +1, undone = -1). Days with no
-  /// activity are omitted. Keyed by midnight-local.
-  static Map<DateTime, int> dailyDeltas(Iterable<LearningEvent> events) {
-    final byDay = <int, int>{};
-    final dayOf = <int, DateTime>{};
+  /// activity are omitted.
+  static Map<Day, int> dailyDeltas(Iterable<LearningEvent> events) {
+    final byDay = <Day, int>{};
     for (final e in events) {
       final delta = switch (e.action) {
         EventAction.done => 1,
@@ -41,25 +35,22 @@ class ProgressSeries {
         EventAction.reviewed => 0,
       };
       if (delta == 0) continue;
-      final ord = _dayNumber(e.occurredAt);
-      dayOf.putIfAbsent(ord, () => _localMidnight(e.occurredAt));
-      byDay[ord] = (byDay[ord] ?? 0) + delta;
+      final day = Day.of(e.occurredAt);
+      byDay[day] = (byDay[day] ?? 0) + delta;
     }
-    return {for (final e in byDay.entries) dayOf[e.key]!: e.value};
+    return byDay;
   }
 
   /// Distinct units marked done per calendar day (for an activity heatmap). A
   /// unit re-marked the same day counts once, matching the set-based `learned`.
-  static Map<DateTime, int> dailyDone(Iterable<LearningEvent> events) {
-    final byDay = <int, Set<String>>{};
-    final dayOf = <int, DateTime>{};
+  static Map<Day, int> dailyDone(Iterable<LearningEvent> events) {
+    final byDay = <Day, Set<String>>{};
     for (final e in events) {
       if (e.action != EventAction.done) continue;
-      final ord = _dayNumber(e.occurredAt);
-      dayOf.putIfAbsent(ord, () => _localMidnight(e.occurredAt));
-      (byDay[ord] ??= <String>{}).add('${e.nodeId} ${e.unitIndex}');
+      (byDay[Day.of(e.occurredAt)] ??= <String>{})
+          .add('${e.nodeId} ${e.unitIndex}');
     }
-    return {for (final e in byDay.entries) dayOf[e.key]!: e.value.length};
+    return {for (final e in byDay.entries) e.key: e.value.length};
   }
 
   /// Cumulative distinct-units-learned line: a monotonic running total of the
@@ -75,13 +66,11 @@ class ProgressSeries {
   /// otherwise-cumulative line. Folding once and reading it here replaces a
   /// second sort of the whole log.
   static List<SeriesPoint> cumulative(LogFold fold) {
-    final perDay = <int, int>{};
-    final dayOf = <int, DateTime>{};
+    final perDay = <Day, int>{};
     for (final byUnit in fold.doneAtByNode.values) {
       for (final occurred in byUnit.values) {
-        final ord = _dayNumber(occurred);
-        dayOf.putIfAbsent(ord, () => _localMidnight(occurred));
-        perDay[ord] = (perDay[ord] ?? 0) + 1;
+        final day = Day.of(occurred);
+        perDay[day] = (perDay[day] ?? 0) + 1;
       }
     }
     if (perDay.isEmpty) return const [];
@@ -89,7 +78,7 @@ class ProgressSeries {
     final days = perDay.keys.toList()..sort();
     var running = 0;
     return [
-      for (final ord in days) SeriesPoint(dayOf[ord]!, running += perDay[ord]!),
+      for (final day in days) SeriesPoint(day, running += perDay[day]!),
     ];
   }
 }

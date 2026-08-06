@@ -1,3 +1,5 @@
+import '../../core/day.dart';
+
 /// Bidirectional siyum/finish-date engine — the reborn "Calculate" logic.
 ///
 /// Forward:  given a pace, when will I finish?
@@ -6,6 +8,14 @@
 /// A weekday/Shabbos-aware variant models a different learning amount on Shabbos,
 /// matching the legacy app's "advanced" calculation but fed from real remaining
 /// counts. All methods are pure; callers pass `from`/`target` explicitly.
+///
+/// **Everything here is in [Day], in and out.** This engine used to speak local
+/// midnight `DateTime`s — it was the only part of the app that did, while four
+/// other files worked in day ordinals and re-ordinalised whatever it returned.
+/// The mismatch was not academic: projecting a finish date meant adding a
+/// `Duration(days:)` to a local `DateTime`, which shifts by an hour across a
+/// DST boundary, so a projection that crossed one landed on 23:00 of the day
+/// before and every reader that re-normalised it read the wrong day.
 class Predictor {
   const Predictor._();
 
@@ -42,30 +52,30 @@ class Predictor {
   /// [finishDateWithCycle] and [finishDateWithShabbos] — so a flat pace and an
   /// equivalent length-1 cycle predict the *same* date (they previously differed
   /// by a day, giving the Calculator and Dashboard two answers for one pace).
-  static DateTime? finishDate({
+  static Day? finishDate({
     required int remaining,
     required double perDay,
-    required DateTime from,
+    required Day from,
   }) {
     final days = daysToFinish(remaining: remaining, perDay: perDay);
     if (days < 0) return null;
-    if (days == 0) return _dayKey(from);
+    if (days == 0) return from;
     // Same horizon as the cycle version, measured the same way (days *after*
     // `from`), so a flat pace and its length-1 cycle agree about "never" as well
     // as about every date.
     if (days - 1 > maxHorizonDays) return null;
-    return _dayKey(from).add(Duration(days: days - 1));
+    return from + (days - 1);
   }
 
   /// Units/day required to finish [remaining] by [target] (recommendation).
   /// Returns 0 if already done; `double.infinity` if the target is today/past.
   static double requiredPerDay({
     required int remaining,
-    required DateTime from,
-    required DateTime target,
+    required Day from,
+    required Day target,
   }) {
     if (remaining <= 0) return 0;
-    final days = _dayKey(target).difference(_dayKey(from)).inDays;
+    final days = target.difference(from);
     if (days <= 0) return double.infinity;
     return remaining / days;
   }
@@ -78,23 +88,22 @@ class Predictor {
   /// and handed to [finishDateWithCycle]. It used to be a second day-by-day walk
   /// with its own cap and its own off-by-one risk; two implementations of one
   /// calculation is how they came to disagree about when a pace never finishes.
-  static DateTime? finishDateWithShabbos({
+  static Day? finishDateWithShabbos({
     required int remaining,
     required double weekdayAmount,
     required double shabbosAmount,
-    required DateTime from,
+    required Day from,
   }) {
-    final start = _dayKey(from);
     return finishDateWithCycle(
       remaining: remaining,
       amounts: [
         for (var i = 0; i < 7; i++)
-          start.add(Duration(days: i)).weekday == DateTime.saturday
+          (from + i).weekday == DateTime.saturday
               ? shabbosAmount
               : weekdayAmount,
       ],
       startIndex: 0,
-      from: start,
+      from: from,
     );
   }
 
@@ -112,13 +121,13 @@ class Predictor {
   /// answering "you will never finish". Nothing about a repeating cycle needs
   /// iterating: the whole cycles are one division, and only the remainder — at
   /// most one cycle — has to be walked.
-  static DateTime? finishDateWithCycle({
+  static Day? finishDateWithCycle({
     required int remaining,
     required List<double> amounts,
     required int startIndex,
-    required DateTime from,
+    required Day from,
   }) {
-    if (remaining <= 0) return _dayKey(from);
+    if (remaining <= 0) return from;
     final n = amounts.length;
     if (n == 0) return null;
 
@@ -149,14 +158,10 @@ class Predictor {
     for (var i = 0; i < 2 * n; i++) {
       left -= perDay[i % n];
       if (left <= _epsilon) {
-        return offset > maxHorizonDays
-            ? null
-            : _dayKey(from).add(Duration(days: offset));
+        return offset > maxHorizonDays ? null : from + offset;
       }
       offset++;
     }
     return null;
   }
-
-  static DateTime _dayKey(DateTime d) => DateTime(d.year, d.month, d.day);
 }

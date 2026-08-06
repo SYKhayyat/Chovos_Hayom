@@ -1,3 +1,4 @@
+import '../../core/day.dart';
 import 'predictor.dart';
 
 /// Whether a target-date goal is on track, and what pace it needs.
@@ -13,8 +14,8 @@ class GoalStatus {
   final int remaining;
   final double requiredPerDay;
   final double currentPace;
-  final DateTime? projectedFinish;
-  final DateTime target;
+  final Day? projectedFinish;
+  final Day target;
 
   bool get achieved => remaining <= 0;
 
@@ -22,10 +23,12 @@ class GoalStatus {
   bool get onTrack => achieved || currentPace >= requiredPerDay;
 
   /// Projected days early (negative) or late (positive) vs the target.
-  int? get daysOffTarget {
-    if (projectedFinish == null) return null;
-    return projectedFinish!.difference(target).inDays;
-  }
+  ///
+  /// Whole calendar days apart, not elapsed hours divided by 24. The previous
+  /// `projectedFinish.difference(target).inDays` truncated toward zero, so a
+  /// projection landing a day late on a target with any time-of-day on it —
+  /// and across a DST boundary, even one at midnight — read as exactly on time.
+  int? get daysOffTarget => projectedFinish?.difference(target);
 }
 
 /// Evaluates a target-date goal against actual pace. Pure.
@@ -34,8 +37,8 @@ class GoalEvaluator {
 
   static GoalStatus evaluate({
     required int remaining,
-    required DateTime from,
-    required DateTime target,
+    required Day from,
+    required Day target,
     required double currentPace,
   }) {
     return GoalStatus(

@@ -1,3 +1,4 @@
+import '../../core/day.dart';
 import '../entities/layer.dart';
 import 'fold_log.dart';
 import 'layer_requirements.dart';
@@ -62,7 +63,7 @@ class ChazaraSchedule {
   /// requirement is the text alone (`{main}`), the pre-layers behaviour.
   static List<ChazaraItem> due(LogFold fold, DateTime now,
       {List<int> intervals = defaultIntervals, LayerRequirements? required}) {
-    final today = _dayNumber(now);
+    final today = Day.of(now);
     final out = <ChazaraItem>[];
     fold.touchedAtByNode.forEach((nodeId, byUnit) {
       byUnit.forEach((unitIndex, last) {
@@ -70,7 +71,8 @@ class ChazaraSchedule {
         final have = fold.completedLayers(nodeId, unitIndex);
         if (!req.every(have.contains)) return;
         final rc = fold.reviewCount(nodeId, unitIndex);
-        final overdue = today - (_dayNumber(last) + intervalFor(rc, intervals));
+        final due = Day.of(last) + intervalFor(rc, intervals);
+        final overdue = today.difference(due);
         if (overdue < 0) return;
         out.add(ChazaraItem(
           nodeId: nodeId,
@@ -84,8 +86,4 @@ class ChazaraSchedule {
     out.sort((a, b) => b.daysOverdue.compareTo(a.daysOverdue));
     return out;
   }
-
-  /// DST-safe whole-day ordinal in UTC.
-  static int _dayNumber(DateTime d) =>
-      DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch ~/ 86400000;
 }

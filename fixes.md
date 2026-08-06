@@ -872,3 +872,67 @@ cannot silently change what it tests.
 - The RTL layout has been *run* but only glanced at. Overflow, mirrored chevrons and numbers inside
   RTL sentences are exactly what tests miss.
 - Windows has no code signing or installer.
+
+---
+
+## A lamdan reading — 2026-08-05 at `bf8e1d2`
+
+Full report in [`lamdan/chovos-hayom-2026-08-05.md`](lamdan/chovos-hayom-2026-08-05.md). Its
+central claim is that this codebase states its rules in prose and prose does not fail CI — ten
+places where a comment argues a principle correctly and the code beside it breaks the same
+principle. One item has been worked so far.
+
+### Done — "which calendar day is this", answered once
+
+**The finding.** Nine sites, two conventions. Four files carried a byte-identical private
+`_dayNumber` (a UTC whole-day ordinal); `Predictor` carried `_dayKey` (a local midnight
+`DateTime`); four more reached for `a.difference(b).inDays` freehand. `ProgressSeries`'s copy sat
+under a comment saying it was *"the same key `PaceEngine` and `ChazaraSchedule` use"* — and was the
+fourth copy of it.
+
+**What the report missed, and it matters.** The two conventions did not merely differ. The
+local-midnight one was **wrong**, measurably, on any host that observes DST:
+
+```
+2026-03-09 .difference( 2026-03-08 ).inDays  ==  0      // the day is 23 hours long
+2026-11-01 .add( Duration(days: 1) )         ==  2026-11-01 23:00
+```
+
+A `Duration` is elapsed time; a calendar day is 23, 24 or 25 hours of it. So five sites — the
+backup reminder's *"yesterday is one day regardless of the clock time"*, the goal tile's days-off-
+target, the calculator's days-until, the chart's x-axis, and the midnight tick itself — were each
+off by a day, once a year. `Predictor`, the one place in the app that *produces* dates, was
+entirely in the wrong convention. `stats_screen.dart` already carried a comment describing this
+precise defect, having hit it in the heatmap and fixed it in that one file; nothing carried the
+knowledge anywhere else.
+
+**The fix, from the ground up.** `lib/core/day.dart` — a `Day` value type holding a whole-day
+count, so "one day later" and "how many days apart" are integer arithmetic and there is no hour to
+lose. `Day.midnight` is the only way back to a `DateTime`, called once per distinct day at the
+display boundary, which preserves the earlier optimisation that a local `DateTime` (~230× the cost
+of the UTC form) is never built per event. `Day` has real `==`/`hashCode`, so grouping maps key on
+it directly and `ProgressSeries` dropped the parallel `ordinal -> DateTime` side-maps it needed to
+carry alongside every result.
+
+Deleted: four `_dayNumber` copies, `Predictor._dayKey`, `ProgressSeries._localMidnight`,
+`BackupReminder._wholeDaysBetween`. `Predictor`, `GoalEvaluator` and `StatsSummary` now speak `Day`
+in and out, so the ordinalise-what-the-predictor-just-materialised seam is gone rather than tidied.
+
+**And the rule is enforced, not stated.** `test/core/day_math_guard_test.dart` reads `lib/` and
+fails the build on any of the four shapes a fifth copy would be written in — the hand-rolled
+ordinal, `.difference(…).inDays`, a by-hand local midnight, and `Duration(days:)` — with a
+`// day-math: ok — <reason>` escape hatch for a line that genuinely needs one. It was verified to
+fail by feeding it all four, in the spirit of `sheet_insets_test.dart`'s negative control. That is
+the direct answer to the report's thesis, for one row of it: the comment became a gate.
+
+`test/core/day_test.dart` sweeps every consecutive pair of days in a year *in the host's own
+timezone*, so a DST runner exercises both transitions and a UTC runner still runs the property,
+plus a control asserting the replaced forms do disagree on a DST host — a DST test that passes
+everywhere is a DST test that has stopped working.
+
+451 tests green (was 430), `flutter analyze --fatal-infos` clean.
+
+**Still open** — everything else in the report: the `clockProvider` tear-off that notifies nothing
+(one character), the absent `==`/`autoDispose` across the provider graph, required/offered as one
+tri-state, eleven schema versions for a database that has never shipped, and the rest of the
+one-want-built-N-times inventory.

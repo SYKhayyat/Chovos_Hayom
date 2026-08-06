@@ -1,3 +1,4 @@
+import '../../core/day.dart';
 import '../entities/learning_event.dart';
 
 /// Time-based analytics over the log. Uses the optional `durationMin` recorded
@@ -17,7 +18,9 @@ class TimeStats {
 
   /// Minutes logged on or after [start] (compared by `occurredAt`, day-inclusive).
   static int minutesSince(Iterable<LearningEvent> events, DateTime start) {
-    final from = DateTime(start.year, start.month, start.day);
+    // One boundary instant, computed once, then a plain instant comparison per
+    // event — cheaper than asking each event which day it falls on.
+    final from = Day.of(start).midnight;
     var sum = 0;
     for (final e in events) {
       final d = e.durationMin;

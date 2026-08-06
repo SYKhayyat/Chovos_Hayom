@@ -5,6 +5,7 @@ import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
+import '../../core/day.dart';
 import '../../core/keypad.dart';
 import '../../domain/entities/catalog.dart';
 import '../../domain/entities/progress_node.dart';
@@ -34,7 +35,10 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
   final _shabbosCtrl = TextEditingController();
   final _cycleCtrl = TextEditingController(text: '5, 5, 5, 5, 5, 0, 10');
   final _cycleStartCtrl = TextEditingController(text: '1');
-  DateTime _target = DateTime.now().add(const Duration(days: 365));
+  /// A year out, as the opening guess for "finish by". Counted in calendar
+  /// days, not 8,760 hours — the `Duration` form drifts an hour across a DST
+  /// boundary and, started late enough in the evening, names the day before.
+  DateTime _target = (Day.of(DateTime.now()) + 365).midnight;
 
   @override
   void dispose() {
@@ -211,7 +215,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
       CalendarMode mode, DateTime now) {
     final remaining = selected.remaining;
     if (remaining <= 0) return l10n.calculatorAlreadyFinished;
-    final today = DateTime(now.year, now.month, now.day);
+    final today = Day.of(now);
 
     switch (_mode) {
       case _CalcMode.rate:
@@ -220,12 +224,15 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
         final shabbos = double.tryParse(_shabbosCtrl.text.trim());
         final date = shabbos == null
             ? Predictor.finishDateWithCycle(
-                remaining: remaining, amounts: [daily], startIndex: 0, from: now)
+                remaining: remaining,
+                amounts: [daily],
+                startIndex: 0,
+                from: today)
             : Predictor.finishDateWithShabbos(
                 remaining: remaining,
                 weekdayAmount: daily,
                 shabbosAmount: shabbos,
-                from: now);
+                from: today);
         return _finishText(l10n, date, mode, today);
 
       case _CalcMode.cycle:
@@ -239,7 +246,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
           remaining: remaining,
           amounts: amounts,
           startIndex: startDay - 1,
-          from: now,
+          from: today,
         );
         if (date == null) return l10n.calculatorCycleNeverFinishes;
         return _finishText(l10n, date, mode, today) +
@@ -247,18 +254,18 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
 
       case _CalcMode.target:
         final rate = Predictor.requiredPerDay(
-            remaining: remaining, from: now, target: _target);
+            remaining: remaining, from: today, target: Day.of(_target));
         if (rate == double.infinity) return l10n.calculatorPickFutureDate;
         return l10n.calculatorRequiredRate(
             rate.toStringAsFixed(2), DateDisplay.format(_target, mode));
     }
   }
 
-  String _finishText(AppLocalizations l10n, DateTime? date, CalendarMode mode,
-      DateTime today) {
+  String _finishText(
+      AppLocalizations l10n, Day? date, CalendarMode mode, Day today) {
     if (date == null) return l10n.calculatorNeverFinish;
-    final days = date.difference(today).inDays;
-    return l10n.calculatorFinishOn(DateDisplay.format(date, mode), days);
+    return l10n.calculatorFinishOn(
+        DateDisplay.format(date.midnight, mode), date.difference(today));
   }
 }
 

@@ -5,6 +5,7 @@ import '../../application/goals.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
+import '../../core/day.dart';
 import '../../core/keypad.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
@@ -171,7 +172,7 @@ class _UnitGrid extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final picked = await showDatePicker(
       context: context,
-      initialDate: now.add(const Duration(days: 180)),
+      initialDate: (Day.of(now) + 180).midnight,
       firstDate: now,
       lastDate: DateTime(2100),
     );
@@ -347,7 +348,7 @@ class _GoalBanner extends ConsumerWidget {
     final text = goal.achieved
         ? l10n.goalReached
         : l10n.goalBanner(
-            DateDisplay.format(goal.target, mode),
+            DateDisplay.format(goal.target.midnight, mode),
             goal.requiredPerDay.toStringAsFixed(2),
             ok ? l10n.goalOnTrack : l10n.goalBehind,
           );

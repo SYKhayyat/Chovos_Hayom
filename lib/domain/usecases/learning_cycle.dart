@@ -1,3 +1,4 @@
+import '../../core/day.dart';
 import '../entities/catalog.dart';
 import '../entities/catalog_node.dart';
 
@@ -88,7 +89,7 @@ class SequentialCycle {
   List<CycleDay> unitsOn(DateTime date) {
     final total = totalUnits;
     if (total <= 0 || unitsPerDay <= 0) return const [];
-    final day = _dayNumber(date) - _dayNumber(startDate);
+    final day = Day.of(date).difference(Day.of(startDate));
     if (day < 0) return const [];
 
     final out = <CycleDay>[];
@@ -126,7 +127,7 @@ class SequentialCycle {
   int cycleNumberOn(DateTime date) {
     final total = totalUnits;
     if (total <= 0 || unitsPerDay <= 0) return 1;
-    final day = _dayNumber(date) - _dayNumber(startDate);
+    final day = Day.of(date).difference(Day.of(startDate));
     if (day < 0) return 0;
     return (day * unitsPerDay) ~/ total + 1;
   }
@@ -151,10 +152,6 @@ class SequentialCycle {
             CycleSegment.fromJson((s as Map).cast<String, dynamic>()),
         ],
       );
-
-  /// DST-safe whole-day ordinal in UTC, matching the rest of the app's day math.
-  static int _dayNumber(DateTime d) =>
-      DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch ~/ 86400000;
 }
 
 /// Resolves a [CycleDay] to the catalog node it should be logged against.

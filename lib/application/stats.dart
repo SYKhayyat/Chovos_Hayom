@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/day.dart';
 import '../domain/usecases/chazara_schedule.dart';
 import '../domain/usecases/pace_engine.dart';
 import '../domain/usecases/predictor.dart';
@@ -29,9 +30,9 @@ class StatsSummary {
   final int total;
   final int streak;
   final double avgPerDay;
-  final DateTime? projectedFinish;
+  final Day? projectedFinish;
   final List<SeriesPoint> series;
-  final Map<DateTime, int> dailyActivity;
+  final Map<Day, int> dailyActivity;
 
   /// Total minutes ever logged (from sessions that recorded a duration).
   final int totalMinutes;
@@ -60,8 +61,10 @@ final _dayTickProvider = StreamProvider<DateTime>((ref) {
   void scheduleNextMidnight() {
     final now = DateTime.now();
     // A second past midnight, so the new day is unambiguously the current one.
-    final next = DateTime(now.year, now.month, now.day + 1)
-        .add(const Duration(seconds: 1));
+    // Tomorrow's midnight comes from `Day`, which counts days rather than
+    // adding 24 hours, so the tick lands on the actual local midnight even on
+    // the two nights a year that are not 24 hours long.
+    final next = (Day.of(now) + 1).midnight.add(const Duration(seconds: 1));
     timer = Timer(next.difference(now), () {
       if (!controller.isClosed) controller.add(DateTime.now());
       scheduleNextMidnight();
@@ -116,7 +119,8 @@ final statsProvider = Provider<StatsSummary?>((ref) {
     streak: PaceEngine.currentStreak(events, now: now),
     avgPerDay: avg,
     projectedFinish: avg > 0
-        ? Predictor.finishDate(remaining: remaining, perDay: avg, from: now)
+        ? Predictor.finishDate(
+            remaining: remaining, perDay: avg, from: Day.of(now))
         : null,
     series: ProgressSeries.cumulative(fold),
     dailyActivity: ProgressSeries.dailyDone(events),

@@ -104,6 +104,11 @@ Rules:
 lib/
   app/             the route table: every screen addressable by name, ids in the path
   core/            cross-cutting: settings registry, DI, result/error types, date/calendar utils
+                     - day.dart       Day: a calendar day as a whole-day count. The single
+                                      answer to "which calendar day is this" — see the
+                                      dependency-rule note below
+                     - calendar.dart  DateDisplay: formatting a date for a human, Gregorian
+                                      or Hebrew. Presentation only
   domain/          pure Dart. NO Flutter, NO Drift imports.
     entities/         CatalogNode, LearningEvent, Profile, UnitState, Progress, Goal, Cycle
     repositories/     abstract interfaces (CatalogRepository, ProgressRepository, ...)
@@ -141,7 +146,13 @@ test/
   widget/           tree view, logging flow
 ```
 
-**Dependency rule:** `features → domain ← data`, `core` available to all. Domain depends on nothing.
+**Dependency rule:** `features → domain ← data`, `core` available to all. Domain depends on nothing
+but `core`, and on exactly one thing in it: `Day`. Calendar-day arithmetic is the one piece of
+cross-cutting logic every layer needs — pace, chazara spacing, cycle position, projections, the
+heatmap, the midnight tick — and the alternative to sharing it was the four byte-identical private
+copies (in two mutually disagreeing conventions) that `Day` replaced. It is pure Dart with no
+imports, so the domain layer stays framework-free. `test/core/day_math_guard_test.dart` enforces
+the "one place" half of that claim; it is a build failure, not a convention.
 The `Predictor` and `PaceEngine` are pure and are where the legacy "Calculate" logic gets reborn —
 fed from the *actual* log instead of a typed-in number, and bidirectional so it also answers
 "to finish by date X, learn Y/day (and Z on Shabbos)."
