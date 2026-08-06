@@ -338,7 +338,7 @@ class _GoalBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mode = ref.watch(settingsProvider).calendar;
+    final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final scheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
     final ok = goal.onTrack;

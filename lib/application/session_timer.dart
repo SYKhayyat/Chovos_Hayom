@@ -56,6 +56,23 @@ class SessionTimerState {
         if (unitIndex != null) 'unitIndex': unitIndex,
       };
 
+  /// The banner and the log sheet both watch this, and both are mounted while
+  /// a session runs. `build()` re-reads and re-parses the persisted JSON on a
+  /// profile switch or any preferences change, so without `==` an unrelated
+  /// settings write rebuilt the running-session strip on the dashboard.
+  @override
+  bool operator ==(Object other) =>
+      other is SessionTimerState &&
+      other.runningSince == runningSince &&
+      other.accumulated == accumulated &&
+      other.unitIndex == unitIndex &&
+      other.nodeId == nodeId &&
+      other.label == label;
+
+  @override
+  int get hashCode =>
+      Object.hash(runningSince, accumulated, label, nodeId, unitIndex);
+
   factory SessionTimerState.fromJson(Map<String, dynamic> json) =>
       SessionTimerState(
         runningSince: json['runningSince'] == null

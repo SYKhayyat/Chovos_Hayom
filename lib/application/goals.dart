@@ -70,7 +70,13 @@ final goalsProvider =
     NotifierProvider<GoalsController, Map<String, DateTime>>(GoalsController.new);
 
 /// Evaluated status for a node's goal (null if no goal is set).
-final goalStatusProvider = Provider.family<GoalStatus?, String>((ref, nodeId) {
+///
+/// Auto-disposed for the reason [progressNodeProvider] is, and more urgently:
+/// this one does not merely look something up, it scans the entire event log
+/// through [PaceEngine.averagePerDay]. A kept-alive element meant that scan ran
+/// once per node-you-once-looked-at, on every mark, forever.
+final goalStatusProvider =
+    Provider.autoDispose.family<GoalStatus?, String>((ref, nodeId) {
   final target = ref.watch(goalsProvider)[nodeId];
   if (target == null) return null;
   final node = ref.watch(progressNodeProvider(nodeId));

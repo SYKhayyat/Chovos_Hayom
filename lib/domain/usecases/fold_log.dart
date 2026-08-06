@@ -12,6 +12,19 @@ import 'layer_requirements.dart';
 /// each used to re-sort and re-fold the whole log to recover one of these — five
 /// ordered passes where one will do. Folding once and answering all of them from
 /// the result is what keeps a tap on a daf cheap for a user with years of history.
+///
+/// **Deliberately has no `operator ==`, unlike the other derived value types.**
+/// The ones that do — [ProgressNode], [StatsSummary], [BackupStatus] and the
+/// rest — earn it because they are compared far more often than they change: a
+/// midnight tick or a settings write re-derives them and the answer is usually
+/// identical, so a cheap comparison saves a rebuild. This is the opposite. It is
+/// rebuilt only when the event log itself emits, and an emission almost always
+/// means a unit really was marked, so the comparison would run over five nested
+/// maps covering the whole log and then return false — roughly the cost of the
+/// fold again, per mark, to catch the rare no-op write (re-saving a haara with
+/// the same text, or a `reviewed` event on a unit that is not currently
+/// learned). Equality here would be a cost, not a saving. `notify_guard_test.dart`
+/// lists the types that must have it, and this is not on that list on purpose.
 class LogFold {
   const LogFold({
     required this.completedByNode,

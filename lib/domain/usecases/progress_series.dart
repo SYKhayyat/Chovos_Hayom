@@ -9,6 +9,18 @@ class SeriesPoint {
   const SeriesPoint(this.day, this.cumulative);
   final Day day;
   final int cumulative;
+
+  /// So that a `List<SeriesPoint>` can be compared element-wise — [StatsSummary]
+  /// holds one, and its `==` is what stops the Statistics screen rebuilding on
+  /// a midnight tick that changed nothing.
+  @override
+  bool operator ==(Object other) =>
+      other is SeriesPoint &&
+      other.cumulative == cumulative &&
+      other.day == day;
+
+  @override
+  int get hashCode => Object.hash(day, cumulative);
 }
 
 /// Derives time-series views of the log for charts and heatmaps. Pure.

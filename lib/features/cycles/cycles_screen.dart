@@ -30,7 +30,7 @@ class CyclesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final now = ref.watch(clockProvider)();
-    final mode = ref.watch(settingsProvider).calendar;
+    final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final cycles = ref.watch(cyclesTodayProvider);
     final l10n = AppLocalizations.of(context);
 
@@ -231,7 +231,7 @@ class _UnitRow extends ConsumerWidget {
     final day = unit.day;
     final fold = ref.watch(foldProvider).asData?.value;
     final required = ref.watch(layerRequirementsProvider);
-    final mode = ref.watch(settingsProvider).calendar;
+    final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final l10n = AppLocalizations.of(context);
 
     final title = node == null

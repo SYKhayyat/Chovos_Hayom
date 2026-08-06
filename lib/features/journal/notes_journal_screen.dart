@@ -82,7 +82,7 @@ class _NotesJournalScreenState extends ConsumerState<NotesJournalScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mode = ref.watch(settingsProvider).calendar;
+    final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final l10n = AppLocalizations.of(context);
     final entries = _filter(ref.watch(_journalEntriesProvider), l10n);
 

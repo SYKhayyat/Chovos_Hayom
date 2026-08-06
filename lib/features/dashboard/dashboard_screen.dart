@@ -200,13 +200,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // that gate moved inside the provider. See nodeLastActivityProvider.
     final lastActivity = ref.watch(nodeLastActivityProvider);
 
-    final reminderOn = ref.watch(settingsProvider).reminderEnabled;
+    final reminderOn =
+        ref.watch(settingsProvider.select((s) => s.reminderEnabled));
     final events = ref.watch(eventsProvider).asData?.value ?? const [];
     final showNudge = RemindersPolicy.shouldRemind(
       enabled: reminderOn,
       events: events,
       now: ref.watch(clockProvider)(),
     );
+    // Up here with the rest of them, and not inside `forest.when(data:)` where
+    // it was — 68 lines below the comment above that forbids exactly this. A
+    // watch inside the data branch means the subscription exists on a loaded
+    // frame and not on a loading or error one, which is the moving-subscription
+    // shape `nodeLastActivityProvider` was rewritten to remove.
+    final backupDue = ref.watch(backupStatusProvider.select((s) => s.due));
 
     return Scaffold(
       drawer: const _AppDrawer(),
@@ -266,7 +273,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           final leading = <Widget>[
             const SessionBanner(),
             if (showNudge) const _NudgeBanner(),
-            if (ref.watch(backupStatusProvider).due) const _BackupBanner(),
+            if (backupDue) const _BackupBanner(),
           ];
           return ListView.builder(
             padding: const EdgeInsets.only(bottom: 88),
@@ -577,7 +584,13 @@ class _AppDrawer extends ConsumerWidget {
               onTap: () => _go(context, Routes.goals),
             ),
             Consumer(builder: (context, ref, _) {
-              final dueCount = ref.watch(chazaraDueProvider).length;
+              // The count, not the list. The drawer sits in the tree whether it
+              // is open or not, and `chazaraDueProvider` re-derives on every
+              // mark and every clock tick and hands back a fresh `List` each
+              // time — which is never `==` to the last one. All this row wants
+              // is a number, and the number rarely changes.
+              final dueCount =
+                  ref.watch(chazaraDueProvider.select((due) => due.length));
               return ListTile(
                 leading: const Icon(Icons.refresh),
                 title: Text(l10n.navChazaraDue),

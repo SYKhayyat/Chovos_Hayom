@@ -124,10 +124,31 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
   late final TextEditingController _noteCtrl;
   late final Set<String> _selectedLayers;
 
-  /// Redraws the elapsed readout once a second. Display only — the elapsed time
-  /// itself lives in [sessionTimerProvider] and is derived from wall-clock
-  /// instants, so nothing is lost if this widget goes away.
+  /// Redraws the elapsed readout once a second **while the timer is running**.
+  /// Display only — the elapsed time itself lives in [sessionTimerProvider] and
+  /// is derived from wall-clock instants, so nothing is lost if this widget
+  /// goes away.
+  ///
+  /// Started from `build` rather than `initState`, and stopped when the session
+  /// is not running. It used to start unconditionally and run for as long as
+  /// the sheet was open, which for the ordinary case — open the sheet, tick a
+  /// meforish, confirm, with no timer ever started — is a wakeup a second to
+  /// redraw a readout that reads `00:00`. A paused session needs no tick
+  /// either: `elapsedAt` returns the banked total until it is resumed.
   Timer? _ticker;
+
+  /// See [_ticker]. Idempotent, so calling it on every build is free.
+  void _syncTicker(bool running) {
+    if (running == (_ticker != null)) return;
+    if (!running) {
+      _ticker?.cancel();
+      _ticker = null;
+      return;
+    }
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   void initState() {
@@ -141,9 +162,6 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
     _noteCtrl = TextEditingController(text: widget.initialNote ?? '');
     _selectedLayers = {...widget.initialLayers};
     if (_selectedLayers.isEmpty) _selectedLayers.add(mainLayerId);
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
   }
 
   @override
@@ -246,6 +264,7 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
     // [showLogUnitSheet].
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final session = ref.watch(sessionTimerProvider);
+    _syncTicker(session.isRunning);
     final elapsed = session.elapsedAt(_now);
     final l10n = AppLocalizations.of(context);
     return Padding(

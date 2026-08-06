@@ -24,6 +24,22 @@ class BackupStatus {
   final bool due;
 
   bool get neverBackedUp => lastBackupAt == null;
+
+  /// `backupStatusProvider` watches the clock, so this is re-evaluated on every
+  /// midnight tick and every return to the foreground. All four fields are
+  /// scalars; comparing them is cheaper than rebuilding the banner, the drawer
+  /// and the Settings tile to arrive at the same pixels.
+  @override
+  bool operator ==(Object other) =>
+      other is BackupStatus &&
+      other.due == due &&
+      other.unsavedUnits == unsavedUnits &&
+      other.daysSinceBackup == daysSinceBackup &&
+      other.lastBackupAt == lastBackupAt;
+
+  @override
+  int get hashCode =>
+      Object.hash(lastBackupAt, unsavedUnits, daysSinceBackup, due);
 }
 
 /// Whether to remind the user to back up, and what is riding on it.

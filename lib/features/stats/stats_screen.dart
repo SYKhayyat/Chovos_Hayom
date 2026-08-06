@@ -16,7 +16,7 @@ class StatsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(statsProvider);
-    final mode = ref.watch(settingsProvider).calendar;
+    final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final now = ref.watch(clockProvider)();
     final l10n = AppLocalizations.of(context);
 

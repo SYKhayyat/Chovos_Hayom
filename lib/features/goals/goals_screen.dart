@@ -15,7 +15,7 @@ class GoalsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final goals = ref.watch(goalsProvider);
-    final mode = ref.watch(settingsProvider).calendar;
+    final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(

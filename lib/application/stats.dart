@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/day.dart';
+import '../core/equality.dart';
 import '../domain/usecases/chazara_schedule.dart';
 import '../domain/usecases/pace_engine.dart';
 import '../domain/usecases/predictor.dart';
@@ -42,6 +43,34 @@ class StatsSummary {
 
   double get percent => total <= 0 ? 0 : 100 * learned / total;
   int get remaining => total - learned;
+
+  /// Scalars first, collections last, and both collections are compared.
+  ///
+  /// [statsProvider] re-derives on every log change *and* on every clock tick,
+  /// and the Statistics screen is one of the two places that watch it. The
+  /// scalar prefix short-circuits the case that dominates — a marked daf moves
+  /// `learned` on the first comparison — so the walk over [series] and
+  /// [dailyActivity] only ever happens when everything else already matched,
+  /// which is the midnight-tick and app-resume case this is here to absorb.
+  @override
+  bool operator ==(Object other) =>
+      other is StatsSummary &&
+      other.learned == learned &&
+      other.total == total &&
+      other.streak == streak &&
+      other.avgPerDay == avgPerDay &&
+      other.projectedFinish == projectedFinish &&
+      other.totalMinutes == totalMinutes &&
+      other.minutesThisMonth == minutesThisMonth &&
+      listEquals(other.series, series) &&
+      mapEquals(other.dailyActivity, dailyActivity);
+
+  /// Shallow, like `ProgressNode.hashCode` and for the same reason: nothing
+  /// keys a map on one of these, and hashing the series would walk it. Equal
+  /// objects only have to *share* a hash; collisions are legal.
+  @override
+  int get hashCode => Object.hash(learned, total, streak, avgPerDay,
+      projectedFinish, totalMinutes, minutesThisMonth, series.length);
 }
 
 /// Fires once at every local midnight, and whenever [invalidateClock] is called
@@ -83,9 +112,23 @@ final _dayTickProvider = StreamProvider<DateTime>((ref) {
 /// plain `DateTime Function()` — watching the tick here means every dependent
 /// provider re-derives when the day rolls over, without any of them knowing
 /// that time is what changed.
+///
+/// **The closure is the whole mechanism, not a style choice.** This read
+/// `return DateTime.now;` — a static method tear-off, which Dart canonicalises
+/// to one object. So the provider rebuilt on every tick and then handed back a
+/// value `==` to the previous one, Riverpod propagated nothing, and the midnight
+/// timer and [invalidateClock] both fired into a wall. Today's Daf Yomi stayed
+/// frozen at whichever day the app was opened on for the life of the process;
+/// the streak and the chazara badge were rescued only by accident, because they
+/// also watch the log. A fresh closure per build is never `==` to the last one,
+/// which is what makes the tick a change. No test caught it because all 19
+/// overrides pass `() => fixedDate`, a fresh closure — the suite was
+/// structurally incapable of observing it. `provider_notify_test.dart` now
+/// watches the *real* provider through an invalidation, deliberately without an
+/// override, which is the only way this class of defect is visible at all.
 final clockProvider = Provider<DateTime Function()>((ref) {
   ref.watch(_dayTickProvider);
-  return DateTime.now;
+  return () => DateTime.now();
 });
 
 /// Force everything date-dependent to re-derive. Called when the app returns to

@@ -29,6 +29,23 @@ class GoalStatus {
   /// projection landing a day late on a target with any time-of-day on it —
   /// and across a DST boundary, even one at midnight — read as exactly on time.
   int? get daysOffTarget => projectedFinish?.difference(target);
+
+  /// `goalStatusProvider` is a family with one element per node that has a
+  /// goal, and each of them watches the log and the clock. Without this, one
+  /// marked daf re-notified every goal row in the app; with it, only the goals
+  /// whose numbers actually moved do.
+  @override
+  bool operator ==(Object other) =>
+      other is GoalStatus &&
+      other.remaining == remaining &&
+      other.requiredPerDay == requiredPerDay &&
+      other.currentPace == currentPace &&
+      other.projectedFinish == projectedFinish &&
+      other.target == target;
+
+  @override
+  int get hashCode => Object.hash(
+      remaining, requiredPerDay, currentPace, projectedFinish, target);
 }
 
 /// Evaluates a target-date goal against actual pace. Pure.

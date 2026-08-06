@@ -82,7 +82,7 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
   @override
   Widget build(BuildContext context) {
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
-    final mode = ref.watch(settingsProvider).calendar;
+    final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final l10n = AppLocalizations.of(context);
     var total = 0;
     for (final s in _segments) {

@@ -207,7 +207,13 @@ final mergedCatalogProvider = Provider<AsyncValue<Catalog>>((ref) {
 });
 
 /// Look up a single node (base or custom) by id.
-final catalogNodeProvider = Provider.family<CatalogNode?, String>((ref, id) {
+///
+/// Auto-disposed, like the other two families — see [progressNodeProvider] for
+/// why. This one is the cheapest of the three to recompute (a map lookup) and
+/// the easiest to accumulate: every node reached from a chazara row, a goal
+/// row, the unit grid or the node editor mints an element keyed by its id.
+final catalogNodeProvider =
+    Provider.autoDispose.family<CatalogNode?, String>((ref, id) {
   return ref.watch(mergedCatalogProvider).asData?.value.byId(id);
 });
 
@@ -367,5 +373,17 @@ final progressIndexProvider = Provider<Map<String, ProgressNode>>((ref) {
 });
 
 /// The progress subtree rooted at [id] (null while loading or if not found).
-final progressNodeProvider = Provider.family<ProgressNode?, String>(
+///
+/// **Auto-disposed, which is the point of the family and not a detail.** A
+/// Riverpod family keeps one element per argument alive for the life of the
+/// container unless told otherwise, so every node a user opened this session
+/// stayed subscribed to [progressIndexProvider] and re-ran on every mark — for
+/// a screen that had been closed an hour ago. Ten mesechtos browsed meant ten
+/// live elements re-deriving per tap, and nothing ever brought that number
+/// down. Recomputing one of these is a single map lookup; keeping it was the
+/// expensive option.
+///
+/// [ProgressNode] has value equality, so an element that survives (because its
+/// screen is still open) still only notifies when its own subtree moved.
+final progressNodeProvider = Provider.autoDispose.family<ProgressNode?, String>(
     (ref, id) => ref.watch(progressIndexProvider)[id]);

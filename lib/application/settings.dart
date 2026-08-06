@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/calendar.dart';
+import '../core/equality.dart';
 import '../core/preferences.dart';
 import '../domain/usecases/backup_reminder.dart';
 import '../domain/usecases/chazara_schedule.dart';
@@ -73,6 +74,33 @@ class SettingsState {
             backupReminderEnabled ?? this.backupReminderEnabled,
         backupIntervalDays: backupIntervalDays ?? this.backupIntervalDays,
       );
+
+  /// Every setter allocates a new state through [copyWith], and three code
+  /// paths — `applyBackup`, `clearAll`, and a profile switch — rebuild one from
+  /// preferences wholesale. Without `==`, importing a backup whose settings
+  /// match the current ones still rebuilt every screen watching this.
+  ///
+  /// It also makes the `.select`s honest. `copyWith` passes untouched fields
+  /// through by reference, so `select((s) => s.sort)` survives a change to the
+  /// chazara intervals on identity alone — but `_load()` builds a *fresh*
+  /// `SortConfig` from the same stored strings, and without value equality on
+  /// it that select fires on every reload. See [SortConfig].
+  @override
+  bool operator ==(Object other) =>
+      other is SettingsState &&
+      other.calendar == calendar &&
+      other.themeMode == themeMode &&
+      other.reminderEnabled == reminderEnabled &&
+      other.hebrewLayout == hebrewLayout &&
+      other.backupReminderEnabled == backupReminderEnabled &&
+      other.backupIntervalDays == backupIntervalDays &&
+      other.sort == sort &&
+      listEquals(other.chazaraIntervals, chazaraIntervals) &&
+      setEquals(other.hiddenMeforishBars, hiddenMeforishBars);
+
+  @override
+  int get hashCode => Object.hash(calendar, themeMode, reminderEnabled,
+      hebrewLayout, backupReminderEnabled, backupIntervalDays, sort);
 }
 
 class SettingsNotifier extends Notifier<SettingsState> {

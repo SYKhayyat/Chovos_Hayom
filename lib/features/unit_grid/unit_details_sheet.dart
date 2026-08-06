@@ -43,7 +43,7 @@ class _UnitDetailsSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final events = ref.watch(eventsProvider).asData?.value ?? const [];
     final history = UnitHistoryFinder.forUnit(events, node.id, unit);
-    final mode = ref.watch(settingsProvider).calendar;
+    final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final theme = Theme.of(context);
     final done = history.done;
     final l10n = AppLocalizations.of(context);

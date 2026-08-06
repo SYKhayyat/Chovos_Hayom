@@ -43,6 +43,22 @@ class SortConfig {
       );
 
   static const _keep = Object();
+
+  /// What makes `settingsProvider.select((s) => s.sort)` mean anything.
+  ///
+  /// A `select` compares the *selected* value, so without this it compared two
+  /// `SortConfig` objects by identity — fine when `copyWith` passed the same
+  /// instance through, useless the moment `SettingsNotifier._load()` rebuilt one
+  /// from preferences. Three fields, all scalars.
+  @override
+  bool operator ==(Object other) =>
+      other is SortConfig &&
+      other.metric == metric &&
+      other.descending == descending &&
+      other.level == level;
+
+  @override
+  int get hashCode => Object.hash(metric, descending, level);
 }
 
 /// Most-recent activity (a `done` event's `occurredAt`) rolled up to *every*

@@ -25,9 +25,25 @@ class SessionBanner extends ConsumerStatefulWidget {
 class _SessionBannerState extends ConsumerState<SessionBanner> {
   Timer? _ticker;
 
-  @override
-  void initState() {
-    super.initState();
+  /// Runs only while a session is actually running.
+  ///
+  /// This used to be started unconditionally in `initState` and never stopped:
+  /// one `setState` a second, for the life of the process, on a battery-powered
+  /// keypad phone — and for most of that life this widget returns
+  /// `SizedBox.shrink()`, so it was a wakeup a second to rebuild nothing. The
+  /// two states that need no tick are *no session* (nothing on screen) and
+  /// *paused* (`elapsedAt` is the banked total, which does not move until it is
+  /// resumed).
+  ///
+  /// Driven from `build` rather than `initState` because whether it should run
+  /// is a function of provider state, which `initState` cannot watch.
+  void _syncTicker(bool running) {
+    if (running == (_ticker != null)) return;
+    if (!running) {
+      _ticker?.cancel();
+      _ticker = null;
+      return;
+    }
     // Redraws the readout only; the elapsed time itself is derived from
     // wall-clock instants held in the provider.
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -44,6 +60,7 @@ class _SessionBannerState extends ConsumerState<SessionBanner> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionTimerProvider);
+    _syncTicker(session.isRunning);
     if (!session.isActive) return const SizedBox.shrink();
 
     final l10n = AppLocalizations.of(context);

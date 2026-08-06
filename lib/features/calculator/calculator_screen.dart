@@ -73,7 +73,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
   Widget build(BuildContext context) {
     final forest = ref.watch(progressForestProvider).asData?.value;
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
-    final mode = ref.watch(settingsProvider).calendar;
+    final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final now = ref.watch(clockProvider)();
     final l10n = AppLocalizations.of(context);
 

@@ -162,7 +162,11 @@ class SettingsScreen extends ConsumerWidget {
             leading: const Icon(Icons.history),
             title: Text(l10n.settingsBulkHistory),
             subtitle: Text(() {
-              final n = ref.watch(batchHistoryProvider).length;
+              // The count, not the list: `batchHistoryProvider` rebuilds the
+              // whole batch list on every mark and returns a fresh `List`,
+              // which no `==` can match. This subtitle wants one number.
+              final n =
+                  ref.watch(batchHistoryProvider.select((b) => b.length));
               return n == 0
                   ? l10n.settingsBulkHistoryEmpty
                   : l10n.settingsBulkHistoryCount(n);
@@ -799,7 +803,7 @@ class _BackupStandingTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final status = ref.watch(backupStatusProvider);
-    final mode = ref.watch(settingsProvider).calendar;
+    final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final scheme = Theme.of(context).colorScheme;
 
     // Three states, not two. The title used to key off `neverBackedUp` while the

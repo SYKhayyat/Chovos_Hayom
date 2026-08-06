@@ -24,7 +24,7 @@ class BulkHistoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final batches = ref.watch(batchHistoryProvider);
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
-    final mode = ref.watch(settingsProvider).calendar;
+    final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(

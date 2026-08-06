@@ -2,6 +2,12 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
+> **Status, 2026-08-06.** Two items have been worked. **Finding 2** (*"Nothing in this app is
+> comparable, and nothing is disposable"*) and **finding 1** (`clockProvider`) are now resolved —
+> see the second status note below. Everything else in this document stands as written.
+>
+> ---
+>
 > **Status, 2026-08-05.** One item has been worked: *"which calendar day is this"* — the first row
 > of finding 5, and item 2 of *Where I'd start*. It is marked **✅ Resolved** in the three places
 > below where it appears. Everything else in this document stands as written and is untouched.
@@ -28,6 +34,61 @@
 
 ---
 
+> ### Findings 1 and 2, resolved — and where finding 2 was overstated
+>
+> **Every count in finding 2 checked out.** Zero `operator ==` in hand-written `lib/` (the single
+> hit was `Day`, added the day before); zero `autoDispose`; two unconditional 1 Hz tickers; and
+> "13 unselected against 7 selected" is exactly right — there are 16 unselected watches of
+> `settingsProvider`, of which three legitimately want the whole object. The mechanism holds too,
+> and was checked against the installed framework rather than from memory: Riverpod 3.3.2's
+> `updateShouldNotify` is `previous != next`, and v3 still defaults `isAutoDispose: false` for the
+> non-codegen API — so the "providers are autoDispose by default in v3" change does not apply here.
+>
+> **Where the finding oversells itself is its headline trace.** "One `done` event, traced: …" is
+> presented as the thing equality fixes, and mostly it is not. A mark genuinely changes the log, so
+> it genuinely changes the fold, the forest, the index, `statsProvider` and `backupStatusProvider`
+> — no `==` can or should stop any of that. What equality actually buys is **scope**, and that
+> turns out to be worth more: the ~300 nodes that did *not* move no longer notify, an unrelated
+> goal row no longer re-renders, and — the case the finding does not mention at all — the midnight
+> tick and the app-resume invalidation now re-derive everything and then propagate *nothing* when
+> the answers are unchanged, instead of repainting every date-dependent screen on every resume.
+>
+> **`LogFold` is deliberately left without `==`**, against the finding's recommendation. It is
+> rebuilt only when the log emits, and an emission almost always means something really changed, so
+> the comparison would walk five nested maps over the whole log and return false — the cost of the
+> fold again, per mark, to catch a rare no-op write. The reasoning is recorded in `fold_log.dart`
+> so it does not get "fixed" later.
+>
+> **Three families were auto-disposed, not two.** `catalogNodeProvider` is one as well, and it is
+> the easiest of the three to accumulate: every node reached from a chazara row, a goal row, the
+> grid or the node editor minted an element keyed by its id and kept it.
+>
+> **The tickers are gated on `isRunning`, not `isActive`.** A *paused* session's readout is the
+> banked total and does not move until it is resumed, so `isActive` would have left one of the two
+> dead states ticking.
+>
+> **Finding 1 came with it** — one character, same subsystem, and the equality work above only
+> pays off if the tick it absorbs actually fires.
+>
+> Resolved by `lib/core/equality.dart` (element-wise `listEquals`/`mapEquals`/`setEquals`, pure
+> Dart so `domain/` stays package-free); `==`/`hashCode` on `ProgressNode`, `StatsSummary`,
+> `SettingsState`, `SortConfig`, `BackupStatus`, `GoalStatus`, `SeriesPoint` and
+> `SessionTimerState`; `autoDispose` on all three families; the 13 `.select`s at the call sites
+> plus two more on `.length` reads of list providers; the conditional `backupStatusProvider` watch
+> lifted out of `forest.when(data:)` — row 2 of *The claim*, which finding 2 lists as an
+> amplifier; and both tickers gated.
+>
+> **And, again, the rule is enforced rather than stated.** `test/application/notify_guard_test.dart`
+> fails the build on a family without `autoDispose`, on an unselected `settingsProvider` watch
+> outside the two files entitled to one, and — the rot mode that matters — on a field added to any
+> of those eight value types and left out of its `==`, which is silent and surfaces as a screen
+> that has quietly stopped updating. `provider_notify_test.dart` counts notifications through the
+> graph; `rebuild_cost_test.dart` counts real widget rebuilds through `debugOnRebuildDirtyWidget`.
+> Between them 13 assertions fail on the pre-fix code, and the deliberate "must still rebuild"
+> controls pass on both.
+
+---
+
 ## The claim
 
 **This codebase enforces its rules in prose, and prose does not fail CI.**
@@ -40,14 +101,14 @@ design writing in the repository. The problem is what happens next to them:
 | The rule, as written | Where it is broken |
 |---|---|
 | `layer_requirements.dart:63-65` — *"Two copies of one transformation is how a preview and an outcome come to disagree, so there is one."* | `offered_layers.dart:28-43` is the second copy of that exact transformation, in the file that `import`s the type from the first. |
-| `dashboard_screen.dart:198-200` — *"Watched unconditionally, so this widget's set of subscriptions is the same on every build."* | `dashboard_screen.dart:269` — `ref.watch(backupStatusProvider)` inside the `data:` branch. 68 lines below the rule, same `build` method. |
+| `dashboard_screen.dart:198-200` — *"Watched unconditionally, so this widget's set of subscriptions is the same on every build."* | `dashboard_screen.dart:269` — `ref.watch(backupStatusProvider)` inside the `data:` branch. 68 lines below the rule, same `build` method. **✅ Resolved** — lifted to the unconditional block, as a `.select` on `.due`. |
 | `progress_series.dart:20-23` — *"the same key `PaceEngine` and `ChazaraSchedule` use"* | …and then copy-pastes `_dayNumber` a fourth time rather than importing either. **✅ Resolved** — `lib/core/day.dart`, and a guard test that fails the build on a fifth copy. |
-| `stats.dart:79-82` — *"watching the tick here means every dependent provider re-derives when the day rolls over"* | `return DateTime.now;` — a static tear-off, which Dart canonicalizes. Nothing re-derives. Ever. |
+| `stats.dart:79-82` — *"watching the tick here means every dependent provider re-derives when the day rolls over"* | `return DateTime.now;` — a static tear-off, which Dart canonicalizes. Nothing re-derives. Ever. **✅ Resolved** — see finding 1. |
 | `text_prompt.dart` exists because five dialogs each hand-rolled a controller and threw *used after being disposed* | `_LayerNameDialog` (`mefarshim_config_sheet.dart:400`) and `_RangeDialog` (`bulk_actions_sheet.dart:329`) hand-roll it again. |
 | `README.md:358` — *"a message is one whole ARB entry, never a sentence glued together"* | `dateTimeLabel` exists, is translated into Hebrew, and has **zero call sites**; `log_unit_sheet.dart:194` and `add_chazara_sheet.dart:173` each glue the string by hand. |
 | `README.md:373` — *"the lint is what keeps new ones from drifting back out of [the guard]"* | `unawaited_futures` fires on expression statements in **async** bodies. The dominant shape here is `onPressed: () => guarded(...)` — a sync arrow closure. Not flagged, any of them. |
 | `learning_event.dart:62-68` — `copyWith` deleted because *"nothing called it"* | `backup_service.dart:353` hand-lists all eleven fields to rescope an event. That *is* `copyWith`, minus the compiler's help. |
-| `sorting.dart:56-65` — ten lines condemning conditional watches | see row 2. |
+| `sorting.dart:56-65` — ten lines condemning conditional watches | see row 2. **✅ Resolved** with it, and now guarded: `notify_guard_test.dart`. |
 | `backup_service.dart:398-403` — the validator justified by two crashes it prevents | Neither crash exists: `catalog.dart:47` and `inherited_layer_set.dart:38` already refuse to revisit a node, and `catalog_node.dart:101` uses `Iterable.generate`, which is empty for a negative count. The guards that make the validator unnecessary say so in *their own* comments. |
 
 Ten instances. That is not carelessness — every one of these was written by someone who
@@ -119,7 +180,11 @@ verified by hand rather than taking a reader's word for it.
 
 ## Findings, ranked by wrongness × cost of leaving it
 
-### 1. `clockProvider` never notifies anything. `rewrite` — one character.
+### 1. `clockProvider` never notifies anything. `rewrite` — one character. **✅ Resolved**
+
+> `return () => DateTime.now();`. `provider_notify_test.dart` pins it by watching the *real*
+> provider through an invalidation — deliberately without the `overrideWithValue` that made all 19
+> other suites blind to it.
 
 ```dart
 /// …watching the tick here means every dependent provider re-derives when the
@@ -150,7 +215,11 @@ would be harmless. Two of the seven read sites aren't.
 
 ---
 
-### 2. Nothing in this app is comparable, and nothing is disposable. `rewrite`.
+### 2. Nothing in this app is comparable, and nothing is disposable. `rewrite`. **✅ Resolved**
+
+> Every count here was verified and every one held. See the status note at the top for what the
+> finding got right, the one place it oversells itself (the per-mark trace), and the one
+> recommendation deliberately not taken (`LogFold`).
 
 ```
 operator== / hashCode / Equatable / @freezed in hand-written lib/ :  0
@@ -548,11 +617,16 @@ CMake caches just as aggressively, and the CMake target-id failure that once bro
 
 ## Where I'd start
 
-1. `return () => DateTime.now();` — today. One character, one real bug.
+1. ~~`return () => DateTime.now();` — today. One character, one real bug.~~ **✅ Done.**
 2. ~~`core/day.dart` — one file, four deletions, no behaviour change. This week.~~ **✅ Done.** It
    was seven deletions, not four, and it *was* a behaviour change: the DST arithmetic it replaced
    was wrong, not merely duplicated.
-3. `==` on `ProgressNode` and `LogFold`; gate the two 1 Hz tickers. Behind `dashboard_rebuild_test.dart`.
+3. ~~`==` on `ProgressNode` and `LogFold`; gate the two 1 Hz tickers. Behind `dashboard_rebuild_test.dart`.~~
+   **✅ Done** — eight types, not two; `LogFold` deliberately excluded (see the status note); three
+   families auto-disposed; tickers gated on `isRunning`. `dashboard_rebuild_test.dart` turned out
+   to be a framework-error net rather than a rebuild counter, so the safety net for this was built
+   rather than borrowed: `provider_notify_test.dart`, `rebuild_cost_test.dart` and
+   `notify_guard_test.dart`, 29 tests, 13 of which fail on the pre-fix code.
 4. Squash the schema to v1 **before** the first release, because after it this stops being free.
 5. Collapse required/offered to one `role` column — same deadline, same reason.
 6. Delete the in-memory repository fake; spend it on the seven unpumped screens.
