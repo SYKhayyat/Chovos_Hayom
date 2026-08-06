@@ -2,7 +2,9 @@ import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/usecases/chazara_schedule.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
-import 'package:chovos_hayom/domain/usecases/layer_requirements.dart';
+import 'package:chovos_hayom/domain/usecases/layer_roles.dart';
+
+import '../support/layer_roles_dsl.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 LearningEvent doneWith(DateTime day, List<String> layers, {int unit = 2}) =>
@@ -94,13 +96,12 @@ void main() {
     });
 
     test('required layers gate the schedule', () {
-      final req = LayerRequirements(nodeConfig: {
-        'a': {'main', 'rashi'}
-      });
+      final req =
+          LayerRoles(nodeConfig: {'a': roles(required: ['main', 'rashi'])});
       // Only the text learned: due date has passed, but Rashi is required.
       final textOnly = FoldLog.fold([doneWith(DateTime(2026, 1, 1), ['main'])]);
       expect(
-          ChazaraSchedule.due(textOnly, DateTime(2026, 1, 10), required: req),
+          ChazaraSchedule.due(textOnly, DateTime(2026, 1, 10), layers: req),
           isEmpty);
 
       // Add Rashi and it becomes a real, complete unit — now it's due.
@@ -108,7 +109,7 @@ void main() {
         doneWith(DateTime(2026, 1, 1), ['main']),
         doneWith(DateTime(2026, 1, 1), ['rashi']),
       ]);
-      expect(ChazaraSchedule.due(both, DateTime(2026, 1, 10), required: req),
+      expect(ChazaraSchedule.due(both, DateTime(2026, 1, 10), layers: req),
           hasLength(1));
     });
   });

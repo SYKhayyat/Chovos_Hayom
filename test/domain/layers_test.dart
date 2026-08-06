@@ -1,8 +1,10 @@
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
-import 'package:chovos_hayom/domain/usecases/layer_requirements.dart';
+import 'package:chovos_hayom/domain/usecases/layer_roles.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/layer_roles_dsl.dart';
 
 LearningEvent ev(
   EventAction action, {
@@ -35,9 +37,8 @@ void main() {
     });
 
     test('a unit is done only when every required layer is present', () {
-      final req = LayerRequirements(nodeConfig: {
-        'a': {'main', 'rashi'}
-      });
+      final req = LayerRoles(
+          nodeConfig: {'a': roles(required: ['main', 'rashi'])});
       final partial = FoldLog.fold([ev(EventAction.done, layers: ['main'])]);
       expect(partial.doneUnits('a', req), isEmpty);
 
@@ -117,47 +118,95 @@ void main() {
     });
   });
 
-  group('LayerRequirements resolution', () {
+  group('LayerRoles resolution', () {
     test('inherits from the nearest configured ancestor', () {
-      final req = LayerRequirements(
-        nodeConfig: {
-          'shas': {'main', 'rashi'}
-        },
+      final r = LayerRoles(
+        nodeConfig: {'shas': roles(required: ['main', 'rashi'])},
         parentOf: {'shas': null, 'bavli': 'shas', 'shabbos': 'bavli'},
       );
-      expect(req.forNode('shabbos'), {'main', 'rashi'});
+      expect(r.requiredForNode('shabbos'), {'main', 'rashi'});
     });
 
     test('a nearer node overrides an ancestor', () {
-      final req = LayerRequirements(
+      final r = LayerRoles(
         nodeConfig: {
-          'shas': {'main', 'rashi'},
-          'shabbos': {'main'},
+          'shas': roles(required: ['main', 'rashi']),
+          'shabbos': roles(required: ['main']),
         },
         parentOf: {'shas': null, 'shabbos': 'shas'},
       );
-      expect(req.forNode('shabbos'), {'main'});
+      expect(r.requiredForNode('shabbos'), {'main'});
     });
 
-    test('a per-unit override beats the node set', () {
-      final req = LayerRequirements(
-        nodeConfig: {
-          'a': {'main'}
-        },
+    test('a per-unit override beats the node config', () {
+      final r = LayerRoles(
+        nodeConfig: {'a': roles(required: ['main'])},
         unitConfig: {
-          'a': {
-            5: {'main', 'tosafos'}
-          }
+          'a': {5: roles(required: ['main', 'tosafos'])}
         },
       );
-      expect(req.forUnit('a', 2), {'main'});
-      expect(req.forUnit('a', 5), {'main', 'tosafos'});
+      expect(r.requiredFor('a', 2), {'main'});
+      expect(r.requiredFor('a', 5), {'main', 'tosafos'});
     });
 
     test('unconfigured nodes default to text-only', () {
-      final req = LayerRequirements();
-      expect(req.forNode('anything'), {'main'});
-      expect(req.hasLayers('anything', 0), isFalse);
+      final r = LayerRoles();
+      expect(r.requiredForNode('anything'), {'main'});
+      expect(r.checkableForNode('anything'), {'main'});
+      expect(r.isLayered('anything', 0), isFalse);
+    });
+  });
+
+  // This group is what `offered_layers_test.dart` and the `UnitLayerView` half
+  // of this file used to prove separately, about two resolvers that had to be
+  // kept in step. It is one resolver now, so it is one group.
+  group('optional vs required', () {
+    test('checkable includes optional; done depends only on required', () {
+      final r = LayerRoles(
+          nodeConfig: {
+            'a': roles(required: ['main'], optional: ['rashi'])
+          });
+
+      expect(r.requiredFor('a', 2), {'main'});
+      expect(r.checkableFor('a', 2), {'main', 'rashi'});
+      // An optional meforish still makes the unit layered (shows a checklist).
+      expect(r.isLayered('a', 2), isTrue);
+
+      // Learning only the text completes the unit — the optional rashi does not
+      // gate it...
+      final textOnly = FoldLog.fold([ev(EventAction.done, layers: ['main'])]);
+      expect(textOnly.doneUnits('a', r), {2});
+      // ...and the fraction, which tracks only required, reads full.
+      expect(r.fraction('a', 2, textOnly), 1.0);
+    });
+
+    test('a required layer is checkable by construction', () {
+      // The old model could express "required but not offered" — a fourth state
+      // that meant nothing — and every reader had to repair it with
+      // `offered ∪ required`. A role map has one entry per layer, so a required
+      // layer is in the map, so it is checkable. There is nothing to reconcile.
+      final r = LayerRoles(
+          nodeConfig: {
+            'a': roles(required: ['main', 'tosafos'])
+          });
+      expect(r.checkableFor('a', 2).containsAll(r.requiredFor('a', 2)), isTrue);
+      expect(r.checkableFor('a', 2), {'main', 'tosafos'});
+    });
+
+    test('text-only unit is not layered', () {
+      expect(LayerRoles().isLayered('a', 2), isFalse);
+    });
+
+    test('an all-optional node completes on nothing', () {
+      // Nothing required means nothing gates completion, and `fraction` must not
+      // divide by zero on the way to saying so.
+      final r = LayerRoles(
+          nodeConfig: {
+            'a': roles(optional: ['rashi', 'tosafos'])
+          });
+      final none = FoldLog.fold(<LearningEvent>[]);
+      expect(r.requiredFor('a', 2), isEmpty);
+      expect(r.fraction('a', 2, none), 0.0);
     });
   });
 }

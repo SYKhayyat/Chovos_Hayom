@@ -233,20 +233,18 @@ class _ProgressBar extends ConsumerWidget {
   }
 
   /// A thin line per enabled meforish (Rashi, Tosafos, …) showing its coverage
-  /// across this node — the mefarshim offered/required here, plus any that
+  /// across this node — the mefarshim checkable here, plus any that
   /// already carry progress underneath (so an aggregating parent reflects them).
   /// The primary text is excluded; it maps to the main bar above.
   List<Widget> _meforishBars(BuildContext context, WidgetRef ref) {
     if (node.total == 0) return const [];
     final l10n = AppLocalizations.of(context);
-    final offered = ref.watch(offeredLayersProvider).forNode(node.id);
-    final required = ref.watch(layerRequirementsProvider).forNode(node.id);
+    final checkable = ref.watch(layerRolesProvider).checkableForNode(node.id);
     final layers = ref.watch(allLayersProvider);
     final hidden = ref.watch(settingsProvider.select((s) => s.hiddenMeforishBars));
 
     final show = <String>{
-      ...offered,
-      ...required,
+      ...checkable,
       ...node.learnedByLayer.keys,
     }
       ..remove(mainLayerId)

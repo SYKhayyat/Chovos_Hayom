@@ -18,9 +18,9 @@ import 'package:chovos_hayom/domain/entities/profile.dart';
 ///
 /// `BackupService.importInto`'s own doc is narrower and accurate — "the
 /// profile's **log** is made to match the backup exactly" — and only the log is
-/// reconciled. Custom sefarim, custom mefarshim and the required/offered layer
-/// configs go through `addCustomNode`/`setLayerRequirement`, which upsert. A row
-/// the backup does not contain is never removed.
+/// reconciled. Custom sefarim, custom mefarshim and the layer settings go
+/// through `addCustomNode`/`setLayerConfig`, which upsert. A row the backup does
+/// not contain is never removed.
 ///
 /// So a custom sefer invented after the backup survives the restore that said it
 /// would undo it. `backup_service_test.dart` covers the merge and the replace of

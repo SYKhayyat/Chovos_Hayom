@@ -2,7 +2,9 @@ import 'package:chovos_hayom/application/backup_service.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/layer.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
-import 'package:chovos_hayom/domain/usecases/layer_requirements.dart';
+import 'package:chovos_hayom/domain/usecases/layer_roles.dart';
+
+import '../support/layer_roles_dsl.dart';
 import 'package:chovos_hayom/features/settings/settings_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -43,8 +45,9 @@ void main() {
     return BackupService(source).export(
       'p1',
       customNodes: const [],
-      requirements: const [
-        LayerConfigEntry(nodeId: nodeId, unitIndex: -1, layers: {mainLayerId}),
+      layerConfigs: [
+        LayerConfigEntry(
+            nodeId: nodeId, unitIndex: -1, roles: roles(required: [mainLayerId])),
       ],
     );
   }
@@ -55,17 +58,19 @@ void main() {
 
     // Here and now, this profile requires Rashi as well, and has nothing logged.
     final repo = InMemoryProgressRepository();
-    await repo.setLayerRequirement(
+    await repo.setLayerConfig(
         'p1',
-        const LayerConfigEntry(
-            nodeId: nodeId, unitIndex: -1, layers: {mainLayerId, 'rashi'}));
-    final currentRequired = LayerRequirements.fromEntries(
-        await repo.watchLayerRequirements('p1').first);
+        LayerConfigEntry(
+            nodeId: nodeId,
+            unitIndex: -1,
+            roles: roles(required: [mainLayerId, 'rashi'])));
+    final currentRoles = LayerRoles.fromEntries(
+        await repo.watchLayerConfigs('p1').first);
 
     final diff = await SettingsScreen.restoreDiff(
       repo: repo,
       profileId: 'p1',
-      currentRequired: currentRequired,
+      currentRoles: currentRoles,
       catalogParents: const {nodeId: 'shas.moed'},
       json: json,
       mode: ImportMode.restoreEverything,
@@ -80,24 +85,27 @@ void main() {
   });
 
   test('the narrow restore is previewed under the merge it performs', () async {
-    // restoreLog upserts the backup's requirements over what is here rather than
-    // replacing them, and for this node the backup's row wins — so the answer is
-    // the same 2. The difference between the modes shows up when the *profile*
-    // holds a requirement the backup does not mention, which restoreLog keeps.
+    // restoreLog upserts the backup's layer settings over what is here rather
+    // than replacing them, and for this node the backup's row wins — so the
+    // answer is the same 2. The difference between the modes shows up when the
+    // *profile* holds a setting the backup does not mention, which restoreLog
+    // keeps.
     final json = await textOnlyBackup();
 
     final repo = InMemoryProgressRepository();
-    await repo.setLayerRequirement(
+    await repo.setLayerConfig(
         'p1',
-        const LayerConfigEntry(
-            nodeId: 'other', unitIndex: -1, layers: {mainLayerId, 'rashi'}));
-    final currentRequired = LayerRequirements.fromEntries(
-        await repo.watchLayerRequirements('p1').first);
+        LayerConfigEntry(
+            nodeId: 'other',
+            unitIndex: -1,
+            roles: roles(required: [mainLayerId, 'rashi'])));
+    final currentRoles = LayerRoles.fromEntries(
+        await repo.watchLayerConfigs('p1').first);
 
     final kept = await SettingsScreen.restoreDiff(
       repo: repo,
       profileId: 'p1',
-      currentRequired: currentRequired,
+      currentRoles: currentRoles,
       catalogParents: const {nodeId: 'shas.moed', 'other': null},
       json: json,
       mode: ImportMode.restoreLog,
@@ -105,7 +113,7 @@ void main() {
     final dropped = await SettingsScreen.restoreDiff(
       repo: repo,
       profileId: 'p1',
-      currentRequired: currentRequired,
+      currentRoles: currentRoles,
       catalogParents: const {nodeId: 'shas.moed', 'other': null},
       json: json,
       mode: ImportMode.restoreEverything,
@@ -113,7 +121,7 @@ void main() {
 
     expect(kept.restored, 2);
     expect(dropped.restored, 2);
-    // The unrelated requirement is the one the two modes disagree about, and
+    // The unrelated layer setting is the one the two modes disagree about, and
     // only the wide one counts it as something it will delete.
     expect(kept.customisations, 0);
     expect(dropped.customisations, 1);
@@ -127,9 +135,11 @@ void main() {
     final json = await BackupService(source).export(
       'p1',
       customNodes: const [],
-      requirements: const [
+      layerConfigs: [
         LayerConfigEntry(
-            nodeId: nodeId, unitIndex: -1, layers: {mainLayerId, 'rashi'}),
+            nodeId: nodeId,
+            unitIndex: -1,
+            roles: roles(required: [mainLayerId, 'rashi'])),
       ],
     );
 
@@ -139,7 +149,7 @@ void main() {
     final diff = await SettingsScreen.restoreDiff(
       repo: repo,
       profileId: 'p1',
-      currentRequired: LayerRequirements.fromEntries(const []),
+      currentRoles: LayerRoles.fromEntries(const []),
       catalogParents: const {nodeId: 'shas.moed'},
       json: json,
       mode: ImportMode.restoreEverything,

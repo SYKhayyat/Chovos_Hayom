@@ -1,46 +1,54 @@
-/// A sparse, inherited set of layer ids resolved per node (and optionally per
-/// unit). This is the shared engine behind both the *required* set (what a unit
-/// needs to count as done) and the *offered* set (what a unit lets you check off
-/// at all) — the two are the same shape and inheritance rules, only their
-/// meaning and default differ.
+import '../entities/layer.dart';
+
+/// A sparse, inherited map of layer id -> [LayerRole], resolved per node (and
+/// optionally per unit). This is the engine behind every layer question the app
+/// asks: what may be ticked here, and what has to be ticked for the unit to
+/// count.
 ///
-/// Configuration is sparse: a set can be pinned at any node (usually high — a
+/// It used to resolve a bare `Set<String>`, and was instantiated twice — once
+/// for the *required* set and once for the *offered* set, with the same default
+/// both times. Two resolvers over the same tree can be pinned at different
+/// depths, which is how a node came to require a meforish it did not offer. One
+/// resolver over a role map cannot: a layer's role is one answer, pinned in one
+/// place.
+///
+/// Configuration is sparse: a map can be pinned at any node (usually high — a
 /// whole Shas or a mesechta) and applies to every descendant unless a nearer
 /// node, or the unit itself, overrides it. When nothing is configured anywhere
-/// the answer is [defaultSet].
+/// the answer is [defaultRoles].
 ///
 /// Node-level resolution is memoized, so a full rollup stays O(nodes), not
 /// O(nodes × depth).
-class InheritedLayerSet {
-  InheritedLayerSet({
+class InheritedLayerRoles {
+  InheritedLayerRoles({
     this.nodeConfig = const {},
     this.unitConfig = const {},
     this.parentOf = const {},
-    required this.defaultSet,
+    this.defaultRoles = defaultLayerRoles,
   });
 
-  /// nodeId -> the set pinned at that node (empty means "revert to default").
-  final Map<String, Set<String>> nodeConfig;
+  /// nodeId -> the roles pinned at that node (empty means "revert to default").
+  final Map<String, Map<String, LayerRole>> nodeConfig;
 
-  /// nodeId -> (unit index -> per-unit override set).
-  final Map<String, Map<int, Set<String>>> unitConfig;
+  /// nodeId -> (unit index -> per-unit override).
+  final Map<String, Map<int, Map<String, LayerRole>>> unitConfig;
 
   /// nodeId -> parent id, for walking inheritance upward.
   final Map<String, String?> parentOf;
 
   /// The answer when nothing is configured on a node or any ancestor.
-  final Set<String> defaultSet;
+  final Map<String, LayerRole> defaultRoles;
 
-  final Map<String, Set<String>> _nodeCache = {};
+  final Map<String, Map<String, LayerRole>> _nodeCache = {};
 
-  /// The set that applies to [nodeId] at node level (inherited from ancestors).
+  /// The roles that apply to [nodeId] at node level (inherited from ancestors).
   ///
   /// Walks upward iteratively and refuses to visit a node twice. A parent cycle
   /// would otherwise recurse forever — an unrecoverable hang on every rebuild,
   /// from data that is merely wrong. Import validation and the node editor both
   /// stop a cycle from being created; this makes the resolver safe regardless of
   /// where its `parentOf` map came from.
-  Set<String> forNode(String nodeId) {
+  Map<String, LayerRole> forNode(String nodeId) {
     final cached = _nodeCache[nodeId];
     if (cached != null) return cached;
 
@@ -49,7 +57,7 @@ class InheritedLayerSet {
     final chain = <String>[];
     final seen = <String>{};
     var current = nodeId;
-    Set<String>? resolved;
+    Map<String, LayerRole>? resolved;
 
     while (true) {
       final memo = _nodeCache[current];
@@ -59,7 +67,7 @@ class InheritedLayerSet {
       }
       if (!seen.add(current)) {
         // A cycle: nothing above it can answer, so fall back to the default.
-        resolved = defaultSet;
+        resolved = defaultRoles;
         break;
       }
       chain.add(current);
@@ -68,12 +76,12 @@ class InheritedLayerSet {
       if (own != null) {
         // An explicitly-empty pin means "reset to the default here", not
         // "nothing".
-        resolved = own.isEmpty ? defaultSet : own;
+        resolved = own.isEmpty ? defaultRoles : own;
         break;
       }
       final parent = parentOf[current];
       if (parent == null) {
-        resolved = defaultSet;
+        resolved = defaultRoles;
         break;
       }
       current = parent;
@@ -87,7 +95,8 @@ class InheritedLayerSet {
 
   /// The nearest node — [nodeId] itself or an ancestor — that carries an
   /// explicit node-level pin, or null when nothing is configured anywhere up the
-  /// chain (so the answer is the pure [defaultSet]). Cycle-guarded like [forNode].
+  /// chain (so the answer is the pure [defaultRoles]). Cycle-guarded like
+  /// [forNode].
   ///
   /// Lets the UI tell "set here" from "inherited from Shas" from "default", so a
   /// config sheet doesn't silently pin an inherited answer as a node-level
@@ -104,11 +113,11 @@ class InheritedLayerSet {
     }
   }
 
-  /// The set for a specific unit — a per-unit override if present, otherwise the
-  /// node-level (inherited) set.
-  Set<String> forUnit(String nodeId, int unitIndex) {
+  /// The roles for a specific unit — a per-unit override if present, otherwise
+  /// the node-level (inherited) answer.
+  Map<String, LayerRole> forUnit(String nodeId, int unitIndex) {
     final override = unitConfig[nodeId]?[unitIndex];
-    if (override != null) return override.isEmpty ? defaultSet : override;
+    if (override != null) return override.isEmpty ? defaultRoles : override;
     return forNode(nodeId);
   }
 }

@@ -2,7 +2,7 @@ import '../entities/catalog_node.dart';
 import '../entities/layer.dart';
 import '../entities/learning_event.dart';
 import '../entities/profile.dart';
-import '../usecases/layer_requirements.dart';
+import '../usecases/layer_roles.dart';
 
 /// Persists the append-only event log, profiles, and user-defined custom nodes.
 /// The log is the single source of truth; nothing derived is stored here.
@@ -76,22 +76,17 @@ abstract interface class ProgressRepository {
   Future<void> addCustomLayer(String profileId, Layer layer);
   Future<void> removeCustomLayer(String profileId, String layerId);
 
-  /// Reactive stream of the profile's required-layer settings (node + unit).
-  Stream<List<LayerConfigEntry>> watchLayerRequirements(String profileId);
+  /// Reactive stream of the profile's layer settings (node + unit level).
+  ///
+  /// One stream, because one entry carries a node's whole answer. This was two
+  /// streams over two tables, which meant every consumer had to watch both and
+  /// re-unite them — and any consumer that watched one and not the other was
+  /// simply wrong about what the user had configured.
+  Stream<List<LayerConfigEntry>> watchLayerConfigs(String profileId);
 
-  /// Pin a required-layer set at a node (unitIndex -1) or a single unit.
-  Future<void> setLayerRequirement(String profileId, LayerConfigEntry entry);
+  /// Pin a layer role map at a node (unitIndex -1) or a single unit.
+  Future<void> setLayerConfig(String profileId, LayerConfigEntry entry);
 
-  /// Remove a required-layer setting, reverting to inheritance/default.
-  Future<void> clearLayerRequirement(
-      String profileId, String nodeId, int unitIndex);
-
-  /// Reactive stream of the profile's *offered* (checkable) layer settings.
-  Stream<List<LayerConfigEntry>> watchOfferedLayers(String profileId);
-
-  /// Pin an offered-layer set at a node (unitIndex -1) or a single unit.
-  Future<void> setOfferedLayers(String profileId, LayerConfigEntry entry);
-
-  /// Remove an offered-layer setting, reverting to inheritance/default.
-  Future<void> clearOfferedLayers(String profileId, String nodeId, int unitIndex);
+  /// Remove a layer setting, reverting to inheritance/default.
+  Future<void> clearLayerConfig(String profileId, String nodeId, int unitIndex);
 }

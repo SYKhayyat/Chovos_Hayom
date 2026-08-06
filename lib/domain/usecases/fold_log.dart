@@ -1,7 +1,7 @@
 import '../entities/enums.dart';
 import '../entities/layer.dart';
 import '../entities/learning_event.dart';
-import 'layer_requirements.dart';
+import 'layer_roles.dart';
 
 /// The state derived by folding the event log: for each unit of each node, which
 /// *layers* are done, how many review passes it has had, when it was learned,
@@ -73,15 +73,15 @@ class LogFold {
       annotatedByNode[nodeId]?.contains(unitIndex) ?? false;
 
   /// Units currently *complete* — every required layer is done. With no
-  /// [required] resolver the requirement is just the text (`{main}`), which
+  /// [layers] resolver the requirement is just the text (`{main}`), which
   /// reproduces the pre-layers behaviour exactly.
-  Set<int> doneUnits(String nodeId, [LayerRequirements? required]) {
+  Set<int> doneUnits(String nodeId, [LayerRoles? layers]) {
     final byUnit = completedByNode[nodeId];
     if (byUnit == null) return const {};
     final out = <int>{};
     byUnit.forEach((unit, completed) {
       if (completed.isEmpty) return;
-      final req = required?.forUnit(nodeId, unit) ?? const {mainLayerId};
+      final req = layers?.requiredFor(nodeId, unit) ?? const {mainLayerId};
       if (_subset(req, completed)) out.add(unit);
     });
     return out;

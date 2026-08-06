@@ -34,16 +34,16 @@ class _UnitLayersSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fold = ref.watch(foldProvider).asData?.value;
-    final view = ref.watch(unitLayerViewProvider);
+    final roles = ref.watch(layerRolesProvider);
     final allLayers = ref.watch(allLayersProvider);
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
 
     final completed = fold?.completedLayers(node.id, unit) ?? const {};
-    final requiredSet = view.requiredFor(node.id, unit);
-    // Everything checkable here: offered ∪ required. Optional (offered-only)
-    // mefarshim appear too, but only required ones gate completion.
-    final checkableSet = view.checkableFor(node.id, unit);
+    final requiredSet = roles.requiredFor(node.id, unit);
+    // Everything checkable here. Optional mefarshim appear too, but only required
+    // ones gate completion.
+    final checkableSet = roles.checkableFor(node.id, unit);
 
     // Show checkable layers first, then any extra already-learned ones, in a
     // stable order that follows the mefarshim list.

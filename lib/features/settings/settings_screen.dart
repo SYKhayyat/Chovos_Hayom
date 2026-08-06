@@ -19,7 +19,7 @@ import '../../domain/entities/layer.dart';
 import '../../domain/entities/learning_event.dart';
 import '../../domain/repositories/progress_repository.dart';
 import '../../domain/usecases/fold_log.dart';
-import '../../domain/usecases/layer_requirements.dart';
+import '../../domain/usecases/layer_roles.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
@@ -286,14 +286,13 @@ class SettingsScreen extends ConsumerWidget {
     await guard.run(
       () async {
         // Straight from the repository, not from the providers that cache it.
-        // These four were `.asData?.value ?? const []`, which turns a provider
+        // These were `.asData?.value ?? const []`, which turns a provider
         // still in flight — or one nothing on this screen keeps alive — into an
         // empty list: a clear that silently skips exactly the rows it was asked
         // to remove, and then reports success for it.
         final customNodes = await repo.watchCustomNodes(profileId).first;
         final customLayers = await repo.watchCustomLayers(profileId).first;
-        final requirements = await repo.watchLayerRequirements(profileId).first;
-        final offered = await repo.watchOfferedLayers(profileId).first;
+        final layerConfigs = await repo.watchLayerConfigs(profileId).first;
 
         await settings.clearAll();
         // Goals are configuration, not history: they travel with the settings
@@ -316,11 +315,8 @@ class SettingsScreen extends ConsumerWidget {
           for (final l in customLayers) {
             await repo.removeCustomLayer(profileId, l.id);
           }
-          for (final r in requirements) {
-            await repo.clearLayerRequirement(profileId, r.nodeId, r.unitIndex);
-          }
-          for (final o in offered) {
-            await repo.clearOfferedLayers(profileId, o.nodeId, o.unitIndex);
+          for (final c in layerConfigs) {
+            await repo.clearLayerConfig(profileId, c.nodeId, c.unitIndex);
           }
         });
       },
@@ -383,7 +379,7 @@ class SettingsScreen extends ConsumerWidget {
   /// `.asData?.value ?? const []`. A provider still in flight — or one nothing
   /// on this screen keeps alive — reads as an **empty list**, which means a
   /// backup that silently leaves out your custom sefarim, your custom mefarshim
-  /// and every required/offered set, and says "Saved backup" about it. That is
+  /// and every layer setting, and says "Saved backup" about it. That is
   /// the same defect goals had before they were added here, and a backup you
   /// only discover is incomplete when you restore it is the worst kind.
   Future<String> _buildExport(WidgetRef ref) async {
@@ -393,8 +389,7 @@ class SettingsScreen extends ConsumerWidget {
       profileId,
       customNodes: await repo.watchCustomNodes(profileId).first,
       customLayers: await repo.watchCustomLayers(profileId).first,
-      requirements: await repo.watchLayerRequirements(profileId).first,
-      offered: await repo.watchOfferedLayers(profileId).first,
+      layerConfigs: await repo.watchLayerConfigs(profileId).first,
       settings: ref.read(settingsProvider.notifier).toBackup(),
       goals: ref.read(goalsProvider),
     );
@@ -613,8 +608,8 @@ class SettingsScreen extends ConsumerWidget {
   /// on the *required-layer sets*, and an import overwrites those from the
   /// backup too. Folding both sides against the current sets predicted the new
   /// log under the old rules — numbers belonging to a state that never exists.
-  /// So each side is folded against the requirements that really apply to it:
-  /// today's for today, and for the outcome the sets the chosen [mode] will
+  /// So each side is folded against the layer settings that really apply to it:
+  /// today's for today, and for the outcome the settings the chosen [mode] will
   /// leave behind (the backup's alone for a full restore; the backup's overlaid
   /// on what is here for the narrower one, which upserts rather than replaces).
   Future<RestoreDiff> _restoreDiff(WidgetRef ref, String json,
@@ -622,7 +617,7 @@ class SettingsScreen extends ConsumerWidget {
       restoreDiff(
         repo: ref.read(progressRepositoryProvider),
         profileId: ref.read(activeProfileProvider),
-        currentRequired: ref.read(layerRequirementsProvider),
+        currentRoles: ref.read(layerRolesProvider),
         catalogParents:
             parentsOf(ref.read(mergedCatalogProvider).asData?.value),
         json: json,
@@ -637,7 +632,7 @@ class SettingsScreen extends ConsumerWidget {
   static Future<RestoreDiff> restoreDiff({
     required ProgressRepository repo,
     required String profileId,
-    required LayerRequirements currentRequired,
+    required LayerRoles currentRoles,
     required Map<String, String?> catalogParents,
     required String json,
     required ImportMode mode,
@@ -654,24 +649,23 @@ class SettingsScreen extends ConsumerWidget {
     };
     final byKey = {
       if (!mode.replacesCustomisation)
-        for (final e in await repo.watchLayerRequirements(profileId).first)
+        for (final e in await repo.watchLayerConfigs(profileId).first)
           (e.nodeId, e.unitIndex): e,
-      for (final e in backup.requirements) (e.nodeId, e.unitIndex): e,
+      for (final e in backup.layerConfigs) (e.nodeId, e.unitIndex): e,
     };
-    final restoredRequired =
-        LayerRequirements.fromEntries(byKey.values, parentOf: parentOf);
+    final restoredRoles =
+        LayerRoles.fromEntries(byKey.values, parentOf: parentOf);
 
-    Set<String> marked(
-        Iterable<LearningEvent> events, LayerRequirements required) {
+    Set<String> marked(Iterable<LearningEvent> events, LayerRoles roles) {
       final fold = FoldLog.fold(events);
       return {
         for (final nodeId in fold.completedByNode.keys)
-          for (final unit in fold.doneUnits(nodeId, required)) '$nodeId $unit',
+          for (final unit in fold.doneUnits(nodeId, roles)) '$nodeId $unit',
       };
     }
 
-    final now = marked(current, currentRequired);
-    final restored = marked(backup.events, restoredRequired);
+    final now = marked(current, currentRoles);
+    final restored = marked(backup.events, restoredRoles);
     final backupIds = backup.events.map((e) => e.id).toSet();
     return RestoreDiff(
       restored: restored.difference(now).length,

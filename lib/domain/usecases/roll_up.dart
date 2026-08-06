@@ -2,7 +2,7 @@ import '../entities/catalog.dart';
 import '../entities/catalog_node.dart';
 import '../entities/progress_node.dart';
 import 'fold_log.dart';
-import 'layer_requirements.dart';
+import 'layer_roles.dart';
 
 /// Builds a [ProgressNode] tree by rolling leaf progress up through the catalog.
 ///
@@ -12,23 +12,23 @@ import 'layer_requirements.dart';
 class RollUp {
   const RollUp._();
 
-  /// Build the full tree from the catalog roots. [required] resolves which
+  /// Build the full tree from the catalog roots. [layers] resolves which
   /// layers each unit needs to count as complete (null = text-only).
   static List<ProgressNode> buildForest(Catalog catalog, LogFold fold,
-          [LayerRequirements? required]) =>
-      [for (final root in catalog.roots) _build(catalog, root, fold, required)];
+          [LayerRoles? layers]) =>
+      [for (final root in catalog.roots) _build(catalog, root, fold, layers)];
 
   /// Build the subtree rooted at [nodeId], or null if it doesn't exist.
   static ProgressNode? buildNode(Catalog catalog, String nodeId, LogFold fold,
-      [LayerRequirements? required]) {
+      [LayerRoles? layers]) {
     final node = catalog.byId(nodeId);
-    return node == null ? null : _build(catalog, node, fold, required);
+    return node == null ? null : _build(catalog, node, fold, layers);
   }
 
   static ProgressNode _build(Catalog catalog, CatalogNode node, LogFold fold,
-      LayerRequirements? required) {
+      LayerRoles? layers) {
     if (node.isLeaf) {
-      final done = fold.doneUnits(node.id, required);
+      final done = fold.doneUnits(node.id, layers);
       var learned = 0;
       for (final unit in done) {
         if (node.containsUnit(unit)) learned++;
@@ -56,7 +56,7 @@ class RollUp {
 
     final children = [
       for (final child in catalog.childrenOf(node.id))
-        _build(catalog, child, fold, required),
+        _build(catalog, child, fold, layers),
     ];
     var learned = 0;
     var total = 0;

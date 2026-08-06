@@ -2,8 +2,7 @@ import '../domain/entities/catalog.dart';
 import '../domain/entities/catalog_node.dart';
 import '../domain/entities/enums.dart';
 import '../domain/usecases/fold_log.dart';
-import '../domain/usecases/layer_requirements.dart';
-import '../domain/usecases/offered_layers.dart';
+import '../domain/usecases/layer_roles.dart';
 import 'logging_service.dart';
 
 /// An inclusive range of unit indices, `[start, end]`. Used to bound a bulk
@@ -88,15 +87,13 @@ class BulkMarker {
   BulkMarker({
     required this.catalog,
     required this.fold,
-    required this.required,
-    required this.offered,
+    required this.layers,
     required this.logger,
   });
 
   final Catalog catalog;
   final LogFold fold;
-  final LayerRequirements required;
-  final OfferedLayers offered;
+  final LayerRoles layers;
   final LoggingService logger;
 
   /// Plan marking units done under [nodeId] according to [selection]. [range]
@@ -172,9 +169,9 @@ class BulkMarker {
       String leafId, int unit, LayerSelection selection, Set<String> have) {
     final want = switch (selection) {
       SingleLayerSelection(:final layerId) => {layerId},
-      RequiredLayerSelection() => required.forUnit(leafId, unit),
+      RequiredLayerSelection() => layers.requiredFor(leafId, unit),
       // "Finish all possible" isn't well defined; treat as the required set.
-      AllLayersSelection() => required.forUnit(leafId, unit),
+      AllLayersSelection() => layers.requiredFor(leafId, unit),
     };
     return [
       for (final l in want)

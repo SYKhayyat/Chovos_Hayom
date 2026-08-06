@@ -7,7 +7,7 @@ import '../../domain/entities/layer.dart';
 import '../../domain/entities/learning_event.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/progress_repository.dart';
-import '../../domain/usecases/layer_requirements.dart';
+import '../../domain/usecases/layer_roles.dart';
 import '../drift/database.dart';
 
 /// Drift-backed [ProgressRepository]. The app's real persistence layer.
@@ -128,10 +128,7 @@ class DriftProgressRepository implements ProgressRepository {
       await (_db.delete(_db.customLayers)
             ..where((t) => t.profileId.equals(profileId)))
           .go();
-      await (_db.delete(_db.requiredLayerConfigs)
-            ..where((t) => t.profileId.equals(profileId)))
-          .go();
-      await (_db.delete(_db.offeredLayerConfigs)
+      await (_db.delete(_db.layerConfigs)
             ..where((t) => t.profileId.equals(profileId)))
           .go();
       await (_db.delete(_db.profiles)..where((t) => t.id.equals(profileId)))
@@ -254,80 +251,57 @@ class DriftProgressRepository implements ProgressRepository {
         .go();
   }
 
-  // --- Required-layer settings ---------------------------------------------
+  // --- Layer settings -------------------------------------------------------
 
   @override
-  Stream<List<LayerRequirementEntry>> watchLayerRequirements(String profileId) {
-    final query = _db.select(_db.requiredLayerConfigs)
-      ..where((t) => t.profileId.equals(profileId));
-    return query.watch().map((rows) => rows
-        .map((r) => LayerRequirementEntry(
-              nodeId: r.nodeId,
-              unitIndex: r.unitIndex,
-              layers: (jsonDecode(r.layersJson) as List).cast<String>().toSet(),
-            ))
-        .toList());
-  }
-
-  @override
-  Future<void> setLayerRequirement(
-      String profileId, LayerRequirementEntry entry) async {
-    await _db.into(_db.requiredLayerConfigs).insertOnConflictUpdate(
-          RequiredLayerConfigsCompanion.insert(
-            profileId: profileId,
-            nodeId: entry.nodeId,
-            unitIndex: Value(entry.unitIndex),
-            layersJson: jsonEncode(entry.layers.toList()),
-          ),
-        );
-  }
-
-  @override
-  Future<void> clearLayerRequirement(
-      String profileId, String nodeId, int unitIndex) async {
-    await (_db.delete(_db.requiredLayerConfigs)
-          ..where((t) =>
-              t.profileId.equals(profileId) &
-              t.nodeId.equals(nodeId) &
-              t.unitIndex.equals(unitIndex)))
-        .go();
-  }
-
-  // --- Offered (checkable) layer settings ----------------------------------
-
-  @override
-  Stream<List<LayerConfigEntry>> watchOfferedLayers(String profileId) {
-    final query = _db.select(_db.offeredLayerConfigs)
+  Stream<List<LayerConfigEntry>> watchLayerConfigs(String profileId) {
+    final query = _db.select(_db.layerConfigs)
       ..where((t) => t.profileId.equals(profileId));
     return query.watch().map((rows) => rows
         .map((r) => LayerConfigEntry(
               nodeId: r.nodeId,
               unitIndex: r.unitIndex,
-              layers: (jsonDecode(r.layersJson) as List).cast<String>().toSet(),
+              roles: _decodeRoles(r.rolesJson),
             ))
         .toList());
   }
 
   @override
-  Future<void> setOfferedLayers(String profileId, LayerConfigEntry entry) async {
-    await _db.into(_db.offeredLayerConfigs).insertOnConflictUpdate(
-          OfferedLayerConfigsCompanion.insert(
+  Future<void> setLayerConfig(String profileId, LayerConfigEntry entry) async {
+    await _db.into(_db.layerConfigs).insertOnConflictUpdate(
+          LayerConfigsCompanion.insert(
             profileId: profileId,
             nodeId: entry.nodeId,
             unitIndex: Value(entry.unitIndex),
-            layersJson: jsonEncode(entry.layers.toList()),
+            rolesJson: jsonEncode(
+                {for (final e in entry.roles.entries) e.key: e.value.name}),
           ),
         );
   }
 
   @override
-  Future<void> clearOfferedLayers(
+  Future<void> clearLayerConfig(
       String profileId, String nodeId, int unitIndex) async {
-    await (_db.delete(_db.offeredLayerConfigs)
+    await (_db.delete(_db.layerConfigs)
           ..where((t) =>
               t.profileId.equals(profileId) &
               t.nodeId.equals(nodeId) &
               t.unitIndex.equals(unitIndex)))
         .go();
+  }
+
+  /// Reads the stored role map. A stored list rather than an object is a row the
+  /// v12 merge did not reach — it cannot happen through the app, but a row that
+  /// arrives any other way should read as *required*, which is what a bare list
+  /// in that column always meant.
+  static Map<String, LayerRole> _decodeRoles(String json) {
+    final decoded = jsonDecode(json);
+    if (decoded is List) {
+      return {for (final id in decoded) '$id': LayerRole.required};
+    }
+    return {
+      for (final e in (decoded as Map).entries)
+        '${e.key}': LayerRole.fromName(e.value as String?),
+    };
   }
 }

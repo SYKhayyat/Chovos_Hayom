@@ -1,6 +1,32 @@
+/// What a layer *is* on a given unit. Three states, and only three:
+///
+/// - **off** — not in the role map at all. Not checkable, not required.
+/// - [optional] — checkable, but does not gate completion. "Maharsha I just
+///   want to tick."
+/// - [required] — checkable *and* part of the definition of done.
+///
+/// This used to be two independent booleans held in two tables — *offered* and
+/// *required* — which admits a fourth state, required-but-not-offered, that means
+/// nothing and had to be repaired by hand at every write site and re-united
+/// (`offered ∪ required`) at every read site. One tri-state cannot express it, so
+/// there is nothing to repair and nothing to keep in sync.
+enum LayerRole {
+  /// Tickable on the unit; never counted toward done.
+  optional,
+
+  /// Tickable, and the unit is not complete until it is done.
+  required;
+
+  /// Round-trips through the stored JSON and through a backup file. Unknown
+  /// names read as [optional] — a config naming a role this build does not know
+  /// should stay checkable rather than silently start gating completion.
+  static LayerRole fromName(String? name) =>
+      name == required.name ? required : optional;
+}
+
 /// A **layer** of a unit — the primary text or a meforish (commentary) learned
 /// on it. A daf can be marked done per layer; a unit counts as complete only
-/// when its *required* layers are all done (see `LayerRequirements`).
+/// when its [LayerRole.required] layers are all done (see `LayerRoles`).
 class Layer {
   const Layer({
     required this.id,
@@ -35,6 +61,11 @@ class Layer {
 /// The primary text of any unit — always present, and required by default so
 /// that existing progress (which only ever recorded "the text") stays complete.
 const mainLayerId = 'main';
+
+/// What a node resolves to when nothing is configured on it or any ancestor:
+/// the text alone, required. That is exactly the pre-layers behaviour, so
+/// progress recorded before mefarshim existed stays complete.
+const Map<String, LayerRole> defaultLayerRoles = {mainLayerId: LayerRole.required};
 
 /// App-provided mefarshim available to add to any node's required set. Kept flat
 /// and universal; the user picks which apply where (nothing is imposed).

@@ -1,7 +1,7 @@
 import '../../core/day.dart';
 import '../entities/layer.dart';
 import 'fold_log.dart';
-import 'layer_requirements.dart';
+import 'layer_roles.dart';
 
 /// A unit that is due (or overdue) for a chazara (review) pass.
 class ChazaraItem {
@@ -62,12 +62,12 @@ class ChazaraSchedule {
   /// dropping units whose required layers aren't all present. With it null the
   /// requirement is the text alone (`{main}`), the pre-layers behaviour.
   static List<ChazaraItem> due(LogFold fold, DateTime now,
-      {List<int> intervals = defaultIntervals, LayerRequirements? required}) {
+      {List<int> intervals = defaultIntervals, LayerRoles? layers}) {
     final today = Day.of(now);
     final out = <ChazaraItem>[];
     fold.touchedAtByNode.forEach((nodeId, byUnit) {
       byUnit.forEach((unitIndex, last) {
-        final req = required?.forUnit(nodeId, unitIndex) ?? const {mainLayerId};
+        final req = layers?.requiredFor(nodeId, unitIndex) ?? const {mainLayerId};
         final have = fold.completedLayers(nodeId, unitIndex);
         if (!req.every(have.contains)) return;
         final rc = fold.reviewCount(nodeId, unitIndex);

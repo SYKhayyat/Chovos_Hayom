@@ -3,7 +3,9 @@ import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/layer.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
-import 'package:chovos_hayom/domain/usecases/layer_requirements.dart';
+import 'package:chovos_hayom/domain/usecases/layer_roles.dart';
+
+import '../support/layer_roles_dsl.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/in_memory_progress_repository.dart';
@@ -97,13 +99,11 @@ void main() {
       'a',
       customNodes: const [],
       customLayers: const [Layer(id: 'my-meforish', name: 'My Meforish')],
-      requirements: const [
-        LayerRequirementEntry(
-            nodeId: 'shas', unitIndex: -1, layers: {'main', 'rashi'})
-      ],
-      offered: const [
+      layerConfigs: [
         LayerConfigEntry(
-            nodeId: 'shas', unitIndex: -1, layers: {'main', 'rashi', 'maharsha'})
+            nodeId: 'shas',
+            unitIndex: -1,
+            roles: roles(required: ['main', 'rashi'], optional: ['maharsha'])),
       ],
       settings: const {'chazaraIntervals': '2,4,8'},
     );
@@ -115,14 +115,15 @@ void main() {
     final events = await target.getEvents('b');
     expect(events.single.note, 'nice chiddush');
     expect(events.single.layers, ['main', 'rashi']);
-    // Custom meforish, requirement, and settings all came across.
+    // Custom meforish, layer settings, and settings all came across.
     expect((await target.watchCustomLayers('b').first).map((l) => l.id),
         contains('my-meforish'));
-    final reqs = await target.watchLayerRequirements('b').first;
-    expect(reqs.single.layers, {'main', 'rashi'});
-    // Offered (checkable) config round-trips independently of required.
-    final offered = await target.watchOfferedLayers('b').first;
-    expect(offered.single.layers, {'main', 'rashi', 'maharsha'});
+    final configs = await target.watchLayerConfigs('b').first;
+    // One entry, and each layer keeps the role it was exported with — an
+    // optional meforish must not come back required, or units the user had
+    // finished go incomplete on restore.
+    expect(configs.single.required, {'main', 'rashi'});
+    expect(configs.single.checkable, {'main', 'rashi', 'maharsha'});
     expect(result.settings['chazaraIntervals'], '2,4,8');
   });
 }

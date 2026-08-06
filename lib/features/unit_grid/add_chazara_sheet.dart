@@ -57,13 +57,13 @@ class _AddChazaraSheetState extends ConsumerState<_AddChazaraSheet> {
   @override
   Widget build(BuildContext context) {
     final fold = ref.watch(foldProvider).asData?.value;
-    final required = ref.watch(layerRequirementsProvider);
+    final layers = ref.watch(layerRolesProvider);
     final allLayers = ref.watch(allLayersProvider);
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
 
     final completed = fold?.completedLayers(widget.node.id, widget.unit) ?? const {};
-    final requiredSet = required.forUnit(widget.node.id, widget.unit);
+    final requiredSet = layers.requiredFor(widget.node.id, widget.unit);
     final candidates = <String>[
       for (final l in allLayers)
         if (requiredSet.contains(l.id) || completed.contains(l.id)) l.id,

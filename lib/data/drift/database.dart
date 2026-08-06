@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import '../../domain/entities/enums.dart';
+import '../../domain/entities/layer.dart';
 
 part 'database.g.dart';
 
@@ -73,11 +76,17 @@ class CustomLayers extends Table {
   Set<Column> get primaryKey => {profileId, id};
 }
 
-/// Which layers are *required* for completion, pinned at a node (unitIndex = -1)
-/// or overridden for a single unit. Sparse and inherited (see LayerRequirements);
-/// absence anywhere means "just the text".
-@DataClassName('LayerRequirementRow')
-class RequiredLayerConfigs extends Table {
+/// What each layer *is* at a node (unitIndex = -1) or on a single unit — the
+/// user's mefarshim answer for that scope. Sparse and inherited (see
+/// `LayerRoles`); absence anywhere means "just the text, required".
+///
+/// This replaces the `required_layer_configs` / `offered_layer_configs` pair,
+/// which stored one tri-state as two membership tables and so admitted a fourth
+/// state — required-but-not-offered — that meant nothing, plus a whole class of
+/// half-written config where a node was pinned in one table and inherited in the
+/// other. One row now carries the whole answer for a scope.
+@DataClassName('LayerConfigRow')
+class LayerConfigs extends Table {
   TextColumn get profileId => text()();
   TextColumn get nodeId => text()();
 
@@ -85,28 +94,8 @@ class RequiredLayerConfigs extends Table {
   /// override for that unit index.
   IntColumn get unitIndex => integer().withDefault(const Constant(-1))();
 
-  /// JSON list of required layer ids.
-  TextColumn get layersJson => text()();
-
-  @override
-  Set<Column> get primaryKey => {profileId, nodeId, unitIndex};
-}
-
-/// Which layers are *offered* (checkable) on a unit, pinned at a node
-/// (unitIndex = -1) or overridden for a single unit. Same sparse+inherited shape
-/// as [RequiredLayerConfigs], but these do **not** gate completion — they only
-/// decide which mefarshim you may tick. Absence anywhere means "just the text".
-@DataClassName('OfferedLayerRow')
-class OfferedLayerConfigs extends Table {
-  TextColumn get profileId => text()();
-  TextColumn get nodeId => text()();
-
-  /// -1 = the node-level default (applies to all its units); >= 0 = a per-unit
-  /// override for that unit index.
-  IntColumn get unitIndex => integer().withDefault(const Constant(-1))();
-
-  /// JSON list of offered layer ids.
-  TextColumn get layersJson => text()();
+  /// JSON object of layer id -> role name ("optional" | "required").
+  TextColumn get rolesJson => text()();
 
   @override
   Set<Column> get primaryKey => {profileId, nodeId, unitIndex};
@@ -142,13 +131,20 @@ class CustomNodes extends Table {
   Set<Column> get primaryKey => {profileId, id};
 }
 
+/// The schema version this build expects.
+///
+/// Named rather than inlined so the migration tests can assert "it upgraded all
+/// the way" against the app's own number. They each typed `11`, at four sites,
+/// and the next bump failed all four with *expected 11, got 12* — a true
+/// statement about the test and nothing at all about the migration.
+const kSchemaVersion = 12;
+
 @DriftDatabase(tables: [
   Profiles,
   LearningEvents,
   CustomNodes,
   CustomLayers,
-  RequiredLayerConfigs,
-  OfferedLayerConfigs
+  LayerConfigs
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
@@ -157,7 +153,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'chovos_hayom'));
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => kSchemaVersion;
 
   /// Every schema change must extend [MigrationStrategy.onUpgrade]. Without this,
   /// bumping [schemaVersion] silently does nothing on existing installs and
@@ -195,10 +191,16 @@ class AppDatabase extends _$AppDatabase {
           // v3 -> v4: per-layer (mefarshim) support — an additive column plus
           // two new config tables. No existing row is touched; a null layersJson
           // reads as the text-only default, so all prior progress is preserved.
+          //
+          // It also created `required_layer_configs`, and v7 created
+          // `offered_layer_configs`. Both are gone at v12, which merges them
+          // into `layer_configs` — and a database this old has neither table nor
+          // any row that could go in one, so creating them here purely for v12
+          // to drop was ceremony. v12 checks whether each table is actually
+          // there, which is the only thing that made this step load-bearing.
           if (from < 4) {
             await _addColumnIfMissing(m, learningEvents, learningEvents.layersJson);
             await _createTableIfMissing(m, customLayers);
-            await _createTableIfMissing(m, requiredLayerConfigs);
           }
           // v4 -> v5: the per-profile catalog override layer (edit/hide any node).
           if (from < 5) {
@@ -208,12 +210,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 6) {
             await _addColumnIfMissing(m, customNodes, customNodes.unitNamesJson);
           }
-          // v6 -> v7: offered (checkable) mefarshim, separate from required.
-          // Additive: a new config table; absence reads as text-only, so no
-          // existing progress or required-set config changes.
-          if (from < 7) {
-            await _createTableIfMissing(m, offeredLayerConfigs);
-          }
+          // v6 -> v7 created `offered_layer_configs`. Deleted with the v4 line
+          // above and for the same reason: v12 merges that table away, and a
+          // database old enough to reach this step has nothing to merge.
           // v8 -> v9: tag bulk-written events with the batch that wrote them, so
           // "finish all" stays undoable durably instead of only for as long as a
           // snackbar lives. Additive and null for every existing row: events
@@ -291,8 +290,87 @@ class AppDatabase extends _$AppDatabase {
                 'CREATE INDEX learning_events_batch '
                     'ON learning_events (profile_id, batch_id)');
           }
+          // v11 -> v12: collapse `required_layer_configs` + `offered_layer_configs`
+          // into one `layer_configs` holding a role per layer. Two membership
+          // tables were storing one tri-state, which made a fourth state
+          // (required-but-not-offered) representable and left every reader to
+          // re-unite them by hand.
+          //
+          // Placed after the index rather than in version order because it
+          // touches neither learning_events nor any table above it — the
+          // additive-before-rebuild rule is about one table's own history, and
+          // this shares none with them. It creates a table and drops two; it
+          // never rebuilds one, so nothing below it can be invalidated either.
+          if (from < 12) await _mergeLayerConfigs(m);
         },
       );
+
+  /// Merges the two legacy layer tables into [layerConfigs] and drops them.
+  ///
+  /// The merge rule is the one the app already applied at *read* time —
+  /// `checkable = offered ∪ required`, with required winning — so a tree that
+  /// was complete before the upgrade is complete after it. Anything present in
+  /// only the offered table becomes [LayerRole.optional]; everything required
+  /// stays required.
+  ///
+  /// Idempotent like every other step: it is guarded on the legacy tables still
+  /// existing, and writes with `INSERT OR REPLACE`, so a run that dies partway
+  /// and replays lands on the same rows. Reading and re-encoding in Dart rather
+  /// than in SQL is deliberate — the JSON1 extension is not guaranteed to be
+  /// compiled into the SQLite this ships against, and a migration is the worst
+  /// possible place to discover that.
+  Future<void> _mergeLayerConfigs(Migrator m) async {
+    await _createTableIfMissing(m, layerConfigs);
+    final hasRequired = await _tableExists('required_layer_configs');
+    final hasOffered = await _tableExists('offered_layer_configs');
+    if (!hasRequired && !hasOffered) return;
+
+    // (profileId, nodeId, unitIndex) -> layer id -> role.
+    final merged = <(String, String, int), Map<String, LayerRole>>{};
+    Future<void> collect(String table, LayerRole role) async {
+      final rows = await customSelect(
+              'SELECT profile_id, node_id, unit_index, layers_json FROM $table')
+          .get();
+      for (final r in rows) {
+        final key = (
+          r.read<String>('profile_id'),
+          r.read<String>('node_id'),
+          r.read<int>('unit_index'),
+        );
+        final roles = merged[key] ??= {};
+        for (final id in jsonDecode(r.read<String>('layers_json')) as List) {
+          // Required wins: it is read second, so it overwrites an optional
+          // entry the offered table put here, never the other way round.
+          roles['$id'] = role;
+        }
+      }
+    }
+
+    if (hasOffered) await collect('offered_layer_configs', LayerRole.optional);
+    if (hasRequired) await collect('required_layer_configs', LayerRole.required);
+
+    for (final e in merged.entries) {
+      if (e.value.isEmpty) continue;
+      final (profileId, nodeId, unitIndex) = e.key;
+      await customStatement(
+        'INSERT OR REPLACE INTO layer_configs '
+        '(profile_id, node_id, unit_index, roles_json) VALUES (?, ?, ?, ?)',
+        [
+          profileId,
+          nodeId,
+          unitIndex,
+          jsonEncode({for (final r in e.value.entries) r.key: r.value.name}),
+        ],
+      );
+    }
+
+    if (hasRequired) {
+      await customStatement('DROP TABLE required_layer_configs');
+    }
+    if (hasOffered) {
+      await customStatement('DROP TABLE offered_layer_configs');
+    }
+  }
 
   /// Column names currently on [table], straight from SQLite.
   Future<Set<String>> _columnsOf(String table) async {

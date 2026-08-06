@@ -145,13 +145,15 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   not before, so a Hebrew name you didn't type at creation used to be unreachable. Alongside the
   separate Hebrew/secular **calendar** toggle and light/dark theme.
 - **Mefarshim as layers**: mark a daf done per-meforish (Gemara, Rashi, Tosafos, or your own
-  custom mefarshim); a unit is "done" only once its *required* mefarshim are learned. Required
-  sets are configured at any node and inherited down (default is text-only, so existing progress is
-  never invalidated). The grid shows a partial fill until a layered unit is complete.
-- **Offered vs. required mefarshim**: each meforish has two independent switches — *Available*
-  (you can check it off here) and *Required* (it gates completion). So you can **track a meforish
-  without mandating it for "done"** — the checkable set is not the same as the definition of done.
-  Both inherit down a node and default to text-only.
+  custom mefarshim); a unit is "done" only once its *required* mefarshim are learned. Layer
+  settings are configured at any node and inherited down (default is text-only, so existing progress
+  is never invalidated). The grid shows a partial fill until a layered unit is complete.
+- **Off / Available / Required**: each meforish is in exactly one of three states — *Off* (not on
+  the unit), *Available* (you can check it off, it doesn't gate completion) or *Required* (it does).
+  So you can **track a meforish without mandating it for "done"**. It was two independent
+  checkboxes, which is four states for a three-state answer: the fourth, required-but-not-available,
+  meant nothing and was repaired by hand at every place that wrote or read it. One control that can
+  only be in one position has nothing to repair.
 - **Bulk finish / clear** on any node — a whole category cascades to every daf underneath, or a
   single sefer at a time: *Finish all* (each unit's required set), *Mark all — Text* or *— any
   meforish*, and *Clear all*. On a leaf you can also **finish an arbitrary range**. Every bulk
@@ -175,10 +177,10 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
 - **Configurable tree sorting** by percent / amount / last-learned / name, at any chosen depth.
 - **Per-profile settings**: calendar, theme, RTL, sort, chazara intervals, meforish bars and cycles
   all belong to the profile rather than the device, so two people sharing one get their own.
-- **Mefarshim configurable at any node**: pin a required/available set on Shas, on a seder, on one
-  mesechta, or on a single daf, and it inherits down until something nearer overrides it. The sheet
-  tells you whether what you're looking at is *set here* or *inherited from* a higher node, and
-  opening it without changing anything won't pin the inherited set as an override — so a set on Shas
+- **Mefarshim configurable at any node**: pin the answer on Shas, on a seder, on one mesechta, or
+  on a single daf, and it inherits down until something nearer overrides it. The sheet tells you
+  whether what you're looking at is *set here* or *inherited from* a higher node, and opening it
+  without changing anything won't pin the inherited answer as an override — so a setting on Shas
   keeps reaching a mesechta you merely glanced at. Logging a meforish carries the same date, duration
   and haara as anything else.
 - **Everything editable**: rename, re-count, re-type, re-parent (attach anywhere), hide/delete, or
@@ -271,8 +273,10 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   delivered to a running app arrives on a different channel, and the framework's default handler
   drops the part of the URI that says *which kind* of screen is wanted. (A private scheme, not an `https` App Link — claiming a domain you don't
   own is how a link ends up opening someone else's app.)
-- Tests covering the engine, layer fold + required/offered-set resolution (including that
-  un-ticking one meforish never wipes the rest of a unit's history), per-meforish roll-up,
+- Tests covering the engine, layer fold + role resolution (including that un-ticking one meforish
+  never wipes the rest of a unit's history, and that every `LayerRole` survives the backup JSON
+  round trip — a role that silently read back as *optional* would un-gate completion), per-meforish
+  roll-up,
   bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
   reminders, backup validation (including override-row parent cycles), chazara scheduling (complete
   units only), siyumim, learning cycles, the per-profile session timer, per-profile settings + their

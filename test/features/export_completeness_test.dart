@@ -5,7 +5,9 @@ import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/layer.dart';
-import 'package:chovos_hayom/domain/usecases/layer_requirements.dart';
+import 'package:chovos_hayom/domain/usecases/layer_roles.dart';
+
+import '../support/layer_roles_dsl.dart';
 import 'package:chovos_hayom/features/settings/settings_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,15 +45,12 @@ void main() {
     );
     await repo.addCustomLayer(
         profile, const Layer(id: 'maharsha', name: 'Maharsha'));
-    await repo.setLayerRequirement(
+    await repo.setLayerConfig(
       profile,
-      const LayerConfigEntry(
-          nodeId: 'shas', unitIndex: -1, layers: {mainLayerId, 'maharsha'}),
-    );
-    await repo.setOfferedLayers(
-      profile,
-      const LayerConfigEntry(
-          nodeId: 'shas', unitIndex: -1, layers: {mainLayerId, 'maharsha'}),
+      LayerConfigEntry(
+          nodeId: 'shas',
+          unitIndex: -1,
+          roles: roles(required: [mainLayerId, 'maharsha'])),
     );
 
     // Capture what the app puts on the clipboard.
@@ -90,7 +89,12 @@ void main() {
     final backup = jsonDecode(copied!) as Map<String, dynamic>;
     expect((backup['customNodes'] as List), hasLength(1));
     expect((backup['customLayers'] as List), hasLength(1));
-    expect((backup['requirements'] as List), hasLength(1));
-    expect((backup['offered'] as List), hasLength(1));
+    final configs = backup['layerConfigs'] as List;
+    expect(configs, hasLength(1));
+    // Not just "a row came out" — the roles came with it. An export that wrote
+    // the ids and dropped what they meant would restore every required meforish
+    // as merely optional, and silently complete units the user had not finished.
+    expect((configs.single as Map)['roles'],
+        {mainLayerId: 'required', 'maharsha': 'required'});
   });
 }

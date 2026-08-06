@@ -4,7 +4,7 @@ import '../domain/entities/catalog_node.dart';
 import '../domain/entities/layer.dart';
 import '../domain/entities/learning_event.dart';
 import '../domain/repositories/progress_repository.dart';
-import '../domain/usecases/layer_requirements.dart';
+import '../domain/usecases/layer_roles.dart';
 
 /// Raised when a backup is unusable. Carries a message meant to be shown to the
 /// user verbatim — "what is wrong with this file" is more useful than "failed".
@@ -39,8 +39,8 @@ enum ImportMode {
   restoreLog,
 
   /// Make the **whole profile** match the backup: [restoreLog], and in addition
-  /// delete the custom sefarim, custom mefarshim and required/offered layer
-  /// settings the backup does not contain.
+  /// delete the custom sefarim, custom mefarshim and layer settings the backup
+  /// does not contain.
   restoreEverything;
 
   /// Whether the log is reconciled rather than merged.
@@ -50,17 +50,15 @@ enum ImportMode {
   bool get replacesCustomisation => this == ImportMode.restoreEverything;
 }
 
-/// Parsed backup payload. Newer fields ([customLayers], [requirements],
-/// [offered], [settings], [goals]) are absent in older backups and default to
-/// empty.
+/// Parsed backup payload. Newer fields ([customLayers], [layerConfigs],
+/// [settings], [goals]) are absent in older backups and default to empty.
 class BackupData {
   const BackupData({
     required this.version,
     required this.events,
     required this.customNodes,
     this.customLayers = const [],
-    this.requirements = const [],
-    this.offered = const [],
+    this.layerConfigs = const [],
     this.settings = const {},
     this.goals = const {},
     this.removedEvents = 0,
@@ -81,8 +79,12 @@ class BackupData {
   final List<LearningEvent> events;
   final List<CatalogNode> customNodes;
   final List<Layer> customLayers;
-  final List<LayerConfigEntry> requirements;
-  final List<LayerConfigEntry> offered;
+
+  /// The profile's mefarshim settings — one entry per configured scope, each
+  /// carrying every layer's role. Read from `layerConfigs` in a v5 backup, and
+  /// reassembled from the old `requirements` + `offered` arrays in anything
+  /// older (see [BackupService.parse]).
+  final List<LayerConfigEntry> layerConfigs;
   final Map<String, dynamic> settings;
 
   /// Target finish dates by node id. Lives outside the repository (in
@@ -92,26 +94,26 @@ class BackupData {
 }
 
 /// Serialises and restores everything a profile owns: the event log (the source
-/// of truth) plus all customization — custom sefarim, custom mefarshim,
-/// required/offered layer settings, goals, and app preferences. A backup fully
-/// round-trips the app.
+/// of truth) plus all customization — custom sefarim, custom mefarshim, layer
+/// settings, goals, and app preferences. A backup fully round-trips the app.
 class BackupService {
   const BackupService(this._repo);
 
   final ProgressRepository _repo;
 
   /// v2 added customLayers, requirements, and settings. v3 added offered
-  /// (checkable) layer configs. v4 added goals. Older backups still import
-  /// (missing fields default to empty).
-  static const currentVersion = 4;
+  /// (checkable) layer configs. v4 added goals. v5 merged requirements+offered
+  /// into one `layerConfigs` array carrying a role per layer. Older backups
+  /// still import (missing fields default to empty; see [parse] for how v1–v4
+  /// layer settings are read back).
+  static const currentVersion = 5;
 
   /// Build a portable JSON string for [profileId].
   Future<String> export(
     String profileId, {
     required List<CatalogNode> customNodes,
     List<Layer> customLayers = const [],
-    List<LayerConfigEntry> requirements = const [],
-    List<LayerConfigEntry> offered = const [],
+    List<LayerConfigEntry> layerConfigs = const [],
     Map<String, dynamic> settings = const {},
     Map<String, DateTime> goals = const {},
   }) async {
@@ -122,8 +124,7 @@ class BackupService {
       'events': events.map((e) => e.toJson()).toList(),
       'customNodes': customNodes.map((n) => n.toJson()).toList(),
       'customLayers': customLayers.map((l) => l.toJson()).toList(),
-      'requirements': requirements.map((r) => r.toJson()).toList(),
-      'offered': offered.map((r) => r.toJson()).toList(),
+      'layerConfigs': layerConfigs.map((r) => r.toJson()).toList(),
       'settings': settings,
       'goals': goals.map((k, v) => MapEntry(k, v.toIso8601String())),
     });
@@ -153,13 +154,48 @@ class BackupService {
           _parseList(map['customNodes'], 'customNodes', CatalogNode.fromJson),
       customLayers:
           _parseList(map['customLayers'], 'customLayers', Layer.fromJson),
-      requirements: _parseList(
-          map['requirements'], 'requirements', LayerConfigEntry.fromJson),
-      offered:
-          _parseList(map['offered'], 'offered', LayerConfigEntry.fromJson),
+      layerConfigs: _parseLayerConfigs(map),
       settings: (map['settings'] as Map?)?.cast<String, dynamic>() ?? const {},
       goals: _parseGoals(map['goals']),
     );
+  }
+
+  /// Reads the layer settings out of a backup of any version.
+  ///
+  /// A v5 backup has one `layerConfigs` array and this is a straight parse.
+  /// Anything older has two arrays — `requirements` and `offered` — where
+  /// membership *was* the meaning, and the same (node, unit) scope routinely
+  /// appears in both, because the config sheet always wrote both. So they are
+  /// merged the way the app used to reconcile them at read time: everything
+  /// offered is checkable, everything required gates completion, and required
+  /// wins where they overlap.
+  ///
+  /// Getting this wrong is not a cosmetic import bug — reading an old backup's
+  /// `requirements` as merely optional would quietly un-complete every layered
+  /// unit in the tree, and reading `offered` as required would make units the
+  /// user had finished go incomplete. Hence the explicit role per array.
+  static List<LayerConfigEntry> _parseLayerConfigs(Map<String, dynamic> map) {
+    if (map.containsKey('layerConfigs')) {
+      return _parseList(
+          map['layerConfigs'], 'layerConfigs', LayerConfigEntry.fromJson);
+    }
+    final merged = <(String, int), Map<String, LayerRole>>{};
+    void take(String field, LayerRole role) {
+      for (final e in _parseList(map[field], field,
+          (j) => LayerConfigEntry.fromJson(j, legacyRole: role))) {
+        (merged[(e.nodeId, e.unitIndex)] ??= {}).addAll(e.roles);
+      }
+    }
+
+    // Offered first, so the required pass overwrites the overlap rather than
+    // the other way round.
+    take('offered', LayerRole.optional);
+    take('requirements', LayerRole.required);
+    return [
+      for (final e in merged.entries)
+        LayerConfigEntry(
+            nodeId: e.key.$1, unitIndex: e.key.$2, roles: e.value),
+    ];
   }
 
   static List<T> _parseList<T>(
@@ -263,11 +299,8 @@ class BackupService {
       for (final l in data.customLayers) {
         await _repo.addCustomLayer(targetProfileId, l);
       }
-      for (final r in data.requirements) {
-        await _repo.setLayerRequirement(targetProfileId, r);
-      }
-      for (final o in data.offered) {
-        await _repo.setOfferedLayers(targetProfileId, o);
+      for (final c in data.layerConfigs) {
+        await _repo.setLayerConfig(targetProfileId, c);
       }
       // Deletions last: a node the backup also contains has just been written in
       // its backup shape, and removing first then re-adding would make the same
@@ -278,11 +311,8 @@ class BackupService {
       for (final id in teardown.layerIds) {
         await _repo.removeCustomLayer(targetProfileId, id);
       }
-      for (final (nodeId, unitIndex) in teardown.requirements) {
-        await _repo.clearLayerRequirement(targetProfileId, nodeId, unitIndex);
-      }
-      for (final (nodeId, unitIndex) in teardown.offered) {
-        await _repo.clearOfferedLayers(targetProfileId, nodeId, unitIndex);
+      for (final (nodeId, unitIndex) in teardown.layerConfigs) {
+        await _repo.clearLayerConfig(targetProfileId, nodeId, unitIndex);
       }
     });
 
@@ -291,8 +321,7 @@ class BackupService {
       events: added,
       customNodes: data.customNodes,
       customLayers: data.customLayers,
-      requirements: data.requirements,
-      offered: data.offered,
+      layerConfigs: data.layerConfigs,
       settings: data.settings,
       goals: data.goals,
       removedEvents: stale.length,
@@ -310,16 +339,12 @@ class BackupService {
       String profileId, BackupData data) async {
     final nodes = await _repo.watchCustomNodes(profileId).first;
     final layers = await _repo.watchCustomLayers(profileId).first;
-    final requirements = await _repo.watchLayerRequirements(profileId).first;
-    final offered = await _repo.watchOfferedLayers(profileId).first;
+    final configs = await _repo.watchLayerConfigs(profileId).first;
 
     final keepNodes = {for (final n in data.customNodes) n.id};
     final keepLayers = {for (final l in data.customLayers) l.id};
-    final keepRequirements = {
-      for (final r in data.requirements) (r.nodeId, r.unitIndex)
-    };
-    final keepOffered = {
-      for (final o in data.offered) (o.nodeId, o.unitIndex)
+    final keepConfigs = {
+      for (final c in data.layerConfigs) (c.nodeId, c.unitIndex)
     };
 
     return _Teardown(
@@ -331,15 +356,10 @@ class BackupService {
         for (final l in layers)
           if (!keepLayers.contains(l.id)) l.id,
       ],
-      requirements: [
-        for (final r in requirements)
-          if (!keepRequirements.contains((r.nodeId, r.unitIndex)))
-            (r.nodeId, r.unitIndex),
-      ],
-      offered: [
-        for (final o in offered)
-          if (!keepOffered.contains((o.nodeId, o.unitIndex)))
-            (o.nodeId, o.unitIndex),
+      layerConfigs: [
+        for (final c in configs)
+          if (!keepConfigs.contains((c.nodeId, c.unitIndex)))
+            (c.nodeId, c.unitIndex),
       ],
     );
   }
@@ -368,29 +388,25 @@ class BackupService {
 
 /// The rows a [ImportMode.restoreEverything] has to delete, by kind.
 ///
-/// Kept as one value rather than four lists threaded through two methods, so the
-/// count the user is shown and the deletions performed cannot come apart.
+/// Kept as one value rather than loose lists threaded through two methods, so
+/// the count the user is shown and the deletions performed cannot come apart.
 class _Teardown {
   const _Teardown({
     required this.nodeIds,
     required this.layerIds,
-    required this.requirements,
-    required this.offered,
+    required this.layerConfigs,
   });
 
   const _Teardown.empty()
       : nodeIds = const [],
         layerIds = const [],
-        requirements = const [],
-        offered = const [];
+        layerConfigs = const [];
 
   final List<String> nodeIds;
   final List<String> layerIds;
-  final List<(String, int)> requirements;
-  final List<(String, int)> offered;
+  final List<(String, int)> layerConfigs;
 
-  int get count =>
-      nodeIds.length + layerIds.length + requirements.length + offered.length;
+  int get count => nodeIds.length + layerIds.length + layerConfigs.length;
 }
 
 /// Checks a parsed backup for anything that would corrupt the app if persisted.
@@ -418,8 +434,7 @@ class BackupValidator {
     _validateNodes(data.customNodes, knownParents);
     _validateEvents(data.events);
     _validateLayers(data.customLayers);
-    _validateConfigs(data.requirements, 'required-mefarshim');
-    _validateConfigs(data.offered, 'offered-mefarshim');
+    _validateConfigs(data.layerConfigs, 'mefarshim');
   }
 
   static void _validateNodes(

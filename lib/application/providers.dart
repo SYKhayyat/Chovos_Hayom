@@ -15,11 +15,9 @@ import '../domain/repositories/catalog_repository.dart';
 import '../domain/repositories/progress_repository.dart';
 import '../domain/usecases/batch_history.dart';
 import '../domain/usecases/fold_log.dart';
-import '../domain/usecases/layer_requirements.dart';
+import '../domain/usecases/layer_roles.dart';
 import '../domain/usecases/mefarshim_stats.dart';
-import '../domain/usecases/offered_layers.dart';
 import '../domain/usecases/roll_up.dart';
-import '../domain/usecases/unit_layer_view.dart';
 import 'bulk_marker.dart';
 import 'crash_log.dart';
 import 'logging_service.dart';
@@ -233,51 +231,33 @@ final allLayersProvider = Provider<List<Layer>>((ref) {
   return [...builtInLayers, ...custom];
 });
 
-/// The active profile's required-layer settings (node + unit level).
+/// The active profile's layer settings (node + unit level).
 final layerConfigProvider = StreamProvider<List<LayerConfigEntry>>((ref) {
   final repo = ref.watch(progressRepositoryProvider);
-  return repo.watchLayerRequirements(ref.watch(activeProfileProvider));
+  return repo.watchLayerConfigs(ref.watch(activeProfileProvider));
 });
 
-/// The active profile's offered- (checkable-) layer settings (node + unit level).
-final offeredConfigProvider = StreamProvider<List<LayerConfigEntry>>((ref) {
-  final repo = ref.watch(progressRepositoryProvider);
-  return repo.watchOfferedLayers(ref.watch(activeProfileProvider));
-});
-
-/// The resolver that answers "which layers must this unit have to be complete?"
+/// The one resolver for every layer question: what may be ticked on a unit, what
+/// gates its completion, how full its bar is, and where the answer was pinned.
 /// Built once from the catalog (for inheritance) + the user's config.
-final layerRequirementsProvider = Provider<LayerRequirements>((ref) {
+///
+/// There were three of these — a required resolver, an identical offered
+/// resolver, and a view that reconciled them — over two streams of two tables.
+/// A layer's role is one answer, so it is resolved once.
+final layerRolesProvider = Provider<LayerRoles>((ref) {
   final catalog = ref.watch(mergedCatalogProvider).asData?.value;
   final entries = ref.watch(layerConfigProvider).asData?.value ?? const [];
 
-  return LayerRequirements.fromEntries(entries, parentOf: parentsOf(catalog));
+  return LayerRoles.fromEntries(entries, parentOf: parentsOf(catalog));
 });
 
-/// The resolver that answers "which mefarshim may this unit check off?" — the
-/// *offered* set, independent of what gates completion. Built the same way as
-/// [layerRequirementsProvider] from the catalog + the offered config.
-final offeredLayersProvider = Provider<OfferedLayers>((ref) {
-  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
-  final entries = ref.watch(offeredConfigProvider).asData?.value ?? const [];
-
-  return OfferedLayers.fromEntries(entries, parentOf: parentsOf(catalog));
-});
-
-/// Every node's parent, which is all [InheritedLayerSet] needs of the catalog.
+/// Every node's parent, which is all [InheritedLayerRoles] needs of the catalog.
 /// Null catalog (still loading) yields an empty map: inheritance then resolves to
 /// the default, which is the same answer an unconfigured tree gives.
 Map<String, String?> parentsOf(Catalog? catalog) => {
       if (catalog != null)
         for (final n in catalog.all) n.id: n.parentId,
     };
-
-/// Reconciles required + offered into per-unit answers (checkable set, layered?,
-/// fraction). The one place the UI and bulk logic consult for layer questions.
-final unitLayerViewProvider = Provider<UnitLayerView>((ref) => UnitLayerView(
-      required: ref.watch(layerRequirementsProvider),
-      offered: ref.watch(offeredLayersProvider),
-    ));
 
 // ---------------------------------------------------------------------------
 // Log + derived progress
@@ -310,8 +290,7 @@ final bulkMarkerProvider = Provider<BulkMarker?>((ref) {
   return BulkMarker(
     catalog: catalog,
     fold: fold,
-    required: ref.watch(layerRequirementsProvider),
-    offered: ref.watch(offeredLayersProvider),
+    layers: ref.watch(layerRolesProvider),
     logger: ref.watch(loggingServiceProvider),
   );
 });
@@ -332,11 +311,11 @@ final batchHistoryProvider = Provider<List<BulkBatch>>((ref) {
 final progressForestProvider = Provider<AsyncValue<List<ProgressNode>>>((ref) {
   final catalog = ref.watch(mergedCatalogProvider);
   final fold = ref.watch(foldProvider);
-  final required = ref.watch(layerRequirementsProvider);
+  final layers = ref.watch(layerRolesProvider);
   return catalog.when(
     loading: () => const AsyncValue.loading(),
     error: AsyncValue.error,
-    data: (c) => fold.whenData((f) => RollUp.buildForest(c, f, required)),
+    data: (c) => fold.whenData((f) => RollUp.buildForest(c, f, layers)),
   );
 });
 

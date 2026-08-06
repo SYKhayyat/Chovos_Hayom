@@ -959,7 +959,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mefarshimExplainer =>
-      '“Available” = you can check it off here. “Required” = a unit is done only once it’s learned. Applies to everything under this item unless overridden.';
+      'Each meforish is off, available to check off here, or required — a unit is done only once every required one is learned. Applies to everything under this item unless overridden.';
 
   @override
   String get mefarshimSetHere => 'Set on this item.';
@@ -974,6 +974,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mefarshimAvailable => 'Available';
+
+  @override
+  String get mefarshimOff => 'Off';
 
   @override
   String get mefarshimAddMeforish => 'Add a meforish';

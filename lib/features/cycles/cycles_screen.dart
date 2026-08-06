@@ -230,7 +230,7 @@ class _UnitRow extends ConsumerWidget {
     final node = unit.node;
     final day = unit.day;
     final fold = ref.watch(foldProvider).asData?.value;
-    final required = ref.watch(layerRequirementsProvider);
+    final layers = ref.watch(layerRolesProvider);
     final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final l10n = AppLocalizations.of(context);
 
@@ -238,7 +238,7 @@ class _UnitRow extends ConsumerWidget {
         ? '${day.sefer} ${day.unit}'
         : nodeAndUnit(l10n, node, day.unit);
     final isDone = unit.isLoggable &&
-        (fold?.doneUnits(node!.id, required).contains(day.unit) ?? false);
+        (fold?.doneUnits(node!.id, layers).contains(day.unit) ?? false);
     final learnedOn = isDone ? fold?.doneAt(node!.id, day.unit) : null;
 
     return Padding(

@@ -954,7 +954,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get mefarshimExplainer =>
-      '״זמין״ = אפשר לסמן אותו כאן. ״חובה״ = יחידה נחשבת גמורה רק לאחר שנלמד. חל על כל מה שמתחת לפריט הזה, אלא אם נקבע אחרת.';
+      'כל מפרש הוא כבוי, זמין לסימון כאן, או חובה — יחידה נחשבת גמורה רק לאחר שכל חובה נלמד. חל על כל מה שמתחת לפריט הזה, אלא אם נקבע אחרת.';
 
   @override
   String get mefarshimSetHere => 'נקבע על פריט זה.';
@@ -970,6 +970,9 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get mefarshimAvailable => 'זמין';
+
+  @override
+  String get mefarshimOff => 'כבוי';
 
   @override
   String get mefarshimAddMeforish => 'הוספת מפרש';

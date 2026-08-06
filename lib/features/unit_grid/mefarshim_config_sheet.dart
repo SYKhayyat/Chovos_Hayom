@@ -3,22 +3,31 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../application/providers.dart';
+import '../../core/keypad.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
-import '../../domain/usecases/layer_requirements.dart';
+import '../../domain/usecases/layer_roles.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
 
-/// Editor for a node's mefarshim, with two independent dimensions per meforish:
+/// Editor for a node's mefarshim. Each one is in exactly one of three states:
 ///
+/// - **Off** — not on the unit at all.
 /// - **Available** — you can check it off on any unit here (it appears in the
 ///   per-unit checklist), without it affecting completion.
 /// - **Required** — it must be learned for a unit to count as done.
 ///
-/// Required implies Available. Both pin at [node] and inherit down unless a
-/// nearer node or a single unit overrides them. Fully user-driven: add your own
-/// mefarshim, offer any subset, require any subset, and reset to inherited.
+/// This was two independent chips, Available and Required, which is four states
+/// for a three-state answer. "Required but not available" means nothing, so
+/// ticking Required silently ticked Available and un-ticking Available silently
+/// un-ticked Required — an invariant repaired by hand here, again at save, and a
+/// third time by every reader taking `offered ∪ required`. One control that can
+/// only be in one position has nothing to repair.
+///
+/// The setting pins at [node] and inherits down unless a nearer node or a single
+/// unit overrides it. Fully user-driven: add your own mefarshim, set any of them
+/// to anything, and reset to inherited.
 Future<void> showMefarshimConfigSheet(
   BuildContext context,
   WidgetRef ref, {
@@ -42,8 +51,9 @@ class _MefarshimConfigSheet extends ConsumerStatefulWidget {
 }
 
 class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
-  Set<String>? _available; // null until seeded from the effective sets
-  Set<String>? _required;
+  /// layer id -> role. Null until seeded from the effective answer; a layer that
+  /// is absent is *off*, which is the third state and needs no storage.
+  Map<String, LayerRole>? _roles;
 
   /// True once the user has actually changed something. The sheet seeds from the
   /// *inherited* answer, so saving an untouched sheet would pin that answer here
@@ -54,30 +64,22 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
   @override
   Widget build(BuildContext context) {
     final layers = ref.watch(allLayersProvider);
-    final required = ref.watch(layerRequirementsProvider);
-    final offered = ref.watch(offeredLayersProvider);
+    final roles = ref.watch(layerRolesProvider);
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
 
-    // Seed once from the currently-effective sets. Available always includes
-    // required (required ⇒ available), matching how they resolve at a unit.
-    if (_required == null) {
-      _required = {...required.forNode(widget.node.id)};
-      _available = {...offered.forNode(widget.node.id), ..._required!};
-    }
-    final requiredSet = _required!;
-    final availableSet = _available!;
+    // Seed once from the currently-effective answer.
+    final current = _roles ??= {...roles.forNode(widget.node.id)};
 
-    // Where the effective sets come from, so the sheet can say so rather than
-    // presenting an inherited answer as if it were set here.
-    final reqSource = required.pinnedSource(widget.node.id);
-    final offSource = offered.pinnedSource(widget.node.id);
-    final pinnedHere =
-        reqSource == widget.node.id || offSource == widget.node.id;
-    final inheritedNode = pinnedHere || (reqSource ?? offSource) == null
-        ? null
-        : catalog?.byId((reqSource ?? offSource)!);
+    // Where the effective answer comes from, so the sheet can say so rather than
+    // presenting an inherited answer as if it were set here. One source now,
+    // where there were two that could name different nodes and the sheet just
+    // took whichever was non-null first.
+    final source = roles.pinnedSource(widget.node.id);
+    final pinnedHere = source == widget.node.id;
+    final inheritedNode =
+        pinnedHere || source == null ? null : catalog?.byId(source);
     final String provenance;
     if (pinnedHere) {
       provenance = l10n.mefarshimSetHere;
@@ -113,24 +115,13 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
               for (final layer in layers)
                 _MeforishRow(
                   layer: layer,
-                  available: availableSet.contains(layer.id),
-                  required: requiredSet.contains(layer.id),
-                  onAvailable: (v) => setState(() {
+                  role: current[layer.id],
+                  onRole: (v) => setState(() {
                     _dirty = true;
-                    if (v) {
-                      availableSet.add(layer.id);
+                    if (v == null) {
+                      current.remove(layer.id);
                     } else {
-                      availableSet.remove(layer.id);
-                      requiredSet.remove(layer.id); // required ⇒ available
-                    }
-                  }),
-                  onRequired: (v) => setState(() {
-                    _dirty = true;
-                    if (v) {
-                      requiredSet.add(layer.id);
-                      availableSet.add(layer.id); // required ⇒ available
-                    } else {
-                      requiredSet.remove(layer.id);
+                      current[layer.id] = v;
                     }
                   }),
                   onEdit: layer.builtIn
@@ -177,30 +168,20 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
     final navigator = Navigator.of(context);
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
-    final requiredSet = _required!;
-    // Available always subsumes required; an empty required falls back to text.
-    final availableSet = {..._available!, ...requiredSet};
-    // Required and offered are two halves of one answer; writing one without the
-    // other leaves a node requiring a meforish it does not offer.
+    // Everything off falls back to the text, required — the same floor the two
+    // writes each used to apply separately. One write, so it applies once, and
+    // there is no longer a transaction here because there is nothing to pair it
+    // with: a half-written config was only possible when it took two rows.
+    final current = _roles!;
     final saved = await guard.run(
-      () => repo.transaction(() async {
-        await repo.setLayerRequirement(
-          profileId,
-          LayerConfigEntry(
-            nodeId: widget.node.id,
-            unitIndex: -1,
-            layers: requiredSet.isEmpty ? {mainLayerId} : requiredSet,
-          ),
-        );
-        await repo.setOfferedLayers(
-          profileId,
-          LayerConfigEntry(
-            nodeId: widget.node.id,
-            unitIndex: -1,
-            layers: availableSet.isEmpty ? {mainLayerId} : availableSet,
-          ),
-        );
-      }),
+      () => repo.setLayerConfig(
+        profileId,
+        LayerConfigEntry(
+          nodeId: widget.node.id,
+          unitIndex: -1,
+          roles: current.isEmpty ? defaultLayerRoles : current,
+        ),
+      ),
       what: l10n.whatSavingMefarshim(nodeName(l10n, widget.node)),
     );
     if (saved) navigator.pop();
@@ -213,10 +194,7 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
     final reset = await guard.run(
-      () => repo.transaction(() async {
-        await repo.clearLayerRequirement(profileId, widget.node.id, -1);
-        await repo.clearOfferedLayers(profileId, widget.node.id, -1);
-      }),
+      () => repo.clearLayerConfig(profileId, widget.node.id, -1),
       what: l10n.whatResettingMefarshim(nodeName(l10n, widget.node)),
     );
     if (reset) navigator.pop();
@@ -224,11 +202,16 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
 
   /// Delete a custom meforish, taking every reference to it with it.
   ///
-  /// Deleting used to remove only the row, leaving the id behind in required-
-  /// and offered-layer settings all over the tree. Anything that *required* it
-  /// then became uncompletable — the unit checklist could only offer a checkbox
-  /// labelled with a raw UUID. So the settings are rewritten in the same
-  /// transaction, and the user is told how many will change before it happens.
+  /// Deleting used to remove only the row, leaving the id behind in layer
+  /// settings all over the tree. Anything that *required* it then became
+  /// uncompletable — the unit checklist could only offer a checkbox labelled
+  /// with a raw UUID. So the settings are rewritten in the same transaction, and
+  /// the user is told how many will change before it happens.
+  ///
+  /// This used to walk two lists over two tables, and clearing one while
+  /// rewriting the other is exactly how a node ended up pinned in one and
+  /// inheriting in the other. One list now, so a scope is either rewritten or
+  /// cleared, never half of each.
   ///
   /// Past events keep their record: the log is history, and a chazara you did on
   /// a meforish still happened. Nothing reads those ids once the settings are
@@ -243,19 +226,16 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
     // read as an empty list would tell the user "required in 0 places" and then
     // leave every one of those references dangling — the exact failure deleting
     // a meforish was fixed for.
-    final requirements = await repo.watchLayerRequirements(profileId).first;
-    final offered = await repo.watchOfferedLayers(profileId).first;
+    final configs = await repo.watchLayerConfigs(profileId).first;
     if (!mounted) return;
 
-    final affectedRequired = [
-      for (final e in requirements)
-        if (e.layers.contains(layer.id)) e,
+    final affected = [
+      for (final e in configs)
+        if (e.roles.containsKey(layer.id)) e,
     ];
-    final affectedOffered = [
-      for (final e in offered)
-        if (e.layers.contains(layer.id)) e,
-    ];
-    final requiredCount = affectedRequired.length;
+    // The warning is about completion breaking, so it counts the scopes that
+    // *require* it — an optional one disappearing costs the user nothing.
+    final requiredCount = affected.where((e) => e.required.contains(layer.id)).length;
 
     final ok = await showDialog<bool>(
       context: context,
@@ -290,17 +270,15 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
 
     final deleted = await guard.run(
       () => repo.transaction(() async {
-        for (final e in affectedRequired) {
-          await _rewriteWithout(
-              e, layer.id, (v) => repo.setLayerRequirement(profileId, v),
-              clear: () =>
-                  repo.clearLayerRequirement(profileId, e.nodeId, e.unitIndex));
-        }
-        for (final e in affectedOffered) {
-          await _rewriteWithout(
-              e, layer.id, (v) => repo.setOfferedLayers(profileId, v),
-              clear: () =>
-                  repo.clearOfferedLayers(profileId, e.nodeId, e.unitIndex));
+        for (final e in affected) {
+          final remaining = e.without(layer.id);
+          if (remaining == null) {
+            // Nothing would be left, so clear the setting entirely and let the
+            // node fall back to inheritance rather than pinning an empty map.
+            await repo.clearLayerConfig(profileId, e.nodeId, e.unitIndex);
+          } else {
+            await repo.setLayerConfig(profileId, remaining);
+          }
         }
         await repo.removeCustomLayer(profileId, layer.id);
       }),
@@ -312,29 +290,11 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
 
     // Drop it from the in-progress edit too, so the sheet doesn't re-save it.
     if (mounted) {
-      setState(() {
-        _available?.remove(layer.id);
-        _required?.remove(layer.id);
-      });
+      setState(() => _roles?.remove(layer.id));
     }
     // A delete happened, but it wrote its own settings changes already and does
     // not, by itself, make the seeded (inherited) set worth pinning here — so it
     // deliberately does not set `_dirty`. Toggling a chip does.
-  }
-
-  /// Writes [entry] back without [layerId] — or clears the setting entirely when
-  /// nothing would be left, so the node falls back to inheritance rather than
-  /// being pinned to an empty set.
-  static Future<void> _rewriteWithout(
-    LayerConfigEntry entry,
-    String layerId,
-    Future<void> Function(LayerConfigEntry) write, {
-    required Future<void> Function() clear,
-  }) async {
-    final remaining = {...entry.layers}..remove(layerId);
-    if (remaining.isEmpty) return clear();
-    return write(LayerConfigEntry(
-        nodeId: entry.nodeId, unitIndex: entry.unitIndex, layers: remaining));
   }
 
   /// Add a meforish, or edit one you added.
@@ -383,7 +343,7 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
     if (mounted) {
       setState(() {
         _dirty = true;
-        _available!.add(id);
+        _roles![id] = LayerRole.optional;
       });
     }
   }
@@ -463,25 +423,27 @@ class _LayerNameDialogState extends State<_LayerNameDialog> {
   }
 }
 
-/// One meforish row: its name plus two independent toggles (Available, Required)
-/// and an optional delete for custom mefarshim. Chips are mouse-friendly and
-/// read clearly on desktop — no touchscreen assumed.
+/// One meforish row: its name, the one control that says what it is here, and an
+/// optional edit/delete for custom mefarshim.
+///
+/// A [SegmentedButton] rather than two chips because the states are mutually
+/// exclusive — a control that can only be in one position is the whole point of
+/// the tri-state. It is also mouse- and D-pad-friendly, and takes one tab stop
+/// where two chips took two.
 class _MeforishRow extends StatelessWidget {
   const _MeforishRow({
     required this.layer,
-    required this.available,
-    required this.required,
-    required this.onAvailable,
-    required this.onRequired,
+    required this.role,
+    required this.onRole,
     this.onEdit,
     this.onDelete,
   });
 
   final Layer layer;
-  final bool available;
-  final bool required;
-  final ValueChanged<bool> onAvailable;
-  final ValueChanged<bool> onRequired;
+
+  /// Null means *off* — the layer is simply not in the node's role map.
+  final LayerRole? role;
+  final ValueChanged<LayerRole?> onRole;
 
   /// Rename it, or give it the Hebrew name you didn't type at creation.
   /// Null for the built-ins, which are not the user's to rename.
@@ -495,46 +457,63 @@ class _MeforishRow extends StatelessWidget {
     // same in either language rather than hiding the one you didn't pick.
     final primary = layerName(l10n, layer);
     final secondary = primary == layer.name ? layer.nameHebrew : layer.name;
+    final compact = isCompact(context);
+
+    final name = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(primary),
+        if (secondary != null && secondary != primary)
+          Text(secondary, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
+    final buttons = [
+      if (onEdit != null)
+        IconButton(
+          icon: const Icon(Icons.edit_outlined, size: 20),
+          tooltip: l10n.tooltipEditMeforish,
+          onPressed: onEdit,
+        ),
+      if (onDelete != null)
+        IconButton(
+          icon: const Icon(Icons.delete_outline, size: 20),
+          tooltip: l10n.tooltipDeleteMeforish,
+          onPressed: onDelete,
+        ),
+    ];
+    // `SegmentedButton` takes a set, but this one is single-select: `selected`
+    // always holds exactly one value, and null is a real value (off) rather than
+    // an empty selection, so there is no state where nothing is lit.
+    final control = SegmentedButton<LayerRole?>(
+      segments: [
+        ButtonSegment(value: null, label: Text(l10n.mefarshimOff)),
+        ButtonSegment(
+            value: LayerRole.optional, label: Text(l10n.mefarshimAvailable)),
+        ButtonSegment(
+            value: LayerRole.required, label: Text(l10n.labelRequired)),
+      ],
+      selected: {role},
+      // Same reasoning as the Calculator's mode switch: the tick costs ~24dp,
+      // and on a 240dp screen that is the difference between "Required" and a
+      // column of letters. The filled segment already says which one is chosen.
+      showSelectedIcon: !compact,
+      onSelectionChanged: (s) => onRole(s.first),
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+      // The control gets its own line at every width rather than sitting beside
+      // the name. Three segments, a name and two icons overflow a 240dp screen
+      // by a mile and an 800dp one by 31px, and the fix for that is either a
+      // second layout for narrow screens — two shapes of one row, which is the
+      // thing this whole change is about — or one shape that always fits. It
+      // also reads better: the meforish, then what it is here.
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(primary),
-                if (secondary != null && secondary != primary)
-                  Text(secondary,
-                      style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-          ),
-          FilterChip(
-            label: Text(l10n.mefarshimAvailable),
-            selected: available,
-            onSelected: onAvailable,
-            visualDensity: VisualDensity.compact,
-          ),
-          const SizedBox(width: 6),
-          FilterChip(
-            label: Text(l10n.labelRequired),
-            selected: required,
-            onSelected: onRequired,
-            visualDensity: VisualDensity.compact,
-          ),
-          if (onEdit != null)
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 20),
-              tooltip: l10n.tooltipEditMeforish,
-              onPressed: onEdit,
-            ),
-          if (onDelete != null)
-            IconButton(
-              icon: const Icon(Icons.delete_outline, size: 20),
-              tooltip: l10n.tooltipDeleteMeforish,
-              onPressed: onDelete,
-            ),
+          Row(children: [Expanded(child: name), ...buttons]),
+          const SizedBox(height: 4),
+          control,
         ],
       ),
     );

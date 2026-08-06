@@ -237,11 +237,12 @@
   "bulkHistoryUndone": "{count, plural, =1{בוטל — רשומה אחת הוסרה} other{בוטל — {count} רשומות הוסרו}}",
 
   "mefarshimTitle": "מפרשים",
-  "mefarshimExplainer": "״זמין״ = אפשר לסמן אותו כאן. ״חובה״ = יחידה נחשבת גמורה רק לאחר שנלמד. חל על כל מה שמתחת לפריט הזה, אלא אם נקבע אחרת.",
+  "mefarshimExplainer": "כל מפרש הוא כבוי, זמין לסימון כאן, או חובה — יחידה נחשבת גמורה רק לאחר שכל חובה נלמד. חל על כל מה שמתחת לפריט הזה, אלא אם נקבע אחרת.",
   "mefarshimSetHere": "נקבע על פריט זה.",
   "mefarshimInheritedFrom": "בירושה מ־{name}. שמירה תקבע אותם כאן.",
   "mefarshimDefault": "ברירת מחדל (פנים בלבד). שמירה תקבע כאן קבוצה.",
   "mefarshimAvailable": "זמין",
+  "mefarshimOff": "כבוי",
   "mefarshimAddMeforish": "הוספת מפרש",
   "mefarshimResetToInherited": "איפוס לירושה",
   "mefarshimNewTitle": "מפרש חדש",

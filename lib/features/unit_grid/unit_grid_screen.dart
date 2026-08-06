@@ -38,7 +38,7 @@ Future<void> logWithDetails(
   required CatalogNode node,
   required int unit,
 }) async {
-  final view = ref.read(unitLayerViewProvider);
+  final roles = ref.read(layerRolesProvider);
   final fold = ref.read(foldProvider).asData?.value;
   final allLayers = ref.read(allLayersProvider);
   final logger = ref.read(loggingServiceProvider);
@@ -46,10 +46,11 @@ Future<void> logWithDetails(
   final l10n = AppLocalizations.of(context);
   final heading = nodeAndUnit(l10n, node, unit);
 
-  final layered = view.isLayered(node.id, unit);
-  final checkable = layered ? view.checkableFor(node.id, unit) : const <String>{};
+  final layered = roles.isLayered(node.id, unit);
+  final checkable =
+      layered ? roles.checkableFor(node.id, unit) : const <String>{};
   final learned = fold?.completedLayers(node.id, unit) ?? const <String>{};
-  final required = layered ? view.requiredFor(node.id, unit) : const <String>{};
+  final required = layered ? roles.requiredFor(node.id, unit) : const <String>{};
   // Default to what's still outstanding; if nothing is, to everything required.
   final outstanding = required.where((l) => !learned.contains(l)).toSet();
 
@@ -184,9 +185,8 @@ class _UnitGrid extends ConsumerWidget {
   }
 
   Widget _grid(BuildContext context, WidgetRef ref, LogFold fold) {
-    final required = ref.watch(layerRequirementsProvider);
-    final view = ref.watch(unitLayerViewProvider);
-    final done = fold.doneUnits(node.id, required);
+    final roles = ref.watch(layerRolesProvider);
+    final done = fold.doneUnits(node.id, roles);
     final l10n = AppLocalizations.of(context);
     return GridView.builder(
       padding: const EdgeInsets.all(12),
@@ -200,13 +200,13 @@ class _UnitGrid extends ConsumerWidget {
       itemBuilder: (context, i) {
         final unit = node.unitOffset + i;
         final isDone = done.contains(unit);
-        // A unit shows the per-layer checklist when it *offers* more than the
-        // text (offered ∪ required); its fill fraction tracks only the *required*
-        // layers, so optional mefarshim never inflate progress.
-        final layered = view.isLayered(node.id, unit);
+        // A unit shows the per-layer checklist when more than the text is
+        // checkable on it; its fill fraction tracks only the *required* layers, so
+        // optional mefarshim never inflate progress.
+        final layered = roles.isLayered(node.id, unit);
         final fraction = isDone
             ? 1.0
-            : (layered ? view.fraction(node.id, unit, fold) : 0.0);
+            : (layered ? roles.fraction(node.id, unit, fold) : 0.0);
         final reviewCount = fold.reviewCount(node.id, unit);
         final hasDetails = isDone && fold.isAnnotated(node.id, unit);
         return _UnitCell(

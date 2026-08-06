@@ -178,9 +178,9 @@ final chazaraDueProvider = Provider<List<ChazaraItem>>((ref) {
   final fold = ref.watch(foldProvider).asData?.value;
   if (fold == null) return const [];
   final intervals = ref.watch(settingsProvider.select((s) => s.chazaraIntervals));
-  final required = ref.watch(layerRequirementsProvider);
+  final layers = ref.watch(layerRolesProvider);
   final items = ChazaraSchedule.due(fold, ref.watch(clockProvider)(),
-      intervals: intervals, required: required);
+      intervals: intervals, layers: layers);
   final catalog = ref.watch(mergedCatalogProvider).asData?.value;
   if (catalog == null) return items;
   // Drop units whose node has since been hidden or removed, or that now sit

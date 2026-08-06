@@ -14,7 +14,7 @@ import '../common/naming.dart';
 ///
 /// - **Finish all** — each unit's required mefarshim.
 /// - **Mark all — `<meforish>`** — one specific layer across every unit (only
-///   the layers offered/required at this node are listed).
+///   the layers checkable at this node are listed).
 /// - **Finish a range…** — a user-chosen `[start, end]` of units (leaf only).
 /// - **Clear all** — un-mark everything.
 ///
@@ -51,14 +51,10 @@ class _BulkActionsSheet extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final name = nodeName(l10n, node);
     final allLayers = ref.watch(allLayersProvider);
-    final offered = ref.watch(offeredLayersProvider);
-    final required = ref.watch(layerRequirementsProvider);
+    final roles = ref.watch(layerRolesProvider);
 
     // The layers worth offering as a per-meforish bulk action at this node.
-    final nodeCheckable = {
-      ...offered.forNode(node.id),
-      ...required.forNode(node.id),
-    };
+    final nodeCheckable = roles.checkableForNode(node.id);
     final perLayer = [
       for (final l in allLayers)
         if (nodeCheckable.contains(l.id)) l,

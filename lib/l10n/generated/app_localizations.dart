@@ -1427,7 +1427,7 @@ abstract class AppLocalizations {
   /// No description provided for @mefarshimExplainer.
   ///
   /// In en, this message translates to:
-  /// **'“Available” = you can check it off here. “Required” = a unit is done only once it’s learned. Applies to everything under this item unless overridden.'**
+  /// **'Each meforish is off, available to check off here, or required — a unit is done only once every required one is learned. Applies to everything under this item unless overridden.'**
   String get mefarshimExplainer;
 
   /// No description provided for @mefarshimSetHere.
@@ -1453,6 +1453,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Available'**
   String get mefarshimAvailable;
+
+  /// No description provided for @mefarshimOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get mefarshimOff;
 
   /// No description provided for @mefarshimAddMeforish.
   ///

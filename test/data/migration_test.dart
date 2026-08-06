@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -121,7 +122,7 @@ void main() {
 
     expect(columns, isNot(contains('haara')));
     expect(columns, contains('note'));
-    expect(version, 11);
+    expect(version, kSchemaVersion);
   });
 
   test('a half-migrated database still opens instead of bricking', () async {
@@ -175,7 +176,7 @@ void main() {
     db.close();
 
     expect(nodes.map((r) => r['id']), ['n1']);
-    expect(version, 11);
+    expect(version, kSchemaVersion);
   });
 
   test('v8 -> v9 adds batch_id and its index without touching existing rows',
@@ -258,7 +259,7 @@ void main() {
     expect(columns, isNot(contains('haara')));
     expect(indexes, contains('learning_events_batch'),
         reason: 'the index must outlive the v8 table rebuild');
-    expect(version, 11);
+    expect(version, kSchemaVersion);
   });
 
   test('v10 -> v11 re-keys learning_events by profile, losing nothing',
@@ -324,7 +325,7 @@ void main() {
         reason: 'the rebuild drops the table and its indexes with it, so the '
             'index has to be recreated after it — not before');
     expect(ids, ['p1', 'p2']);
-    expect(version, 11);
+    expect(version, kSchemaVersion);
   });
 
   test('v9 -> v10 drops the dead settings_json column, keeping profiles',
@@ -357,5 +358,199 @@ void main() {
 
     expect(columns, isNot(contains('settings_json')));
     expect(rows.single['name'], 'Yaakov', reason: 'the profile itself survives');
+  });
+  group('v11 -> v12 merges the two layer tables into one', () {
+    /// The pair as it stood at v11: membership in `required_layer_configs`
+    /// meant "gates completion", membership in `offered_layer_configs` meant
+    /// "checkable", and the app took the union of the two at every read.
+    const legacyTables = [
+      '''
+      CREATE TABLE required_layer_configs (
+        profile_id TEXT NOT NULL,
+        node_id TEXT NOT NULL,
+        unit_index INTEGER NOT NULL DEFAULT -1,
+        layers_json TEXT NOT NULL,
+        PRIMARY KEY (profile_id, node_id, unit_index)
+      )
+      ''',
+      '''
+      CREATE TABLE offered_layer_configs (
+        profile_id TEXT NOT NULL,
+        node_id TEXT NOT NULL,
+        unit_index INTEGER NOT NULL DEFAULT -1,
+        layers_json TEXT NOT NULL,
+        PRIMARY KEY (profile_id, node_id, unit_index)
+      )
+      ''',
+    ];
+
+    String legacyRow(String table, String node, String layersJson,
+            {int unit = -1, String profile = 'p1'}) =>
+        "INSERT INTO $table (profile_id, node_id, unit_index, layers_json) "
+        "VALUES ('$profile', '$node', $unit, '$layersJson')";
+
+    /// Opens the migrated database and reads `layer_configs` back as
+    /// (node, unit) -> decoded role map.
+    Map<(String, int), Map<String, String>> readConfigs() {
+      final db = raw.sqlite3.open(path);
+      final rows =
+          db.select('SELECT node_id, unit_index, roles_json FROM layer_configs');
+      final out = <(String, int), Map<String, String>>{
+        for (final r in rows)
+          (r['node_id'] as String, r['unit_index'] as int):
+              (jsonDecode(r['roles_json'] as String) as Map)
+                  .map((k, v) => MapEntry('$k', '$v')),
+      };
+      db.close();
+      return out;
+    }
+
+    Future<void> migrate() async {
+      final db = AppDatabase(NativeDatabase(File(path)));
+      await db.customSelect('SELECT 1').get();
+      await db.close();
+    }
+
+    test('required wins over offered, and offered-only becomes optional',
+        () async {
+      // The exact reconciliation the app used to do at read time — the union,
+      // with required taking precedence — now done once, at rest.
+      seed([
+        ...legacyTables,
+        legacyRow('required_layer_configs', 'shas', '["main","rashi"]'),
+        legacyRow(
+            'offered_layer_configs', 'shas', '["main","rashi","maharsha"]'),
+      ], userVersion: 11);
+
+      await migrate();
+
+      expect(readConfigs()[('shas', -1)], {
+        'main': 'required',
+        'rashi': 'required',
+        'maharsha': 'optional',
+      });
+    });
+
+    test('a scope pinned in only one of the two tables still comes across',
+        () async {
+      // The delete-a-meforish cascade could clear one table's row and rewrite
+      // the other's, so half-pinned scopes really are out there on the one
+      // device this schema has ever run on. Neither half may be dropped.
+      seed([
+        ...legacyTables,
+        legacyRow('required_layer_configs', 'nach', '["main"]'),
+        legacyRow('offered_layer_configs', 'nach.tehillim', '["main","rashi"]'),
+      ], userVersion: 11);
+
+      await migrate();
+
+      final configs = readConfigs();
+      expect(configs[('nach', -1)], {'main': 'required'});
+      expect(configs[('nach.tehillim', -1)],
+          {'main': 'optional', 'rashi': 'optional'});
+    });
+
+    test('per-unit overrides keep their unit index', () async {
+      seed([
+        ...legacyTables,
+        legacyRow('required_layer_configs', 'shabbos', '["main","tosafos"]',
+            unit: 7),
+      ], userVersion: 11);
+
+      await migrate();
+
+      expect(readConfigs()[('shabbos', 7)],
+          {'main': 'required', 'tosafos': 'required'});
+    });
+
+    test('the legacy tables are gone afterwards', () async {
+      seed([
+        ...legacyTables,
+        legacyRow('required_layer_configs', 'shas', '["main"]'),
+      ], userVersion: 11);
+
+      await migrate();
+
+      final db = raw.sqlite3.open(path);
+      final tables = db
+          .select("SELECT name FROM sqlite_master WHERE type = 'table'")
+          .map((r) => r['name'] as String)
+          .toSet();
+      final version =
+          db.select('PRAGMA user_version').first['user_version'] as int;
+      db.close();
+
+      expect(tables, contains('layer_configs'));
+      expect(tables, isNot(contains('required_layer_configs')));
+      expect(tables, isNot(contains('offered_layer_configs')));
+      expect(version, kSchemaVersion);
+    });
+
+    test('a v3 database, which predates both tables, still reaches v12',
+        () async {
+      // v3 is older than the layer feature entirely, so the v4 and v7 steps that
+      // used to create these tables purely for v12 to drop are gone. The merge
+      // has to tolerate their absence rather than throw during `beforeOpen` —
+      // the one failure the user cannot get out of — and the rest of the chain
+      // has to still run around it.
+      seed([
+        v7LearningEvents,
+        '''
+        CREATE TABLE custom_nodes (
+          id TEXT NOT NULL,
+          profile_id TEXT NOT NULL,
+          parent_id TEXT NULL,
+          name TEXT NOT NULL,
+          name_hebrew TEXT NULL,
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          kind INTEGER NOT NULL,
+          unit_label INTEGER NULL,
+          unit_count INTEGER NOT NULL DEFAULT 0,
+          unit_offset INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (profile_id, id)
+        )
+        ''',
+        "INSERT INTO custom_nodes (id, profile_id, name, kind, unit_count) "
+            "VALUES ('mine', 'p1', 'My Sefer', 1, 10)",
+        insertEvent('x'),
+      ], userVersion: 3);
+
+      await migrate();
+
+      final db = raw.sqlite3.open(path);
+      final tables = db
+          .select("SELECT name FROM sqlite_master WHERE type = 'table'")
+          .map((r) => r['name'] as String)
+          .toSet();
+      final nodes = db.select('SELECT name FROM custom_nodes');
+      final version =
+          db.select('PRAGMA user_version').first['user_version'] as int;
+      db.close();
+
+      expect(readConfigs(), isEmpty);
+      expect(tables, contains('layer_configs'));
+      expect(nodes.single['name'], 'My Sefer',
+          reason: 'the custom sefer survives the whole chain');
+      expect(version, kSchemaVersion);
+    });
+
+    test('replaying the step is a no-op rather than a crash', () async {
+      // Same replay-safety every other step has: a run that died after the
+      // merge but before user_version was bumped must not throw on the retry.
+      seed([
+        ...legacyTables,
+        legacyRow('required_layer_configs', 'shas', '["main","rashi"]'),
+      ], userVersion: 11);
+
+      await migrate();
+      // Stamp it back and run it again over the already-merged database.
+      final stamp = raw.sqlite3.open(path);
+      stamp.execute('PRAGMA user_version = 11');
+      stamp.close();
+      await migrate();
+
+      expect(readConfigs()[('shas', -1)],
+          {'main': 'required', 'rashi': 'required'});
+    });
   });
 }

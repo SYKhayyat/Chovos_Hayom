@@ -2,6 +2,12 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
+> **Status, 2026-08-06 (later).** **Finding 3** (*"Required and Offered are one tri-state wearing
+> two booleans"*) is now resolved — see the note below it. Everything else in this document stands
+> as written.
+>
+> ---
+>
 > **Status, 2026-08-06.** Two items have been worked. **Finding 2** (*"Nothing in this app is
 > comparable, and nothing is disposable"*) and **finding 1** (`clockProvider`) are now resolved —
 > see the second status note below. Everything else in this document stands as written.
@@ -100,7 +106,7 @@ design writing in the repository. The problem is what happens next to them:
 
 | The rule, as written | Where it is broken |
 |---|---|
-| `layer_requirements.dart:63-65` — *"Two copies of one transformation is how a preview and an outcome come to disagree, so there is one."* | `offered_layers.dart:28-43` is the second copy of that exact transformation, in the file that `import`s the type from the first. |
+| `layer_requirements.dart:63-65` — *"Two copies of one transformation is how a preview and an outcome come to disagree, so there is one."* | `offered_layers.dart:28-43` is the second copy of that exact transformation, in the file that `import`s the type from the first. **✅ Resolved** — both files deleted; see finding 3. |
 | `dashboard_screen.dart:198-200` — *"Watched unconditionally, so this widget's set of subscriptions is the same on every build."* | `dashboard_screen.dart:269` — `ref.watch(backupStatusProvider)` inside the `data:` branch. 68 lines below the rule, same `build` method. **✅ Resolved** — lifted to the unconditional block, as a `.select` on `.due`. |
 | `progress_series.dart:20-23` — *"the same key `PaceEngine` and `ChazaraSchedule` use"* | …and then copy-pastes `_dayNumber` a fourth time rather than importing either. **✅ Resolved** — `lib/core/day.dart`, and a guard test that fails the build on a fifth copy. |
 | `stats.dart:79-82` — *"watching the tick here means every dependent provider re-derives when the day rolls over"* | `return DateTime.now;` — a static tear-off, which Dart canonicalizes. Nothing re-derives. Ever. **✅ Resolved** — see finding 1. |
@@ -281,7 +287,67 @@ surface it.
 
 ---
 
-### 3. *Required* and *Offered* are one tri-state wearing two booleans. `rewrite`.
+### 3. *Required* and *Offered* are one tri-state wearing two booleans. `rewrite`. **✅ Resolved**
+
+> **Every claim in this finding checked out**, including the two that carry it: the twins really are
+> the same `fromEntries` loop over the same engine, and their "different" defaults really are the
+> identical const `<String>{mainLayerId}`. The six-layer table is right row for row, and the illegal
+> fourth state really is repaired by hand at `mefarshim_config_sheet.dart:124`, `:131` and `:182`.
+>
+> **Where the finding undersells itself is the count.** "*`unit_layer_view.dart:29` defines
+> `checkableFor` as `offered ∪ required`*" reads as one reconciliation in one place. It was written
+> out by hand at **four**: `UnitLayerView.checkableFor`, plus `bulk_actions_sheet.dart:57`,
+> `progress_tile.dart:246` and the config sheet's own seed at `:67` — three call sites that never
+> went through the class written to reconcile them, and therefore the three that could have
+> disagreed.
+>
+> **Two things the sweep did not reach.** `BulkMarker.offered` was a **dead field** — passed by the
+> provider, stored, and never read once; the pure carrying cost of a second resolver. And the
+> meforish-delete cascade could genuinely produce the divergence the union was papering over: it
+> cleared a scope's row in one table (its last id was the meforish being deleted) while rewriting
+> the other, leaving a node pinned in one table and inheriting in the other. So "the sets were never
+> independent" was true of the *intent* and not of the data.
+>
+> **The finding's diagnosis and its prescription disagree, and the diagnosis wins.** *The change*
+> proposes one table with a `role` column and one resolver taking `role` and `defaultSet` — which
+> deletes the twin but still stores two membership sets, so the fourth state stays representable and
+> the invariant stays hand-enforced at three write sites. The paragraph above it is the one that is
+> right: *"that want is a three-valued enum — `off | optional | required`"*. That is what was built.
+> One entry holds `Map<String, LayerRole>`; absent means off. A required layer is in the map, so it
+> is checkable, so there is nothing to reconcile and nothing to repair.
+>
+> **One deliberate semantic change.** The two sets could be pinned at different depths of the tree;
+> one role map cannot. Nothing real is lost — the config sheet was the only writer and always wrote
+> both at the same node in one transaction — and it removes the divergence class above. Said out
+> loud because it is a behaviour change, not a refactor.
+>
+> **Not done, and still true:** the *Related* note. `unitIndex: -1` is still the only value ever
+> written, so the per-unit level of the three-level inheritance is still implemented, still carried
+> by backups and the resolver, and still unreachable from the UI. It is cheaper now — one write path
+> instead of two — but it is not fixed.
+>
+> Resolved by `lib/domain/entities/layer.dart` (`LayerRole`, `defaultLayerRoles`),
+> `lib/domain/usecases/layer_roles.dart` (`LayerConfigEntry` + the one `LayerRoles` resolver) and
+> `inherited_layer_roles.dart` (the same engine, resolving a role map); `LayerRequirements`,
+> `OfferedLayers`, `UnitLayerView` and `InheritedLayerSet` deleted. One `layer_configs` table
+> replaces two, at schema v12, which merges the legacy pair by the same union-with-required-winning
+> the app used to apply at read time — and the v4/v7 steps that created those tables are **deleted**,
+> because on any database old enough to run them they created an empty table for v12 to drop. Three
+> repository methods replace six, one stream replaces two, one provider replaces three, one backup
+> array replaces two (backup format v5, with v1–v4 files read back under the role of the array they
+> came from — reading an old `requirements` as optional would silently un-complete the user's tree),
+> and the config sheet's two chips become one `SegmentedButton`.
+>
+> **And the rule is enforced rather than stated.** `test/domain/layer_role_guard_test.dart` reads
+> `lib/` and fails the build on a second resolver, a second stream or table of layer settings, or a
+> hand-written `offered ∪ required` — verified to fail by feeding it a violation, not assumed. Its
+> second half is the rot mode that matters and is silent: it iterates `LayerRole.values` through
+> `fromName` and through the backup JSON round trip, so a third role added without teaching the
+> codecs about it fails CI instead of reading back as *optional* and quietly un-gating completion.
+> Six new migration tests cover the merge against real on-disk SQLite, including a scope pinned in
+> only one legacy table, a v3 database that predates both, and a replay of the half-finished step.
+> `migration_test.dart` had the schema number typed out at four sites and now reads `kSchemaVersion`.
+> 495 tests pass; `analyze --fatal-infos` is clean.
 
 `offered_layers.dart` is `layer_requirements.dart` with `Required` search-replaced to `Offered`:
 the same `fromEntries` loop, the same three delegating getters, and two "different" defaults that
@@ -321,6 +387,13 @@ sheet's own doc-comment at `:20` promises the third.
 ---
 
 ### 4. Eleven schema versions in twenty-nine days, for a database that has never shipped. `delete`.
+
+> **Twelve now, and the count is the wrong thing to watch.** Finding 3 added v12 and deleted the v7
+> step and one line of v4 outright — they created the two tables v12 merges away, and any database
+> old enough to run them has nothing to put in one. So the chain got a step longer and two steps
+> shorter, which is this finding's own point made from the other side: the length is a symptom, and
+> what actually costs is a step that exists only so a later step has something to read. This finding
+> stands otherwise, and the squash is still the right move before v1.
 
 `database.dart:174-295` is 120 lines of migration plus seven schema-introspection helpers
 (`_columnsOf`, `_tableExists`, `_isPartOfPrimaryKey`, three `…IfMissing` variants), plus 361
@@ -628,7 +701,10 @@ CMake caches just as aggressively, and the CMake target-id failure that once bro
    rather than borrowed: `provider_notify_test.dart`, `rebuild_cost_test.dart` and
    `notify_guard_test.dart`, 29 tests, 13 of which fail on the pre-fix code.
 4. Squash the schema to v1 **before** the first release, because after it this stops being free.
-5. Collapse required/offered to one `role` column — same deadline, same reason.
+5. ~~Collapse required/offered to one `role` column — same deadline, same reason.~~ **✅ Done** —
+   and not to a `role` column, which keeps two sets. To one role *map*, which is what this
+   document's own diagnosis of finding 3 asks for; the fourth state is now unrepresentable rather
+   than repaired. Schema v12, backup format v5, one resolver where there were three.
 6. Delete the in-memory repository fake; spend it on the seven unpumped screens.
 7. Delete `fixes.md`, both GRADEs and BUILD (carving ~55 lines of measurement lore into
    `docs/MEASURING.md`); cut the README to ~120 lines and `ARCHITECTURE.md` to §10.
