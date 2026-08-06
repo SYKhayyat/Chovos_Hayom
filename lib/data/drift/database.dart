@@ -8,6 +8,23 @@ import '../../domain/entities/layer.dart';
 
 part 'database.g.dart';
 
+/// A `DateTime` stored at full precision, as microseconds since the epoch.
+///
+/// Drift's own `DateTimeColumn` stores whole seconds. That is fine for a date
+/// the user picked and wrong for anything the app orders by; see
+/// [LearningEvents.loggedAt]. Always UTC-agnostic in the same way drift's is —
+/// the epoch value carries the instant, and the local/UTC flag is not stored,
+/// so it reads back local exactly as it went in.
+class _MicrosecondsSinceEpoch extends TypeConverter<DateTime, int> {
+  const _MicrosecondsSinceEpoch();
+
+  @override
+  DateTime fromSql(int fromDb) => DateTime.fromMicrosecondsSinceEpoch(fromDb);
+
+  @override
+  int toSql(DateTime value) => value.microsecondsSinceEpoch;
+}
+
 /// Local user profiles. All progress is scoped by [Profiles.id].
 @DataClassName('ProfileRow')
 class Profiles extends Table {
@@ -29,7 +46,21 @@ class LearningEvents extends Table {
   IntColumn get unitIndex => integer()();
   IntColumn get action => intEnum<EventAction>()();
   DateTimeColumn get occurredAt => dateTime()();
-  DateTimeColumn get loggedAt => dateTime()();
+
+  /// When this event was appended — the log's **order**, and the only column
+  /// whose sub-second part is load-bearing.
+  ///
+  /// Stored as microseconds rather than through drift's `DateTimeColumn`, which
+  /// writes `millisecondsSinceEpoch ~/ 1000` and so discards everything below a
+  /// second. `FoldLog` sorts by this and breaks ties on the event id — a v4
+  /// UUID — so two events one second apart in storage were ordered by a coin
+  /// flip on random text. Mark a daf and un-mark it inside the same second and
+  /// the `undone` won only if its UUID happened to sort later; otherwise the
+  /// daf stayed learned, permanently, because the fold re-derives from the log
+  /// every time. This was invisible for as long as the tests ran against an
+  /// in-memory double that kept `DateTime` objects in a Dart list at full
+  /// precision.
+  IntColumn get loggedAt => integer().map(const _MicrosecondsSinceEpoch())();
   IntColumn get durationMin => integer().nullable()();
 
   /// A **haara** — the single free-text field on an event: an insight on the daf,
@@ -137,7 +168,7 @@ class CustomNodes extends Table {
 /// the way" against the app's own number. They each typed `11`, at four sites,
 /// and the next bump failed all four with *expected 11, got 12* — a true
 /// statement about the test and nothing at all about the migration.
-const kSchemaVersion = 12;
+const kSchemaVersion = 13;
 
 @DriftDatabase(tables: [
   Profiles,
@@ -302,6 +333,29 @@ class AppDatabase extends _$AppDatabase {
           // this shares none with them. It creates a table and drops two; it
           // never rebuilds one, so nothing below it can be invalidated either.
           if (from < 12) await _mergeLayerConfigs(m);
+          // v12 -> v13: `logged_at` moves from whole seconds to microseconds.
+          //
+          // A pure value rewrite — the column stays an integer, so there is no
+          // table to rebuild and nothing above this can be invalidated by it.
+          //
+          // Idempotent by inspecting the values rather than by `from`, like
+          // every other step: a run that dies after this UPDATE but before
+          // `user_version` is bumped would otherwise multiply by a million
+          // twice and land every event in the year 58692. Seconds since the
+          // epoch stay below 1e11 until the year 5138 and microseconds passed
+          // it in 1973, so the threshold separates the two cleanly and the
+          // replay is a no-op. Rows already converted are left alone, which
+          // also means a half-finished run finishes correctly rather than
+          // needing to start over.
+          //
+          // Guarded on `hasEvents` for the reason the v11 step spells out: a
+          // database that has never had the table is not a database this may
+          // throw on.
+          if (from < 13 && hasEvents) {
+            await customStatement('UPDATE learning_events '
+                'SET logged_at = logged_at * 1000000 '
+                'WHERE logged_at < 100000000000');
+          }
         },
       );
 

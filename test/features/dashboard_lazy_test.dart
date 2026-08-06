@@ -8,7 +8,7 @@ import 'package:chovos_hayom/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
 const _categories = 20;
 const _leavesEach = 20;
@@ -56,7 +56,7 @@ void main() {
         overrides: [
           catalogRepositoryProvider.overrideWithValue(_BigCatalogRepository()),
           progressRepositoryProvider
-              .overrideWithValue(InMemoryProgressRepository()),
+              .overrideWithValue(memoryRepository()),
         ],
         child: const ChovosHayomApp(),
       ),

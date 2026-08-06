@@ -1,8 +1,9 @@
 import 'package:chovos_hayom/domain/entities/layer.dart';
 import 'package:chovos_hayom/domain/usecases/layer_roles.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 import '../support/layer_roles_dsl.dart';
 
 /// The cleanup a meforish deletion performs, exercised at the repository level
@@ -17,11 +18,11 @@ import '../support/layer_roles_dsl.dart';
 /// [LayerConfigEntry.without], so this loop tests the branch the app takes
 /// rather than a copy of it.
 Future<void> deleteMeforish(
-  InMemoryProgressRepository repo,
+  ProgressRepository repo,
   String profileId,
   String layerId,
 ) async {
-  final configs = await repo.watchLayerConfigs(profileId).first;
+  final configs = await repo.getLayerConfigs(profileId);
   await repo.transaction(() async {
     for (final e in configs) {
       if (!e.roles.containsKey(layerId)) continue;
@@ -37,10 +38,10 @@ Future<void> deleteMeforish(
 }
 
 void main() {
-  late InMemoryProgressRepository repo;
+  late ProgressRepository repo;
 
   setUp(() async {
-    repo = InMemoryProgressRepository();
+    repo = memoryRepository();
     await repo.addCustomLayer('p', const Layer(id: 'mine', name: 'My Meforish'));
   });
 
@@ -54,10 +55,10 @@ void main() {
 
     await deleteMeforish(repo, 'p', 'mine');
 
-    final configs = await repo.watchLayerConfigs('p').first;
+    final configs = await repo.getLayerConfigs('p');
     expect(configs.single.required, {'main'},
         reason: 'units gated on it must not become uncompletable');
-    expect(await repo.watchCustomLayers('p').first, isEmpty);
+    expect(await repo.getCustomLayers('p'), isEmpty);
   });
 
   test('a setting that held only that meforish is cleared, not left empty',
@@ -71,7 +72,7 @@ void main() {
 
     await deleteMeforish(repo, 'p', 'mine');
 
-    expect(await repo.watchLayerConfigs('p').first, isEmpty);
+    expect(await repo.getLayerConfigs('p'), isEmpty);
   });
 
   test('an optional role is cleaned up the same way as a required one', () async {
@@ -84,7 +85,7 @@ void main() {
 
     await deleteMeforish(repo, 'p', 'mine');
 
-    final configs = await repo.watchLayerConfigs('p').first;
+    final configs = await repo.getLayerConfigs('p');
     expect(configs.single.checkable, {'main', 'rashi'});
     expect(configs.single.roles['rashi'], LayerRole.optional,
         reason: 'the surviving roles keep their meaning, not just their ids');
@@ -104,7 +105,7 @@ void main() {
 
     await deleteMeforish(repo, 'p', 'mine');
 
-    final configs = await repo.watchLayerConfigs('p').first;
+    final configs = await repo.getLayerConfigs('p');
     expect(configs.single.roles, {'main': LayerRole.optional});
     expect(configs.single.required, isEmpty);
   });
@@ -120,7 +121,7 @@ void main() {
 
     await deleteMeforish(repo, 'p', 'mine');
 
-    final configs = await repo.watchLayerConfigs('p').first;
+    final configs = await repo.getLayerConfigs('p');
     expect(configs.single.unitIndex, 7);
     expect(configs.single.required, {'main'});
   });
@@ -139,7 +140,7 @@ void main() {
 
     await deleteMeforish(repo, 'p', 'mine');
 
-    final configs = await repo.watchLayerConfigs('p').first;
+    final configs = await repo.getLayerConfigs('p');
     expect(configs.length, 2);
     expect(configs.firstWhere((e) => e.nodeId == 'nach').required, {'main'});
   });

@@ -2,13 +2,14 @@ import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/progress_node.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
-ProviderContainer makeContainer(InMemoryProgressRepository repo) {
+ProviderContainer makeContainer(ProgressRepository repo) {
   final c = ProviderContainer(overrides: [
     catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
     progressRepositoryProvider.overrideWithValue(repo),
@@ -27,7 +28,7 @@ ProgressNode? shabbos(List<ProgressNode> forest) => forest
 
 void main() {
   test('custom node is merged into the catalog and tracked', () async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     final c = makeContainer(repo);
     addTearDown(c.dispose);
     final sub = c.listen(progressForestProvider, (_, _) {});
@@ -62,7 +63,7 @@ void main() {
   });
 
   test('switching profiles scopes the log independently', () async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     final c = makeContainer(repo);
     addTearDown(c.dispose);
     final sub = c.listen(progressForestProvider, (_, _) {});

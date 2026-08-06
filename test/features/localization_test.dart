@@ -8,12 +8,13 @@ import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/features/stats/stats_screen.dart';
 import 'package:chovos_hayom/features/unit_grid/unit_grid_screen.dart';
 import 'package:chovos_hayom/l10n/generated/app_localizations.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 import '../support/localized_app.dart';
 
 /// The app declared `supportedLocales: [en, he]` and shipped a "Hebrew layout"
@@ -25,7 +26,7 @@ import '../support/localized_app.dart';
 /// These tests are what stop that from being true again: they assert that
 /// choosing Hebrew changes the words, not just the direction.
 void main() {
-  Widget stats(InMemoryProgressRepository repo, Locale locale) => ProviderScope(
+  Widget stats(ProgressRepository repo, Locale locale) => ProviderScope(
         overrides: [
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
           progressRepositoryProvider.overrideWithValue(repo),
@@ -46,7 +47,7 @@ void main() {
 
   testWidgets('a Hebrew locale translates the words, not just the direction',
       (tester) async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2, DateTime(2026, 1, 10)));
 
     await tester.pumpWidget(stats(repo, const Locale('he')));
@@ -61,7 +62,7 @@ void main() {
   });
 
   testWidgets('the Hebrew locale lays the app out right-to-left', (tester) async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await tester.pumpWidget(stats(repo, const Locale('he')));
     await tester.pumpAndSettle();
 
@@ -70,7 +71,7 @@ void main() {
   });
 
   testWidgets('English is still English', (tester) async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await tester.pumpWidget(stats(repo, const Locale('en')));
     await tester.pumpAndSettle();
 
@@ -84,7 +85,7 @@ void main() {
     // `nameHebrew` has been stored and searched since the first version and
     // never displayed. This is the assertion that it is now the name a Hebrew
     // reader sees.
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     final app = ProviderScope(
       overrides: [
         catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),

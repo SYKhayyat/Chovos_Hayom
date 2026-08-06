@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
 ProgressNode _leaf(List<ProgressNode> forest) =>
     forest.single // root
@@ -14,7 +14,7 @@ ProgressNode _leaf(List<ProgressNode> forest) =>
 
 void main() {
   test('appending an event reactively updates the derived progress tree', () async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     final container = ProviderContainer(overrides: [
       catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
       progressRepositoryProvider.overrideWithValue(repo),

@@ -10,12 +10,13 @@ import 'package:chovos_hayom/features/dashboard/session_banner.dart';
 import 'package:chovos_hayom/features/journal/notes_journal_screen.dart';
 import 'package:chovos_hayom/features/siyum/siyum_screen.dart';
 import 'package:chovos_hayom/features/stats/stats_screen.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 import '../support/localized_app.dart';
 
 /// **Rebuilds, counted on the real screens.**
@@ -56,7 +57,7 @@ void main() {
         loggedAt: DateTime(2026, 1, 9),
       );
 
-  Widget scoped(Widget home, InMemoryProgressRepository repo) => ProviderScope(
+  Widget scoped(Widget home, ProgressRepository repo) => ProviderScope(
         overrides: [
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
           progressRepositoryProvider.overrideWithValue(repo),
@@ -76,7 +77,7 @@ void main() {
       (name: 'NotesJournalScreen', widget: const NotesJournalScreen()),
     ]) {
       testWidgets('does not rebuild ${screen.name}', (tester) async {
-        final repo = InMemoryProgressRepository();
+        final repo = memoryRepository();
         await repo.addEvent(done(2));
         await tester.pumpWidget(scoped(screen.widget, repo));
         await tester.pumpAndSettle();
@@ -100,7 +101,7 @@ void main() {
       // The control. A `.select` that never fires is indistinguishable from a
       // missing subscription, and the difference only shows up as a screen that
       // has quietly stopped updating.
-      final repo = InMemoryProgressRepository();
+      final repo = memoryRepository();
       await repo.addEvent(done(2));
       await tester.pumpWidget(scoped(const StatsScreen(), repo));
       await tester.pumpAndSettle();
@@ -119,7 +120,7 @@ void main() {
 
   group('the session banner\'s one-second ticker', () {
     testWidgets('does not run when there is no session', (tester) async {
-      final repo = InMemoryProgressRepository();
+      final repo = memoryRepository();
       await tester.pumpWidget(scoped(const SessionBanner(), repo));
       await tester.pumpAndSettle();
 
@@ -135,7 +136,7 @@ void main() {
     });
 
     testWidgets('does not run while a session is merely paused', (tester) async {
-      final repo = InMemoryProgressRepository();
+      final repo = memoryRepository();
       await tester.pumpWidget(scoped(const SessionBanner(), repo));
       await tester.pumpAndSettle();
 
@@ -160,7 +161,7 @@ void main() {
     testWidgets('does run while a session is running', (tester) async {
       // The control that stops the two above from being satisfied by simply
       // deleting the ticker.
-      final repo = InMemoryProgressRepository();
+      final repo = memoryRepository();
       await tester.pumpWidget(scoped(const SessionBanner(), repo));
       await tester.pumpAndSettle();
 

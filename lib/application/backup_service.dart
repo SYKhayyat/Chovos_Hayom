@@ -337,9 +337,9 @@ class BackupService {
   /// preview comes to disagree with the outcome.
   Future<_Teardown> _customisationsToRemove(
       String profileId, BackupData data) async {
-    final nodes = await _repo.watchCustomNodes(profileId).first;
-    final layers = await _repo.watchCustomLayers(profileId).first;
-    final configs = await _repo.watchLayerConfigs(profileId).first;
+    final nodes = await _repo.getCustomNodes(profileId);
+    final layers = await _repo.getCustomLayers(profileId);
+    final configs = await _repo.getLayerConfigs(profileId);
 
     final keepNodes = {for (final n in data.customNodes) n.id};
     final keepLayers = {for (final l in data.customLayers) l.id};

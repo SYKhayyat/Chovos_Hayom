@@ -304,6 +304,29 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   is paired with a control that *must* still rebuild, because a subscription that never fires and a
   missing subscription look identical until a screen stops updating. Thirteen of them fail on the
   code they were written against; the controls pass on both.
+- **The tests run against the real database.** There was a 344-line
+  `InMemoryProgressRepository` — a fifth larger than the repository it doubled — that 38 test files
+  used. Its docstring claimed to have "no native dependencies", which was already untrue (three
+  suites ran `AppDatabase(NativeDatabase.memory())` under plain `flutter test`, in CI, in
+  milliseconds), and to be "a faithful implementation rather than a stub", which is not a property
+  anyone can keep: it had drifted on four axes, and its own docstring said that exactly this kind of
+  drift is why the cross-profile import collision could not fail in any test that used it. It is
+  gone, replaced by an eight-line `memoryDatabase()` helper, and the four axes are now assertions
+  the real repository has to earn. **It was hiding a live defect**: drift's `DateTimeColumn` stores
+  whole seconds, so mark-then-un-mark inside one second left the fold ordering two identical
+  timestamps by their random v4 UUIDs — half the time the daf stayed learned, permanently. The
+  double kept `DateTime` objects in a Dart list at full precision, so no test could see it.
+  `logged_at` now stores microseconds (schema v13), and
+  `test/support/repository_double_guard_test.dart` fails the build if a second implementation of the
+  interface, a database opened by hand, or a one-shot read off a live query stream comes back.
+- **The four report screens are built by tests**, rather than constructed and asserted `isNotNull`:
+  Siyumim (a seder marked as bigger than a mesechta, asserted per row), Mefarshim progress (each
+  layer counted separately, the bar relative to the biggest), Chazara (an overdue row, and that the
+  quick Review button carries the mefarshim the unit was learned with), Goals (the required pace it
+  renders, and that removing one is undoable), plus the durable bulk-undo list — where the name of
+  what you are undoing is computed by widget code no domain test runs. `lib/core/daf_yomi.dart`,
+  imported by three production files, has its own test at last: the 14th cycle's first daf, the
+  roll-over into the next mesechta, and the two days the Yerushalmi cycle skips.
 - The 58 added in phase 11 are mostly about the half of the app a unit test cannot see, and each one
   was watched fail first: the real Drift repository under test at last (it had none, and both of its
   defects were about profile scope), every modal sheet laid out on a phone that has a navigation bar
@@ -322,7 +345,7 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 | **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the release binary has now upgraded a real v10 database to the v11 schema in place, keeping every event ✅ |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36 (moto g stylus 2025). Measured on the device: the logging sheet's confirm button clears the navigation bar by 45px and a tap at its bottom edge registers, the Hebrew progress fraction paints `0 / 12,092  (0.0%)` in that order, the app bar fits `Chovos Hayom`, a backup exported from one profile imports into another, and a deep link opens the same screen whether the app was running or not ✅ |
 | **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, Statistics and Siyumim scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search. Also walked key by key: the app opens on the tree's first generation, three presses of *down* reach the backup banner's named dismiss, the message that replaces it leaves on its own within ten seconds, and the drawer's first row returns to the tree ✅ |
-| **CI** | analyze `--fatal-infos`, 480 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
+| **CI** | analyze `--fatal-infos`, 530 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher

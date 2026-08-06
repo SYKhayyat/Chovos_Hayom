@@ -14,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
 import '../support/localized_app.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
 /// *Clear settings* names what it removes, and removes exactly that.
 ///
@@ -26,7 +26,7 @@ import '../support/in_memory_progress_repository.dart';
 void main() {
   testWidgets('clearing settings clears goals and custom sefarim, not the log',
       (tester) async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addCustomNode(
       'default',
       const CatalogNode(
@@ -95,7 +95,7 @@ void main() {
     // screen keeps that provider alive, so it is still loading here. Which is
     // the whole reason the clear reads the repository directly: reading the
     // cache would have found an empty list and deleted nothing.
-    expect(await repo.watchCustomNodes('default').first, isEmpty);
+    expect(await repo.getCustomNodes('default'), isEmpty);
     // The log is history, and history is never what a settings reset touches.
     expect(await repo.getEvents('default'), hasLength(1));
   });

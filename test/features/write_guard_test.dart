@@ -16,7 +16,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
 import '../support/failing_progress_repository.dart';
-import '../support/in_memory_progress_repository.dart';
 import '../support/localized_app.dart';
 import '../support/recording_crash_log.dart';
 
@@ -187,7 +186,7 @@ void main() {
       ).toJson()),
     };
 
-    Widget cyclesScreen(InMemoryProgressRepository repo) => wrap(
+    Widget cyclesScreen(ProgressRepository repo) => wrap(
           const CyclesScreen(),
           repo: repo,
           prefs: InMemoryPreferences(prefs),

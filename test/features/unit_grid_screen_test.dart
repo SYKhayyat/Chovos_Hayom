@@ -1,12 +1,13 @@
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/features/unit_grid/unit_grid_screen.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
 import '../support/localized_app.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
 /// The grid is addressed by id, which is what makes `/sefer/<id>` a route — and
 /// what fixes a staleness bug on the way. Holding a `CatalogNode` froze the
@@ -14,7 +15,7 @@ import '../support/in_memory_progress_repository.dart';
 /// the tree behind it, or from another profile's data arriving) was invisible
 /// until you backed out and came in again.
 void main() {
-  Widget grid(InMemoryProgressRepository repo, {String id = 'shas.moed.shabbos'}) =>
+  Widget grid(ProgressRepository repo, {String id = 'shas.moed.shabbos'}) =>
       ProviderScope(
         overrides: [
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
@@ -25,7 +26,7 @@ void main() {
 
   testWidgets('the title follows a rename made while the grid is open',
       (tester) async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await tester.pumpWidget(grid(repo));
     await tester.pumpAndSettle();
     expect(find.text('Shabbos'), findsOneWidget);
@@ -40,7 +41,7 @@ void main() {
 
   testWidgets('a unit count raised while the grid is open grows the grid',
       (tester) async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await tester.pumpWidget(grid(repo));
     await tester.pumpAndSettle();
 
@@ -55,7 +56,7 @@ void main() {
 
   testWidgets('an id that does not resolve says so instead of spinning forever',
       (tester) async {
-    await tester.pumpWidget(grid(InMemoryProgressRepository(), id: 'gone'));
+    await tester.pumpWidget(grid(memoryRepository(), id: 'gone'));
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);

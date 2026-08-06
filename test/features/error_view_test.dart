@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/failing_catalog_repository.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 import '../support/localized_app.dart';
 import '../support/recording_crash_log.dart';
 
@@ -32,7 +32,7 @@ void main() {
           crashLogProvider.overrideWithValue(crashLog),
           catalogRepositoryProvider.overrideWithValue(catalog),
           progressRepositoryProvider
-              .overrideWithValue(InMemoryProgressRepository()),
+              .overrideWithValue(memoryRepository()),
         ],
         child: localizedApp(
           home: const DashboardScreen(),
@@ -117,7 +117,7 @@ void main() {
         crashLogProvider.overrideWithValue(crashLog),
         catalogRepositoryProvider.overrideWithValue(catalog),
         progressRepositoryProvider
-            .overrideWithValue(InMemoryProgressRepository()),
+            .overrideWithValue(memoryRepository()),
       ],
       child: localizedApp(
         home: const DashboardScreen(),

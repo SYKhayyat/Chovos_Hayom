@@ -359,6 +359,99 @@ void main() {
     expect(columns, isNot(contains('settings_json')));
     expect(rows.single['name'], 'Yaakov', reason: 'the profile itself survives');
   });
+  group('v12 -> v13 rescales logged_at from seconds to microseconds', () {
+    /// The events table as it stood at v12 — the shape v13 rewrites values in.
+    const v12LearningEvents = '''
+      CREATE TABLE learning_events (
+        id TEXT NOT NULL,
+        profile_id TEXT NOT NULL,
+        node_id TEXT NOT NULL,
+        unit_index INTEGER NOT NULL,
+        action INTEGER NOT NULL,
+        occurred_at INTEGER NOT NULL,
+        logged_at INTEGER NOT NULL,
+        duration_min INTEGER NULL,
+        note TEXT NULL,
+        layers_json TEXT NULL,
+        batch_id TEXT NULL,
+        PRIMARY KEY (profile_id, id)
+      )
+    ''';
+
+    String v12Row(String id, {required int loggedAt}) =>
+        'INSERT INTO learning_events '
+        '(id, profile_id, node_id, unit_index, action, occurred_at, logged_at) '
+        "VALUES ('$id', 'p1', 'berachos', 2, 0, 1750000000, $loggedAt)";
+
+    Future<void> migrate() async {
+      final db = AppDatabase(NativeDatabase(File(path)));
+      await db.customSelect('SELECT 1').get();
+      await db.close();
+    }
+
+    Map<String, int> readLoggedAt() {
+      final db = raw.sqlite3.open(path);
+      final rows = db.select('SELECT id, logged_at FROM learning_events');
+      final out = {
+        for (final r in rows) r['id'] as String: r['logged_at'] as int,
+      };
+      db.close();
+      return out;
+    }
+
+    test('every existing event keeps the instant it was logged at', () async {
+      seed([v12LearningEvents, v12Row('e1', loggedAt: 1750000000)],
+          userVersion: 12);
+
+      await migrate();
+
+      expect(readLoggedAt()['e1'], 1750000000 * 1000000,
+          reason: 'the same moment, expressed in the new unit — an event that '
+              'came out a million times too early would sort before the whole '
+              'log and read as the first thing the user ever learned');
+    });
+
+    test('replaying the step does not multiply twice', () async {
+      // The rot mode this guard exists for: `alterTable` steps commit as they
+      // go, so a migration can die with the UPDATE applied and user_version
+      // un-bumped. A second pass keyed only on `from` would put every event in
+      // the year 58692, and nothing downstream would ever notice — the fold
+      // would simply order the log by whichever events were multiplied twice.
+      seed([v12LearningEvents, v12Row('e1', loggedAt: 1750000000)],
+          userVersion: 12);
+      await migrate();
+
+      final stamp = raw.sqlite3.open(path);
+      stamp.execute('PRAGMA user_version = 12');
+      stamp.close();
+      await migrate();
+
+      expect(readLoggedAt()['e1'], 1750000000 * 1000000);
+    });
+
+    test('a database with no events at all upgrades anyway', () async {
+      // `learning_events` is not guaranteed to exist at this point in the
+      // chain: the v9 -> v10 test seeds a profiles-only database. An UPDATE
+      // against a missing table is the one failure a user cannot get out of.
+      seed([
+        '''
+        CREATE TABLE profiles (
+          id TEXT NOT NULL, name TEXT NOT NULL, created_at INTEGER NOT NULL,
+          PRIMARY KEY (id)
+        )
+        ''',
+      ], userVersion: 12);
+
+      await migrate();
+
+      final db = raw.sqlite3.open(path);
+      final version =
+          db.select('PRAGMA user_version').first['user_version'] as int;
+      db.close();
+      expect(version, kSchemaVersion);
+    });
+  });
+
   group('v11 -> v12 merges the two layer tables into one', () {
     /// The pair as it stood at v11: membership in `required_layer_configs`
     /// meant "gates completion", membership in `offered_layer_configs` meant

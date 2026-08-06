@@ -166,12 +166,23 @@ class DriftProgressRepository implements ProgressRepository {
         createdAt: row.createdAt,
       );
 
+  /// One query definition per collection, read two ways.
+  ///
+  /// `watch()` and `get()` differ only in whether the result keeps updating, so
+  /// the selectable is built once and the two halves of the interface are two
+  /// lines each. A hand-written second query is how the reactive and one-shot
+  /// answers come to disagree about the same rows.
+  SimpleSelectStatement<CustomNodes, CustomNodeRow> _customNodesOf(
+          String profileId) =>
+      _db.select(_db.customNodes)..where((t) => t.profileId.equals(profileId));
+
   @override
-  Stream<List<CatalogNode>> watchCustomNodes(String profileId) {
-    final query = _db.select(_db.customNodes)
-      ..where((t) => t.profileId.equals(profileId));
-    return query.watch().map((rows) => rows.map(_toNode).toList());
-  }
+  Stream<List<CatalogNode>> watchCustomNodes(String profileId) =>
+      _customNodesOf(profileId).watch().map((rows) => rows.map(_toNode).toList());
+
+  @override
+  Future<List<CatalogNode>> getCustomNodes(String profileId) async =>
+      (await _customNodesOf(profileId).get()).map(_toNode).toList();
 
   @override
   Future<void> addCustomNode(String profileId, CatalogNode node) async {
@@ -221,16 +232,22 @@ class DriftProgressRepository implements ProgressRepository {
 
   // --- Mefarshim (custom layers) -------------------------------------------
 
+  SimpleSelectStatement<CustomLayers, CustomLayerRow> _customLayersOf(
+          String profileId) =>
+      _db.select(_db.customLayers)
+        ..where((t) => t.profileId.equals(profileId))
+        ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]);
+
   @override
-  Stream<List<Layer>> watchCustomLayers(String profileId) {
-    final query = _db.select(_db.customLayers)
-      ..where((t) => t.profileId.equals(profileId))
-      ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]);
-    return query.watch().map((rows) => rows
-        .map((r) =>
-            Layer(id: r.id, name: r.name, nameHebrew: r.nameHebrew))
-        .toList());
-  }
+  Stream<List<Layer>> watchCustomLayers(String profileId) =>
+      _customLayersOf(profileId).watch().map((rows) => rows.map(_toLayer).toList());
+
+  @override
+  Future<List<Layer>> getCustomLayers(String profileId) async =>
+      (await _customLayersOf(profileId).get()).map(_toLayer).toList();
+
+  Layer _toLayer(CustomLayerRow r) =>
+      Layer(id: r.id, name: r.name, nameHebrew: r.nameHebrew);
 
   @override
   Future<void> addCustomLayer(String profileId, Layer layer) async {
@@ -253,18 +270,25 @@ class DriftProgressRepository implements ProgressRepository {
 
   // --- Layer settings -------------------------------------------------------
 
+  SimpleSelectStatement<LayerConfigs, LayerConfigRow> _layerConfigsOf(
+          String profileId) =>
+      _db.select(_db.layerConfigs)..where((t) => t.profileId.equals(profileId));
+
   @override
-  Stream<List<LayerConfigEntry>> watchLayerConfigs(String profileId) {
-    final query = _db.select(_db.layerConfigs)
-      ..where((t) => t.profileId.equals(profileId));
-    return query.watch().map((rows) => rows
-        .map((r) => LayerConfigEntry(
-              nodeId: r.nodeId,
-              unitIndex: r.unitIndex,
-              roles: _decodeRoles(r.rolesJson),
-            ))
-        .toList());
-  }
+  Stream<List<LayerConfigEntry>> watchLayerConfigs(String profileId) =>
+      _layerConfigsOf(profileId)
+          .watch()
+          .map((rows) => rows.map(_toLayerConfig).toList());
+
+  @override
+  Future<List<LayerConfigEntry>> getLayerConfigs(String profileId) async =>
+      (await _layerConfigsOf(profileId).get()).map(_toLayerConfig).toList();
+
+  LayerConfigEntry _toLayerConfig(LayerConfigRow r) => LayerConfigEntry(
+        nodeId: r.nodeId,
+        unitIndex: r.unitIndex,
+        roles: _decodeRoles(r.rolesJson),
+      );
 
   @override
   Future<void> setLayerConfig(String profileId, LayerConfigEntry entry) async {

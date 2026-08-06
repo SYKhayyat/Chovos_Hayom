@@ -8,7 +8,7 @@ import '../support/layer_roles_dsl.dart';
 import 'package:chovos_hayom/features/settings/settings_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
 /// The number a destructive confirmation shows has to be the number that
 /// happens.
@@ -40,7 +40,7 @@ void main() {
   /// A backup holding the text alone as the requirement, and two units of it
   /// learned.
   Future<String> textOnlyBackup() async {
-    final source = InMemoryProgressRepository();
+    final source = memoryRepository();
     await source.addEvents([mark('e2', 2, mainLayerId), mark('e3', 3, mainLayerId)]);
     return BackupService(source).export(
       'p1',
@@ -57,7 +57,7 @@ void main() {
     final json = await textOnlyBackup();
 
     // Here and now, this profile requires Rashi as well, and has nothing logged.
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.setLayerConfig(
         'p1',
         LayerConfigEntry(
@@ -65,7 +65,7 @@ void main() {
             unitIndex: -1,
             roles: roles(required: [mainLayerId, 'rashi'])));
     final currentRoles = LayerRoles.fromEntries(
-        await repo.watchLayerConfigs('p1').first);
+        await repo.getLayerConfigs('p1'));
 
     final diff = await SettingsScreen.restoreDiff(
       repo: repo,
@@ -92,7 +92,7 @@ void main() {
     // keeps.
     final json = await textOnlyBackup();
 
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.setLayerConfig(
         'p1',
         LayerConfigEntry(
@@ -100,7 +100,7 @@ void main() {
             unitIndex: -1,
             roles: roles(required: [mainLayerId, 'rashi'])));
     final currentRoles = LayerRoles.fromEntries(
-        await repo.watchLayerConfigs('p1').first);
+        await repo.getLayerConfigs('p1'));
 
     final kept = await SettingsScreen.restoreDiff(
       repo: repo,
@@ -130,7 +130,7 @@ void main() {
   test('a unit the backup no longer completes is counted as lost', () async {
     // The mirror case, and the one the warning exists for: the backup requires
     // more than this profile does, so units marked today stop qualifying.
-    final source = InMemoryProgressRepository();
+    final source = memoryRepository();
     await source.addEvent(mark('e2', 2, mainLayerId));
     final json = await BackupService(source).export(
       'p1',
@@ -143,7 +143,7 @@ void main() {
       ],
     );
 
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(mark('e2', 2, mainLayerId));
 
     final diff = await SettingsScreen.restoreDiff(

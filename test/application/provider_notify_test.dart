@@ -10,10 +10,11 @@ import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/repositories/catalog_repository.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
 /// **What notifies what, counted.**
 ///
@@ -86,11 +87,11 @@ void main() {
         loggedAt: DateTime(2026, 1, 1),
       );
 
-  late InMemoryProgressRepository repo;
+  late ProgressRepository repo;
   late ProviderContainer container;
 
   setUp(() async {
-    repo = InMemoryProgressRepository();
+    repo = memoryRepository();
     container = ProviderContainer(overrides: [
       catalogRepositoryProvider
           .overrideWithValue(_FixedCatalogRepository(twoLeafCatalog())),

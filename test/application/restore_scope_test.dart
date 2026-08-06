@@ -1,12 +1,12 @@
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:chovos_hayom/application/backup_service.dart';
-import 'package:chovos_hayom/data/drift/database.dart';
 import 'package:chovos_hayom/data/repositories/drift_progress_repository.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/profile.dart';
+
+import '../support/memory_database.dart';
 
 /// GRADER PROBE — what "restore" actually restores.
 ///
@@ -34,15 +34,11 @@ import 'package:chovos_hayom/domain/entities/profile.dart';
 /// this probe now pins both halves — the wide mode deletes the sefer, and the
 /// narrow one is asserted to keep it, which is the promise its copy now makes.
 void main() {
-  late AppDatabase db;
   late DriftProgressRepository repo;
 
   setUp(() {
-    db = AppDatabase(NativeDatabase.memory());
-    repo = DriftProgressRepository(db);
+    repo = memoryRepository();
   });
-
-  tearDown(() => db.close());
 
   /// Takes a backup of a clean profile, then invents a sefer the user regrets.
   Future<String> backupThenAddASefer() async {
@@ -59,7 +55,7 @@ void main() {
         unitCount: 10,
       ),
     );
-    expect((await repo.watchCustomNodes('p1').first).length, 1);
+    expect((await repo.getCustomNodes('p1')).length, 1);
     return backup;
   }
 
@@ -70,7 +66,7 @@ void main() {
     final result = await BackupService(repo)
         .importInto('p1', backup, mode: ImportMode.restoreEverything);
 
-    expect(await repo.watchCustomNodes('p1').first, isEmpty,
+    expect(await repo.getCustomNodes('p1'), isEmpty,
         reason: 'this is the restore that promises to undo everything recorded '
             'since the backup');
     expect(result.removedCustomisations, 1,
@@ -83,7 +79,7 @@ void main() {
     final result = await BackupService(repo)
         .importInto('p1', backup, mode: ImportMode.restoreLog);
 
-    expect((await repo.watchCustomNodes('p1').first).single.id, 'custom.oops',
+    expect((await repo.getCustomNodes('p1')).single.id, 'custom.oops',
         reason: 'the narrow restore reconciles the log and nothing else — '
             '"Custom sefarim, mefarshim and settings are kept"');
     expect(result.removedCustomisations, 0);

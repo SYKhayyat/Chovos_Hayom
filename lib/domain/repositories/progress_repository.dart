@@ -62,6 +62,17 @@ abstract interface class ProgressRepository {
   /// Reactive stream of the profile's custom nodes (as catalog nodes).
   Stream<List<CatalogNode>> watchCustomNodes(String profileId);
 
+  /// The profile's custom nodes, once.
+  ///
+  /// This and its two siblings below exist because eleven call sites wanted a
+  /// one-shot read and only had a stream, so they all wrote
+  /// `await watchCustomNodes(id).first`: open a live query, register it in the
+  /// update store, fetch, emit, cancel, unregister — to answer a question a
+  /// `SELECT` answers. The log has had both halves from the start
+  /// ([watchEvents] and [getEvents]); these three collections were given only
+  /// the reactive one, and every reader had to improvise the other.
+  Future<List<CatalogNode>> getCustomNodes(String profileId);
+
   /// Add or replace a custom node. Idempotent by (profileId, id) so re-importing
   /// a backup does not duplicate or throw.
   Future<void> addCustomNode(String profileId, CatalogNode node);
@@ -71,6 +82,9 @@ abstract interface class ProgressRepository {
 
   /// Reactive stream of the profile's user-defined mefarshim.
   Stream<List<Layer>> watchCustomLayers(String profileId);
+
+  /// The profile's user-defined mefarshim, once. See [getCustomNodes].
+  Future<List<Layer>> getCustomLayers(String profileId);
 
   /// Add or replace a custom meforish (idempotent by (profileId, id)).
   Future<void> addCustomLayer(String profileId, Layer layer);
@@ -83,6 +97,9 @@ abstract interface class ProgressRepository {
   /// re-unite them — and any consumer that watched one and not the other was
   /// simply wrong about what the user had configured.
   Stream<List<LayerConfigEntry>> watchLayerConfigs(String profileId);
+
+  /// The profile's layer settings, once. See [getCustomNodes].
+  Future<List<LayerConfigEntry>> getLayerConfigs(String profileId);
 
   /// Pin a layer role map at a node (unitIndex -1) or a single unit.
   Future<void> setLayerConfig(String profileId, LayerConfigEntry entry);

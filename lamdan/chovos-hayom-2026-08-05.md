@@ -2,6 +2,12 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
+> **Status, 2026-08-06 (later still).** **Finding 7** (*"The test suite tests the layer that never
+> breaks"*) is now resolved — see the note below it. Everything else in this document stands as
+> written.
+>
+> ---
+>
 > **Status, 2026-08-06 (later).** **Finding 3** (*"Required and Offered are one tri-state wearing
 > two booleans"*) is now resolved — see the note below it. Everything else in this document stands
 > as written.
@@ -394,6 +400,12 @@ sheet's own doc-comment at `:20` promises the third.
 > shorter, which is this finding's own point made from the other side: the length is a symptom, and
 > what actually costs is a step that exists only so a later step has something to read. This finding
 > stands otherwise, and the squash is still the right move before v1.
+>
+> **Thirteen now.** Finding 7 added v13 — a one-line value rewrite of `logged_at`, and the first step
+> in the chain that fixes a defect rather than accommodating a shape change. It is also the cheapest
+> possible argument for this finding: a squash to v1 would have carried it for free, and instead it
+> is a step with its own three migration tests. Every week this waits, the squash gets a little
+> less free.
 
 `database.dart:174-295` is 120 lines of migration plus seven schema-introspection helpers
 (`_columnsOf`, `_tableExists`, `_isPartOfPrimaryKey`, three `…IfMissing` variants), plus 361
@@ -482,7 +494,71 @@ which is precisely the thing you'd want to time.
 
 ---
 
-### 7. The test suite tests the layer that never breaks. `rewrite`.
+### 7. The test suite tests the layer that never breaks. `rewrite`. **✅ Resolved**
+
+> **The finding's central claim was right, and it undersold what it was worth.** The double really
+> was 344 lines against a 307-line repository, really was used by 38 files, and really had drifted on
+> all four named axes — each is now a test in `drift_progress_repository_test.dart` that the double
+> passed and the real repository has to earn. Claim 1 held too: `NativeDatabase.memory()` was already
+> running under plain `flutter_test` in CI, so nothing had to be added to delete the double, and the
+> replacement is the ~8-line `setUp` helper the finding predicted.
+>
+> **What it did not predict is that the double was hiding a live bug, and a bad one.** Drift's
+> `DateTimeColumn` stores `millisecondsSinceEpoch ~/ 1000` — whole seconds. `FoldLog` sorts the log
+> by `loggedAt` and breaks ties on the event id, which is a v4 UUID. So *every pair of events inside
+> one second* was ordered by a coin flip on random text, and for a `done` and an `undone` on the same
+> unit that decides whether the daf is learned — permanently, because the fold is re-derived from the
+> log on every read. Mark a daf and un-mark it with two quick taps and roughly half the time it
+> stayed marked. Verified rather than reasoned: two events written 900µs apart came back with
+> byte-identical timestamps. No test could see it while the suite ran against a double that kept
+> `DateTime` objects in a Dart list at full precision — which is this finding's own thesis, arriving
+> with a bill attached. `LearningEvents.loggedAt` now stores microseconds through a type converter,
+> at schema **v13**, with a value-inspecting idempotency guard so a replayed step cannot multiply by
+> a million twice. Both regression tests were watched fail against the old column before being kept.
+>
+> **A second defect, found the same way and fixed in production rather than in the tests.** Eleven
+> call sites read a one-shot value as `await repo.watchCustomNodes(id).first` — open a live query,
+> register it in the update store, fetch, emit, cancel, unregister, to answer what a `SELECT`
+> answers. The log has had both halves since the beginning (`watchEvents` *and* `getEvents`); the
+> other three collections were given only the reactive one, so every reader improvised the other.
+> That shape also does not resolve at all under `flutter_test`'s fake clock — a continuous `listen`
+> does, `.first` does not — so a widget test that reached one hung rather than failed.
+> `getCustomNodes`, `getCustomLayers` and `getLayerConfigs` now exist, sharing one query definition
+> and one row mapper with their `watch` halves.
+>
+> **Where the finding is now stale.** Its coverage table was computed before findings 1–3 landed:
+> `core/` is no longer at 3.1 tests per 1,000 lines but 26, because `day.dart` brought its own sweep.
+> And "seven screens are never pumped" is now four — `rebuild_cost_test.dart` pumps the journal, the
+> siyum screen and the session banner, though only to count rebuilds, never to look at what they
+> render.
+>
+> Resolved by `test/support/memory_database.dart` (the helper, plus the two drift options that make a
+> real database usable in a widget test: `dontWarnAboutMultipleDatabases`, whose captured stack trace
+> per construction turned a one-minute suite into a four-minute one, and `closeStreamsSynchronously`,
+> without which every cancelled query stream leaves a pending timer and the run hangs);
+> `FailingProgressRepository` rewritten as a delegating wrapper, which also absorbed a second
+> hand-rolled failure double in `import_error_wording_test`; all 110 references migrated; the fake
+> deleted. New: `report_screens_test.dart` and `bulk_history_screen_test.dart` build the four screens
+> nothing ever built, and `core/daf_yomi_test.dart` covers the file three production files import and
+> no test touched. `test/grader/` is dissolved — the three duplicates deleted after checking each
+> against what supersedes it (`predictor_cost_test` is line-for-line `predictor_test:184`;
+> `sheet_nav_bar_inset_test` covers one of the seven sheets `sheet_insets_test` covers, which also has
+> the negative control; `backup_tile_never_exported_test` is three tests in `backup_reminder_test`),
+> with the hardware measurements from the deleted ones grafted onto their survivors.
+>
+> **And the rule is enforced rather than stated.** `test/support/repository_double_guard_test.dart`
+> reads `lib/` and `test/` and fails the build on a second `implements ProgressRepository`, on a
+> `NativeDatabase.memory()` opened outside the helper, and on a `watchX(...).first`. Each ban carries
+> the line it exists to catch and is asserted to still match it, because a source-scanning guard that
+> has rotted into matching nothing is the standard way this kind of check dies.
+>
+> **The cost, said plainly:** `flutter test` went from ~1m30 to ~2m40 on the same machine. That is
+> the price of every test opening a real SQLite database, and it is the right trade — but it is a
+> real one, and the squash in finding 4 is now worth slightly more than it was.
+>
+> **Not done, and still true:** `ProgressRepository` grew from 24 methods to 27. Finding 11's
+> "revisit whether a ~20-line delegating wrapper is a better shape than a 97-line interface, once the
+> in-memory fake is gone" is now unblocked, and pointed at a 105-line interface.
 
 9,806 test lines against 14,636 production is a sane global ratio. The distribution is not:
 
@@ -630,6 +706,11 @@ apparatus against `'$verb $n unit(s)'` while shipping the same expressiveness un
   doubles, and `FailingProgressRepository` exists to prove the write-error banner works, which you
   cannot make Drift do on demand. Once finding 7 lands and the in-memory fake is gone, revisit
   whether a ~20-line delegating wrapper is a better shape than a 97-line interface. Not before.
+  **Now unblocked** (finding 7 landed) — and pointed at a bigger target than this predicted: one
+  production implementation, *one* test double, and 27 methods across 109 lines, because the three
+  one-shot getters the eleven `.first` call sites were improvising had to be added. The revisit is
+  worth doing; the answer is less obvious than it looks, since the delegating wrapper would still
+  need all 27 members.
 
 ---
 
@@ -705,7 +786,11 @@ CMake caches just as aggressively, and the CMake target-id failure that once bro
    and not to a `role` column, which keeps two sets. To one role *map*, which is what this
    document's own diagnosis of finding 3 asks for; the fourth state is now unrepresentable rather
    than repaired. Schema v12, backup format v5, one resolver where there were three.
-6. Delete the in-memory repository fake; spend it on the seven unpumped screens.
+6. ~~Delete the in-memory repository fake; spend it on the seven unpumped screens.~~ **✅ Done** —
+   and the fake was hiding a live bug: sub-second timestamps were being discarded at rest, so a
+   mark and an un-mark in the same second were ordered by their random UUIDs. Schema v13. See the
+   status note on finding 7 for that, for the eleven one-shot reads dressed as live queries, and
+   for what the finding got stale about.
 7. Delete `fixes.md`, both GRADEs and BUILD (carving ~55 lines of measurement lore into
    `docs/MEASURING.md`); cut the README to ~120 lines and `ARCHITECTURE.md` to §10.
 

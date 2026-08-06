@@ -2,12 +2,13 @@ import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/features/unit_grid/unit_grid_screen.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 import '../support/localized_app.dart';
 
 /// The unit grid, read aloud.
@@ -31,7 +32,7 @@ void main() {
         durationMin: unit == 4 ? 30 : null,
       );
 
-  Widget grid(InMemoryProgressRepository repo,
+  Widget grid(ProgressRepository repo,
           {Locale locale = const Locale('en')}) =>
       ProviderScope(
         overrides: [
@@ -47,7 +48,7 @@ void main() {
   testWidgets('a cell says whether it is learned, not only shows it',
       (tester) async {
     final handle = tester.ensureSemantics();
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2));
 
     await tester.pumpWidget(grid(repo));
@@ -61,7 +62,7 @@ void main() {
   testWidgets('a chazara count and recorded details are announced too',
       (tester) async {
     final handle = tester.ensureSemantics();
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(4));
     await repo.addEvent(LearningEvent(
       id: 'r4',
@@ -88,7 +89,7 @@ void main() {
   testWidgets('the cell announces as a button, checked, and reachable',
       (tester) async {
     final handle = tester.ensureSemantics();
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2));
 
     await tester.pumpWidget(grid(repo));
@@ -119,7 +120,7 @@ void main() {
   testWidgets('the announcement is translated with everything else',
       (tester) async {
     final handle = tester.ensureSemantics();
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2));
 
     await tester.pumpWidget(grid(repo, locale: const Locale('he')));

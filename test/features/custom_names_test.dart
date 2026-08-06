@@ -4,12 +4,13 @@ import 'package:chovos_hayom/domain/entities/layer.dart';
 import 'package:chovos_hayom/features/custom_node/add_custom_node_screen.dart';
 import 'package:chovos_hayom/features/unit_grid/mefarshim_config_sheet.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 import '../support/localized_app.dart';
 
 /// Anything the user creates can carry both names, in either order.
@@ -55,7 +56,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Widget nodeForm(InMemoryProgressRepository repo,
+  Widget nodeForm(ProgressRepository repo,
           {Locale locale = const Locale('en')}) =>
       ProviderScope(
         overrides: [
@@ -66,7 +67,7 @@ void main() {
             home: const AddCustomNodeScreen(), locale: locale),
       );
 
-  Widget mefarshimSheet(InMemoryProgressRepository repo,
+  Widget mefarshimSheet(ProgressRepository repo,
           {Locale locale = const Locale('en')}) =>
       ProviderScope(
         overrides: [
@@ -96,7 +97,7 @@ void main() {
   group('custom sefer', () {
     testWidgets('offers both names, labelled so the pairing is obvious',
         (tester) async {
-      await tester.pumpWidget(nodeForm(InMemoryProgressRepository()));
+      await tester.pumpWidget(nodeForm(memoryRepository()));
       await tester.pumpAndSettle();
 
       expect(find.text('Name (English)'), findsOneWidget);
@@ -106,14 +107,14 @@ void main() {
     testWidgets('a Hebrew-only name is enough', (tester) async {
       // Someone working entirely in Hebrew should not have to invent a
       // transliteration to get past the form.
-      final repo = InMemoryProgressRepository();
+      final repo = memoryRepository();
       await tester.pumpWidget(nodeForm(repo));
       await tester.pumpAndSettle();
 
       await enterInto(tester, 'Name (Hebrew)', 'מסילת ישרים');
       await tapButton(tester, 'Add');
 
-      final saved = (await repo.watchCustomNodes('default').first).single;
+      final saved = (await repo.getCustomNodes('default')).single;
       expect(saved.nameHebrew, 'מסילת ישרים');
       // ...and it stands in as the primary name, so an English locale shows it
       // rather than a blank.
@@ -121,34 +122,34 @@ void main() {
     });
 
     testWidgets('an English-only name still works', (tester) async {
-      final repo = InMemoryProgressRepository();
+      final repo = memoryRepository();
       await tester.pumpWidget(nodeForm(repo));
       await tester.pumpAndSettle();
 
       await enterInto(tester, 'Name (English)', 'Mesilas Yesharim');
       await tapButton(tester, 'Add');
 
-      final saved = (await repo.watchCustomNodes('default').first).single;
+      final saved = (await repo.getCustomNodes('default')).single;
       expect(saved.name, 'Mesilas Yesharim');
       expect(saved.nameHebrew, isNull);
     });
 
     testWidgets('neither name is refused, and says why', (tester) async {
-      final repo = InMemoryProgressRepository();
+      final repo = memoryRepository();
       await tester.pumpWidget(nodeForm(repo));
       await tester.pumpAndSettle();
 
       await tapButton(tester, 'Add');
 
       expect(find.textContaining('in either language'), findsOneWidget);
-      expect(await repo.watchCustomNodes('default').first, isEmpty);
+      expect(await repo.getCustomNodes('default'), isEmpty);
     });
   });
 
   group('custom meforish', () {
     testWidgets('can be given a Hebrew name after it was created',
         (tester) async {
-      final repo = InMemoryProgressRepository();
+      final repo = memoryRepository();
       await repo.addCustomLayer(
           'default', const Layer(id: 'ml', name: 'Maharal'));
 
@@ -173,7 +174,7 @@ void main() {
           matching: find.widgetWithText(FilledButton, 'Save')));
       await tester.pumpAndSettle();
 
-      final saved = (await repo.watchCustomLayers('default').first).single;
+      final saved = (await repo.getCustomLayers('default')).single;
       expect(saved.nameHebrew, 'מהר״ל');
       // The id is unchanged, so every event and every required/offered set that
       // named this meforish still points at it.
@@ -183,7 +184,7 @@ void main() {
 
     testWidgets('built-in mefarshim are not the user\'s to rename',
         (tester) async {
-      final repo = InMemoryProgressRepository();
+      final repo = memoryRepository();
       await tester.pumpWidget(mefarshimSheet(repo));
       await tester.pumpAndSettle();
       await tester.tap(find.text('open'));
@@ -195,7 +196,7 @@ void main() {
     });
 
     testWidgets('a Hebrew-only meforish name is enough', (tester) async {
-      final repo = InMemoryProgressRepository();
+      final repo = memoryRepository();
       await tester.pumpWidget(mefarshimSheet(repo));
       await tester.pumpAndSettle();
       await tester.tap(find.text('open'));
@@ -214,7 +215,7 @@ void main() {
           matching: find.widgetWithText(FilledButton, 'Add')));
       await tester.pumpAndSettle();
 
-      final saved = (await repo.watchCustomLayers('default').first).single;
+      final saved = (await repo.getCustomLayers('default')).single;
       expect(saved.nameHebrew, 'פני יהושע');
       expect(saved.name, 'פני יהושע');
     });

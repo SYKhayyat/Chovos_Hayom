@@ -1,17 +1,18 @@
 import 'package:chovos_hayom/application/logging_service.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
 import 'package:chovos_hayom/domain/usecases/unit_history.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
 void main() {
   group('editDetails', () {
-    late InMemoryProgressRepository repo;
+    late ProgressRepository repo;
     late LoggingService logger;
 
     setUp(() {
-      repo = InMemoryProgressRepository();
+      repo = memoryRepository();
       logger = LoggingService(
         repository: repo,
         profileId: 'p',

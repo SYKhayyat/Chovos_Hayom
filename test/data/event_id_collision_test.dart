@@ -1,13 +1,13 @@
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:chovos_hayom/application/backup_service.dart';
-import 'package:chovos_hayom/data/drift/database.dart';
 import 'package:chovos_hayom/data/repositories/drift_progress_repository.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/layer.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/entities/profile.dart';
+
+import '../support/memory_database.dart';
 
 /// GRADER PROBE — the real Drift repository, not the in-memory double.
 ///
@@ -19,15 +19,11 @@ import 'package:chovos_hayom/domain/entities/profile.dart';
 /// `InMemoryProgressRepository`, which keys events by profile and so has no
 /// global id constraint to violate.
 void main() {
-  late AppDatabase db;
   late DriftProgressRepository repo;
 
   setUp(() {
-    db = AppDatabase(NativeDatabase.memory());
-    repo = DriftProgressRepository(db);
+    repo = memoryRepository();
   });
-
-  tearDown(() => db.close());
 
   LearningEvent event(String id, String profileId) => LearningEvent(
         id: id,

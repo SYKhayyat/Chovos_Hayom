@@ -9,7 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
 import '../support/localized_app.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
 LearningEvent done(int unit, DateTime day) => LearningEvent(
       id: 'e$unit-${day.toIso8601String()}',
@@ -25,7 +25,7 @@ void main() {
   testWidgets('stats screen shows a 2-day streak and progress chart',
       (tester) async {
     final clock = DateTime(2026, 1, 10, 12);
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2, DateTime(2026, 1, 10)));
     await repo.addEvent(done(3, DateTime(2026, 1, 9)));
 

@@ -1,15 +1,16 @@
 import 'package:chovos_hayom/domain/entities/catalog.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
 
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
 /// The clone itself, lifted out of `CatalogEditor` (which needs a `WidgetRef`)
 /// so the structural rules can be asserted directly.
 Future<void> cloneStructure(
-  InMemoryProgressRepository repo,
+  ProgressRepository repo,
   String profileId,
   Catalog catalog,
   CatalogNode root,
@@ -67,20 +68,20 @@ void main() {
   test('cloning a subtree keeps its named units', () async {
     // Named units are structure, not progress. Dropping them turned a clone of
     // Chumash into a list of numbers.
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await cloneStructure(repo, 'p', _catalog, _catalog.byId('chumash')!);
 
-    final nodes = await repo.watchCustomNodes('p').first;
+    final nodes = await repo.getCustomNodes('p');
     final leaf = nodes.firstWhere((n) => n.name == 'Bereishis');
     expect(leaf.unitNames, ['Bereishis', 'Noach', 'Lech Lecha']);
     expect(leaf.unitDisplay(2), 'Noach');
   });
 
   test('the clone is a fresh subtree, re-parented onto the new root', () async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await cloneStructure(repo, 'p', _catalog, _catalog.byId('chumash')!);
 
-    final nodes = await repo.watchCustomNodes('p').first;
+    final nodes = await repo.getCustomNodes('p');
     final root = nodes.firstWhere((n) => n.name == 'Chumash (copy)');
     final leaf = nodes.firstWhere((n) => n.name == 'Bereishis');
 

@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 import '../support/localized_app.dart';
 import '../support/recording_crash_log.dart';
 
@@ -46,7 +46,7 @@ void main() {
         overrides: [
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
           progressRepositoryProvider
-              .overrideWithValue(InMemoryProgressRepository()),
+              .overrideWithValue(memoryRepository()),
           appPreferencesProvider
               .overrideWithValue(prefs ?? InMemoryPreferences()),
           crashLogProvider.overrideWithValue(RecordingCrashLog()),

@@ -290,9 +290,9 @@ class SettingsScreen extends ConsumerWidget {
         // still in flight — or one nothing on this screen keeps alive — into an
         // empty list: a clear that silently skips exactly the rows it was asked
         // to remove, and then reports success for it.
-        final customNodes = await repo.watchCustomNodes(profileId).first;
-        final customLayers = await repo.watchCustomLayers(profileId).first;
-        final layerConfigs = await repo.watchLayerConfigs(profileId).first;
+        final customNodes = await repo.getCustomNodes(profileId);
+        final customLayers = await repo.getCustomLayers(profileId);
+        final layerConfigs = await repo.getLayerConfigs(profileId);
 
         await settings.clearAll();
         // Goals are configuration, not history: they travel with the settings
@@ -387,9 +387,9 @@ class SettingsScreen extends ConsumerWidget {
     final profileId = ref.read(activeProfileProvider);
     return BackupService(repo).export(
       profileId,
-      customNodes: await repo.watchCustomNodes(profileId).first,
-      customLayers: await repo.watchCustomLayers(profileId).first,
-      layerConfigs: await repo.watchLayerConfigs(profileId).first,
+      customNodes: await repo.getCustomNodes(profileId),
+      customLayers: await repo.getCustomLayers(profileId),
+      layerConfigs: await repo.getLayerConfigs(profileId),
       settings: ref.read(settingsProvider.notifier).toBackup(),
       goals: ref.read(goalsProvider),
     );
@@ -649,7 +649,7 @@ class SettingsScreen extends ConsumerWidget {
     };
     final byKey = {
       if (!mode.replacesCustomisation)
-        for (final e in await repo.watchLayerConfigs(profileId).first)
+        for (final e in await repo.getLayerConfigs(profileId))
           (e.nodeId, e.unitIndex): e,
       for (final e in backup.layerConfigs) (e.nodeId, e.unitIndex): e,
     };

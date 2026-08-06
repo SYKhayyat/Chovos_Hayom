@@ -3,9 +3,10 @@ import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 import 'dart:convert';
 
 /// A valid backup body, so each test can corrupt exactly one thing.
@@ -50,7 +51,7 @@ Map<String, dynamic> event(String id, {int unitIndex = 2}) => {
     };
 
 Future<void> expectRejected(String json, Matcher messageMatcher) async {
-  final repo = InMemoryProgressRepository();
+  final repo = memoryRepository();
   await expectLater(
     BackupService(repo).importInto('b', json),
     throwsA(isA<BackupFormatException>()
@@ -58,7 +59,7 @@ Future<void> expectRejected(String json, Matcher messageMatcher) async {
   );
   // Nothing may be left behind by a rejected import.
   expect(await repo.getEvents('b'), isEmpty);
-  expect(await repo.watchCustomNodes('b').first, isEmpty);
+  expect(await repo.getCustomNodes('b'), isEmpty);
 }
 
 void main() {
@@ -152,7 +153,7 @@ void main() {
     // shas.berachos, closing a loop in which *every* id is already "known" —
     // invisible to a cycle check that walks only the backup's own rows, and it
     // empties the whole tree once in SQLite.
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     final json =
         jsonEncode(backup(nodes: [node('shas', parentId: 'shas.berachos')]));
     await expectLater(
@@ -161,20 +162,20 @@ void main() {
       throwsA(isA<BackupFormatException>()
           .having((e) => e.message, 'message', contains('loop'))),
     );
-    expect(await repo.watchCustomNodes('b').first, isEmpty);
+    expect(await repo.getCustomNodes('b'), isEmpty);
   });
 
   test('a parent in the bundled catalog is accepted', () async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     final json =
         jsonEncode(backup(nodes: [node('mine', parentId: 'shas.moed')]));
     await BackupService(repo)
         .importInto('b', json, knownParents: {'shas.moed': null});
-    expect((await repo.watchCustomNodes('b').first).single.id, 'mine');
+    expect((await repo.getCustomNodes('b')).single.id, 'mine');
   });
 
   test('a rejected import leaves no partial data behind', () async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     // Good events first, then a node that must be refused: without a
     // transaction the events would land and the node would not.
     final json = jsonEncode(backup(
@@ -203,11 +204,11 @@ void main() {
           loggedAt: at,
         );
 
-    late InMemoryProgressRepository repo;
+    late ProgressRepository repo;
     late String json;
 
     setUp(() async {
-      repo = InMemoryProgressRepository();
+      repo = memoryRepository();
       await repo.addEvent(ev('done-1', EventAction.done, DateTime(2026, 7, 24, 10)));
       // The backup is taken while the unit is marked.
       json = await BackupService(repo).export('a', customNodes: const []);
@@ -265,19 +266,19 @@ void main() {
   });
 
   test('goals round-trip through a backup', () async {
-    final source = InMemoryProgressRepository();
+    final source = memoryRepository();
     final json = await BackupService(source).export(
       'a',
       customNodes: const [],
       goals: {'shas': DateTime(2030, 6, 1)},
     );
-    final target = InMemoryProgressRepository();
+    final target = memoryRepository();
     final data = await BackupService(target).importInto('b', json);
     expect(data.goals, {'shas': DateTime(2030, 6, 1)});
   });
 
   test('the batch id of a bulk event survives a backup round-trip', () async {
-    final source = InMemoryProgressRepository();
+    final source = memoryRepository();
     await source.addEvent(LearningEvent(
       id: 'e1',
       profileId: 'a',
@@ -289,18 +290,18 @@ void main() {
       batchId: 'batch-7',
     ));
     final json = await BackupService(source).export('a', customNodes: const []);
-    final target = InMemoryProgressRepository();
+    final target = memoryRepository();
     await BackupService(target).importInto('b', json);
     expect((await target.getEvents('b')).single.batchId, 'batch-7');
   });
 
   test('a valid CatalogNode with no units is still fine', () async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     const category = CatalogNode(
         id: 'cat', parentId: null, name: 'Category', kind: NodeKind.category);
-    final json = await BackupService(InMemoryProgressRepository())
+    final json = await BackupService(memoryRepository())
         .export('a', customNodes: const [category]);
     await BackupService(repo).importInto('b', json);
-    expect((await repo.watchCustomNodes('b').first).single.id, 'cat');
+    expect((await repo.getCustomNodes('b')).single.id, 'cat');
   });
 }

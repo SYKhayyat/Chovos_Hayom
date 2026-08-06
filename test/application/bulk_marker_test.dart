@@ -5,9 +5,10 @@ import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
 import 'package:chovos_hayom/domain/usecases/layer_roles.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
 /// cat ─┬─ a (units 2,3,4)
 ///      └─ b (units 1,2)
@@ -33,13 +34,13 @@ Catalog buildCatalog() => Catalog([
     ]);
 
 void main() {
-  late InMemoryProgressRepository repo;
+  late ProgressRepository repo;
   late int counter;
   late LoggingService logger;
   final catalog = buildCatalog();
 
   setUp(() {
-    repo = InMemoryProgressRepository();
+    repo = memoryRepository();
     counter = 0;
     logger = LoggingService(
       repository: repo,

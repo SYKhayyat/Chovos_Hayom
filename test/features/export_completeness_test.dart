@@ -15,7 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
 import '../support/localized_app.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
 /// A backup has to contain everything, including the parts no screen happens to
 /// be looking at.
@@ -29,7 +29,7 @@ import '../support/in_memory_progress_repository.dart';
 void main() {
   testWidgets('exporting carries the custom sefarim, mefarshim and layer config',
       (tester) async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     const profile = 'default';
     await repo.addCustomNode(
       profile,

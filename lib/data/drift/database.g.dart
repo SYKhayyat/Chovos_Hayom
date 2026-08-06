@@ -328,17 +328,15 @@ class $LearningEventsTable extends LearningEvents
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _loggedAtMeta = const VerificationMeta(
-    'loggedAt',
-  );
   @override
-  late final GeneratedColumn<DateTime> loggedAt = GeneratedColumn<DateTime>(
-    'logged_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
+  late final GeneratedColumnWithTypeConverter<DateTime, int> loggedAt =
+      GeneratedColumn<int>(
+        'logged_at',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<DateTime>($LearningEventsTable.$converterloggedAt);
   static const VerificationMeta _durationMinMeta = const VerificationMeta(
     'durationMin',
   );
@@ -444,14 +442,6 @@ class $LearningEventsTable extends LearningEvents
     } else if (isInserting) {
       context.missing(_occurredAtMeta);
     }
-    if (data.containsKey('logged_at')) {
-      context.handle(
-        _loggedAtMeta,
-        loggedAt.isAcceptableOrUnknown(data['logged_at']!, _loggedAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_loggedAtMeta);
-    }
     if (data.containsKey('duration_min')) {
       context.handle(
         _durationMinMeta,
@@ -514,10 +504,12 @@ class $LearningEventsTable extends LearningEvents
         DriftSqlType.dateTime,
         data['${effectivePrefix}occurred_at'],
       )!,
-      loggedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}logged_at'],
-      )!,
+      loggedAt: $LearningEventsTable.$converterloggedAt.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}logged_at'],
+        )!,
+      ),
       durationMin: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}duration_min'],
@@ -544,6 +536,8 @@ class $LearningEventsTable extends LearningEvents
 
   static JsonTypeConverter2<EventAction, int, int> $converteraction =
       const EnumIndexConverter<EventAction>(EventAction.values);
+  static TypeConverter<DateTime, int> $converterloggedAt =
+      const _MicrosecondsSinceEpoch();
 }
 
 class LearningEventRow extends DataClass
@@ -554,6 +548,20 @@ class LearningEventRow extends DataClass
   final int unitIndex;
   final EventAction action;
   final DateTime occurredAt;
+
+  /// When this event was appended — the log's **order**, and the only column
+  /// whose sub-second part is load-bearing.
+  ///
+  /// Stored as microseconds rather than through drift's `DateTimeColumn`, which
+  /// writes `millisecondsSinceEpoch ~/ 1000` and so discards everything below a
+  /// second. `FoldLog` sorts by this and breaks ties on the event id — a v4
+  /// UUID — so two events one second apart in storage were ordered by a coin
+  /// flip on random text. Mark a daf and un-mark it inside the same second and
+  /// the `undone` won only if its UUID happened to sort later; otherwise the
+  /// daf stayed learned, permanently, because the fold re-derives from the log
+  /// every time. This was invisible for as long as the tests ran against an
+  /// in-memory double that kept `DateTime` objects in a Dart list at full
+  /// precision.
   final DateTime loggedAt;
   final int? durationMin;
 
@@ -597,7 +605,11 @@ class LearningEventRow extends DataClass
       );
     }
     map['occurred_at'] = Variable<DateTime>(occurredAt);
-    map['logged_at'] = Variable<DateTime>(loggedAt);
+    {
+      map['logged_at'] = Variable<int>(
+        $LearningEventsTable.$converterloggedAt.toSql(loggedAt),
+      );
+    }
     if (!nullToAbsent || durationMin != null) {
       map['duration_min'] = Variable<int>(durationMin);
     }
@@ -826,7 +838,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     Expression<int>? unitIndex,
     Expression<int>? action,
     Expression<DateTime>? occurredAt,
-    Expression<DateTime>? loggedAt,
+    Expression<int>? loggedAt,
     Expression<int>? durationMin,
     Expression<String>? note,
     Expression<String>? layersJson,
@@ -903,7 +915,9 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
       map['occurred_at'] = Variable<DateTime>(occurredAt.value);
     }
     if (loggedAt.present) {
-      map['logged_at'] = Variable<DateTime>(loggedAt.value);
+      map['logged_at'] = Variable<int>(
+        $LearningEventsTable.$converterloggedAt.toSql(loggedAt.value),
+      );
     }
     if (durationMin.present) {
       map['duration_min'] = Variable<int>(durationMin.value);
@@ -2606,10 +2620,11 @@ class $$LearningEventsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<DateTime> get loggedAt => $composableBuilder(
-    column: $table.loggedAt,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnWithTypeConverterFilters<DateTime, DateTime, int> get loggedAt =>
+      $composableBuilder(
+        column: $table.loggedAt,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
 
   ColumnFilters<int> get durationMin => $composableBuilder(
     column: $table.durationMin,
@@ -2671,7 +2686,7 @@ class $$LearningEventsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<DateTime> get loggedAt => $composableBuilder(
+  ColumnOrderings<int> get loggedAt => $composableBuilder(
     column: $table.loggedAt,
     builder: (column) => ColumnOrderings(column),
   );
@@ -2726,7 +2741,7 @@ class $$LearningEventsTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<DateTime> get loggedAt =>
+  GeneratedColumnWithTypeConverter<DateTime, int> get loggedAt =>
       $composableBuilder(column: $table.loggedAt, builder: (column) => column);
 
   GeneratedColumn<int> get durationMin => $composableBuilder(

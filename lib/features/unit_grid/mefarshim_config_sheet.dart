@@ -226,7 +226,7 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
     // read as an empty list would tell the user "required in 0 places" and then
     // leave every one of those references dangling — the exact failure deleting
     // a meforish was fixed for.
-    final configs = await repo.watchLayerConfigs(profileId).first;
+    final configs = await repo.getLayerConfigs(profileId);
     if (!mounted) return;
 
     final affected = [

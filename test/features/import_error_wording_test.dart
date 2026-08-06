@@ -8,7 +8,7 @@ import 'package:chovos_hayom/domain/entities/profile.dart';
 import 'package:chovos_hayom/features/settings/settings_screen.dart';
 import 'package:chovos_hayom/l10n/generated/app_localizations_en.dart';
 
-import '../support/in_memory_progress_repository.dart';
+import '../support/failing_progress_repository.dart';
 
 /// GRADER PROBE — when an import fails, the app tells the user their backup file
 /// is unreadable.
@@ -72,7 +72,9 @@ void main() {
 
   test('a failure that is the app\'s own is not reported as an unreadable file',
       () async {
-    final repo = _FailsTheWrite();
+    // Disarmed while the fixture is built, then armed for the import — the
+    // write has to succeed once so there is something to export.
+    final repo = FailingProgressRepository(failWrites: false);
     await repo.addProfile(
         Profile(id: 'p1', name: 'Reuven', createdAt: DateTime(2026)));
     await repo.addProfile(
@@ -81,7 +83,7 @@ void main() {
 
     final service = BackupService(repo);
     final json = await service.export('p1', customNodes: const []);
-    repo.armed = true;
+    repo.failWrites = true;
 
     Object? thrown;
     try {
@@ -119,19 +121,4 @@ void main() {
       contains('“events” must be a list.'),
     );
   });
-}
-
-/// The in-memory double, with the repository write made to fail on demand — a
-/// stand-in for the `SqliteException` the real one raised, and for whatever
-/// raises next.
-class _FailsTheWrite extends InMemoryProgressRepository {
-  bool armed = false;
-
-  @override
-  Future<void> addEvents(List<LearningEvent> events) async {
-    if (armed) {
-      throw StateError('UNIQUE constraint failed: learning_events.id');
-    }
-    return super.addEvents(events);
-  }
 }

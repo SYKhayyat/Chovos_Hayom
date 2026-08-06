@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 import '../support/localized_app.dart';
 
 /// The app bar has to fit the app's own name.
@@ -22,7 +22,7 @@ void main() {
         overrides: [
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
           progressRepositoryProvider
-              .overrideWithValue(InMemoryProgressRepository()),
+              .overrideWithValue(memoryRepository()),
           appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
           clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
         ],

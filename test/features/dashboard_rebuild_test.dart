@@ -13,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 import '../support/localized_app.dart';
 
 /// Changing the sort must not provoke a build-phase `setState`.
@@ -50,7 +50,7 @@ void main() {
 
   testWidgets('changing the sort from its sheet raises no framework error',
       (tester) async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2));
 
     await tester.pumpWidget(ProviderScope(
@@ -88,7 +88,7 @@ void main() {
       (tester) async {
     // The other overlay on this screen, and the other thing that flips
     // TickerMode on a ConsumerStatefulWidget.
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2));
 
     await tester.pumpWidget(ProviderScope(
@@ -119,7 +119,7 @@ void main() {
     // a route animates over another, which is what made Riverpod resume and
     // flush the dashboard's subscriptions mid-frame. So mutate *during* the
     // transition rather than after it settles.
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2));
 
     await tester.pumpWidget(ProviderScope(

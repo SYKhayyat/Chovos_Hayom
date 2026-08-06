@@ -1,13 +1,14 @@
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
-ProviderContainer makeContainer(InMemoryProgressRepository repo) =>
+ProviderContainer makeContainer(ProgressRepository repo) =>
     ProviderContainer(overrides: [
       catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
       progressRepositoryProvider.overrideWithValue(repo),
@@ -15,7 +16,7 @@ ProviderContainer makeContainer(InMemoryProgressRepository repo) =>
 
 void main() {
   test('a same-id custom row overrides a built-in node in place', () async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     final c = makeContainer(repo);
     addTearDown(c.dispose);
     final sub = c.listen(mergedCatalogProvider, (_, _) {});
@@ -48,7 +49,7 @@ void main() {
   });
 
   test('a hidden override removes the node and its subtree', () async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     final c = makeContainer(repo);
     addTearDown(c.dispose);
     final sub = c.listen(mergedCatalogProvider, (_, _) {});

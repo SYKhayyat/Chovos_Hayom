@@ -1,22 +1,23 @@
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/domain/entities/profile.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 
 /// Deleting a profile used to leave every one of its preference keys behind —
 /// only goals were removed, and the ten scoped settings keys (calendar, theme,
 /// cycles, …) plus the session timer were orphaned in shared_preferences
 /// forever. Looping PrefKeys.perProfile fixes it by construction.
 void main() {
-  late InMemoryProgressRepository repo;
+  late ProgressRepository repo;
   late InMemoryPreferences prefs;
   late ProviderContainer container;
 
   setUp(() {
-    repo = InMemoryProgressRepository();
+    repo = memoryRepository();
     prefs = InMemoryPreferences();
     container = ProviderContainer(overrides: [
       progressRepositoryProvider.overrideWithValue(repo),

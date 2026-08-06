@@ -14,7 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 import '../support/localized_app.dart';
 
 /// Every modal sheet, laid out on a phone that has a system navigation bar.
@@ -24,6 +24,14 @@ import '../support/localized_app.dart';
 /// phone with 352 tests staying quiet: taps in the bottom two thirds of "Mark
 /// learned" went to the system, and aiming at it opened Recents. Nothing here is
 /// clever — it is one `viewPadding` and one `expect` — and that is the point.
+///
+/// Measured on hardware before any of this existed (moto g stylus 2025, Android
+/// 16, 1220x2712, three-button bar 135px tall): the log sheet's Cancel / Mark
+/// learned row was laid out at y=2532..2667 while the bar owned y=2577..2712,
+/// so a tap at y=2640 — inside the button's own bounds — opened `RecentsActivity`
+/// instead. That measurement lived in a one-sheet probe of its own, which this
+/// file superseded the moment it covered seven; the numbers are kept here
+/// because they are the evidence, and the probe is gone.
 ///
 /// The rule: **a sheet may extend under the navigation bar, but nothing you can
 /// tap may.** So this looks only at controls that *begin* above the bar's top
@@ -86,7 +94,7 @@ void main() {
       overrides: [
         catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
         progressRepositoryProvider
-            .overrideWithValue(InMemoryProgressRepository()),
+            .overrideWithValue(memoryRepository()),
         appPreferencesProvider.overrideWithValue(InMemoryPreferences({})),
       ],
       child: localizedApp(

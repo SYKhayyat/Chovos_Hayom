@@ -6,6 +6,7 @@ import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/features/dashboard/dashboard_screen.dart';
 import 'package:chovos_hayom/features/settings/settings_screen.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
 import '../support/failing_progress_repository.dart';
-import '../support/in_memory_progress_repository.dart';
+import '../support/memory_database.dart';
 import '../support/localized_app.dart';
 import '../support/recording_crash_log.dart';
 
@@ -47,7 +48,7 @@ void main() {
   late RecordingCrashLog crashLog;
   setUp(() => crashLog = RecordingCrashLog());
 
-  ProviderScope settings(InMemoryProgressRepository repo, AppPreferences prefs) =>
+  ProviderScope settings(ProgressRepository repo, AppPreferences prefs) =>
       ProviderScope(
         overrides: [
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
@@ -65,7 +66,7 @@ void main() {
 
   testWidgets('a successful export stamps the profile as backed up',
       (tester) async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2, DateTime(2026, 2, 1)));
     final prefs = InMemoryPreferences();
     mockClipboard(tester);
@@ -148,7 +149,7 @@ void main() {
       required bool exported,
       required int learned,
     }) async {
-      final repo = InMemoryProgressRepository();
+      final repo = memoryRepository();
       for (var i = 0; i < learned; i++) {
         await repo.addEvent(done(2 + i, DateTime(2026, 2, 20)));
       }
@@ -196,7 +197,7 @@ void main() {
     testWidgets('a fully-exported profile is the one that gets the tick',
         (tester) async {
       // Exported after the learning: nothing outstanding.
-      final repo = InMemoryProgressRepository();
+      final repo = memoryRepository();
       await repo.addEvent(done(2, DateTime(2026, 2, 1)));
       final prefs = InMemoryPreferences({
         PrefKeys.scoped('default', stamp):
@@ -227,7 +228,7 @@ void main() {
 
   testWidgets('the dashboard warns when learning has never been backed up',
       (tester) async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2, DateTime(2026, 2, 1)));
 
     await tester.pumpWidget(ProviderScope(
@@ -251,7 +252,7 @@ void main() {
       overrides: [
         catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
         progressRepositoryProvider
-            .overrideWithValue(InMemoryProgressRepository()),
+            .overrideWithValue(memoryRepository()),
         appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
         clockProvider.overrideWithValue(() => now),
       ],
@@ -267,7 +268,7 @@ void main() {
     // The switch has always existed in Settings, but a warning you can only
     // silence by hunting through a screen — possibly in a language you don't
     // read — is a warning that just becomes noise.
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2, DateTime(2026, 2, 1)));
     final prefs = InMemoryPreferences();
 
@@ -299,7 +300,7 @@ void main() {
 
   testWidgets('dismissing the banner is undoable', (tester) async {
     // Turning off a safety warning by mis-tap must cost nothing.
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2, DateTime(2026, 2, 1)));
 
     await tester.pumpWidget(ProviderScope(
@@ -325,7 +326,7 @@ void main() {
   });
 
   testWidgets('turning the reminder off removes the banner', (tester) async {
-    final repo = InMemoryProgressRepository();
+    final repo = memoryRepository();
     await repo.addEvent(done(2, DateTime(2026, 2, 1)));
     final prefs = InMemoryPreferences({
       PrefKeys.scoped('default', PrefKeys.backupReminderEnabled): 'false',
