@@ -26,6 +26,21 @@ prediction-from-actual-pace for free.
   chazara spacing, cycle position, the finish-date projection, the heatmap, the midnight tick —
   counts in `Day`, and `test/core/day_math_guard_test.dart` fails the build if a second copy of
   that arithmetic appears anywhere in `lib/`.
+- **The log is folded twice, and then nobody reads it again.** `LogFold` answers *what is learned
+  now* — membership per unit, which is what the tree, the chazara schedule and a siyum want.
+  [`LogActivity`](lib/domain/usecases/log_activity.dart) answers *what happened, and when* — the log
+  indexed by calendar day, which is what the pace, the streak, the heatmap, the minutes and the
+  "have I recorded anything today" nudge want. They are two indexes and not one because an un-marked
+  daf leaves the first and stays in the second: the heatmap is a record of a day, not a claim about
+  today. Both are built once per change; every question above is then a map lookup. It had grown the
+  other way — `statsProvider` held a fold and made five more passes over the log it came from, every
+  goal row made another, and the dashboard made one more for a banner, so a user at year seven paid
+  nine-plus full scans of ~3,000 events on every mark and every midnight tick, invisibly, because
+  the cost scales with history and a freshly-tested phone has none.
+  `test/application/log_pass_count_test.dart` counts real passes through a live provider graph — ten
+  goal rows must cost zero, a midnight tick must cost zero — and
+  `test/domain/log_pass_guard_test.dart` fails the build if a new function takes the whole log,
+  listing the seven that legitimately do and why each is its own axis.
 - **Derived does not mean re-rendered.** Everything being a fold over the log is only affordable if
   the derivation *stops* where the answer stopped changing. Riverpod re-notifies whenever
   `previous != next`, and Dart compares objects by identity unless told otherwise, so every derived
@@ -61,7 +76,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
 | **9 — Speaking Hebrew** | Full English/Hebrew localization (the toggle translates rather than mirrors), `nameHebrew` finally displayed, screen-reader labels on the unit grid, a real error view with retry behind every failed read, and CI that pins its toolchain and fails on a stale or incomplete string table | ✅ Done |
 | **10 — Not losing it** | A backup reminder that counts what is genuinely at risk, so the "everything stays on your device" promise stops being a silent single point of failure | ✅ Done |
 | **11 — What a phone found** | Twelve defects from two independent adversarial gradings, three of which no test could have seen and one minute on a phone showed immediately: a confirm button under the navigation bar, a progress fraction reading backwards in Hebrew, a green tick over a backup that did not exist. Plus the cross-profile import that never worked, a restore split into the two things it was pretending to be, a calculator that walked 200,000 days inside `build()`, and a grid a keyboard could only half reach. Then the phone was plugged in and found a thirteenth: a deep link that opened the right screen from cold and "Not found" when the app was already running | ✅ Done |
-| **12 — Rules that fail CI** | The second pass, from an architecture review that argued the codebase enforces its rules in prose. Nine answers to "which calendar day is this", one of them wrong across a DST boundary, collapsed into `Day`. Then the provider graph: nothing in the app was comparable and no family was disposable, so every derivation notified everything, a clock that watched a midnight tick handed back a canonicalised tear-off and propagated nothing at all, and two one-second tickers ran for the life of the process to redraw a widget that was not on screen. Each rule now has a guard test rather than a comment | ✅ Done |
+| **12 — Rules that fail CI** | The second pass, from an architecture review that argued the codebase enforces its rules in prose. Nine answers to "which calendar day is this", one of them wrong across a DST boundary, collapsed into `Day`. Then the provider graph: nothing in the app was comparable and no family was disposable, so every derivation notified everything, a clock that watched a midnight tick handed back a canonicalised tear-off and propagated nothing at all, and two one-second tickers ran for the life of the process to redraw a widget that was not on screen. Then the derive engine's own thesis, which had quietly stopped being true downstream of itself: the fold exists so the log is walked once, and the numbers on top of it walked it nine more times plus once per goal. Each rule now has a guard test rather than a comment | ✅ Done |
 
 ### What works today
 - Expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur, Shulchan
@@ -319,6 +334,16 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   `logged_at` now stores microseconds (schema v13), and
   `test/support/repository_double_guard_test.dart` fails the build if a second implementation of the
   interface, a database opened by hand, or a one-shot read off a live query stream comes back.
+- **How many times the log is walked, counted.** The notification tallies above measure where the
+  graph *stops*; they say nothing about the work done before it decides not to notify, which is
+  where the cost actually was. `log_pass_count_test.dart` hands the graph an event list that counts
+  every element read and asserts in whole passes: deriving the entire Statistics surface is two —
+  one per index — ten goal rows add none, and a midnight tick adds none, because neither index
+  depends on the clock. On the shape they replaced those read 7, 10 and 6. Alongside them,
+  `derived_flush_test.dart` walks a real app through *drill in, mark a daf, come back* with a goal
+  set, because a `Consumer` that sleeps under a pushed route wakes up flushing its ancestors, and a
+  derived provider that went dirty in the meantime turns that into a `setState` during build — one
+  extra provider between a banner and the log was enough to make the trip back throw every time.
 - **The four report screens are built by tests**, rather than constructed and asserted `isNotNull`:
   Siyumim (a seder marked as bigger than a mesechta, asserted per row), Mefarshim progress (each
   layer counted separately, the bar relative to the biggest), Chazara (an overdue row, and that the
@@ -345,7 +370,7 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 | **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the release binary has now upgraded a real v10 database to the v11 schema in place, keeping every event ✅ |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36 (moto g stylus 2025). Measured on the device: the logging sheet's confirm button clears the navigation bar by 45px and a tap at its bottom edge registers, the Hebrew progress fraction paints `0 / 12,092  (0.0%)` in that order, the app bar fits `Chovos Hayom`, a backup exported from one profile imports into another, and a deep link opens the same screen whether the app was running or not ✅ |
 | **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, Statistics and Siyumim scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search. Also walked key by key: the app opens on the tree's first generation, three presses of *down* reach the backup banner's named dismiss, the message that replaces it leaves on its own within ten seconds, and the drawer's first row returns to the tree ✅ |
-| **CI** | analyze `--fatal-infos`, 530 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
+| **CI** | analyze `--fatal-infos`, 556 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher

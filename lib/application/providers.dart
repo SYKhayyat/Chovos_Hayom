@@ -16,6 +16,7 @@ import '../domain/repositories/progress_repository.dart';
 import '../domain/usecases/batch_history.dart';
 import '../domain/usecases/fold_log.dart';
 import '../domain/usecases/layer_roles.dart';
+import '../domain/usecases/log_activity.dart';
 import '../domain/usecases/mefarshim_stats.dart';
 import '../domain/usecases/roll_up.dart';
 import 'bulk_marker.dart';
@@ -270,7 +271,12 @@ final loggingServiceProvider = Provider<LoggingService>((ref) => LoggingService(
     ));
 
 /// Reactive event log for the active profile.
-final eventsProvider = StreamProvider<List<LearningEvent>>((ref) {
+///
+/// **Two providers should watch this: [foldProvider] and [logActivityProvider].**
+/// Anything else wanting a number out of the log wants one of them — see
+/// `log_pass_guard_test.dart` for the three exceptions and why each is its own
+/// axis.
+final eventsProvider = StreamProvider<List<LearningEvent>>((ref) { // log-pass: ok — the log's own carrier, not a walk of it
   final repo = ref.watch(progressRepositoryProvider);
   final profileId = ref.watch(activeProfileProvider);
   return repo.watchEvents(profileId);
@@ -279,6 +285,18 @@ final eventsProvider = StreamProvider<List<LearningEvent>>((ref) {
 /// The folded log for the active profile (which units are done, review counts).
 final foldProvider = Provider<AsyncValue<LogFold>>((ref) {
   return ref.watch(eventsProvider).whenData(FoldLog.fold);
+});
+
+/// The log indexed by calendar day for the active profile — the *history* half
+/// of the derive engine, where [foldProvider] is the *current state* half.
+///
+/// Everything that used to ask the raw log a question about days — the pace, the
+/// streak, the heatmap, the minutes, the "have I recorded anything today" nudge
+/// — reads this instead, so the log is walked twice per change rather than nine
+/// times plus once per goal. See [LogActivity] for why it is a second index and
+/// not more fields on [LogFold].
+final logActivityProvider = Provider<AsyncValue<LogActivity>>((ref) {
+  return ref.watch(eventsProvider).whenData(LogActivity.of);
 });
 
 /// A ready-to-use bulk finish/clear engine, or null while the catalog/log are
@@ -320,12 +338,20 @@ final progressForestProvider = Provider<AsyncValue<List<ProgressNode>>>((ref) {
 });
 
 /// Per-meforish totals across the whole catalog (how many units carry each
-/// layer as learned), most-learned first. Reuses the shared fold.
+/// layer as learned), most-learned first.
+///
+/// Summed off the forest rather than derived from the fold a second time.
+/// `RollUp` already counts exactly this per leaf — same walk over the marked
+/// units, same clamp to each leaf's valid range — and rolls it up into
+/// `ProgressNode.learnedByLayer`, so computing it again was one number with two
+/// derivations and nothing pinning them together. Reading the roots also makes
+/// the two agree *by construction* on the case where they could differ: a node
+/// whose parent id points at nothing is not in the forest, so its marks are not
+/// in the headline `learned` — and were, until now, in this table.
 final mefarshimStatsProvider = Provider<List<MefarshimStat>>((ref) {
-  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
-  final fold = ref.watch(foldProvider).asData?.value;
-  if (catalog == null || fold == null) return const [];
-  return MefarshimStats.compute(catalog, fold);
+  final forest = ref.watch(progressForestProvider).asData?.value;
+  if (forest == null) return const [];
+  return MefarshimStats.of(forest);
 });
 
 /// Every node of the forest by id — built by walking the one forest that

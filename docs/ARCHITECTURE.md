@@ -115,7 +115,9 @@ lib/
     usecases/         pure functions/services:
                         - FoldLog        (events -> UnitState set, incl. review counts)
                         - RollUp         (leaf progress -> parent aggregates over the tree)
-                        - PaceEngine     (events + window -> units/day, rolling averages, streaks)
+                        - LogActivity    (log -> indexed by calendar day: units learned per
+                                          day, minutes per day, what was recorded when.
+                                          Pace, streaks and the heatmap are lookups on it)
                         - Predictor      (bidirectional: pace->date  AND  targetDate->required rate)
                         - SequentialCycle / CycleMapper
                                          (a user-defined cycle -> "today's unit",
@@ -153,7 +155,7 @@ heatmap, the midnight tick — and the alternative to sharing it was the four by
 copies (in two mutually disagreeing conventions) that `Day` replaced. It is pure Dart with no
 imports, so the domain layer stays framework-free. `test/core/day_math_guard_test.dart` enforces
 the "one place" half of that claim; it is a build failure, not a convention.
-The `Predictor` and `PaceEngine` are pure and are where the legacy "Calculate" logic gets reborn —
+The `Predictor` is pure and is where the legacy "Calculate" logic gets reborn —
 fed from the *actual* log instead of a typed-in number, and bidirectional so it also answers
 "to finish by date X, learn Y/day (and Z on Shabbos)."
 
@@ -169,7 +171,12 @@ progressRepositoryProvider  -> Drift-backed, scoped by activeProfile
 activeProfileProvider       -> current profile id (switchable)
 progressTreeProvider        -> reactive: watches the log, folds + rolls up, emits the tree
                                with per-node % and remaining. UI rebuilds automatically.
-paceProvider / predictorProvider / goalStatusProvider -> derived analytics
+foldProvider / logActivityProvider -> the two indexes of the log: what is learned
+                               now, and what happened when. Everything below reads these,
+                               never the log (test/domain/log_pass_guard_test.dart)
+paceProvider / goalStatusProvider -> derived analytics. The pace is one number for the
+                               profile, derived once — every goal row used to scan the
+                               whole log for its own copy
 ```
 
 Drift's reactive streams + Riverpod mean: append an event → `UnitState` updates → tree provider
@@ -183,10 +190,10 @@ re-emits → dashboard re-renders. No manual refresh plumbing (the legacy app wa
 |---|---|
 | Per-unit tracking & display | `UnitState` + tree view with per-node progress bars |
 | Session logging (date/duration/note) | `LearningEvent` fields; auto `occurredAt` |
-| Charts / heatmaps / predictions | queries over the log; `PaceEngine` + `Predictor` |
+| Charts / heatmaps / predictions | lookups on `LogActivity`; `Predictor` |
 | Custom sefarim/categories | `CustomNode` (same schema; **user fills in unit counts**) |
 | Hebrew/secular calendar toggle | `kosher_dart`; a display layer over every DateTime |
-| Custom cycles / rolling averages | `PaceEngine` windows + `Predictor` |
+| Custom cycles / rolling averages | `LogActivity.averagePerDay` windows + `Predictor` |
 | Multiple local profiles | `profileId` designed in from day 0 |
 | Expandable tree view | replaces legacy drill-down; the visible tree is **flattened** to rows and fed to a `ListView.builder`, so only what is on screen is built (see §10) |
 | Multi-criteria sorting | sort/compare over the derived tree |
@@ -195,7 +202,7 @@ re-emits → dashboard re-renders. No manual refresh plumbing (the legacy app wa
 | Export/import | serialize the event log + custom nodes + settings (versioned JSON). **Import merges; restore replaces** — see §10 |
 | Undo/redo | inverse events / log tail — falls out of the architecture |
 | Single source of truth | derive `learned`; storing it is impossible by design |
-| Reminders/notifications | Phase 4; needs `PaceEngine` to detect "behind" first |
+| Reminders/notifications | Phase 4; needs `LogActivity` to detect "behind" first |
 | Timer / auto date-time | stopwatch → `durationMin`; auto `occurredAt` unless manual |
 
 ---

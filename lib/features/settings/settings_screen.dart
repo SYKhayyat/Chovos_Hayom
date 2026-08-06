@@ -656,7 +656,11 @@ class SettingsScreen extends ConsumerWidget {
     final restoredRoles =
         LayerRoles.fromEntries(byKey.values, parentOf: parentOf);
 
-    Set<String> marked(Iterable<LearningEvent> events, LayerRoles roles) {
+    // A one-shot preview of two *different* logs — what is on disk and what is
+    // in the file the user just picked — run once, off any rebuild path.
+    // Neither is the active profile's live log, and no index covers the second.
+    Set<String> marked(Iterable<LearningEvent> events, // log-pass: ok — see above
+        LayerRoles roles) {
       final fold = FoldLog.fold(events);
       return {
         for (final nodeId in fold.completedByNode.keys)

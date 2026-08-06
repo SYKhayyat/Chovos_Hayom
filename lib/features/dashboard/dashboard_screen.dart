@@ -8,9 +8,11 @@ import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/sorting.dart';
 import '../../application/stats.dart';
+import '../../core/day.dart';
 import '../../core/keypad.dart';
 import '../../domain/entities/catalog.dart';
 import '../../domain/entities/progress_node.dart';
+import '../../domain/usecases/log_activity.dart';
 import '../../domain/usecases/reminders_policy.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/error_view.dart';
@@ -200,14 +202,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // that gate moved inside the provider. See nodeLastActivityProvider.
     final lastActivity = ref.watch(nodeLastActivityProvider);
 
-    final reminderOn =
-        ref.watch(settingsProvider.select((s) => s.reminderEnabled));
-    final events = ref.watch(eventsProvider).asData?.value ?? const [];
-    final showNudge = RemindersPolicy.shouldRemind(
-      enabled: reminderOn,
-      events: events,
-      now: ref.watch(clockProvider)(),
-    );
+    // The nudge is *not* watched here. It used to be, and answering it meant
+    // walking every event ever recorded from this `build` to produce one bool.
+    // It now lives in [_NudgeBanner], which gates itself — see the note there
+    // for why a self-gating ConsumerWidget is the right shape and not merely a
+    // tidier one.
+    //
     // Up here with the rest of them, and not inside `forest.when(data:)` where
     // it was — 68 lines below the comment above that forbids exactly this. A
     // watch inside the data branch means the subscription exists on a loaded
@@ -272,7 +272,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           // scroll with the tree instead of pinning a second scroll view.
           final leading = <Widget>[
             const SessionBanner(),
-            if (showNudge) const _NudgeBanner(),
+            const _NudgeBanner(),
             if (backupDue) const _BackupBanner(),
           ];
           return ListView.builder(
@@ -456,11 +456,38 @@ class _BackupBanner extends ConsumerWidget {
   }
 }
 
-class _NudgeBanner extends StatelessWidget {
+/// "You haven't learned today." Decides for itself whether to appear.
+///
+/// **Self-gating, like [SessionBanner] beside it in the same list.** The
+/// dashboard's `build` used to ask this question, which meant a banner
+/// appearing or clearing rebuilt the whole tree screen — and, worse, that it
+/// answered it by walking the entire event log. Neither is true now: the answer
+/// is three map lookups on [LogActivity], and only this widget hears it.
+///
+/// **And the policy call stays here rather than behind a `shouldRemindProvider`,
+/// which is not a style preference.** A `Consumer` that stays mounted under a
+/// pushed route or an open sheet has its subscriptions paused by `TickerMode`
+/// and resumed when the overlay closes. Resuming one flushes it *and its
+/// ancestors*; if a **derived** ancestor went dirty while it slept, that
+/// ancestor rebuilds and notifies mid-build, and the descendant provider's
+/// re-invalidation is a `setState` inside the build phase, which Flutter
+/// asserts on. One provider between this banner and the log was enough to make
+/// *drill in, mark a daf, come back* throw every time. Watching an index that
+/// sits one hop from the log has no such window, because the stream it depends
+/// on is what emitted in the first place and is already clean.
+/// `derived_flush_test.dart` pins both routes a mark is made from.
+class _NudgeBanner extends ConsumerWidget {
   const _NudgeBanner();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final show = RemindersPolicy.shouldRemind(
+      enabled: ref.watch(settingsProvider.select((s) => s.reminderEnabled)),
+      activity:
+          ref.watch(logActivityProvider).asData?.value ?? LogActivity.empty,
+      today: Day.of(ref.watch(clockProvider)()),
+    );
+    if (!show) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.fromLTRB(12, 12, 12, 4),

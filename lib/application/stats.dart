@@ -5,11 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/day.dart';
 import '../core/equality.dart';
 import '../domain/usecases/chazara_schedule.dart';
-import '../domain/usecases/pace_engine.dart';
 import '../domain/usecases/predictor.dart';
 import '../domain/usecases/progress_series.dart';
 import '../domain/usecases/siyum.dart';
-import '../domain/usecases/time_stats.dart';
 import 'providers.dart';
 import 'settings.dart';
 
@@ -136,13 +134,37 @@ final clockProvider = Provider<DateTime Function()>((ref) {
 /// day (or after the device slept through midnight) must not show stale dates.
 void invalidateClock(WidgetRef ref) => ref.invalidate(_dayTickProvider);
 
+/// The learning pace: distinct units per day over the last thirty.
+///
+/// **A provider because it has more than one consumer.** [statsProvider] needs
+/// it for the projected finish date and the Statistics tile, and
+/// `goalStatusProvider` needs the same number for every goal — and computed it
+/// itself, per goal, per rebuild. N goals therefore cost N+1 identical scans of
+/// the whole event log on every mark and every clock tick. Derived once here,
+/// they all read one `double`, which has real `==`, so a re-derivation that
+/// lands on the same pace notifies nobody at all.
+final paceProvider = Provider<double>((ref) {
+  final activity = ref.watch(logActivityProvider).asData?.value;
+  if (activity == null) return 0;
+  return activity.averagePerDay(Day.of(ref.watch(clockProvider)()),
+      windowDays: 30);
+});
+
 /// Overall stats for the active profile, derived from the log. Null while the
 /// catalog or event log is still loading.
+///
+/// **Watches the two indexes, never the log.** This used to hold a [LogFold] and
+/// then make five more passes over the event list that produced it — the pace,
+/// the streak, the heatmap, the total minutes and the month's minutes, each a
+/// full walk, on every mark and every midnight tick. `fold_log.dart` opens by
+/// explaining that the fold exists to replace exactly that; this was where the
+/// passes had grown back. [LogActivity] answers all five off one pass, and the
+/// answers below are map lookups.
 final statsProvider = Provider<StatsSummary?>((ref) {
   final forest = ref.watch(progressForestProvider).asData?.value;
-  final events = ref.watch(eventsProvider).asData?.value;
   final fold = ref.watch(foldProvider).asData?.value;
-  if (forest == null || events == null || fold == null) return null;
+  final activity = ref.watch(logActivityProvider).asData?.value;
+  if (forest == null || fold == null || activity == null) return null;
 
   // Aggregate every root, not just the first — a top-level custom sefer is a
   // second root and must be counted in the overall totals/projection.
@@ -154,22 +176,24 @@ final statsProvider = Provider<StatsSummary?>((ref) {
   }
   final remaining = total - learned;
   final now = ref.watch(clockProvider)();
-  final avg = PaceEngine.averagePerDay(events, now: now, windowDays: 30);
+  final today = Day.of(now);
+  final avg = ref.watch(paceProvider);
 
   return StatsSummary(
     learned: learned,
     total: total,
-    streak: PaceEngine.currentStreak(events, now: now),
+    streak: activity.streakEndingAt(today),
     avgPerDay: avg,
     projectedFinish: avg > 0
-        ? Predictor.finishDate(
-            remaining: remaining, perDay: avg, from: Day.of(now))
+        ? Predictor.finishDate(remaining: remaining, perDay: avg, from: today)
         : null,
     series: ProgressSeries.cumulative(fold),
-    dailyActivity: ProgressSeries.dailyDone(events),
-    totalMinutes: TimeStats.totalMinutes(events),
-    minutesThisMonth:
-        TimeStats.minutesSince(events, DateTime(now.year, now.month, 1)),
+    // The index's own map, handed through unchanged — `StatsSummary.==` checks
+    // identity before walking it, so a tick that changed nothing compares the
+    // heatmap in one pointer read.
+    dailyActivity: activity.dailyCounts,
+    totalMinutes: activity.totalMinutes,
+    minutesThisMonth: activity.minutesSince(Day.of(DateTime(now.year, now.month, 1))),
   );
 });
 

@@ -25,19 +25,6 @@ void main() {
       ev(DateTime(2026, 1, 3), EventAction.reviewed, unit: 3),
     ];
 
-    test('dailyDeltas nets done and undone, ignores reviewed', () {
-      final d = ProgressSeries.dailyDeltas(events);
-      expect(d[Day.of(DateTime(2026, 1, 1))], 2);
-      expect(d[Day.of(DateTime(2026, 1, 3))], 0); // +1 done, -1 undone
-      expect(d.containsKey(Day.of(DateTime(2026, 1, 2))), isFalse);
-    });
-
-    test('dailyDone counts only done events', () {
-      final d = ProgressSeries.dailyDone(events);
-      expect(d[Day.of(DateTime(2026, 1, 1))], 2);
-      expect(d[Day.of(DateTime(2026, 1, 3))], 1);
-    });
-
     test('cumulative is a monotonic total of currently-held units by learn-date', () {
       // unit 2 (Jan 1) was later un-marked, so it drops out entirely; the line
       // reflects only units 3 (Jan 1) and 4 (Jan 3) that are still done.
@@ -79,24 +66,13 @@ void main() {
       expect(ProgressSeries.cumulative(FoldLog.fold(const [])), isEmpty);
     });
 
-    // The helpers group on `Day`, whose identity is a cheap int ordinal
+    // Grouping happens on `Day`, whose identity is a cheap int ordinal
     // (constructing a *local* DateTime per event was ~230× slower and made the
-    // Statistics screen take a second to open). These pin the behaviour that
+    // Statistics screen take a second to open). This pins the behaviour that
     // both that refactor and the later move to `Day` had to preserve: events at
-    // different times of the same calendar day still collapse to one key.
-    test('events at different times of one day collapse to that one day', () {
-      final events = [
-        ev(DateTime(2026, 3, 9, 0, 30), EventAction.done, unit: 2),
-        ev(DateTime(2026, 3, 9, 23, 45), EventAction.done, unit: 3),
-      ];
-      final done = ProgressSeries.dailyDone(events);
-      expect(done.keys, [Day.of(DateTime(2026, 3, 9))]);
-      expect(done[Day.of(DateTime(2026, 3, 9))], 2);
-
-      final deltas = ProgressSeries.dailyDeltas(events);
-      expect(deltas[Day.of(DateTime(2026, 3, 9))], 2);
-    });
-
+    // different times of the same calendar day still collapse to one key. The
+    // same property for the day-indexed helpers that used to live here is in
+    // `log_activity_test.dart`, which is where they went.
     test('cumulative keys each distinct learned-day exactly once', () {
       final events = [
         ev(DateTime(2026, 3, 9, 8), EventAction.done, unit: 2),

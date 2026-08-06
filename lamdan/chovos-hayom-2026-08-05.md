@@ -2,6 +2,12 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
+> **Status, 2026-08-06 (later still, again).** Four rows of **finding 5** — the pace scalar, the
+> log→numbers pass, distinct-units-learned-on-a-day and the per-meforish counts — are now resolved.
+> See the note below the finding. The rest of finding 5's inventory stands as written.
+>
+> ---
+>
 > **Status, 2026-08-06 (later still).** **Finding 7** (*"The test suite tests the layer that never
 > breaks"*) is now resolved — see the note below it. Everything else in this document stands as
 > written.
@@ -431,16 +437,89 @@ re-import. Delete 120 lines, seven helpers, 361 test lines.
 
 ### 5. One want, satisfied N times — the inventory. `rewrite`, incrementally.
 
+> ### Four rows resolved — and the one place the diagnosis was wrong
+>
+> **The counts checked out, and the real number was worse than any single row says.** Walked with a
+> counter through a live provider graph rather than by reading: deriving the Statistics surface took
+> **seven** full passes over the event log, a midnight tick took **six**, and ten goal rows took
+> **ten** more. The per-mark total on the hot path was nine plus one per goal — the fold, five in
+> `statsProvider`, `backupStatusProvider`, `batchHistoryProvider`, the dashboard's nudge, and
+> `goalStatusProvider` per goal. `derive_cost_test.dart` could not see any of it, because it calls
+> `FoldLog.fold` directly, once, in isolation; `provider_notify_test.dart` could not either, because
+> it counts notifications, and the notifications were never the problem — the work done before
+> deciding not to notify was.
+>
+> **Where the finding is wrong, and it matters:** *"`LogFold.doneAtByNode` already answers all
+> three."* It does not, and building it that way would have shipped a bug. The fold resolves
+> membership — an un-marked daf leaves it entirely, and a re-marked one keeps only its latest date.
+> The heatmap and the pace are questions about *history*: a daf you learned in March and un-marked
+> in June was still learned in March, and March's square must still be lit. Answering them from the
+> fold would have silently rewritten the user's past every time they corrected a mark. So it is a
+> **second index, not more fields on the first** — `LogActivity`, the log by calendar day — and the
+> two are named for the question they answer rather than for the pass that produces them.
+>
+> **Three of the copies were dead, so they were deleted rather than ported.** `PaceEngine.unitsOn`
+> — one of the three sites the *distinct-units-on-a-day* row names — has no production caller at
+> all, and neither do `ProgressSeries.dailyDeltas`, `TimeStats.timedSessions` or
+> `TimeStats.averageSessionMinutes`. Carrying dead code into a faster index is still carrying dead
+> code. That empties `pace_engine.dart` and `time_stats.dart`, which are gone; finding 11's aside
+> about `time_stats.dart`'s callerless half is resolved with them.
+>
+> **The per-meforish row understates itself: the two derivations could genuinely disagree.** They
+> are the same arithmetic over the same marked units with the same range clamp, except that `RollUp`
+> walks the catalog *from its roots* and `MefarshimStats` walked the fold's node ids. A node whose
+> `parentId` points at nothing is in `byId` and not in the forest, so its marks were outside the
+> headline `learned` and inside this table. `MefarshimStats.of(forest)` sums the roll-up the
+> dashboard bars are already drawn from, which makes them agree by construction. Narrow, and a
+> behaviour change, so it is said out loud.
+>
+> **What the sweep could not reach is that the prescription is not free.** *"One `paceProvider`"* is
+> the right answer and adding it broke the app. A `Consumer` that stays mounted under a pushed route
+> or an open sheet has its subscriptions paused by `TickerMode` and resumed when the overlay closes;
+> resuming one flushes it *and its ancestors*, and a **derived** ancestor that went dirty while it
+> slept rebuilds and notifies mid-build, which turns the descendant's re-invalidation into a
+> `setState` inside the build phase. Flutter asserts on that. One provider between the dashboard's
+> nudge banner and the log was enough to make *drill in, mark a daf, come back* throw every time —
+> found by the existing `widget_test.dart`, which is the one test in the suite that walks that
+> route. The banner now reads the index directly, one hop from the stream that emitted, and
+> `derived_flush_test.dart` pins both paths a mark is made from, with a goal set so the longest
+> chain in the app is live.
+>
+> Resolved by `lib/domain/usecases/log_activity.dart` (one order-independent pass; `unitsDoneByDay`,
+> `dailyCounts`, `recordedDoneByDay`, `minutesByDay`, `totalMinutes`, `firstDayLearned`, and the
+> five queries as methods so there is no `events` parameter left to pass), `logActivityProvider`
+> beside `foldProvider`, `paceProvider` where N+1 scans were, `MefarshimStats.of(forest)`,
+> `RemindersPolicy` retyped, `PaceEngine`, `TimeStats` and `ProgressSeries.dailyDone`/`dailyDeltas`
+> deleted. `averagePerDay` now costs thirty map lookups instead of a pass over every event ever
+> recorded; `streakEndingAt` costs the length of the streak; `dailyCounts` is handed out by identity,
+> so `StatsSummary.==` compares the heatmap on a midnight tick in one pointer read.
+>
+> **And the rule is enforced rather than stated.** `log_pass_count_test.dart` hands the graph an
+> event list that counts every element read and asserts in whole passes — two to derive everything,
+> zero for ten goal rows, zero for a midnight tick — and three of its five fail on the pre-fix shape
+> at 7, 10 and 6, watched fail before being kept. `log_pass_guard_test.dart` reads `lib/` and fails
+> the build on a new function taking the whole log, naming the seven that legitimately do and why
+> each is its own axis; it was fed a violation rather than assumed to work. And `log_activity_test`
+> holds every answer against the *long-hand definition it replaced*, copied verbatim, swept across
+> every window end over a log built to hit each edge — a backdated recording, a duration on a
+> chazara, a unit marked twice in a day and on two days, an un-mark, a zero duration.
+>
+> **Not done, and still true:** `backupStatusProvider` still walks the log, on a third axis neither
+> index carries — distinct units touched since an *instant*, keyed on `loggedAt`. One pass per change
+> and per clock tick. `batchHistoryProvider`, the Notes Journal and the unit details sheet likewise
+> ask genuinely different questions of the raw log and were left alone. And the other thirteen rows
+> of the inventory below are untouched.
+
 The single largest category by volume. Each row is one idea implemented more than once, in
 places that cannot see each other:
 
 | The one want | Times built | Worst consequence |
 |---|---|---|
 | ~~"which calendar day is this"~~ **✅ Resolved** | ~~**9 sites, 2 incompatible conventions**~~ — all nine migrated to `Day` (`lib/core/day.dart`); the four `_dayNumber` copies, `_dayKey`, `_localMidnight` and `_wholeDaysBetween` are gone, and `test/core/day_math_guard_test.dart` fails the build if the arithmetic reappears outside that file | ~~`Predictor.finishDate` returns a local `DateTime` that the other four would immediately re-ordinalize~~ — and worse: the local-midnight convention was outright wrong across a DST boundary, so five sites (not four) mis-counted one day a year. See the status note at the top |
-| distinct-units-learned-on-a-day | 3 (`pace_engine:17`, `:55`, `progress_series:53`) | `LogFold.doneAtByNode` already answers all three |
-| the pace scalar | once per goal, per tick (`goals.dart:79`) + once in `stats.dart:111` | N goals ⇒ N+1 identical full-log scans per rebuild |
-| per-meforish counts | 2 (`mefarshim_stats.dart:22` and `roll_up.dart:38-48`) | same number, two derivations, no test pinning them together |
-| the log→numbers pass | **5 passes in `statsProvider` while holding a fold built by a 6th** | `fold_log.dart:11-14` states the point of the fold was "five ordered passes where one will do" |
+| ~~distinct-units-learned-on-a-day~~ **✅ Resolved** | ~~3~~ — 2 live and 1 dead (`PaceEngine.unitsOn` had no caller); all now `LogActivity.unitsDoneByDay` | ~~`LogFold.doneAtByNode` already answers all three~~ — it does **not**, and building it that way would have rewritten the user's past on every un-mark. See the status note |
+| ~~the pace scalar~~ **✅ Resolved** | ~~once per goal, per tick~~ — one `paceProvider`, and a `double` has real `==`, so an unchanged pace notifies no goal row at all | ~~N goals ⇒ N+1 identical full-log scans per rebuild~~ — measured at ten passes for ten goal rows; now zero |
+| ~~per-meforish counts~~ **✅ Resolved** | ~~2~~ — `MefarshimStats.of(forest)` sums the roll-up the dashboard bars are drawn from | ~~same number, two derivations, no test pinning them together~~ — and they could genuinely disagree, on a node whose parent id points at nothing |
+| ~~the log→numbers pass~~ **✅ Resolved** | ~~**5 passes in `statsProvider`**~~ — it now watches the two indexes and never the log; every answer is a map lookup | ~~`fold_log.dart:11-14` states the point of the fold was "five ordered passes where one will do"~~ — enforced now, at two passes, by `log_pass_count_test.dart` |
 | the date+time+duration+haara form | 2 full copies (`log_unit_sheet`, `add_chazara_sheet`) | two ARB keys for one duration field |
 | the meforish checkbox list | 3 | — |
 | `nameOf` (layer name with deleted fallback) | 3, and **they disagree** — `unit_details_sheet.dart:155` prints a raw UUID where the other two print a translated string | same fix applied twice out of three |
@@ -697,7 +776,9 @@ apparatus against `'$verb $n unit(s)'` while shipping the same expressiveness un
   Java shape. It also costs approximately nothing, and renaming nineteen files is churn with no user
   on the other end. **Leave it.** (`reminders_policy.dart` at 22 lines — one boolean AND with one
   caller — and `time_stats.dart`, half of whose functions have zero callers, are worth folding into
-  their single call sites when you're next in there. Not a project.)
+  their single call sites when you're next in there. Not a project.) **`time_stats.dart` is now
+  gone** — half of it had no callers and the other half moved into `LogActivity` with finding 5's
+  four rows; `reminders_policy.dart` stands.
 - **`CatalogRepository`.** One method, one production implementation, and the extension point it was
   built for ("remote/custom sources later") shipped instead as `custom_nodes` merged in a provider,
   bypassing the interface entirely. Deleting it is net-negative-cost. It is also 7 lines. Leave it

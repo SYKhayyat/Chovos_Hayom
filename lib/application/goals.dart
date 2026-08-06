@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/day.dart';
 import '../core/preferences.dart';
 import '../domain/usecases/goal_evaluator.dart';
-import '../domain/usecases/pace_engine.dart';
 import 'providers.dart';
 import 'stats.dart';
 
@@ -71,26 +70,27 @@ final goalsProvider =
 
 /// Evaluated status for a node's goal (null if no goal is set).
 ///
-/// Auto-disposed for the reason [progressNodeProvider] is, and more urgently:
-/// this one does not merely look something up, it scans the entire event log
-/// through [PaceEngine.averagePerDay]. A kept-alive element meant that scan ran
-/// once per node-you-once-looked-at, on every mark, forever.
+/// Auto-disposed for the reason [progressNodeProvider] is. It used to be more
+/// urgent than that: this element scanned the entire event log itself, through
+/// `PaceEngine.averagePerDay`, so a kept-alive one meant that scan ran once per
+/// node-you-once-looked-at on every mark, forever. The scan is gone either way —
+/// the pace is one number for the whole profile and is derived once, in
+/// [paceProvider] — so what an element costs now is a map lookup and a
+/// subtraction, and what N goals cost is N of those rather than N full passes
+/// over the log.
 final goalStatusProvider =
     Provider.autoDispose.family<GoalStatus?, String>((ref, nodeId) {
   final target = ref.watch(goalsProvider)[nodeId];
   if (target == null) return null;
   final node = ref.watch(progressNodeProvider(nodeId));
-  final events = ref.watch(eventsProvider).asData?.value;
-  if (node == null || events == null) return null;
-  final now = ref.watch(clockProvider)();
-  final pace = PaceEngine.averagePerDay(events, now: now, windowDays: 30);
+  if (node == null) return null;
   // Goals persist as `DateTime` because that is what the date picker and the
   // settings file speak; the calendar day they mean is resolved here, once, at
   // the boundary into the domain.
   return GoalEvaluator.evaluate(
     remaining: node.remaining,
-    from: Day.of(now),
+    from: Day.of(ref.watch(clockProvider)()),
     target: Day.of(target),
-    currentPace: pace,
+    currentPace: ref.watch(paceProvider),
   );
 });
