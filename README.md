@@ -345,7 +345,15 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   where the cost actually was. `log_pass_count_test.dart` hands the graph an event list that counts
   every element read and asserts in whole passes: deriving the entire Statistics surface is two —
   one per index — ten goal rows add none, and a midnight tick adds none, because neither index
-  depends on the clock. On the shape they replaced those read 7, 10 and 6. Alongside them,
+  depends on the clock. On the shape they replaced those read 7, 10 and 6. That file picks its own
+  subscriptions, though, and a user does not — so `log_pass_screen_test.dart` counts the same way
+  with the real app up: **three passes per mark**, the two indexes plus the backup axis, and three
+  wherever the mark is made, because a pushed grid does not pause the dashboard underneath it. The
+  journal, the bulk-undo list and a unit grid each cost one pass while they are on screen and
+  **nothing at all** once they are not. The three remaining axes were priced rather than argued
+  about: against ~660µs to fold 3,000 events and ~690µs to index them by day, the backup axis is
+  28µs, the batch grouping 25µs and one unit's history 27µs — two percent, and not where the
+  milliseconds are. Alongside them,
   `derived_flush_test.dart` walks a real app through *drill in, mark a daf, come back* with a goal
   set, because a `Consumer` that sleeps under a pushed route wakes up flushing its ancestors, and a
   derived provider that went dirty in the meantime turns that into a `setState` during build — one

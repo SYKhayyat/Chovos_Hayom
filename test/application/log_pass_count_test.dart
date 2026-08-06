@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:chovos_hayom/application/backup_status.dart';
 import 'package:chovos_hayom/application/goals.dart';
@@ -16,6 +15,7 @@ import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/counting_log.dart';
 import '../support/memory_database.dart';
 
 /// **How many times the event log is walked, counted.**
@@ -36,13 +36,20 @@ import '../support/memory_database.dart';
 /// notifications was never the problem — the work done *before* deciding not to
 /// notify was.
 ///
-/// So this counts the work. The log hands out a counter on every element read,
-/// which is the one thing `ListBase` routes all of iteration, `toList`, `where`
-/// and `forEach` through, and the assertions are in whole passes over it.
+/// So this counts the work. The log hands out a counter on every element read
+/// ([CountingLog]), which is the one thing `ListBase` routes all of iteration,
+/// `toList`, `where` and `forEach` through, and the assertions are in whole
+/// passes over it.
 ///
 /// The two that matter are not the absolute numbers — those are two, the two
 /// indexes — but the *deltas*: adding ten goals must cost zero extra passes, and
 /// a midnight tick must cost zero. Both were linear before.
+///
+/// **This file chooses its own subscriptions, which is its blind spot.** The
+/// numbers below are what the graph costs when a test decides what is being
+/// watched; a user does not. `log_pass_screen_test.dart` counts the same way
+/// with real screens mounted, where the subscription set is whatever the app
+/// actually holds, and it is the file that owns the axes excluded here.
 void main() {
   /// Ten leaves, because the claim being tested is about N.
   const leafIds = [
@@ -75,12 +82,12 @@ void main() {
         loggedAt: DateTime(2026, 1, 5).add(Duration(hours: 24 * (unit % 20))),
       );
 
-  late _CountingLog log;
+  late CountingLog log;
   late StreamController<List<LearningEvent>> events;
   late ProviderContainer container;
 
   setUp(() async {
-    log = _CountingLog([for (var u = 2; u < 62; u++) done(u)]);
+    log = CountingLog([for (var u = 2; u < 62; u++) done(u)]);
     events = StreamController<List<LearningEvent>>.broadcast();
     addTearDown(events.close);
 
@@ -111,7 +118,9 @@ void main() {
     // stay about the day-indexed answers this file is named for, and not a total
     // that moves when an unrelated provider is added. The backup axis gets its
     // own group at the bottom, because "one pass each and both honest" was true
-    // of the pass and false of when it ran.
+    // of the pass and false of when it ran. `batchHistoryProvider` is counted in
+    // `log_pass_screen_test.dart` instead, on the two screens that watch it —
+    // where the thing worth knowing is that it costs nothing on every other one.
     container.listen(statsProvider, (_, _) {});
     events.add(log);
     await pumpEventQueue();
@@ -119,7 +128,7 @@ void main() {
 
   test('a change to the log costs two passes: one per index', () {
     log.reset();
-    events.add(_CountingLog([...log.inner, done(80)]));
+    events.add(CountingLog([...log.inner, done(80)]));
     return pumpEventQueue().then((_) {
       // The new list carries its own counter; what this asserts is that the
       // *old* one is not read again, which is what a provider holding onto the
@@ -129,7 +138,7 @@ void main() {
   });
 
   test('deriving the whole stats surface costs two passes, not seven', () async {
-    final fresh = _CountingLog([...log.inner, done(81)]);
+    final fresh = CountingLog([...log.inner, done(81)]);
     events.add(fresh);
     await pumpEventQueue();
     container.read(statsProvider);
@@ -246,7 +255,7 @@ void main() {
       watchBackup();
       await pumpEventQueue();
 
-      final fresh = _CountingLog([...log.inner, done(82)]);
+      final fresh = CountingLog([...log.inner, done(82)]);
       events.add(fresh);
       await pumpEventQueue();
       container.read(statsProvider);
@@ -260,10 +269,11 @@ void main() {
   });
 
   test('the counter counts what it claims to', () {
-    // A source of truth for the numbers above: iteration, `toList`, `where` and
-    // an indexed read all have to register, or every assertion here is a green
-    // test measuring nothing.
-    final probe = _CountingLog([done(2), done(3), done(4)]);
+    // A source of truth for the numbers above *and* for the ones in
+    // `log_pass_screen_test.dart`, which counts the same way over real screens:
+    // iteration, `toList`, `where` and an indexed read all have to register, or
+    // every assertion in both files is a green test measuring nothing.
+    final probe = CountingLog([done(2), done(3), done(4)]);
     for (final _ in probe) {}
     expect(probe.passes, 1);
     probe.toList();
@@ -274,40 +284,6 @@ void main() {
     probe[0];
     expect(probe.visits, 1);
   });
-}
-
-/// The event log, counting every element read.
-///
-/// `ListBase` implements iteration, `toList`, `where`, `map` and `forEach` in
-/// terms of `length` and `operator []`, so overriding the one subscript is
-/// enough to see all of them — and a `.length` read, which is not a walk, does
-/// not register.
-class _CountingLog extends ListBase<LearningEvent> {
-  _CountingLog(this.inner);
-
-  final List<LearningEvent> inner;
-  int visits = 0;
-
-  /// Element reads expressed in whole walks of the log.
-  double get passes => inner.isEmpty ? 0 : visits / inner.length;
-
-  void reset() => visits = 0;
-
-  @override
-  int get length => inner.length;
-
-  @override
-  set length(int value) => throw UnsupportedError('the log is append-only');
-
-  @override
-  LearningEvent operator [](int index) {
-    visits++;
-    return inner[index];
-  }
-
-  @override
-  void operator []=(int index, LearningEvent value) =>
-      throw UnsupportedError('the log is append-only');
 }
 
 class _FixedCatalogRepository implements CatalogRepository {

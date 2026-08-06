@@ -552,6 +552,36 @@ re-import. Delete 120 lines, seven helpers, 361 test lines.
 > > counting log rather than assumed. The unit details sheet is the weakest of the three: it filters
 > > the whole log per *build* rather than per change. It stays, because it is a modal for one unit
 > > and the only log changes while it is open are the ones made from inside it.
+> >
+> > > **Then all four were priced, and the answer is that none of them is the problem.** "One pass"
+> > > is a count, not a quantity, and the note above kept arguing in counts. Over a 3,000-event log —
+> > > seven years of daf yomi, the number this whole finding is scaled to — the two mandatory indexes
+> > > cost ~660µs (`FoldLog.fold`, which also sorts) and ~690µs (`LogActivity.of`). Against that, the
+> > > backup axis is **28µs**, the batch grouping 25µs, one unit's history 27µs, and the journal's
+> > > filter-and-sort 36µs. The third axis is **two percent** of the two it rides along with; all
+> > > four together, with every screen that wants one open at once, are under a quarter of either
+> > > index. There is no fix here worth the risk of making one. If a mark ever needs to get cheaper
+> > > on a Sonim, the two indexes are where the milliseconds are, and the fold's sort is most of it.
+> > >
+> > > **Counted through the real app rather than argued: three passes per mark, and three is all
+> > > there is.** `log_pass_screen_test.dart` is the companion to `log_pass_count_test.dart` and
+> > > exists because that file chooses its own subscriptions — it says so in its setUp, and the two
+> > > axes it leaves out are exactly the two this note is about. A user does not choose; the screen
+> > > they are on does. So the log is handed to `ChovosHayomApp` itself: the dashboard costs the fold,
+> > > the day index and the backup axis, once each, and **so does the unit grid**, which was the one
+> > > thing here that came out differently from the guess. A grid on its own is one pass; pushing it
+> > > over the dashboard does not pause what is underneath, and should not — that is the same
+> > > `setState() during build` cliff `derived_flush_test.dart` guards, approached from the other
+> > > side. Marking a daf costs three walks wherever you are standing.
+> > >
+> > > **And one sentence above is wrong, which is the reason to price things rather than reason about
+> > > them.** *"The only log changes while it is open are the ones made from inside it"* is true and
+> > > is not why the details sheet is cheap. It filters per *build*, and a build is not a log change:
+> > > a rotation re-filters it, so does the keyboard a nested chazara sheet brings up, so does a
+> > > calendar-mode write. Both are now expectations in the new file rather than a claim in a
+> > > document. What makes it tolerable is the 27µs, and what keeps it small is the `.select` on the
+> > > one settings field it reads — that is pinned too, because dropping it would turn every settings
+> > > write into a full walk, which is the exact defect this whole note began with.
 
 The single largest category by volume. Each row is one idea implemented more than once, in
 places that cannot see each other:
