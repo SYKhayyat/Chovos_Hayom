@@ -1,11 +1,17 @@
-# Chovos Hayom — Architecture & Phase 0 Plan
+# Chovos Hayom — Architecture
 
-> Total rewrite in Flutter. Clean slate: legacy Java/SharedPreferences app deleted (lives in git
-> history / GitHub). Stack: **Flutter + Dart · Riverpod (codegen) · Drift (SQLite)**. v1 targets
-> **Android + Windows**; code kept portable for macOS/Linux/iOS later.
+> Stack: **Flutter + Dart · Riverpod · Drift (SQLite)**. Ships on **Android + Windows**; the code is
+> kept portable for macOS/Linux/iOS.
 >
-> Guiding constraints (from product owner): **modular, easy to extend, highly configurable,
-> feature-rich.** These are treated as first-class architectural requirements — see §10.
+> Guiding constraints: **modular, easy to extend, highly configurable, feature-rich.** These are
+> treated as first-class architectural requirements — see §5.
+>
+> This describes the architecture as it *is*. It began life as a plan and spent a while being both,
+> which is how §2.2 came to specify a table that was never built, and how the roadmap that used to
+> sit here came to list five phases against the README's thirteen. The scheduling half — the
+> roadmap, the Phase 0 deliverables, the decisions log and the proposed-features list, all of them
+> long since answered — is gone; git history has it. What is left is meant to be true, and seven
+> source files cite it by section number, so keep the numbering stable.
 
 ---
 
@@ -74,27 +80,47 @@ LearningEvent            -- append-only; NEVER updated or deleted in normal use
   unitIndex    int      which specific perek/daf
   action       enum     done | undone | reviewed   (reviewed = chazara pass)
   occurredAt   DateTime WHEN it was learned (defaults to now unless user sets it)
-  loggedAt     DateTime WHEN it was recorded (always now)
+  loggedAt     int      WHEN it was recorded (always now), stored as microseconds
+                        since epoch. Drift's DateTime column is second-resolution,
+                        which silently ordered a mark and an un-mark made in the
+                        same second by their random UUIDs
   durationMin  int?     optional session length
   note         String?
-  tagsJson     String?  optional labels (chavrusa, location, "with Rashi", ...)
+  layersJson   String?  which layers this event covers (the text, Rashi, ...)
+  batchId      String?  groups a bulk action, so it can be undone as one
 
 CustomNode               -- user-defined sefarim/categories; same shape as CatalogNode,
   ...                       profile-scoped and editable. USER SUPPLIES unit counts/labels
-                            (no bundled catalog exists for custom content).
+                            (no bundled catalog exists for custom content). Also carries
+                            `hidden` and `unitNamesJson`, which is how a *built-in* node is
+                            overridden: an override row shadows the catalog by id.
 
-UnitState                -- MATERIALIZED VIEW / cache, fully rebuildable from the log
-  profileId, nodeId, unitIndex, isDone, reviewCount, lastEventId
+CustomLayer              -- user-defined mefarshim, profile-scoped
+LayerConfig              -- per (node, unitIndex) map of layer -> role
+                            (off | optional | required); absent means off.
+                            unitIndex -1 means "this node and below"
 ```
 
+Five tables, and that is the whole of it. **There is no `UnitState` table, and there never was one** —
+this section specified one as a materialized cache for the project's whole life, and two source files
+cite this section by number while a third names the entity. Nothing was ever built, which is the
+correct outcome: a cache of the fold is exactly the stored derived state §1 exists to refuse. The
+fold is computed on demand, once per log change, by `FoldLog` — see §4.
+
 Rules:
-- `occurredAt` auto-fills to `now()` **only if the user didn't supply a date/time** (your spec).
+- `occurredAt` auto-fills to `now()` **only if the user didn't supply a date/time**.
 - `loggedAt` is always `now()`.
-- Aggregate `learned` / percentages are **never stored** — they are folds over `UnitState`.
+- Aggregate `learned` / percentages are **never stored** — they are folds over the log.
   `learned > total` is structurally impossible.
-- Undo = append an inverse event (or truncate the tail); redo = replay. Export = dump the log.
+- Undo = append an inverse event; redo = replay. Export = dump the log.
 - **Custom sources:** when a user creates a custom sefer/category, *they* fill in the unit label and
   count. Same schema as the bundled catalog, so every feature works on it identically.
+- **A profile is spread across two stores, and a backup has to reconcile both.** The five tables
+  above, plus the preferences noted on `Profile` — settings and goals. `ImportMode` says how much of
+  a profile an import may replace, and it has to mean the same thing in both stores: it reached the
+  tables and not the preferences for a month, so a *merge* overwrote settings it promised to leave
+  alone while *restore everything* left goals it promised to delete.
+  `test/application/import_scope_test.dart` enumerates the contract over every key that exists.
 
 ---
 
@@ -110,10 +136,11 @@ lib/
                      - calendar.dart  DateDisplay: formatting a date for a human, Gregorian
                                       or Hebrew. Presentation only
   domain/          pure Dart. NO Flutter, NO Drift imports.
-    entities/         CatalogNode, LearningEvent, Profile, UnitState, Progress, Goal, Cycle
+    entities/         CatalogNode, Catalog, LearningEvent, Profile, ProgressNode, Layer
     repositories/     abstract interfaces (CatalogRepository, ProgressRepository, ...)
     usecases/         pure functions/services:
-                        - FoldLog        (events -> UnitState set, incl. review counts)
+                        - FoldLog        (events -> LogFold: which units are complete,
+                                          review counts, recorded details — one pass)
                         - RollUp         (leaf progress -> parent aggregates over the tree)
                         - LogActivity    (log -> indexed by calendar day: units learned per
                                           day, minutes per day, what was recorded when.
@@ -194,99 +221,7 @@ re-emits → dashboard re-renders. No manual refresh plumbing (the legacy app wa
 
 ---
 
-## 5. Feature list → where it lands
-
-| Your feature | Mechanism |
-|---|---|
-| Per-unit tracking & display | `UnitState` + tree view with per-node progress bars |
-| Session logging (date/duration/note) | `LearningEvent` fields; auto `occurredAt` |
-| Charts / heatmaps / predictions | lookups on `LogActivity`; `Predictor` |
-| Custom sefarim/categories | `CustomNode` (same schema; **user fills in unit counts**) |
-| Hebrew/secular calendar toggle | `kosher_dart`; a display layer over every DateTime |
-| Custom cycles / rolling averages | `LogActivity.averagePerDay` windows + `Predictor` |
-| Multiple local profiles | `profileId` designed in from day 0 |
-| Expandable tree view | replaces legacy drill-down; the visible tree is **flattened** to rows and fed to a `ListView.builder`, so only what is on screen is built (see §10) |
-| Multi-criteria sorting | sort/compare over the derived tree |
-| Recommendation engine | `Predictor` (targetDate → required rate) — same code as prediction |
-| Global search | filter/query over catalog + custom nodes (Drift FTS optional) |
-| Export/import | serialize the event log + custom nodes + settings (versioned JSON). **Import merges; restore replaces** — see §10 |
-| Undo/redo | inverse events / log tail — falls out of the architecture |
-| Single source of truth | derive `learned`; storing it is impossible by design |
-| Reminders/notifications | Phase 4; needs `LogActivity` to detect "behind" first |
-| Timer / auto date-time | stopwatch → `durationMin`; auto `occurredAt` unless manual |
-
----
-
-## 6. Roadmap (phased)
-
-- **Phase 0 — Foundation (this plan).** Project scaffold, Drift schema, catalog-as-JSON loader,
-  the pure derive-from-log engine, test harness. No pretty UI yet.
-- **Phase 1 — Parity+.** Expandable tree with progress bars, per-unit toggle, session logging with
-  auto-date, dashboard. Already beats the legacy app.
-- **Phase 2 — Intelligence.** History/charts, `PaceEngine`, bidirectional `Predictor` (unifies
-  Calculate + recommendation + custom cycles), Hebrew-calendar toggle, streaks.
-- **Phase 3 — Power.** Profiles UI, custom sefarim, sort/search, export/import, goals, known cycles.
-- **Phase 4 — Polish.** Notifications, timer, chazara UI, drag-order, i18n/RTL polish, more platforms.
-
-Undo/redo and single-source-of-truth are *not* phases — they're consequences of Phase 0.
-
----
-
-## 7. Phase 0 — concrete deliverables
-
-1. **Repo hygiene:** legacy Java app **deleted** (on GitHub). Fresh Flutter project scaffolded at
-   repo root, Android + Windows targets configured.
-2. **Dependencies:** `flutter_riverpod` + `riverpod_generator`, `drift` + `drift_flutter` +
-   `sqlite3_flutter_libs`, `uuid`, `path_provider`. (`kosher_dart`, `fl_chart` deferred.)
-3. **Domain entities + repository interfaces** (pure Dart).
-4. **Drift schema:** `Profile`, `LearningEvent`, `CustomNode`, `UnitState` tables + DAOs.
-5. **Catalog JSON:** author a *small* first slice (Shas/Moed) + loader + version field. Full corpus
-   authoring is its own sub-task (hand-ported from legacy counts, retrievable from git history).
-6. **Derive engine:** `FoldLog`, `RollUp`, first cut of `PaceEngine` — fully unit-tested.
-7. **Reactive wiring:** `progressTreeProvider` end-to-end: insert an event → tree reflects it.
-8. **Tests green:** domain unit tests + one in-memory Drift repo test + one widget smoke test.
-
-**Definition of done for Phase 0:** marking a unit done in one leaf updates that leaf's %, rolls up
-to its parents, survives restart, and is provably reconstructed from the log alone — all under test.
-
----
-
-## 8. Decisions log
-
-- **Irregular units → count half as full.** All units integer; no doubles. *(Resolved.)*
-- **Custom sources → user supplies unit counts.** *(Resolved.)*
-- **Legacy code → deleted.** On GitHub / git history. *(Resolved.)*
-- **Catalog authoring** — hand-port curated counts from legacy `TasksSetup.java` (via git history).
-- **Charting package** — `fl_chart` likely; decide in Phase 2.
-
----
-
-## 9. Additional features folded in (proposed)
-
-Beyond the original list, these fit the log-as-truth model cheaply and raise the app from tracker to
-companion:
-
-- **Chazara / review tracking.** `reviewed` events + `reviewCount` per unit. First-learning vs.
-  review passes are distinguishable everywhere — central to serious learning, absent from most apps.
-- **Streaks & consistency.** Daily learning streak + activity heatmap, straight from the log.
-- **Per-node goals + on-track status.** Set a target date on any node; `Predictor` flags
-  ahead/behind and the required rate. This is the "recommendation engine" made concrete and personal.
-- **Learning cycles as first-class.** Shipped as an *engine*, not a bundled list: Daf Yomi Bavli
-  and Yerushalmi are built in because `kosher_dart` computes them authoritatively from the Hebrew
-  calendar, and everything else (Amud Yomi, Mishna Yomi, Rambam Yomi, a personal seder) is a
-  `SequentialCycle` the user defines — sefarim in order, units per day, a start date. Inventing a
-  start date for a cycle in a religious-practice app would be worse than not shipping it, and with
-  the engine there, not shipping it costs the user nothing. Each has a **"Today" view**.
-- **Full Hebrew / RTL support + UI language toggle.** Hebrew node names, RTL layout, English/Hebrew
-  UI — important for this audience, and cheap if designed in from the start (hence `nameHebrew`).
-- **Siyum tracking & celebration.** Detect completions, list past siyumim and upcoming ones
-  (legacy README advertised a siyum listing — carried forward and upgraded).
-- **Data-integrity tools.** "Rebuild derived state from log" maintenance action + versioned export;
-  makes the derive-from-log guarantee operable, not just theoretical.
-
----
-
-## 10. Cross-cutting principles: modular, configurable, extensible
+## 5. Cross-cutting principles: modular, configurable, extensible
 
 Explicit product requirements, enforced architecturally:
 

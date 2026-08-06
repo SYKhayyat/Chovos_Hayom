@@ -38,12 +38,24 @@ class RestoreDiff {
     required this.removed,
     required this.staleEvents,
     this.customisations = 0,
+    this.goals = 0,
   });
 
   /// Custom sefarim, custom mefarshim and layer settings a
   /// [ImportMode.restoreEverything] would delete. Zero for the narrower restore,
   /// which is exactly what makes the two different.
   final int customisations;
+
+  /// Target finish dates a [ImportMode.restoreEverything] would delete, counted
+  /// separately from [customisations] rather than added to it because the
+  /// sentence the user reads names what it is deleting, and "3 custom sefarim"
+  /// is not a truthful way to say "your goal for Berachos".
+  ///
+  /// The profile's *settings* are reset by the same mode and are deliberately
+  /// not counted anywhere: unlike a sefer or a goal, a preference cannot be
+  /// lost, only returned to what the file says, and there is no number of them
+  /// that would tell the user something a sentence does not.
+  final int goals;
 
   /// Units the backup has marked that this profile currently does not.
   final int restored;
@@ -55,7 +67,11 @@ class RestoreDiff {
   final int staleEvents;
 
   bool get changesNothing =>
-      restored == 0 && removed == 0 && staleEvents == 0 && customisations == 0;
+      restored == 0 &&
+      removed == 0 &&
+      staleEvents == 0 &&
+      customisations == 0 &&
+      goals == 0;
 }
 
 class SettingsScreen extends ConsumerWidget {
@@ -422,8 +438,16 @@ class SettingsScreen extends ConsumerWidget {
       },
       mode: mode,
     );
-    await ref.read(settingsProvider.notifier).applyBackup(data.settings);
-    await ref.read(goalsProvider.notifier).applyBackup(data.goals);
+    // The two stores that live in preferences rather than in the repository, and
+    // so are applied here instead of inside `importInto`. They take the mode for
+    // the same reason everything inside it does: for a long time they did not,
+    // and a *merge* — the mode that promises to remove nothing — overwrote every
+    // setting in the profile with the file's, while *restore everything* left
+    // behind every goal set since the backup. The scope of a destructive action
+    // has to be the same in all of the places that implement it.
+    await ref.read(settingsProvider.notifier).applyBackup(data.settings, mode);
+    final deletedGoals =
+        await ref.read(goalsProvider.notifier).applyBackup(data.goals, mode);
     // Cycles ride in the settings map (they are a per-profile preference) but
     // are owned by a separate controller that read the pref at build time, so it
     // must re-read now that applyBackup has rewritten it — otherwise the imported
@@ -445,7 +469,8 @@ class SettingsScreen extends ConsumerWidget {
                 removed: 0,
                 staleEvents: data.removedEvents,
               ),
-          deletedCustomisations: data.removedCustomisations);
+          deletedCustomisations: data.removedCustomisations,
+          deletedGoals: deletedGoals);
     }
     final added = data.events.length;
     if (added > 0) return l10n.backupImported(added);
@@ -620,6 +645,7 @@ class SettingsScreen extends ConsumerWidget {
         currentRoles: ref.read(layerRolesProvider),
         catalogParents:
             parentsOf(ref.read(mergedCatalogProvider).asData?.value),
+        currentGoals: ref.read(goalsProvider),
         json: json,
         mode: mode,
       );
@@ -634,6 +660,7 @@ class SettingsScreen extends ConsumerWidget {
     required String profileId,
     required LayerRoles currentRoles,
     required Map<String, String?> catalogParents,
+    required Map<String, DateTime> currentGoals,
     required String json,
     required ImportMode mode,
   }) async {
@@ -680,6 +707,8 @@ class SettingsScreen extends ConsumerWidget {
       customisations: mode.replacesCustomisation
           ? await BackupService(repo).customisationsAtRisk(profileId, json)
           : 0,
+      goals:
+          GoalsController.goalsRemovedBy(currentGoals, backup.goals, mode).length,
     );
   }
 
@@ -689,8 +718,10 @@ class SettingsScreen extends ConsumerWidget {
   /// a separate argument rather than read off [diff]: the diff is a prediction,
   /// and a report that echoes the prediction cannot notice when they differ.
   static String restoreSummary(AppLocalizations l10n, RestoreDiff diff,
-      {int deletedCustomisations = 0}) {
-    if (diff.changesNothing && deletedCustomisations == 0) {
+      {int deletedCustomisations = 0, int deletedGoals = 0}) {
+    if (diff.changesNothing &&
+        deletedCustomisations == 0 &&
+        deletedGoals == 0) {
       return l10n.restoreAlreadyMatched;
     }
     final parts = [
@@ -698,6 +729,7 @@ class SettingsScreen extends ConsumerWidget {
       if (diff.removed > 0) l10n.restoreSummaryRemoved(diff.removed),
       if (deletedCustomisations > 0)
         l10n.restoreSummaryDeletedCustom(deletedCustomisations),
+      if (deletedGoals > 0) l10n.restoreSummaryDeletedGoals(deletedGoals),
     ];
     return parts.isEmpty
         // The log changed but nothing you can see did — e.g. only a re-log of
@@ -712,10 +744,13 @@ class SettingsScreen extends ConsumerWidget {
       BuildContext context, RestoreDiff diff, ImportMode mode) async {
     final l10n = AppLocalizations.of(context);
     // What this restore is about to destroy — marked units, and for the wide one
-    // the customisations too. Both feed the red button: a dialog that colours
-    // itself by units alone would look harmless while deleting a sefer.
+    // the customisations and goals too. All three feed the red button: a dialog
+    // that colours itself by units alone would look harmless while deleting a
+    // sefer, and one that counts sefarim alone would look harmless while
+    // deleting every target date the learner has set.
     final losing = diff.removed;
-    final destructive = losing > 0 || diff.customisations > 0;
+    final destructive =
+        losing > 0 || diff.customisations > 0 || diff.goals > 0;
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -729,6 +764,7 @@ class SettingsScreen extends ConsumerWidget {
                 if (losing > 0) l10n.restoreConfirmLosing(losing),
                 if (diff.customisations > 0)
                   l10n.restoreConfirmLosingCustom(diff.customisations),
+                if (diff.goals > 0) l10n.restoreConfirmLosingGoals(diff.goals),
                 if (diff.restored > 0)
                   l10n.restoreConfirmGaining(diff.restored),
                 l10n.restoreConfirmBackupFirst,

@@ -77,342 +77,106 @@ prediction-from-actual-pace for free.
 
 Clean architecture in layers: `domain/` (pure Dart, no framework) · `data/` (Drift + JSON) ·
 `application/` (Riverpod) · `features/` (UI) · `app/` (the route table). Full design in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); the standards every change is held to are in
+[`CONTRIBUTING.md`](CONTRIBUTING.md); and if you are about to measure anything on real hardware,
+read [`docs/MEASURING.md`](docs/MEASURING.md) first — several of the obvious instruments read zero
+on Flutter and look authoritative doing it.
 
 **Stack:** Flutter · Riverpod · Drift (SQLite) · `fl_chart` (charts) · `kosher_dart` (Hebrew
 calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_provider` (crash log) ·
 `flutter_localizations` + `gen-l10n` (English/Hebrew).
 
-## Status
+## What it does
 
-| Phase | Scope | State |
-|---|---|---|
-| **0 — Foundation** | Event-log core, Drift schema, catalog loader, derive engine, tests | ✅ Done |
-| **1 — Parity+** | Full catalog (312 nodes), per-unit grid, session logging, dashboard | ✅ Done |
-| **2 — Intelligence** | Charts, pace engine, predictions, Hebrew calendar | ✅ Done |
-| **3 — Power** | Profiles, custom sefarim, search, export/import | ✅ Done |
-| **4 — Polish** | Goals, chazara UI, session timer, in-app reminders | ✅ Done |
-| **5 — Hardening+** | Migration strategy, correctness fixes, cycles, chazara scheduling, siyumim, time analytics, RTL, file backup, full data management | ✅ Done |
-| **6 — Depth** | Haaros + Notes Journal, tree sorting, **mefarshim as per-daf layers** (custom + configurable required sets), chazara as first-class passes, full node editability (edit/hide/reset/clone **any** node, named units, attach-anywhere), settings export/import/clear | ✅ Done |
-| **7 — Production readiness** | Durable bulk undo, validated + atomic import, one-pass derive engine, per-profile settings, configurable learning cycles, release signing + icon + CI + crash log, one write-error policy, named routes + deep links | ✅ Done |
-| **8 — Shipping it** | Partial-un-mark data-loss fix, backup covers every per-profile key, profile-delete cleanup, override-cycle validation, day-ordinal series keying, lazy tree rendering, real restore-from-backup — and the app actually **built and run** on Windows and Android | ✅ Done |
-| **9 — Speaking Hebrew** | Full English/Hebrew localization (the toggle translates rather than mirrors), `nameHebrew` finally displayed, screen-reader labels on the unit grid, a real error view with retry behind every failed read, and CI that pins its toolchain and fails on a stale or incomplete string table | ✅ Done |
-| **10 — Not losing it** | A backup reminder that counts what is genuinely at risk, so the "everything stays on your device" promise stops being a silent single point of failure | ✅ Done |
-| **11 — What a phone found** | Twelve defects from two independent adversarial gradings, three of which no test could have seen and one minute on a phone showed immediately: a confirm button under the navigation bar, a progress fraction reading backwards in Hebrew, a green tick over a backup that did not exist. Plus the cross-profile import that never worked, a restore split into the two things it was pretending to be, a calculator that walked 200,000 days inside `build()`, and a grid a keyboard could only half reach. Then the phone was plugged in and found a thirteenth: a deep link that opened the right screen from cold and "Not found" when the app was already running | ✅ Done |
-| **12 — Rules that fail CI** | The second pass, from an architecture review that argued the codebase enforces its rules in prose. Nine answers to "which calendar day is this", one of them wrong across a DST boundary, collapsed into `Day`. Then the provider graph: nothing in the app was comparable and no family was disposable, so every derivation notified everything, a clock that watched a midnight tick handed back a canonicalised tear-off and propagated nothing at all, and two one-second tickers ran for the life of the process to redraw a widget that was not on screen. Then the derive engine's own thesis, which had quietly stopped being true downstream of itself: the fold exists so the log is walked once, and the numbers on top of it walked it nine more times plus once per goal. Each rule now has a guard test rather than a comment | ✅ Done |
+**Tracking.** An expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur,
+Shulchan Aruch, Mishna Berura — with progress bars that roll up from every daf and perek to the root.
+Open a sefer for its per-unit grid; tap a daf to mark it, tap again to undo. Long-press to log it
+with a date, a time, how long it took and a haara, or to view and edit those afterwards. Bulk finish
+or clear any node — a whole category, one sefer, or an arbitrary range of dapim — each confirming
+with the exact number of units it will change, each undoable from **Bulk action history** today or
+next month rather than for four seconds.
 
-### What works today
-- Expandable tree of all of Torah — Tanach, Mishnayos, Shas, Yerushalmi, Rambam, Tur, Shulchan
-  Aruch, Mishna Berura — with live progress bars that roll up from every daf/perek to the root.
-- Tap a sefer/mesechta to open its **per-unit grid**; tap a daf to mark it, tap again to undo.
-- **Long-press** a unit to log it with a specific date **and time**, how long it took, and a haara
-  (otherwise the date/time auto-fills to now). Long-press a *finished* unit for **View / edit
-  details** — see and change when you finished, the duration, the haara, and its review history
-  after the fact. A small note glyph marks units that carry recorded details. Review (chazara)
-  passes are tracked per unit.
-- **One report, five tabs** — Overview, Calculator, Goals, Siyumim, Mefarshim. These were five
-  separate screens on five drawer rows, which on a 240dp keypad phone was nearly half a drawer you
-  cross with a D-pad, and which kept apart two things that compute the same number. Each still has
-  its own address (`/stats`, `/calculator`, `/goals`, `/siyumim`, `/mefarshim`), so a link or a
-  restored route opens the report on the tab it named.
-  - **Overview**: overall %, current streak, 30-day pace, projected siyum date, a cumulative
-    progress line chart, and a 12-week activity heatmap.
-  - **Calculator**, three modes, for the whole Torah or any category:
-    *Rate* ("at X/day, +Y on Shabbos → finish date"), *Cycle* (a **custom repeating cycle of any
-    length** — set each cycle-day's amount and which day you're currently on, e.g. a 7- or 30-day
-    plan), and *By date* ("to finish by date D → learn R/day") — whose answer you can now **keep
-    as a goal**, which is what it was describing all along.
-- **Hebrew or secular calendar** toggle applied to every date, plus light/dark theme.
-- **Multiple local profiles** (switch between users; each has its own log), **custom sefarim**
-  (add your own trackable sefer or habit with your own unit counts), **global search** across
-  everything, and **export/import** of all data as JSON. Settings persist across launches.
-- **Goals**: set a target finish date on any sefer and see whether you're on track and the daily
-  rate you need — from the sefer's own grid, or from the Calculator's *By date* mode, which works
-  out exactly that. The Goals tab lists them, and its empty state offers to make one rather than
-  naming a screen to go and find. A **chazara menu** (long-press a unit) logs review
-  passes or un-marks; an optional **daily nudge** reminds you in-app if you haven't learned today.
-- **One form records learning, whichever kind it is.** Marking a daf, editing what you already
-  recorded and logging a chazara are the same sheet with a different verb — the same date-and-time
-  switch, duration, haara and meforish checklist. Logging a chazara used to be a second copy of it,
-  and every way the copy had drifted was a loss: no session timer on the one action where timing
-  what you are about to do is most of the point.
-- **A session timer that runs while you learn.** Start it, close the sheet, and go learn — it
-  survives leaving the screen, backgrounding the app, and quitting it entirely, and a banner shows
-  the live session wherever you are so you can pause or discard it. Stopping fills in the duration.
-- **Learning cycles, plural**: **Daf Yomi Bavli** and **Daf Yomi Yerushalmi** come built in,
-  computed from the Hebrew calendar. Everything else — Mishna Yomi, Rambam Yomi, Amud Yomi, a
-  yeshiva's seder, your own chazara programme — you **define yourself**: pick the sefarim (or a
-  whole category, expanded in order), set units-per-day and a start date, and choose whether it
-  repeats. One-tap logging for whatever today calls for — and if a cycle names a sefer your catalog
-  spells differently, you can **link it by hand** instead of hitting a dead end.
-- **Chazara scheduling**: a spaced-repetition list of units **due for review**, most-overdue first,
-  with a due-count badge; reviewing pushes the next date out. Only units that are actually complete
-  appear — ticking an optional meforish doesn't put a half-learned daf on the list — and a unit whose
-  sefer you've since hidden or shrunk drops off rather than lingering as a dead row.
-- **Siyumim at every level**: a running, auto-derived list of everything you've **completed** — a
-  mesechta, a seder, Nach, or Shas itself — each dated by its final unit, with the bigger siyumim
-  marked as such.
-- **Time analytics**: total time learned and time-this-month, from logged session durations.
-- **Import merges; Restore replaces.** Two separate actions, because they answer different
-  questions. *Import* adds whatever a backup has that you don't and never removes anything — so
-  re-importing a backup you already have reports "already up to date" rather than a bare "0". But the
-  log is append-only: un-marking a daf *appends* an `undone`, it doesn't delete the `done`. So a
-  merge can never undo something you did after the backup — every id in the file is already present,
-  and your later `undone` still wins. *Restore* is the one that puts it back, and it comes in two
-  sizes, because "undo my learning back to this backup" and "throw away everything this profile has
-  become since" are different intentions and only one of them deletes a sefer. **Restore learning**
-  reconciles the log and keeps your custom sefarim, mefarshim and settings; **Restore everything**
-  makes the whole profile match the file and deletes the customisations it does not contain. All of
-  them report in the terms you can see — "1 unit is marked again; 1 unit is no longer marked" — and
-  both restores tell you exactly what they will change *before* they change it, counting the sefarim
-  as well as the units, because putting a daf back is done by deleting an event, so an event-level
-  tally would read "removed 2, added 0" while a completion visibly returns.
-- **A backup imports into a second profile.** It never did: event ids were unique across the whole
-  database rather than within a profile, so the same file imported twice collided with itself and
-  the import died on a constraint — and the message blamed the *file*, which is the one thing that
-  was not at fault and the only copy of that learning. The key is now the profile plus the id, like
-  every other table, and a failure that is the app's own says so instead of inviting you to delete
-  your backup and make another.
-- **Full data management**: **file** (and clipboard) export/import, **delete/rename profiles**,
-  **delete custom sefarim**, undo on goal removal, and expand-all / collapse-all for the tree
-  (which now starts collapsed).
-- **The app speaks Hebrew.** One toggle switches every string in it — screens, menus,
-  confirmations, error messages, the sentence a failed write reports itself with — into Hebrew, and
-  lays the app out right-to-left. It used to flip the direction and localize Material's own date
-  pickers while leaving the app's own text in English, which is a mirror, not a translation.
-  **All 312 sefarim** carry their real names (ברכות, בבא מציעא, שולחן ערוך), as do the built-in
-  mefarshim (רש״י, תוספות). A mesechta that appears in Mishnayos, Shas, Yerushalmi and Rambam is
-  disambiguated by **where it sits**, derived from its ancestors — "Shabbos · Shas · Moed" — rather
-  than by a "(Shas)" typed into 120 of the names, which was noise on every row inside Shas, missing
-  from every Mishnayos masechta, and impossible for a sefer you add yourself. The four places that
-  show a flat list with no tree around it (search results, the calculator's dropdown, both cycle
-  pickers) all say which one you are looking at, in either language.
-- **Numbers read the right way round in Hebrew.** "0 / 929" was painting as "929 / 0" on every row
-  of the tree: digits are weak-left-to-right and a space-padded slash is neutral, so the bidi
-  algorithm reversed the whole run and swapped the operands. The numeric templates are wrapped in a
-  Unicode isolate, so the line still sits on the right and its contents still read left to right. Anything **you** add takes both names
-  too: the custom-sefer and custom-meforish forms offer an English field and a Hebrew one side by
-  side, either alone is enough, and a custom meforish can be renamed afterwards — which it could
-  not before, so a Hebrew name you didn't type at creation used to be unreachable. Alongside the
-  separate Hebrew/secular **calendar** toggle and light/dark theme.
-- **Mefarshim as layers**: mark a daf done per-meforish (Gemara, Rashi, Tosafos, or your own
-  custom mefarshim); a unit is "done" only once its *required* mefarshim are learned. Layer
-  settings are configured at any node and inherited down (default is text-only, so existing progress
-  is never invalidated). The grid shows a partial fill until a layered unit is complete.
-- **Off / Available / Required**: each meforish is in exactly one of three states — *Off* (not on
-  the unit), *Available* (you can check it off, it doesn't gate completion) or *Required* (it does).
-  So you can **track a meforish without mandating it for "done"**. It was two independent
-  checkboxes, which is four states for a three-state answer: the fourth, required-but-not-available,
-  meant nothing and was repaired by hand at every place that wrote or read it. One control that can
-  only be in one position has nothing to repair.
-- **Bulk finish / clear** on any node — a whole category cascades to every daf underneath, or a
-  single sefer at a time: *Finish all* (each unit's required set), *Mark all — Text* or *— any
-  meforish*, and *Clear all*. On a leaf you can also **finish an arbitrary range**. Every bulk
-  action is one batched write, and **every one of them confirms first with the exact number of units
-  it will change** — the difference between finishing one mesechta and finishing Shas is 64 versus
-  12,092, and that number is the whole point. Undo is durable: **Settings → Bulk action history**
-  lists every batch and reverts any of them, today or next month — not for four seconds.
-- **Mefarshim progress**: a running breakdown of how much of each meforish (and the text) you've
-  learned across everything — meaningful now that optional mefarshim are tracked separately from
-  progress bars. In the **tree**, each node also shows a thin per-meforish coverage line under its
-  main bar (e.g. a Gemara's main progress plus a little Rashi / Tosafos bar) wherever mefarshim are
-  enabled — rolled up from every daf underneath. Each meforish's line can be switched on/off
-  individually in **Settings → Mefarshim bars**.
-- **A haara** per learning/chazara: one free-text field, used however you like — a chiddush, a
-  question, a maareh makom, or how the seder went. Every non-empty one is collected in a searchable
-  **Notes Journal**, so nothing needs classifying before you write it. Every finished unit's
-  details — when, how long, the haara, and its full chazara history — are viewable and editable
-  after the fact.
-- **Chazara as first-class passes**: each review records its own date/time, duration, mefarshim,
-  and haara, with user-configurable spaced-repetition intervals.
-- **Configurable tree sorting** by percent / amount / last-learned / name, at any chosen depth.
-- **Per-profile settings**: calendar, theme, RTL, sort, chazara intervals, meforish bars and cycles
-  all belong to the profile rather than the device, so two people sharing one get their own.
-- **Mefarshim configurable at any node**: pin the answer on Shas, on a seder, on one mesechta, or
-  on a single daf, and it inherits down until something nearer overrides it. The sheet tells you
-  whether what you're looking at is *set here* or *inherited from* a higher node, and opening it
-  without changing anything won't pin the inherited answer as an override — so a setting on Shas
-  keeps reaching a mesechta you merely glanced at. Logging a meforish carries the same date, duration
-  and haara as anything else.
-- **Everything editable**: rename, re-count, re-type, re-parent (attach anywhere), hide/delete, or
-  reset **any** node — built-in or custom — via a per-profile override layer; clone a subtree's
-  structure; give units real names. A full backup and settings export/import/clear round-trip it
-  all — learning cycles included — and *Clear settings* names everything it removes (preferences,
-  goals, learning cycles, custom sefarim, mefarshim, required sets) before it removes any of it,
-  leaving the learning log untouched.
-- **It tells you when your learning exists in only one place.** Keeping everything on the device is
-  the point (see below), and the consequence is that the app's own export is the only copy that
-  survives a lost phone — which nothing ever mentioned. Settings now shows where you stand ("last
-  exported 3 March · 41 units learned since — they exist only on this device"), and once there is
-  unsaved learning older than your chosen interval, the dashboard says so and offers the export.
-  It counts **units**, not log entries, so the number means something; it goes quiet the moment
-  there is nothing unsaved, however long ago the last export was, so a finished sefer isn't nagged
-  about forever; an empty profile is never warned at; and the "last exported" stamp is written
-  *after* the export succeeds and never on a failure or a cancel — a false "you're safe" would
-  silence the one warning that mattered. The interval is yours to set, and the whole thing is one
-  switch to turn off.
-- **Your data stays yours.** Android's automatic cloud backup is switched **off** — left on, it
-  would copy the database (every daf, every haara) to your Google account by default, unasked. The
-  app's own export is the only way your learning leaves the device. Imported backups are
-  **validated before anything is written** and applied in one transaction, so a corrupt or
-  hand-edited file gives a clear error instead of a permanently broken app — including a hand-edited
-  override that would re-parent a built-in sefer beneath its own descendant and empty the tree. Goals
-  and cycles travel with the backup, and deleting a profile takes *all* of its settings with it — its
-  goals, cycles, and every per-profile preference — not just its learning history.
-- **A crash log**, on the device only, readable and copyable from Settings — so a bug that only
-  happens on your phone is something you can actually report. Nothing is sent anywhere.
-- **A write either happens or it says so.** Every write the app makes goes through one guard: it is
-  awaited, it is reported *after* it succeeds rather than alongside it, and if it fails you get one
-  consistent sentence naming what failed and a **Details** button that opens the crash log — where
-  the failure is already recorded under what you were doing ("Marking Shabbos daf 2 learned").
-  Nothing is fire-and-forget, so nothing can fail in silence, and a form whose save failed stays
-  open with your work still in it rather than closing over something that was never written.
-- **A failed *read* says so too.** The three screens that load data used to render a raw exception
-  with no way forward, which made a database that lost a race look identical to a permanently broken
-  install. They now say what could not be loaded, say that nothing was lost (every one of them is a
-  read), offer **Try again** — which genuinely re-runs the load, and recovers — and put the failure
-  in the crash log, so the *Open crash log* they offer is not a promise of something that isn't
-  there. A provider error never reached the log before: it isn't an uncaught exception, so none of
-  the crash handlers ever saw it.
-- **The grid can be read aloud.** A unit cell shows whether it is learned through colour alone, and
-  its only text is the bare unit number — so the app's central screen announced itself to a screen
-  reader as "2, 3, 4, 5". Each cell now says what it is ("daf 2, learned", "daf 7, partly learned,
-  50%"), including its chazara count and whether it carries recorded details, and announces as a
-  checked button you can reach by keyboard. Progress bars are marked decorative, since the count
-  beside them already carries the number in words.
-- **The grid answers a keyboard.** Tab reaches the cells, Enter marks the focused one — and the
-  focused one is now *visible*, which it was not: the cell is a filled container and the default
-  focus highlight paints behind it, so a keyboard user was marking dapim blind. Shift+F10 or the
-  context-menu key opens the same menu right-click does, so logging with a date, a duration, a haara
-  or a chazara no longer needs a pointing device.
-- **It works on a phone with no touchscreen.** Not a scaled-down mode — the whole app, on a Sonim
-  XP5s: Android 7.1, a 240 x 324dp screen (Material's smallest target is 320x480), a D-pad and a
-  numeric keypad. It already *ran* there, and already answered the D-pad, because the keyboard
-  support above costs nothing extra on a device whose keys arrive as key events — the phone's MENU
-  soft key even reaches the unit menu as `LogicalKeyboardKey.contextMenu`, the binding added for
-  desktop. What it did not do was ever say **what was selected**: pressing the centre key on the
-  unit grid opened "Bulk actions", because focus had started on an app bar icon and nothing on
-  screen said so; one more press would have marked a whole sefer learned. A focus ring now follows
-  whatever holds focus, anywhere in the app. Screens made only of figures — Statistics, Siyumim,
-  Mefarshim progress — could not be scrolled *at all*, holding no focusable widget for the D-pad to
-  move to, so everything below the fold was unreachable by any sequence of keys; they scroll now.
-  The drawer is shorter, too: five of its twelve rows were reports, and they are one row now.
-  App bars fold their actions into a named menu rather than scaling the app's own name down to an
-  illegible dash, floating buttons that sat on top of the content give way to bar actions, and the
-  statistics tiles size to their contents instead of to a fixed 2.4 aspect ratio that made every
-  figure overflow the card below it. All of it keys off screen *width*, so a phone with a
-  touchscreen is pixel-identical to what it was — asserted by tests, not hoped for.
-- **Nothing on it is a dead end.** Three things that were only dead ends on a device with no
-  touchscreen, all found by using one. A `SnackBar` carrying an action never dismisses itself —
-  Flutter defaults `persist` to `action != null`, so the way it leaves is a *swipe* — which meant
-  turning off the backup reminder replaced the banner with a permanent black slab across the bottom
-  third of the screen; every message the app shows now times out again, with a longer window when
-  there is an Undo to walk a D-pad over to. The banner's own dismiss was a bare ✕ beside "Back up",
-  reachable only by pressing *right* (plain down skipped it for the tree) and explained only in a
-  tooltip, which needs a pointer the phone does not have; on a narrow screen it is a named button
-  under the other one. And the drawer listed ten destinations and no way back, so opening it stranded
-  you off the tree — the tree is now the first row in it.
-- **It opens on the tree.** The catalog is one root with everything under it, and the tree started
-  fully collapsed, so the app opened on a *single row* — "Kol HaTorah Kula, 0 / 12,092" — above an
-  empty screen. The first generation opens itself now, on every device; it is one row's worth of
-  work, since the visible tree is flattened and built lazily.
-- **Every screen has an address.** Screens are named routes that carry ids (`/sefer/<id>`), never
-  widget objects — which is what makes deep links, notification taps and Android's state
-  restoration possible at all, and what makes a rename show up on a screen that is already open.
-  On Android those addresses are reachable from outside: `chovoshayom://sefer/<id>` opens that
-  sefer's grid with the dashboard behind it, and a path the app doesn't serve says so rather than
-  showing a blank screen — **whether or not the app was already open**, which is not free: a link
-  delivered to a running app arrives on a different channel, and the framework's default handler
-  drops the part of the URI that says *which kind* of screen is wanted. (A private scheme, not an `https` App Link — claiming a domain you don't
-  own is how a link ends up opening someone else's app.)
-- Tests covering the engine, layer fold + role resolution (including that un-ticking one meforish
-  never wipes the rest of a unit's history, and that every `LayerRole` survives the backup JSON
-  round trip — a role that silently read back as *optional* would un-gate completion), per-meforish
-  roll-up,
-  bulk finish/clear + ranges + durable undo, per-meforish stats, catalog overrides, analytics, goals,
-  reminders, backup validation (including override-row parent cycles), chazara scheduling (complete
-  units only), siyumim, learning cycles, the per-profile session timer, per-profile settings + their
-  backup coverage and profile-delete cleanup, restore-vs-merge (including that a merge *cannot* undo
-  an un-mark and a restore can), the schema, derive-engine cost — both the scans-counter and
-  two benchmarks that catch constant-factor regressions — lazy tree rendering, the write guard
-  + route table, the read-failure view (that retry re-runs the load and recovers, and that a rebuild
-  does not re-log the same failure), the grid's screen-reader labels, the backup reminder (that a failed export never stamps the profile as safe, that units are counted rather than log entries, and that a profile with nothing unsaved is left alone), and translation — that Hebrew
-  changes the *words* and not only the direction, that both locales are key-for-key complete, and
-  that reports read correctly in each.
-- Calendar-day arithmetic is pinned by a sweep over **every consecutive pair of days in a year, in
-  whatever timezone the runner is in** — so a host that observes DST exercises both transitions, and
-  a UTC host still runs the property. The sweep is paired with a negative control that asserts the
-  local-`DateTime` forms it replaced *do* disagree with it on such a host: a DST test that quietly
-  passes everywhere is a DST test that has stopped working. A source-scanning guard
-  (`test/core/day_math_guard_test.dart`) then fails the build if the arithmetic reappears outside
-  `lib/core/day.dart`, with a `// day-math: ok — <reason>` escape hatch for the line that genuinely
-  needs it.
-- **What rebuilds, counted rather than asserted in prose.** `provider_notify_test.dart` tallies
-  notifications through the real provider graph — a daf marked in one mesechta must not notify
-  another one's node, a settings write nobody reads must reach nobody, re-deriving over unchanged
-  data must propagate nothing — and `rebuild_cost_test.dart` tallies actual widget rebuilds through
-  the framework's own `debugOnRebuildDirtyWidget` hook, including that the session banner's
-  one-second ticker does not run when there is no session or a paused one. Each negative assertion
-  is paired with a control that *must* still rebuild, because a subscription that never fires and a
-  missing subscription look identical until a screen stops updating. Thirteen of them fail on the
-  code they were written against; the controls pass on both.
-- **The tests run against the real database.** There was a 344-line
-  `InMemoryProgressRepository` — a fifth larger than the repository it doubled — that 38 test files
-  used. Its docstring claimed to have "no native dependencies", which was already untrue (three
-  suites ran `AppDatabase(NativeDatabase.memory())` under plain `flutter test`, in CI, in
-  milliseconds), and to be "a faithful implementation rather than a stub", which is not a property
-  anyone can keep: it had drifted on four axes, and its own docstring said that exactly this kind of
-  drift is why the cross-profile import collision could not fail in any test that used it. It is
-  gone, replaced by an eight-line `memoryDatabase()` helper, and the four axes are now assertions
-  the real repository has to earn. **It was hiding a live defect**: drift's `DateTimeColumn` stores
-  whole seconds, so mark-then-un-mark inside one second left the fold ordering two identical
-  timestamps by their random v4 UUIDs — half the time the daf stayed learned, permanently. The
-  double kept `DateTime` objects in a Dart list at full precision, so no test could see it.
-  `logged_at` now stores microseconds, and
-  `test/support/repository_double_guard_test.dart` fails the build if a second implementation of the
-  interface, a database opened by hand, or a one-shot read off a live query stream comes back.
-- **How many times the log is walked, counted.** The notification tallies above measure where the
-  graph *stops*; they say nothing about the work done before it decides not to notify, which is
-  where the cost actually was. `log_pass_count_test.dart` hands the graph an event list that counts
-  every element read and asserts in whole passes: deriving the entire Statistics surface is two —
-  one per index — ten goal rows add none, and a midnight tick adds none, because neither index
-  depends on the clock. On the shape they replaced those read 7, 10 and 6. That file picks its own
-  subscriptions, though, and a user does not — so `log_pass_screen_test.dart` counts the same way
-  with the real app up: **three passes per mark**, the two indexes plus the backup axis, and three
-  wherever the mark is made, because a pushed grid does not pause the dashboard underneath it. The
-  journal, the bulk-undo list and a unit grid each cost one pass while they are on screen and
-  **nothing at all** once they are not. The three remaining axes were priced rather than argued
-  about: against ~660µs to fold 3,000 events and ~690µs to index them by day, the backup axis is
-  28µs, the batch grouping 25µs and one unit's history 27µs — two percent, and not where the
-  milliseconds are. Alongside them,
-  `derived_flush_test.dart` walks a real app through *drill in, mark a daf, come back* with a goal
-  set, because a `Consumer` that sleeps under a pushed route wakes up flushing its ancestors, and a
-  derived provider that went dirty in the meantime turns that into a `setState` during build — one
-  extra provider between a banner and the log was enough to make the trip back throw every time.
-- **The report is built by tests**, rather than constructed and asserted `isNotNull`:
-  Siyumim (a seder marked as bigger than a mesechta, asserted per row), Mefarshim (each
-  layer counted separately, the bar relative to the biggest, and a meforish deleted since it was
-  learned named rather than printed as a raw UUID), Chazara (an overdue row, and that the
-  quick Review button carries the mefarshim the unit was learned with), Goals (the required pace it
-  renders, that removing one is undoable, and that the Calculator's answer can be kept as one),
-  plus the shell itself — every old route name still opening the report on its own tab. On the
-  Sonim's 240dp screen every tab is walked for overflow, and the D-pad round trip in and out of the
-  tab bar is asserted in both directions, because a tab bar is a second axis of navigation on a
-  device that has one comfortable one. `report_guard_test.dart` then fails the build if a section
-  grows a `Scaffold` of its own, if the goal sentence is rendered outside `goal_status.dart`, or if
-  a second date-and-duration logging form appears. Alongside them, the durable bulk-undo list — where the name of
-  what you are undoing is computed by widget code no domain test runs. `lib/core/daf_yomi.dart`,
-  imported by three production files, has its own test at last: the 14th cycle's first daf, the
-  roll-over into the next mesechta, and the two days the Yerushalmi cycle skips.
-- The 58 added in phase 11 are mostly about the half of the app a unit test cannot see, and each one
-  was watched fail first: the real Drift repository under test at last (it had none, and both of its
-  defects were about profile scope), every modal sheet laid out on a phone that has a navigation bar
-  — with a control sheet the same assertion must *reject*, since a geometry check that cannot fail is
-  what let a dead button ship — the grid driven by keyboard alone, the app bar measured at 1.6x font
-  scale, the finish-date predictor checked against a written-out day-by-day walk over nine cycle
-  shapes, the backup tile across all four corners of exported x learned, and the restore preview's
-  arithmetic against a backup whose mefarshim requirements differ from the profile's.
+**Mefarshim as layers.** Mark a daf per-meforish — Gemara, Rashi, Tosafos, or your own — and a unit
+counts as done only once its *required* mefarshim are learned. Each meforish is in exactly one of
+three states: *Off*, *Available* (checkable, does not gate completion) or *Required*. Configure it at
+any node — Shas, a seder, one mesechta, a single daf — and it inherits down until something nearer
+overrides it. The tree shows a thin per-meforish coverage line under each main bar.
 
+**Chazara.** Every review is a first-class pass with its own date, duration, mefarshim and haara. A
+spaced-repetition list shows what is due, most-overdue first, with a badge; reviewing pushes the next
+date out. Intervals are yours to set.
+
+**One report, five tabs** — Overview, Calculator, Goals, Siyumim, Mefarshim — each keeping its own
+address (`/stats`, `/calculator`, `/goals`, `/siyumim`, `/mefarshim`).
+
+- **Overview**: overall %, current streak, 30-day pace, projected siyum date, a cumulative progress
+  line and a 12-week activity heatmap.
+- **Calculator**, for all of Torah or any category, in three modes: *Rate* (at X/day, +Y on Shabbos →
+  finish date), *Cycle* (a custom repeating plan of any length), and *By date* (finish by D → learn
+  R/day), whose answer can be kept as a goal — which is what it was computing all along.
+- **Goals**: a target date on any sefer, with whether you are on track and the rate you need.
+- **Siyumim**: everything completed at every level, mesechta to seder to Shas, dated by its final unit.
+- **Mefarshim**: how much of each meforish you have learned across everything.
+
+**Learning cycles.** Daf Yomi Bavli and Yerushalmi are built in, computed from the Hebrew calendar.
+Everything else — Mishna Yomi, Rambam Yomi, Amud Yomi, a yeshiva's seder, your own chazara programme
+— you define: pick sefarim or a whole category, set units-per-day and a start date, choose whether it
+repeats. One-tap logging for whatever today calls for.
+
+**A session timer** that survives leaving the screen, backgrounding the app and quitting it, with a
+banner showing the live session wherever you are. Stopping fills in the duration.
+
+**A haara** on any learning or chazara — a chiddush, a question, a maareh makom, how the seder went —
+collected into a searchable **Notes Journal**, so nothing has to be classified before it is written.
+
+**Hebrew.** One toggle switches every string in the app into Hebrew and lays it out right-to-left —
+screens, menus, confirmations, and the sentence a failed write reports itself with. All 312 sefarim
+carry their real names, as do the built-in mefarshim. A mesechta appearing in Mishnayos, Shas,
+Yerushalmi and Rambam is disambiguated by where it sits — "Shabbos · Shas · Moed" — derived from its
+ancestors, so it translates and so it works for a sefer you added yourself. Anything you add takes
+both names.
+
+**Yours, and only yours.** Multiple local profiles, each with its own log and its own settings.
+Custom sefarim with your own unit counts. Any node — built-in or custom — can be renamed, re-counted,
+re-typed, re-parented, hidden, deleted or reset through a per-profile override layer. Global search
+across all of it. Android's automatic cloud backup is switched **off**: left on, it would copy every
+daf and every haara to your Google account unasked. The app's own export is the only way anything
+leaves the device, and nothing is sent anywhere — including the on-device crash log, which you can
+read and copy from Settings.
+
+**Backups, and what each one promises.** *Import* adds what a backup has that you do not and removes
+nothing. It cannot undo, and that is not a limitation to work around: the log is append-only, so
+un-marking a daf appends an `undone` rather than deleting the `done`, and re-importing an older file
+adds nothing while the later `undone` still wins. *Restore* is the one that puts it back, in two
+sizes, because "undo my learning back to this backup" and "throw away everything this profile has
+become" are different intentions and only one of them deletes a sefer:
+
+| | log | custom sefarim, mefarshim, layer settings | goals | settings |
+|---|---|---|---|---|
+| **Import** | merged | merged | merged | fills in what you have never set |
+| **Restore learning** | reconciled | merged | merged | fills in what you have never set |
+| **Restore everything** | reconciled | reconciled | reconciled | reset to the file's |
+
+Both restores say exactly what they will change *before* they change it — units, sefarim and goals —
+and report afterwards in units rather than log entries, because putting a daf back is done by
+deleting an event, so an event-level tally would read "removed 2, added 0" while a completion
+visibly returns. Imported files are validated before anything is written and applied in one
+transaction. And Settings tells you where you stand — "last exported 3 March · 41 units learned since
+— they exist only on this device" — counting units rather than log entries, going quiet the moment
+there is nothing unsaved, and never warning an empty profile.
+
+**Every write either happens or says so.** One guard awaits every user-initiated write, reports
+success only *after* it succeeds, and on failure gives one consistent sentence plus a **Details**
+button opening the crash log, where it is already recorded under what you were doing ("Marking
+Shabbos daf 2 learned"). A form whose save failed stays open with your work in it. Failed *reads* get
+the same treatment, with a **Try again** that genuinely re-runs the load.
+
+**It works without a touchscreen.** Not a scaled-down mode — the whole app on a Sonim XP5s: Android
+7.1, a 240 × 324dp screen (Material's smallest target is 320 × 480), a D-pad and a numeric keypad. A
+focus ring follows whatever holds focus anywhere in the app, the grid answers Tab and Enter, Shift+F10
+opens the same menu right-click does, the MENU soft key reaches the unit menu, and screens made only
+of figures scroll on the D-pad. The unit grid reads aloud as "daf 7, partly learned, 50%" rather than
+as "2, 3, 4, 5".
 ## Platform status
 
 Both target platforms are built and run-verified, and CI enforces it on every push:
@@ -422,7 +186,7 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 | **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the real on-disk database here, 35 events deep, has been carried through the whole migration chain and then adopted by the squashed schema, keeping every event ✅ |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36 (moto g stylus 2025). Measured on the device: the logging sheet's confirm button clears the navigation bar by 45px and a tap at its bottom edge registers, the Hebrew progress fraction paints `0 / 12,092  (0.0%)` in that order, the app bar fits `Chovos Hayom`, a backup exported from one profile imports into another, and a deep link opens the same screen whether the app was running or not ✅ |
 | **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, the report's figure-only tabs scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search. Also walked key by key: the app opens on the tree's first generation, three presses of *down* reach the backup banner's named dismiss, the message that replaces it leaves on its own within ten seconds, and the drawer's first row returns to the tree ✅ |
-| **CI** | analyze `--fatal-infos`, 571 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
+| **CI** | analyze `--fatal-infos`, the full suite, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher

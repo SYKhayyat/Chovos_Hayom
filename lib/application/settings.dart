@@ -6,6 +6,7 @@ import '../core/equality.dart';
 import '../core/preferences.dart';
 import '../domain/usecases/backup_reminder.dart';
 import '../domain/usecases/chazara_schedule.dart';
+import 'backup_service.dart';
 import 'providers.dart';
 import 'sorting.dart';
 
@@ -315,10 +316,45 @@ class SettingsNotifier extends Notifier<SettingsState> {
   /// importing a file must not change how this device presents itself, and a
   /// backup from a Hebrew reader's phone must not leave an English reader
   /// looking for a toggle they can no longer read.
-  Future<void> applyBackup(Map<String, dynamic> settings) async {
-    if (settings.isEmpty) return;
+  ///
+  /// [mode] decides how much of this is reconciled rather than merged, and it
+  /// has to, because **for settings the file names every key whether the user
+  /// set it or not**. [toBackup] emits all of [PrefKeys.perProfile] every time,
+  /// filling in the effective value — which for an untouched profile is the
+  /// default. So "the backup contains this key" carries no intent, and applying
+  /// every key it contains meant a *merge* — the mode whose whole promise is
+  /// "remove nothing" — silently replaced the sort order, chazara intervals,
+  /// hidden bars and backup interval of the profile it was merged into.
+  /// `cycles` made that outright destructive rather than merely surprising:
+  /// the whole list serialises to one key, so merging a backup taken before a
+  /// cycle was added *deleted* that cycle.
+  ///
+  /// So key-presence is read off the profile instead, where it does mean
+  /// something: [clearAll] removes keys rather than writing default values
+  /// precisely so an unset key stays unset, which makes "this profile has a
+  /// value stored for this key" the same question as "the learner has expressed
+  /// a preference here". A merge fills in the ones they have not.
+  ///
+  /// [ImportMode.restoreEverything] is the mode that means "make this profile
+  /// match the file", so it clears the profile's own keys first and takes the
+  /// backup's answers whole — including for keys an older backup omits, which
+  /// is why the clear happens even when [settings] is empty.
+  Future<void> applyBackup(Map<String, dynamic> settings, ImportMode mode) async {
+    if (settings.isEmpty && !mode.replacesCustomisation) return;
+    final prefs = ref.read(appPreferencesProvider);
+    if (mode.replacesCustomisation) {
+      for (final key in PrefKeys.perProfile) {
+        await prefs.remove(PrefKeys.scoped(_profileId, key));
+      }
+    }
     for (final entry in settings.entries) {
       if (PrefKeys.deviceWide.contains(entry.key)) continue;
+      // Not `_get`: this asks whether a value is *stored*, and `_get` answers
+      // for the device-wide keys too, which are skipped above anyway.
+      if (!mode.replacesCustomisation &&
+          prefs.getString(PrefKeys.scoped(_profileId, entry.key)) != null) {
+        continue;
+      }
       await _set(entry.key, entry.value.toString());
     }
     state = _load();

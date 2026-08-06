@@ -28,25 +28,50 @@ class BackupFormatException implements Exception {
 /// what most people want after an accidental bulk action; the wide one is what
 /// "exactly match" means, and it deletes things, so it is a separate button with
 /// its own confirmation.
+///
+/// **A profile is spread across two stores, and the mode governs both.** The
+/// event log and the four repository tables are reconciled inside [importInto];
+/// the settings map and the goals map live in preferences and are applied by the
+/// settings screen after it returns. For a month the mode reached the first
+/// group and not the second, which broke the promise in both directions at once
+/// — a [merge] overwrote settings it had undertaken to leave alone, and a
+/// [restoreEverything] kept goals it had undertaken to delete.
+/// `test/application/import_scope_test.dart` holds every store to the table
+/// below.
+///
+/// | | log | tables | goals | settings |
+/// |---|---|---|---|---|
+/// | [merge] | merged | merged | merged | fills only what is unset |
+/// | [restoreLog] | reconciled | merged | merged | fills only what is unset |
+/// | [restoreEverything] | reconciled | reconciled | reconciled | reset to the file's |
+///
+/// Settings are the odd column, and `SettingsNotifier.applyBackup` explains why:
+/// an export names every per-profile key whether or not anybody ever set it, so
+/// unlike every other row, the file's *mentioning* something is not evidence of
+/// intent.
 enum ImportMode {
   /// Add what the profile does not have. Remove nothing. Re-importing a backup
   /// into the profile it came from is a no-op.
   merge,
 
   /// Make the **log** match the backup: events the backup does not contain are
-  /// deleted, so un-marks and re-logs recorded since it are undone. Custom
-  /// sefarim, mefarshim and layer settings are merged in, never removed.
+  /// deleted, so un-marks and re-logs recorded since it are undone. Everything
+  /// else — custom sefarim, mefarshim, layer settings, goals and preferences —
+  /// is merged in, never removed.
   restoreLog,
 
   /// Make the **whole profile** match the backup: [restoreLog], and in addition
-  /// delete the custom sefarim, custom mefarshim and layer settings the backup
-  /// does not contain.
+  /// delete the custom sefarim, custom mefarshim, layer settings and goals the
+  /// backup does not contain, and put the profile's preferences back to the ones
+  /// it does.
   restoreEverything;
 
   /// Whether the log is reconciled rather than merged.
   bool get replacesLog => this != ImportMode.merge;
 
-  /// Whether everything outside the log is reconciled too.
+  /// Whether everything outside the log is reconciled too — in *both* stores.
+  /// Read by `importInto` for the tables, and by the two preference-backed
+  /// controllers for goals and settings.
   bool get replacesCustomisation => this == ImportMode.restoreEverything;
 }
 

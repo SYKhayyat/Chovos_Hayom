@@ -1886,7 +1886,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsRestoreEverythingSubtitle =>
-      'Make this whole profile match a backup — and delete the custom sefarim, mefarshim and mefarshim settings you have added since it';
+      'Make this whole profile match a backup — and delete the custom sefarim, mefarshim, mefarshim settings and goals you have added since it, and put your settings back to what it says';
 
   @override
   String get settingsExportClipboard => 'Export to clipboard';
@@ -2149,7 +2149,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restoreConfirmIntroEverything =>
-      'This makes the whole profile match the backup, undoing everything recorded since it — including the sefarim and settings you have added.';
+      'This makes the whole profile match the backup, undoing everything recorded since it — including the sefarim and goals you have added, and your settings, which go back to what the backup says.';
 
   @override
   String restoreConfirmLosingCustom(int count) {
@@ -2169,6 +2169,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String restoreConfirmLosingGoals(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$countString target finish dates set since the backup will be deleted.',
+      one: '1 target finish date set since the backup will be deleted.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String restoreSummaryDeletedCustom(int count) {
     final intl.NumberFormat countNumberFormat =
         intl.NumberFormat.decimalPattern(localeName);
@@ -2179,6 +2195,21 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other: '$countString custom sefarim and settings deleted',
       one: '1 custom sefer or setting deleted',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreSummaryDeletedGoals(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString goals deleted',
+      one: '1 goal deleted',
     );
     return '$_temp0';
   }

@@ -1,3 +1,4 @@
+import 'package:chovos_hayom/application/backup_service.dart';
 import 'package:chovos_hayom/application/backup_status.dart';
 import 'package:chovos_hayom/application/goals.dart';
 import 'package:chovos_hayom/application/providers.dart';
@@ -279,16 +280,24 @@ void main() {
         () async {
       // `_load()` rebuilds a *fresh* SortConfig from the stored strings, which
       // is what `applyBackup`, `clearAll` and a profile switch all go through.
+      //
+      // Deliberately the *wide* mode: a merge now declines to overwrite a key
+      // the profile already has, so a second merge would notify nobody by never
+      // writing — which would pass this test without exercising the reload this
+      // test is about. `restoreEverything` clears and rewrites every time, so
+      // the only thing standing between it and a notification is `SortConfig.==`.
       final sort = _Counter();
       container.listen(
           settingsProvider.select((s) => s.sort), (_, _) => sort.bump());
       await container.read(settingsProvider.notifier).applyBackup(
-          {PrefKeys.sortMetric: SortMetric.name.name});
+          {PrefKeys.sortMetric: SortMetric.name.name},
+          ImportMode.restoreEverything);
       await pumpEventQueue();
       expect(sort.value, 1, reason: 'the metric genuinely changed');
 
       await container.read(settingsProvider.notifier).applyBackup(
-          {PrefKeys.sortMetric: SortMetric.name.name});
+          {PrefKeys.sortMetric: SortMetric.name.name},
+          ImportMode.restoreEverything);
       await pumpEventQueue();
       expect(sort.value, 1, reason: 'the second import says the same thing');
     });

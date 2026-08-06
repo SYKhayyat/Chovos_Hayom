@@ -2,7 +2,20 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-06 (last).** **Finding 4** (*"Eleven schema versions in twenty-nine days, for a
+> **Status, 2026-08-06 (last).** **Finding 8** (*"The documentation is a fossil of the process that
+> produced it"*) is now resolved — see the note below it, including the two counts in it that had
+> rotted, the third that has been overtaken, and the reason its most valuable sentence is a
+> parenthetical in a table of documents to delete. That sentence is about the *code*: `ImportMode`
+> governed the log and four tables and nothing else, which broke the promise in both directions —
+> the one the finding names, and a worse one it does not, where a **merge** deleted a learning cycle
+> in the mode that undertakes to remove nothing. It is the residue of a lineage three earlier
+> reviews each got one layer of. `README.md` is 310 lines rather than the ~120 costed, which is a
+> disagreement, argued in the note. That was the last item in *Where I'd start*; findings 5 (thirteen
+> rows), 9, 10 and 11 remain.
+>
+> ---
+>
+> **Status, 2026-08-06 (previously last).** **Finding 4** (*"Eleven schema versions in twenty-nine days, for a
 > database that has never shipped"*) is now resolved — see the note below it, including the round
 > trip it was costed at that turned out not to be needed, the two numbers in it that had grown while
 > it waited, and the one thing the sweep could not have reached: the database it is about was not at
@@ -10,7 +23,7 @@
 >
 > ---
 >
-> **Status, 2026-08-06 (previously last).** **Finding 6** (*"Four report screens are Stats sections wearing
+> **Status, 2026-08-06 (three back).** **Finding 6** (*"Four report screens are Stats sections wearing
 > routes"*) is now resolved — see the note below it, including the one place its arithmetic is
 > wrong (the `DpadScroll` count), the one claim that has gone stale since it was written, and the
 > keypad interaction the sweep could not have reached. Two rows of **finding 5** go with it: the
@@ -923,9 +936,89 @@ prose in them; it is the best documentation in the repository.**
 
 ---
 
-### 8. The documentation is a fossil of the process that produced it. `delete`.
+### 8. The documentation is a fossil of the process that produced it. `delete`. **✅ Resolved**
 
-2,801 lines of markdown outside the code.
+> **The thesis held; three of the counts had rotted, and the one paragraph that was not about prose
+> at all turned out to be the whole finding.** The markdown had grown to 3,033 lines while this sat
+> — the fossil was still accreting. `UnitState` is right and understates itself: §2.2 specifies the
+> table, §3's entity list names it, and §7 lists building it as a Phase 0 deliverable, so it is three
+> places, not one. The roadmap contradiction is exact (§6 ends at five phases, the README's table at
+> thirteen). Two counts are wrong: **seven** source files cite `ARCHITECTURE.md` by section, not
+> eight — and *"states the test count three times and is wrong twice"* has been overtaken. It states
+> it once now and 571 was correct on the day this was read. It is stated **zero** times now, because
+> a hand-maintained number in prose has exactly one stable value.
+>
+> **Where the finding buries its own headline.** *"Two README paragraphs are not merely stale, they
+> describe behaviour the code does not have"* is one paragraph inside a table of documents to delete,
+> and it is the only unresolved **behavioural defect** left in this report. `ImportMode` reached the
+> event log and the four repository tables and stopped; settings and goals live in preferences, are
+> applied by the settings screen *after* `importInto` returns, and took no mode at all.
+>
+> **It breaks the promise in both directions, and the finding only names one of them.** The report
+> has the `restoreEverything` half — goals set since the backup survive a restore that undertook to
+> delete them. The other half is the destructive one and is not mentioned: a **merge** overwrote
+> every setting in the profile with the file's. `cycles` serialises the entire list to one key, so
+> merging a backup taken before a cycle was added *deleted that cycle* — in the mode whose whole
+> promise is "remove nothing".
+>
+> **What the sweep could not reach is why the merge half is structural rather than careless.**
+> `toBackup()` emits every key in `PrefKeys.perProfile` on every export, filling in the *effective*
+> value — which for a profile that has never touched settings is simply the default. So the file
+> names every key regardless of intent, and "apply what the file names" cannot mean anything else.
+> The fix is not a branch on the file, it is reading intent off the **profile**: `clearAll` removes
+> keys rather than writing default values, precisely so an unset key stays unset, which already makes
+> "this profile stores a value for this key" the same question as "the learner has expressed a
+> preference here". A merge fills in the ones they have not. Goals are the opposite and are left
+> alone: a node is in that map only because somebody picked a date for it, so there naming *is* the
+> intent, and imported-wins stays the right merge. The two maps look alike and are not, and a fix
+> that treated them alike would have been wrong about one of them.
+>
+> **It is the residue of a three-round lineage, which is the finding's own thesis with a longer
+> fuse.** `F4` in the 2026-07-29 grade, `F4` again on 2026-07-30, `W5` in the builder's report — each
+> round found the gap between what the copy promised and what the restore did, and each fixed the
+> layer it could see. `W5` is where `bool replace` became `ImportMode`; it covered the repository and
+> did not know there was a second store. Three reviews, three partial fixes, and the reason none of
+> them closed it is that no test asked the same question of every store at once.
+>
+> Resolved by threading the mode through `SettingsNotifier.applyBackup` and
+> `GoalsController.applyBackup`; `GoalsController.goalsRemovedBy`, which the confirmation counts and
+> the import deletes from, so the preview and the outcome are one function the way
+> `_customisationsToRemove` already was; `RestoreDiff.goals` feeding the red button, because a dialog
+> that counts sefarim alone looks harmless while deleting every date the learner is working towards;
+> `applyBackup` returning what it deleted so the report says what happened rather than repeating the
+> prediction; and four ARB strings — two reworded, two new, in both locales — including
+> `settingsRestoreFileSubtitle`, whose *"settings are kept"* was **false when this was written** and
+> is now true. That one was fixed by the code catching up to the prose rather than the reverse, which
+> is the finding's own prescription taken literally.
+>
+> **And the rule is enforced rather than stated.** `test/application/import_scope_test.dart`
+> enumerates the contract over `PrefKeys.perProfile` rather than spelling it out per key, asserting
+> on the *stored string* rather than the parsed state so it needs to know nothing about what any key
+> means — which is the only way it outlives the list it iterates. Five of its assertions were watched
+> fail against the pre-fix behaviour before being kept. Its last test is the one that matters: the
+> compiler already catches a *call site* that forgets the mode, so what it reads `lib/` for is the
+> next store — a fourth thing a profile owns whose `applyBackup` never took a mode in the first
+> place, which is silent, and is exactly how this one happened.
+>
+> **On the prose itself, one deliberate divergence.** `fixes.md`, both GRADEs and BUILD are deleted;
+> the standards from `fixes.md:15-34` are `CONTRIBUTING.md`; the measurement lore is
+> `docs/MEASURING.md` — larger than the ~55 lines costed, because GRADE-29's §2 has a mutation-test
+> round and a deliberately-broken CI gate that are as unrecoverable as GRADE-30's dead oracles, and
+> the deep-link and crash-log traps in BUILD §5 are the kind of thing that costs an afternoon twice.
+> `ARCHITECTURE.md` loses §5–§9 and keeps §1–§4 and §10, renumbered to §5 with its one citation
+> updated; §2.2 now documents the five tables that exist and says plainly that `UnitState` never did.
+> **The README is 310 lines, not the ~120 costed**, and that is a disagreement rather than a
+> shortfall: the finding is right that "What works today" is a changelog in release-note voice, and
+> every sentence phrased *"it used to be broken"* is gone, but deleting the section outright leaves a
+> README that never says what the product does. It is rewritten in present tense at a third the
+> length. The import/restore semantics are a table there now, which is what the two lying paragraphs
+> should have been all along.
+>
+> **Not done, and adjacent:** finding 9. `BackupValidator` is still 166 lines defending a door
+> `catalog.dart:47` and `inherited_layer_roles.dart` already lock, and `importInto` still calls it on
+> every path touched above.
+
+2,801 lines of markdown outside the code — **3,033 by the time this was worked.**
 
 | file | lines | verdict |
 |---|---|---|
@@ -1114,8 +1207,14 @@ CMake caches just as aggressively, and the CMake target-id failure that once bro
    drawer down from twelve rows to eight. It was not the `~525 lines out` the finding costs it at
    (see the note), and the win it did not predict is that the Calculator's *By date* answer can now
    be saved as a goal — which is what it had been computing all along.
-8. Delete `fixes.md`, both GRADEs and BUILD (carving ~55 lines of measurement lore into
-   `docs/MEASURING.md`); cut the README to ~120 lines and `ARCHITECTURE.md` to §10.
+8. ~~Delete `fixes.md`, both GRADEs and BUILD (carving ~55 lines of measurement lore into
+   `docs/MEASURING.md`); cut the README to ~120 lines and `ARCHITECTURE.md` to §10.~~ **✅ Done** —
+   and the carve-out is ~130 lines rather than ~55, because GRADE-29's §2 holds a mutation-test
+   round and a deliberately-broken CI gate that are as unrecoverable as GRADE-30's dead oracles.
+   The standards buried at `fixes.md:15` are `CONTRIBUTING.md`. The README is 310 lines and the
+   argument for that is in the note. What this item does not say, and is the reason it was worth
+   more than a tidy-up, is that finding 8 contains the only live behavioural defect left in this
+   document: `ImportMode` reached one of the two stores a profile lives in.
 
 ---
 

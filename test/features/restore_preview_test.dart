@@ -72,6 +72,7 @@ void main() {
       profileId: 'p1',
       currentRoles: currentRoles,
       catalogParents: const {nodeId: 'shas.moed'},
+      currentGoals: const {},
       json: json,
       mode: ImportMode.restoreEverything,
     );
@@ -107,6 +108,7 @@ void main() {
       profileId: 'p1',
       currentRoles: currentRoles,
       catalogParents: const {nodeId: 'shas.moed', 'other': null},
+      currentGoals: const {},
       json: json,
       mode: ImportMode.restoreLog,
     );
@@ -115,6 +117,7 @@ void main() {
       profileId: 'p1',
       currentRoles: currentRoles,
       catalogParents: const {nodeId: 'shas.moed', 'other': null},
+      currentGoals: const {},
       json: json,
       mode: ImportMode.restoreEverything,
     );
@@ -151,6 +154,7 @@ void main() {
       profileId: 'p1',
       currentRoles: LayerRoles.fromEntries(const []),
       catalogParents: const {nodeId: 'shas.moed'},
+      currentGoals: const {},
       json: json,
       mode: ImportMode.restoreEverything,
     );
@@ -159,5 +163,51 @@ void main() {
         reason: 'the same event stops completing the unit once Rashi is '
             'required, and the confirmation has to say so');
     expect(diff.restored, 0);
+  });
+
+  group('goals are part of what the wide restore destroys', () {
+    // They were not counted at all, because they were not deleted at all — the
+    // mode that promises the profile will match the file left every target date
+    // set since the backup exactly where it was. Now that it deletes them, the
+    // red button has to know: a dialog that counts sefarim alone looks harmless
+    // while throwing away every date the learner is working towards.
+    Future<String> backupWithGoal() async {
+      final source = memoryRepository();
+      return BackupService(source).export('p1',
+          customNodes: const [], goals: {nodeId: DateTime(2027, 3, 1)});
+    }
+
+    test('the wide restore counts a goal the backup does not name', () async {
+      final diff = await SettingsScreen.restoreDiff(
+        repo: memoryRepository(),
+        profileId: 'p1',
+        currentRoles: LayerRoles.fromEntries(const []),
+        catalogParents: const {nodeId: 'shas.moed'},
+        currentGoals: {nodeId: DateTime(2027), 'shas.moed.eruvin': DateTime(2027)},
+        json: await backupWithGoal(),
+        mode: ImportMode.restoreEverything,
+      );
+
+      expect(diff.goals, 1, reason: 'Eruvin is not in the file');
+      expect(diff.changesNothing, isFalse,
+          reason: 'a restore that deletes a goal and nothing else still has '
+              'something to warn about, and used to report "already matched"');
+    });
+
+    test('the narrow restore counts none of them', () async {
+      final diff = await SettingsScreen.restoreDiff(
+        repo: memoryRepository(),
+        profileId: 'p1',
+        currentRoles: LayerRoles.fromEntries(const []),
+        catalogParents: const {nodeId: 'shas.moed'},
+        currentGoals: {'shas.moed.eruvin': DateTime(2027)},
+        json: await backupWithGoal(),
+        mode: ImportMode.restoreLog,
+      );
+
+      expect(diff.goals, 0,
+          reason: 'it reconciles the log and nothing else — which is the '
+              'difference the two buttons exist to express');
+    });
   });
 }

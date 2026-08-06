@@ -120,8 +120,8 @@ class ProgressTile extends ConsumerWidget {
       tooltip: l10n.nodeMenuTooltip,
       onSelected: (value) => _onMenu(context, ref, editor, value),
       itemBuilder: (_) => [
-        // The whole InheritedLayerSet engine is built around pinning a set at a
-        // *high* node and letting it inherit down. Until this entry existed the
+        // The whole InheritedLayerRoles engine is built around pinning a role
+        // map at a *high* node and letting it inherit down. Until this existed the
         // only way in was a leaf's app bar, so "require Rashi across all of
         // Shas" meant opening thirty-seven mesechtos one at a time.
         PopupMenuItem(value: 'mefarshim', child: Text(l10n.menuMefarshim)),

@@ -2813,7 +2813,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsRestoreEverythingSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Make this whole profile match a backup — and delete the custom sefarim, mefarshim and mefarshim settings you have added since it'**
+  /// **'Make this whole profile match a backup — and delete the custom sefarim, mefarshim, mefarshim settings and goals you have added since it, and put your settings back to what it says'**
   String get settingsRestoreEverythingSubtitle;
 
   /// No description provided for @settingsExportClipboard.
@@ -3155,7 +3155,7 @@ abstract class AppLocalizations {
   /// No description provided for @restoreConfirmIntroEverything.
   ///
   /// In en, this message translates to:
-  /// **'This makes the whole profile match the backup, undoing everything recorded since it — including the sefarim and settings you have added.'**
+  /// **'This makes the whole profile match the backup, undoing everything recorded since it — including the sefarim and goals you have added, and your settings, which go back to what the backup says.'**
   String get restoreConfirmIntroEverything;
 
   /// No description provided for @restoreConfirmLosingCustom.
@@ -3164,11 +3164,23 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 custom sefer, meforish or mefarshim setting added since the backup will be deleted.} other{{count} custom sefarim, mefarshim and mefarshim settings added since the backup will be deleted.}}'**
   String restoreConfirmLosingCustom(int count);
 
+  /// No description provided for @restoreConfirmLosingGoals.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 target finish date set since the backup will be deleted.} other{{count} target finish dates set since the backup will be deleted.}}'**
+  String restoreConfirmLosingGoals(int count);
+
   /// No description provided for @restoreSummaryDeletedCustom.
   ///
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 custom sefer or setting deleted} other{{count} custom sefarim and settings deleted}}'**
   String restoreSummaryDeletedCustom(int count);
+
+  /// No description provided for @restoreSummaryDeletedGoals.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 goal deleted} other{{count} goals deleted}}'**
+  String restoreSummaryDeletedGoals(int count);
 
   /// No description provided for @restoreConfirmLosing.
   ///

@@ -1878,7 +1878,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get settingsRestoreEverythingSubtitle =>
-      'התאמת כל הפרופיל הזה לגיבוי — וגם מחיקת הספרים המיוחדים, המפרשים והגדרות המפרשים שהוספת מאז';
+      'התאמת כל הפרופיל הזה לגיבוי — וגם מחיקת הספרים המיוחדים, המפרשים, הגדרות המפרשים והיעדים שהוספת מאז, והחזרת ההגדרות שלך למה שכתוב בו';
 
   @override
   String get settingsExportClipboard => 'ייצוא ללוח';
@@ -2138,7 +2138,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get restoreConfirmIntroEverything =>
-      'פעולה זו מתאימה את כל הפרופיל לגיבוי, ומבטלת כל מה שנרשם מאז — כולל הספרים וההגדרות שהוספת.';
+      'פעולה זו מתאימה את כל הפרופיל לגיבוי, ומבטלת כל מה שנרשם מאז — כולל הספרים והיעדים שהוספת, וההגדרות שלך חוזרות למה שכתוב בגיבוי.';
 
   @override
   String restoreConfirmLosingCustom(int count) {
@@ -2157,6 +2157,21 @@ class AppLocalizationsHe extends AppLocalizations {
   }
 
   @override
+  String restoreConfirmLosingGoals(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString תאריכי יעד שקבעת מאז הגיבוי יימחקו.',
+      one: 'תאריך יעד אחד שקבעת מאז הגיבוי יימחק.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String restoreSummaryDeletedCustom(int count) {
     final intl.NumberFormat countNumberFormat =
         intl.NumberFormat.decimalPattern(localeName);
@@ -2167,6 +2182,21 @@ class AppLocalizationsHe extends AppLocalizations {
       locale: localeName,
       other: '$countString ספרים מיוחדים והגדרות נמחקו',
       one: 'ספר מיוחד או הגדרה אחת נמחקו',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreSummaryDeletedGoals(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString יעדים נמחקו',
+      one: 'יעד אחד נמחק',
     );
     return '$_temp0';
   }

@@ -42,7 +42,7 @@ class Catalog {
     // per-profile override layer can (via a hand-edited import) contain a cycle
     // between two category nodes — and this is called from BulkMarker and the
     // cycle editor, where an unbounded recursion would hang the app rather than
-    // fail cleanly. InheritedLayerSet.forNode guards its walk for the same reason.
+    // fail cleanly. InheritedLayerRoles guards its walk for the same reason.
     if (!seen.add(nodeId)) return;
     final node = _byId[nodeId];
     if (node == null) return;

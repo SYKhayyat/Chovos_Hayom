@@ -1,3 +1,4 @@
+import 'package:chovos_hayom/application/backup_service.dart';
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/settings.dart';
 import 'package:chovos_hayom/application/sorting.dart';
@@ -170,7 +171,7 @@ void main() {
       PrefKeys.hebrewLayout: 'false',
       PrefKeys.themeMode: 'light',
       PrefKeys.chazaraIntervals: '5,10',
-    });
+    }, ImportMode.merge);
 
     expect(settings().hebrewLayout, isTrue);
     expect(settings().themeMode, ThemeMode.system);
@@ -180,7 +181,8 @@ void main() {
 
   test('an imported backup applies to the active profile only', () async {
     await switchTo('other');
-    await notifier().applyBackup({PrefKeys.chazaraIntervals: '5,10'});
+    await notifier()
+        .applyBackup({PrefKeys.chazaraIntervals: '5,10'}, ImportMode.merge);
     expect(settings().chazaraIntervals, [5, 10]);
 
     await switchTo('default');

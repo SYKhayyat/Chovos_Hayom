@@ -914,7 +914,7 @@
   "settingsRestoreFile": "Restore learning from file",
   "settingsRestoreFileSubtitle": "Make your learning history exactly match a backup, undoing anything logged since it. Custom sefarim, mefarshim and settings are kept.",
   "settingsRestoreEverything": "Restore everything from file",
-  "settingsRestoreEverythingSubtitle": "Make this whole profile match a backup — and delete the custom sefarim, mefarshim and mefarshim settings you have added since it",
+  "settingsRestoreEverythingSubtitle": "Make this whole profile match a backup — and delete the custom sefarim, mefarshim, mefarshim settings and goals you have added since it, and put your settings back to what it says",
   "settingsExportClipboard": "Export to clipboard",
   "settingsExportClipboardSubtitle": "Copy all progress as JSON",
   "settingsImportClipboard": "Import from clipboard",
@@ -1009,13 +1009,21 @@
   "restoreConfirmTitle": "Restore from this backup?",
   "restoreConfirmNoChange": "This profile already matches the backup — nothing will change.",
   "restoreConfirmIntro": "This makes your learning history exactly match the backup, undoing everything logged since it.",
-  "restoreConfirmIntroEverything": "This makes the whole profile match the backup, undoing everything recorded since it — including the sefarim and settings you have added.",
+  "restoreConfirmIntroEverything": "This makes the whole profile match the backup, undoing everything recorded since it — including the sefarim and goals you have added, and your settings, which go back to what the backup says.",
   "restoreConfirmLosingCustom": "{count, plural, =1{1 custom sefer, meforish or mefarshim setting added since the backup will be deleted.} other{{count} custom sefarim, mefarshim and mefarshim settings added since the backup will be deleted.}}",
   "@restoreConfirmLosingCustom": {
     "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
   },
+  "restoreConfirmLosingGoals": "{count, plural, =1{1 target finish date set since the backup will be deleted.} other{{count} target finish dates set since the backup will be deleted.}}",
+  "@restoreConfirmLosingGoals": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
   "restoreSummaryDeletedCustom": "{count, plural, =1{1 custom sefer or setting deleted} other{{count} custom sefarim and settings deleted}}",
   "@restoreSummaryDeletedCustom": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "restoreSummaryDeletedGoals": "{count, plural, =1{1 goal deleted} other{{count} goals deleted}}",
+  "@restoreSummaryDeletedGoals": {
     "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
   },
   "restoreConfirmLosing": "{count, plural, =1{1 unit you have marked since the backup will no longer be marked.} other{{count} units you have marked since the backup will no longer be marked.}}",
