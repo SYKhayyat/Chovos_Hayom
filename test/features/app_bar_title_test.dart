@@ -1,7 +1,9 @@
+import 'package:chovos_hayom/app/routes.dart';
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/stats.dart';
 import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/features/dashboard/dashboard_screen.dart';
+import 'package:chovos_hayom/features/reports/report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -81,16 +83,21 @@ void main() {
     expect(find.byTooltip('Siyum calculator'), findsNothing);
   });
 
-  testWidgets('and the two that moved are named rows in the drawer',
+  testWidgets('and the two that moved are still reachable, under Reports',
       (tester) async {
     await title(tester);
     await tester.tap(find.byTooltip('Open navigation menu'));
     await tester.pumpAndSettle();
 
     // Not merely present — reachable, since an icon that vanished from the bar
-    // and reappeared nowhere is a feature removed rather than moved.
-    expect(find.widgetWithText(ListTile, 'Statistics'), findsOneWidget);
-    expect(find.widgetWithText(ListTile, 'Siyum calculator'), findsOneWidget);
+    // and reappeared nowhere is a feature removed rather than moved. Both are
+    // tabs of the report now, so the row is one and the destination is two:
+    // the row's route resolves, and it resolves to a screen that has them.
+    // (Asserted rather than walked, because this file's harness gives the app
+    // no route table — see report_screen_test.dart for the walk.)
+    expect(find.widgetWithText(ListTile, 'Reports'), findsOneWidget);
+    expect(AppRouter.screenFor(Routes.stats), isA<ReportScreen>());
+    expect(AppRouter.screenFor(Routes.calculator), isA<ReportScreen>());
   });
 
   testWidgets('and the drawer names the way back to the tree', (tester) async {

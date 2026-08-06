@@ -10,8 +10,10 @@ import '../../core/keypad.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/naming.dart';
 
-class StatsScreen extends ConsumerWidget {
-  const StatsScreen({super.key});
+/// The headline figures, the curve and the heatmap — what used to be the whole
+/// of `/stats`, now the first tab of the report.
+class OverviewSection extends ConsumerWidget {
+  const OverviewSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,42 +22,40 @@ class StatsScreen extends ConsumerWidget {
     final now = ref.watch(clockProvider)();
     final l10n = AppLocalizations.of(context);
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.statsTitle)),
-      // Nothing on this screen can hold focus — it is entirely figures — so a
-      // D-pad had no way to move it and the list never scrolled at all. Verified
-      // on the Sonim: the chart and the heatmap below the fold could not be
-      // reached by any sequence of keys. [DpadScroll] turns up and down into
-      // scrolling for exactly this case.
-      body: stats == null
-          ? const Center(child: CircularProgressIndicator())
-          : DpadScroll(
-              builder: (context, controller) => ListView(
-                controller: controller,
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _SummaryGrid(stats: stats, mode: mode),
-                  const SizedBox(height: 24),
-                  Text(l10n.statsProgressOverTime,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  // A fifth of a 324dp screen is a chart you cannot read a value
-                  // off; a fixed 200 left room for nothing else. Tied to the
-                  // viewport so it stays a readable share of whatever screen it
-                  // lands on.
-                  SizedBox(
-                    height: (MediaQuery.sizeOf(context).height * 0.42)
-                        .clamp(140.0, 220.0),
-                    child: _ProgressChart(stats: stats),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(l10n.statsActivity,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  _Heatmap(activity: stats.dailyActivity, now: now),
-                ],
-              ),
-            ),
+    if (stats == null) return const Center(child: CircularProgressIndicator());
+    // Nothing on this section can hold focus — it is entirely figures — so a
+    // D-pad had no way to move it and the list never scrolled at all. Verified
+    // on the Sonim: the chart and the heatmap below the fold could not be
+    // reached by any sequence of keys. [DpadScroll] turns up and down into
+    // scrolling for exactly this case; `skipTraversal: false` is what lets
+    // pressing down from the tab bar arrive here in the first place.
+    return DpadScroll(
+      skipTraversal: false,
+      builder: (context, controller) => ListView(
+        controller: controller,
+        padding: const EdgeInsets.all(16),
+        children: [
+          _SummaryGrid(stats: stats, mode: mode),
+          const SizedBox(height: 24),
+          Text(l10n.statsProgressOverTime,
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          // A fifth of a 324dp screen is a chart you cannot read a value
+          // off; a fixed 200 left room for nothing else. Tied to the
+          // viewport so it stays a readable share of whatever screen it
+          // lands on.
+          SizedBox(
+            height:
+                (MediaQuery.sizeOf(context).height * 0.42).clamp(140.0, 220.0),
+            child: _ProgressChart(stats: stats),
+          ),
+          const SizedBox(height: 24),
+          Text(l10n.statsActivity,
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          _Heatmap(activity: stats.dailyActivity, now: now),
+        ],
+      ),
     );
   }
 }
@@ -99,14 +99,11 @@ class _SummaryGrid extends StatelessWidget {
       _StatTile(
           label: l10n.statsStreak, value: l10n.statsStreakValue(stats.streak)),
       _StatTile(
-          label: l10n.statsAvgPerDay,
-          value: stats.avgPerDay.toStringAsFixed(2)),
+          label: l10n.statsAvgPerDay, value: stats.avgPerDay.toStringAsFixed(2)),
       _StatTile(label: l10n.statsTimeLearned, value: time(stats.totalMinutes)),
       _StatTile(
-          label: l10n.statsTimeThisMonth,
-          value: time(stats.minutesThisMonth)),
-      _StatTile(
-          label: l10n.statsProjectedSiyum, value: finish, wide: true),
+          label: l10n.statsTimeThisMonth, value: time(stats.minutesThisMonth)),
+      _StatTile(label: l10n.statsProjectedSiyum, value: finish, wide: true),
     ];
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -171,8 +168,7 @@ class _ProgressChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (stats.series.length < 2) {
-      return Center(
-          child: Text(AppLocalizations.of(context).statsNeedMoreData));
+      return Center(child: Text(AppLocalizations.of(context).statsNeedMoreData));
     }
     final first = stats.series.first.day;
     final spots = [
@@ -217,8 +213,9 @@ class _Heatmap extends StatelessWidget {
     final today = Day.of(now);
     const weeks = 12;
     const days = weeks * 7;
-    final maxCount =
-        activity.values.isEmpty ? 1 : activity.values.reduce((a, b) => a > b ? a : b);
+    final maxCount = activity.values.isEmpty
+        ? 1
+        : activity.values.reduce((a, b) => a > b ? a : b);
 
     // Columns = weeks, rows = day-of-week.
     return SingleChildScrollView(
@@ -242,7 +239,8 @@ class _Heatmap extends StatelessWidget {
                       return const SizedBox(width: 16, height: 16);
                     }
                     final count = activity[day] ?? 0;
-                    final intensity = count == 0 ? 0.0 : (count / maxCount).clamp(0.2, 1.0);
+                    final intensity =
+                        count == 0 ? 0.0 : (count / maxCount).clamp(0.2, 1.0);
                     return Container(
                       width: 14,
                       height: 14,

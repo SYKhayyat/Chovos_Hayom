@@ -5,7 +5,8 @@ import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/features/dashboard/dashboard_screen.dart';
-import 'package:chovos_hayom/features/stats/stats_screen.dart';
+import 'package:chovos_hayom/features/reports/overview_section.dart';
+import 'package:chovos_hayom/features/reports/report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,7 +53,7 @@ void main() {
           appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
           clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
         ],
-        child: localizedApp(home: const StatsScreen()),
+        child: localizedApp(home: const ReportScreen()),
       );
 
   /// Renders at [size] logical pixels, the way the device reports itself.
@@ -106,7 +107,7 @@ void main() {
     });
   });
 
-  group('the statistics screen', () {
+  group('the report screen', () {
     testWidgets('lays out on a 240dp screen without overflowing',
         (tester) async {
       sized(tester, kSonim);
@@ -118,7 +119,28 @@ void main() {
       // 100x41 box holding a label and a bold number that need about 55. Every
       // value spilled over the card below it. An overflow raises here.
       expect(tester.takeException(), isNull);
-      expect(find.byType(StatsScreen), findsOneWidget);
+      expect(find.byType(OverviewSection), findsOneWidget);
+    });
+
+    testWidgets('and so does every one of its tabs', (tester) async {
+      // Five labels across 240dp is what the scrolling tab bar is for, and the
+      // section under it is a different layout each time. Checking only the
+      // one the report opens on would leave four untested layouts behind two
+      // key presses.
+      sized(tester, kSonim);
+      await tester.pumpWidget(stats());
+      await tester.pumpAndSettle();
+
+      for (final tab in ['Calculator', 'Goals', 'Siyumim', 'Mefarshim']) {
+        await tester.scrollUntilVisible(find.widgetWithText(Tab, tab), 60,
+            scrollable: find
+                .descendant(
+                    of: find.byType(TabBar), matching: find.byType(Scrollable))
+                .first);
+        await tester.tap(find.widgetWithText(Tab, tab));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: tab);
+      }
     });
 
     testWidgets('and scrolls on a D-pad, having nothing focusable in it',
@@ -127,7 +149,13 @@ void main() {
       await tester.pumpWidget(stats());
       await tester.pumpAndSettle();
 
-      final list = find.byType(Scrollable).first;
+      // The section's own list, named rather than taken as "the first
+      // Scrollable": at 240dp the report's tab bar is itself scrollable and
+      // sits above this, and so does the TabBarView's pager.
+      final list = find
+          .descendant(
+              of: find.byType(OverviewSection), matching: find.byType(Scrollable))
+          .first;
       final before = tester.widget<Scrollable>(list).controller!.offset;
 
       // Directional focus moves between focusable widgets and scrolls only to
@@ -139,6 +167,46 @@ void main() {
 
       expect(tester.widget<Scrollable>(list).controller!.offset,
           greaterThan(before));
+    });
+
+    testWidgets('and the tab bar above it can be reached, and left again',
+        (tester) async {
+      // The one interaction the merge introduced. Five report routes became
+      // five tabs, and a tab bar is a second axis of navigation on a device
+      // that has one comfortable one — so the round trip has to work by key or
+      // four fifths of the report is unreachable on this phone.
+      //
+      // It nearly did not. `DpadScroll` claims focus on arrival and holds it,
+      // turning up and down into scrolling; at either end it deliberately does
+      // *not* claim the key, so focus can leave. Getting back in is the half
+      // that needed the work: the wrapper was `skipTraversal: true`, which
+      // makes it invisible to directional focus, and its autofocus only fires
+      // when nothing in the scope holds focus — which after a tab switch is
+      // false, because the tab does. Reachable one way and not the other.
+      sized(tester, kSonim);
+      await tester.pumpWidget(stats());
+      await tester.pumpAndSettle();
+
+      bool inTabBar() =>
+          find
+              .ancestor(
+                  of: find.byWidget(
+                      FocusManager.instance.primaryFocus!.context!.widget),
+                  matching: find.byType(TabBar))
+              .evaluate()
+              .isNotEmpty;
+
+      expect(inTabBar(), isFalse, reason: 'the section starts focused');
+
+      // Up, at the top of a list that is already at the top: unclaimed, so
+      // traversal takes it.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(inTabBar(), isTrue, reason: 'up from the top leaves the section');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(inTabBar(), isFalse, reason: 'and down comes back into it');
     });
   });
 

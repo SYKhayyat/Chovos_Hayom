@@ -11,6 +11,18 @@ import 'package:flutter/material.dart';
 /// [locale] defaults to English so existing expectations keep reading as they
 /// were written; passing `Locale('he')` is what lets a test assert that a screen
 /// is actually translated rather than merely mirrored.
+/// One tab of the report, pumped on its own.
+///
+/// The five sections are bodies, not screens: the `Scaffold`, the app bar and
+/// the tab controller belong to [ReportScreen] and there is deliberately only
+/// one of each. A test that wants to look at a single section still has to
+/// supply both, because a `ListTile` needs a `Material` ancestor and
+/// `GoalsSection` reaches for the controller to move to the Calculator tab.
+Widget reportSection(Widget section, {int length = 5}) => DefaultTabController(
+      length: length,
+      child: Scaffold(body: section),
+    );
+
 MaterialApp localizedApp({
   Widget? home,
   Locale locale = const Locale('en'),

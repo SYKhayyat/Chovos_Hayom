@@ -3,80 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/goals.dart';
 import '../../application/providers.dart';
-import '../../application/settings.dart';
-import '../../core/calendar.dart';
+import '../../application/stats.dart';
 import '../../core/day.dart';
 import '../../core/keypad.dart';
 import '../../domain/entities/catalog_node.dart';
-import '../../domain/entities/layer.dart';
 import '../../domain/usecases/fold_log.dart';
-import '../../domain/usecases/goal_evaluator.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/error_view.dart';
+import '../common/goal_status.dart';
 import '../common/guarded.dart';
 import '../common/missing_item.dart';
 import '../common/naming.dart';
-import 'add_chazara_sheet.dart';
 import 'bulk_actions_sheet.dart';
 import 'log_unit_sheet.dart';
 import 'mefarshim_config_sheet.dart';
 import 'unit_details_sheet.dart';
 import 'unit_layers_sheet.dart';
-
-/// Log one unit with a date, a duration, a haara — **and**, on a layered unit,
-/// which mefarshim it covers.
-///
-/// Those two features used to be mutually exclusive: the checklist marked a
-/// meforish with no date, duration or haara, and this sheet always wrote
-/// `layers: [main]`, so on a layered unit it only marked the text. There was no
-/// way to record "I learned Rashi on this daf for 40 minutes and here's my
-/// chiddush". One sheet now does both, and the layer checklist is seeded with
-/// whatever the unit still needs.
-Future<void> logWithDetails(
-  BuildContext context,
-  WidgetRef ref, {
-  required CatalogNode node,
-  required int unit,
-}) async {
-  final roles = ref.read(layerRolesProvider);
-  final fold = ref.read(foldProvider).asData?.value;
-  final allLayers = ref.read(allLayersProvider);
-  final logger = ref.read(loggingServiceProvider);
-  final guard = WriteGuard.of(context, ref);
-  final l10n = AppLocalizations.of(context);
-  final heading = nodeAndUnit(l10n, node, unit);
-
-  final layered = roles.isLayered(node.id, unit);
-  final checkable =
-      layered ? roles.checkableFor(node.id, unit) : const <String>{};
-  final learned = fold?.completedLayers(node.id, unit) ?? const <String>{};
-  final required = layered ? roles.requiredFor(node.id, unit) : const <String>{};
-  // Default to what's still outstanding; if nothing is, to everything required.
-  final outstanding = required.where((l) => !learned.contains(l)).toSet();
-
-  final result = await showLogUnitSheet(
-    context,
-    title: heading,
-    nodeId: node.id,
-    unitIndex: unit,
-    layerOptions: [
-      for (final l in allLayers)
-        if (checkable.contains(l.id)) l,
-    ],
-    initialLayers: layered
-        ? (outstanding.isNotEmpty ? outstanding : required)
-        : const {mainLayerId},
-  );
-  if (result == null) return;
-  await guard.run(
-    () => logger.markDone(node.id, unit,
-        occurredAt: result.occurredAt,
-        durationMin: result.durationMin,
-        note: result.note,
-        layers: result.layers),
-    what: l10n.whatLogging(heading),
-  );
-}
 
 /// A grid of every unit (daf/perek/siman) in a leaf. Tap toggles done; long-press
 /// opens a menu to log details, add a chazara (review), or un-mark.
@@ -146,7 +88,8 @@ class _UnitGrid extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          if (goal != null) _GoalBanner(goal: goal, nodeId: node.id, name: name),
+          if (goal != null)
+            GoalBanner(goal: goal, nodeId: node.id, name: name),
           Expanded(
             child: foldAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -168,7 +111,10 @@ class _UnitGrid extends ConsumerWidget {
   }
 
   Future<void> _setGoal(BuildContext context, WidgetRef ref) async {
-    final now = DateTime.now();
+    // Through the clock, like every other "what day is it" in the app — reading
+    // the wall clock here made the one screen that *creates* a goal the one
+    // screen no test could place in time.
+    final now = ref.read(clockProvider)();
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
     final picked = await showDatePicker(
@@ -300,7 +246,7 @@ class _UnitGrid extends ConsumerWidget {
                 title: Text(l10n.cellMenuAddChazara),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  showAddChazaraSheet(context, ref, node: node, unit: unit);
+                  logChazaraWithDetails(context, ref, node: node, unit: unit);
                 },
               ),
               ListTile(
@@ -325,70 +271,6 @@ class _UnitGrid extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _GoalBanner extends ConsumerWidget {
-  const _GoalBanner(
-      {required this.goal, required this.nodeId, required this.name});
-  final GoalStatus goal;
-  final String nodeId;
-  final String name;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final mode = ref.watch(settingsProvider.select((s) => s.calendar));
-    final scheme = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context);
-    final ok = goal.onTrack;
-    final color = goal.achieved
-        ? Colors.green
-        : (ok ? scheme.primary : scheme.error);
-    final text = goal.achieved
-        ? l10n.goalReached
-        : l10n.goalBanner(
-            DateDisplay.format(goal.target.midnight, mode),
-            goal.requiredPerDay.toStringAsFixed(2),
-            ok ? l10n.goalOnTrack : l10n.goalBehind,
-          );
-    return Container(
-      width: double.infinity,
-      color: color.withValues(alpha: 0.12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Icon(ok ? Icons.trending_up : Icons.trending_down, color: color, size: 18),
-          const SizedBox(width: 8),
-          Expanded(child: Text(text, style: TextStyle(color: color))),
-          IconButton(
-            icon: const Icon(Icons.close, size: 18),
-            tooltip: l10n.tooltipRemoveGoal,
-            onPressed: () => _remove(context, ref),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _remove(BuildContext context, WidgetRef ref) async {
-    final previous = ref.read(goalsProvider)[nodeId];
-    final goals = ref.read(goalsProvider.notifier);
-    final guard = WriteGuard.of(context, ref);
-    final l10n = AppLocalizations.of(context);
-    await guard.run(
-      () => goals.removeGoal(nodeId),
-      what: l10n.whatRemovingGoal(name),
-      success: previous == null ? null : l10n.goalRemoved,
-      undo: previous == null
-          ? null
-          : SnackBarAction(
-              label: l10n.actionUndo,
-              // Restoring is itself a write, so it reports like one rather than
-              // silently doing nothing if it fails.
-              onPressed: () => guard.run(() => goals.setGoal(nodeId, previous),
-                  what: l10n.whatRestoringGoal(name)),
-            ),
     );
   }
 }

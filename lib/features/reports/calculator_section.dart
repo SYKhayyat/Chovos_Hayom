@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../application/goals.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
@@ -11,23 +12,31 @@ import '../../domain/entities/catalog.dart';
 import '../../domain/entities/progress_node.dart';
 import '../../domain/usecases/predictor.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../common/guarded.dart';
 import '../common/naming.dart';
 
 enum _CalcMode { rate, cycle, target }
 
-/// The reborn "Calculate": flexible siyum planning.
+/// Flexible siyum planning.
 ///  * Rate   — at X/day (and Y on Shabbos), when do I finish?
 ///  * Cycle  — a custom repeating cycle of any length (you set each day's amount
 ///             and which cycle-day is today).
 ///  * Target — to finish by a date, what flat daily rate do I need?
-class CalculatorScreen extends ConsumerStatefulWidget {
-  const CalculatorScreen({super.key});
+///
+/// The third mode is a goal in every respect except that it could not be kept:
+/// it names a node, a target date and the pace that reaches it, which is exactly
+/// what `goalStatusProvider` evaluates, and the answer used to evaporate the
+/// moment you navigated away. **Save it** is the whole of what was missing, and
+/// it only became possible to offer once Goals stopped being a different route.
+class CalculatorSection extends ConsumerStatefulWidget {
+  const CalculatorSection({super.key});
 
   @override
-  ConsumerState<CalculatorScreen> createState() => _CalculatorScreenState();
+  ConsumerState<CalculatorSection> createState() => _CalculatorSectionState();
 }
 
-class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
+class _CalculatorSectionState extends ConsumerState<CalculatorSection>
+    with AutomaticKeepAliveClientMixin {
   String? _nodeId;
   _CalcMode _mode = _CalcMode.rate;
 
@@ -35,10 +44,26 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
   final _shabbosCtrl = TextEditingController();
   final _cycleCtrl = TextEditingController(text: '5, 5, 5, 5, 5, 0, 10');
   final _cycleStartCtrl = TextEditingController(text: '1');
+
   /// A year out, as the opening guess for "finish by". Counted in calendar
   /// days, not 8,760 hours — the `Duration` form drifts an hour across a DST
   /// boundary and, started late enough in the evening, names the day before.
-  DateTime _target = (Day.of(DateTime.now()) + 365).midnight;
+  late DateTime _target;
+
+  /// A `TabBarView` disposes the page you tabbed away from, and four
+  /// controllers' worth of typing is not something to lose because you glanced
+  /// at Siyumim. This is the one section here that holds state a user entered.
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Through the clock, like everything else that asks what day it is: the
+    // tests override it, and a screen that reads the wall clock directly is a
+    // screen no test can place in time.
+    _target = (Day.of(ref.read(clockProvider)()) + 365).midnight;
+  }
 
   @override
   void dispose() {
@@ -71,24 +96,23 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin
     final forest = ref.watch(progressForestProvider).asData?.value;
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
     final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final now = ref.watch(clockProvider)();
     final l10n = AppLocalizations.of(context);
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.calculatorTitle)),
-      body: forest == null || catalog == null
-          ? const Center(child: CircularProgressIndicator())
-          : _body(context, l10n, catalog, _selectable(forest), mode, now),
-    );
+    if (forest == null || catalog == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return _body(context, l10n, catalog, _selectable(forest), mode, now);
   }
 
   Widget _body(BuildContext context, AppLocalizations l10n, Catalog catalog,
       List<_Selectable> nodes, CalendarMode mode, DateTime now) {
-    final selectedEntry = nodes.firstWhere((s) => s.node.id == _nodeId,
-        orElse: () => nodes.first);
+    final selectedEntry =
+        nodes.firstWhere((s) => s.node.id == _nodeId, orElse: () => nodes.first);
     final selected = selectedEntry.node;
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -96,8 +120,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
         DropdownButtonFormField<String>(
           initialValue: selected.id,
           isExpanded: true,
-          decoration:
-              InputDecoration(labelText: l10n.calculatorWhatFinishing),
+          decoration: InputDecoration(labelText: l10n.calculatorWhatFinishing),
           items: [
             for (final s in nodes)
               DropdownMenuItem(
@@ -125,8 +148,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
             ButtonSegment(
                 value: _CalcMode.cycle, label: Text(l10n.calculatorModeCycle)),
             ButtonSegment(
-                value: _CalcMode.target,
-                label: Text(l10n.calculatorModeByDate)),
+                value: _CalcMode.target, label: Text(l10n.calculatorModeByDate)),
           ],
           selected: {_mode},
           // The tick beside the selected segment costs about 24dp, and on a
@@ -137,31 +159,33 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
           onSelectionChanged: (s) => setState(() => _mode = s.first),
         ),
         const SizedBox(height: 16),
-        ..._inputs(context, l10n, mode),
+        ..._inputs(context, l10n, mode, now),
         const SizedBox(height: 24),
         _Result(text: _compute(l10n, selected, mode, now)),
+        if (_mode == _CalcMode.target) ...[
+          const SizedBox(height: 12),
+          _SaveAsGoal(node: selected, target: _target),
+        ],
       ],
     );
   }
 
-  List<Widget> _inputs(
-      BuildContext context, AppLocalizations l10n, CalendarMode mode) {
+  List<Widget> _inputs(BuildContext context, AppLocalizations l10n,
+      CalendarMode mode, DateTime now) {
     switch (_mode) {
       case _CalcMode.rate:
         return [
           TextField(
             controller: _dailyCtrl,
             keyboardType: TextInputType.number,
-            decoration:
-                InputDecoration(labelText: l10n.calculatorAmountPerDay),
+            decoration: InputDecoration(labelText: l10n.calculatorAmountPerDay),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: _shabbosCtrl,
             keyboardType: TextInputType.number,
-            decoration:
-                InputDecoration(labelText: l10n.calculatorAmountShabbos),
+            decoration: InputDecoration(labelText: l10n.calculatorAmountShabbos),
             onChanged: (_) => setState(() {}),
           ),
         ];
@@ -191,14 +215,14 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
           Row(
             children: [
               Expanded(
-                  child: Text(l10n.calculatorTarget(
-                      DateDisplay.format(_target, mode)))),
+                  child: Text(
+                      l10n.calculatorTarget(DateDisplay.format(_target, mode)))),
               TextButton(
                 onPressed: () async {
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: _target,
-                    firstDate: DateTime.now(),
+                    firstDate: now,
                     lastDate: DateTime(2100),
                   );
                   if (picked != null) setState(() => _target = picked);
@@ -266,6 +290,45 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     if (date == null) return l10n.calculatorNeverFinish;
     return l10n.calculatorFinishOn(
         DateDisplay.format(date.midnight, mode), date.difference(today));
+  }
+}
+
+/// Keeps what the "By date" mode just worked out, as a goal on the node it was
+/// worked out for.
+///
+/// Disabled rather than hidden when a goal for this node already exists: the
+/// button is the answer to "can I keep this", and a control that vanishes when
+/// the answer is *you already did* is a control that reads as broken.
+class _SaveAsGoal extends ConsumerWidget {
+  const _SaveAsGoal({required this.node, required this.target});
+
+  final ProgressNode node;
+  final DateTime target;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final existing = ref.watch(goalsProvider)[node.id];
+    final already = existing != null && Day.of(existing) == Day.of(target);
+    return Align(
+      child: FilledButton.icon(
+        icon: const Icon(Icons.flag_outlined, size: 18),
+        label: Text(already ? l10n.calculatorGoalSaved : l10n.calculatorSaveGoal),
+        onPressed: already ? null : () => _save(context, ref),
+      ),
+    );
+  }
+
+  Future<void> _save(BuildContext context, WidgetRef ref) async {
+    final goals = ref.read(goalsProvider.notifier);
+    final guard = WriteGuard.of(context, ref);
+    final l10n = AppLocalizations.of(context);
+    final name = nodeName(l10n, node.node);
+    await guard.run(
+      () => goals.setGoal(node.id, target),
+      what: l10n.whatSettingGoal(name),
+      success: l10n.calculatorGoalSetFor(name),
+    );
   }
 }
 

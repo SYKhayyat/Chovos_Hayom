@@ -118,15 +118,19 @@ void main() {
   });
 
   testWidgets('navigating by name from the drawer still works', (tester) async {
+    // The drawer lost five rows to the report and gained one, so the row this
+    // walks is "Reports" and the destination is /stats. Siyumim is still a
+    // route — the test below proves it resolves — it is just no longer a door
+    // of its own on a drawer that was twelve rows long on a 324dp screen.
     await pumpApp(tester);
     await tester.tap(find.byTooltip('Open navigation menu'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Siyumim'));
+    await tester.tap(find.text('Reports'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Siyumim'), findsOneWidget);
+    expect(find.text('Siyumim'), findsOneWidget, reason: 'as a tab');
     expect(ModalRoute.of(tester.element(find.text('Siyumim')))?.settings.name,
-        Routes.siyumim);
+        Routes.stats);
   });
 
   testWidgets('every route the app is asked for by name resolves',

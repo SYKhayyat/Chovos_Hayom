@@ -3,15 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../application/providers.dart';
 import '../../application/session_timer.dart';
 import '../../application/stats.dart';
+import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
 
 /// Result of the logging sheet. [occurredAt] is null when the user did not set a
-/// date/time manually, so the caller auto-fills "now" (ARCHITECTURE.md §2.2).
+/// date/time manually, so the caller auto-fills "now".
 class LogUnitResult {
   const LogUnitResult({
     this.occurredAt,
@@ -33,27 +35,47 @@ class LogUnitResult {
   final List<String> layers;
 }
 
-/// A modal sheet for logging a unit — or editing an already-logged one — with an
-/// optional manual date **and time**, the shared session timer, a duration, a
-/// free-text haara, and (on a layered unit) which mefarshim it covers. Returns
-/// null if cancelled.
+/// A modal sheet for logging a unit — or editing an already-logged one, or
+/// recording a chazara on it — with an optional manual date **and time**, the
+/// shared session timer, a duration, a free-text haara, and (on a layered unit)
+/// which mefarshim it covers. Returns null if cancelled.
+///
+/// **This is the only form in the app that records learning.** There used to be
+/// two. `add_chazara_sheet.dart` was 223 lines of the same six fields in the
+/// same order with the same nav-bar inset workaround and the same manual
+/// date/time switch, differing in an `EventAction`, a seed set and one string —
+/// and it had drifted in three ways, every one of them in the copy's favour of
+/// being worse: it read the wall clock directly instead of `clockProvider`, so
+/// no test could place it in time; it had no session timer, which is precisely
+/// what you would want on a chazara; and it asked for the duration through a
+/// second ARB key saying the same thing as the first. Folding it in is what
+/// makes those three impossible rather than fixed.
 ///
 /// Pass [initialOccurredAt]/[initialDurationMin]/[initialNote] to pre-fill the
 /// fields (edit mode); [saveLabel] labels the confirm button. Pass
-/// [layerOptions] to offer a meforish checklist, with [initialLayers] selected.
-/// [nodeId]/[unitIndex] tie the session timer to what is being learned.
+/// [layerOptions] to offer a meforish checklist, with [initialLayers] selected
+/// and [checklistLabel] over it. [nodeId]/[unitIndex] tie the session timer to
+/// what is being learned.
 Future<LogUnitResult?> showLogUnitSheet(
   BuildContext context, {
   required String title,
+
+  /// A second line under [title] — which unit this is, when the title is naming
+  /// the *action* ("Add chazara") rather than the unit.
+  String? subtitle,
   DateTime? initialOccurredAt,
   int? initialDurationMin,
   String? initialNote,
+
   /// Null uses "Mark learned". A default *value* can't be a localized string —
   /// it has to be resolved from a context — so the default is expressed as
   /// absence and filled in where the sheet is built.
   String? saveLabel,
   List<Layer> layerOptions = const [],
   Set<String> initialLayers = const {mainLayerId},
+
+  /// Null uses "What you learned:". Absence for the same reason as [saveLabel].
+  String? checklistLabel,
   String? nodeId,
   int? unitIndex,
 }) {
@@ -77,12 +99,14 @@ Future<LogUnitResult?> showLogUnitSheet(
     builder: (_) => SafeArea(
       child: _LogUnitSheet(
         title: title,
+        subtitle: subtitle,
         initialOccurredAt: initialOccurredAt,
         initialDurationMin: initialDurationMin,
         initialNote: initialNote,
         saveLabel: saveLabel,
         layerOptions: layerOptions,
         initialLayers: initialLayers,
+        checklistLabel: checklistLabel,
         nodeId: nodeId,
         unitIndex: unitIndex,
       ),
@@ -93,9 +117,11 @@ Future<LogUnitResult?> showLogUnitSheet(
 class _LogUnitSheet extends ConsumerStatefulWidget {
   const _LogUnitSheet({
     required this.title,
+    this.subtitle,
     this.saveLabel,
     required this.layerOptions,
     required this.initialLayers,
+    this.checklistLabel,
     this.initialOccurredAt,
     this.initialDurationMin,
     this.initialNote,
@@ -104,7 +130,9 @@ class _LogUnitSheet extends ConsumerStatefulWidget {
   });
 
   final String title;
+  final String? subtitle;
   final String? saveLabel;
+  final String? checklistLabel;
   final DateTime? initialOccurredAt;
   final int? initialDurationMin;
   final String? initialNote;
@@ -156,7 +184,7 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
     // Editing an existing event (has an occurredAt) starts in manual mode with
     // its stored date/time; a fresh log defaults to "now" and manual off.
     _manualDate = widget.initialOccurredAt != null;
-    _date = widget.initialOccurredAt ?? DateTime.now();
+    _date = widget.initialOccurredAt ?? ref.read(clockProvider)();
     _durationCtrl = TextEditingController(
         text: widget.initialDurationMin?.toString() ?? '');
     _noteCtrl = TextEditingController(text: widget.initialNote ?? '');
@@ -275,9 +303,12 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
+            if (widget.subtitle != null)
+              Text(widget.subtitle!,
+                  style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             if (widget.layerOptions.isNotEmpty) ...[
-              Text(l10n.logSheetWhatYouLearned,
+              Text(widget.checklistLabel ?? l10n.logSheetWhatYouLearned,
                   style: Theme.of(context).textTheme.labelLarge),
               for (final layer in widget.layerOptions)
                 CheckboxListTile(
@@ -383,4 +414,119 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
       ),
     );
   }
+}
+
+/// Log one unit with a date, a duration, a haara — **and**, on a layered unit,
+/// which mefarshim it covers.
+///
+/// Those two features used to be mutually exclusive: the checklist marked a
+/// meforish with no date, duration or haara, and this sheet always wrote
+/// `layers: [main]`, so on a layered unit it only marked the text. There was no
+/// way to record "I learned Rashi on this daf for 40 minutes and here's my
+/// chiddush". One sheet now does both, and the layer checklist is seeded with
+/// whatever the unit still needs.
+Future<void> logWithDetails(
+  BuildContext context,
+  WidgetRef ref, {
+  required CatalogNode node,
+  required int unit,
+}) async {
+  final roles = ref.read(layerRolesProvider);
+  final fold = ref.read(foldProvider).asData?.value;
+  final allLayers = ref.read(allLayersProvider);
+  final logger = ref.read(loggingServiceProvider);
+  final guard = WriteGuard.of(context, ref);
+  final l10n = AppLocalizations.of(context);
+  final heading = nodeAndUnit(l10n, node, unit);
+
+  final layered = roles.isLayered(node.id, unit);
+  final checkable =
+      layered ? roles.checkableFor(node.id, unit) : const <String>{};
+  final learned = fold?.completedLayers(node.id, unit) ?? const <String>{};
+  final required = layered ? roles.requiredFor(node.id, unit) : const <String>{};
+  // Default to what's still outstanding; if nothing is, to everything required.
+  final outstanding = required.where((l) => !learned.contains(l)).toSet();
+
+  final result = await showLogUnitSheet(
+    context,
+    title: heading,
+    nodeId: node.id,
+    unitIndex: unit,
+    layerOptions: [
+      for (final l in allLayers)
+        if (checkable.contains(l.id)) l,
+    ],
+    initialLayers: layered
+        ? (outstanding.isNotEmpty ? outstanding : required)
+        : const {mainLayerId},
+  );
+  if (result == null) return;
+  await guard.run(
+    () => logger.markDone(node.id, unit,
+        occurredAt: result.occurredAt,
+        durationMin: result.durationMin,
+        note: result.note,
+        layers: result.layers),
+    what: l10n.whatLogging(heading),
+  );
+}
+
+/// Log one chazara (review) pass over [unit]: which mefarshim were reviewed,
+/// when, how long, and any notes. Each pass is independent of the main learning
+/// and of other passes, so you can review just Tosafos one time and the whole
+/// daf the next.
+///
+/// The same form as [logWithDetails], down to the session timer — which this
+/// action never had, and which a chazara wants at least as much as a first
+/// learning does. What differs is three arguments and the verb at the end.
+Future<void> logChazaraWithDetails(
+  BuildContext context,
+  WidgetRef ref, {
+  required CatalogNode node,
+  required int unit,
+}) async {
+  final roles = ref.read(layerRolesProvider);
+  final fold = ref.read(foldProvider).asData?.value;
+  final allLayers = ref.read(allLayersProvider);
+  final logger = ref.read(loggingServiceProvider);
+  final guard = WriteGuard.of(context, ref);
+  final l10n = AppLocalizations.of(context);
+  final heading = nodeAndUnit(l10n, node, unit);
+
+  final completed = fold?.completedLayers(node.id, unit) ?? const <String>{};
+  final requiredSet = roles.requiredFor(node.id, unit);
+  // What can be reviewed: everything this unit needs, plus anything already
+  // learned on it that it no longer needs.
+  var options = [
+    for (final l in allLayers)
+      if (requiredSet.contains(l.id) || completed.contains(l.id)) l,
+  ];
+  if (options.isEmpty) options = [layerById(l10n, allLayers, mainLayerId)];
+
+  final result = await showLogUnitSheet(
+    context,
+    title: l10n.addChazaraTitle,
+    subtitle: heading,
+    nodeId: node.id,
+    unitIndex: unit,
+    saveLabel: l10n.addChazaraSubmit,
+    checklistLabel: l10n.addChazaraReviewed,
+    layerOptions: options,
+    // A fresh pass defaults to reviewing everything currently learned.
+    initialLayers: completed.isEmpty
+        ? {for (final l in options) l.id}
+        : completed.toSet(),
+  );
+  if (result == null) return;
+  await guard.run(
+    () => logger.markReview(
+      node.id,
+      unit,
+      occurredAt: result.occurredAt,
+      durationMin: result.durationMin,
+      note: result.note,
+      layers: result.layers,
+    ),
+    what: l10n.whatLoggingChazara(heading),
+  );
 }

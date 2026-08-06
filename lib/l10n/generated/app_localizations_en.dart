@@ -118,12 +118,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tooltipMore => 'More actions';
 
   @override
-  String get navStatistics => 'Statistics';
-
-  @override
-  String get navSiyumCalculator => 'Siyum calculator';
-
-  @override
   String get tooltipAddCustomSefer => 'Add custom sefer';
 
   @override
@@ -142,19 +136,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navLearningCycles => 'Learning cycles';
 
   @override
-  String get navGoals => 'Goals';
+  String get navReports => 'Reports';
 
   @override
   String get navChazaraDue => 'Chazara due';
 
   @override
-  String get navSiyumim => 'Siyumim';
-
-  @override
   String get navNotesJournal => 'Notes Journal';
-
-  @override
-  String get navMefarshimProgress => 'Mefarshim progress';
 
   @override
   String get navProfiles => 'Profiles';
@@ -417,8 +405,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goalReached => 'Goal reached! 🎉';
 
   @override
-  String goalBanner(String date, String rate, String status) {
-    return 'Goal $date · need $rate/day · $status';
+  String goalStatus(Object date, Object rate, Object status) {
+    return 'By $date · need $rate/day · $status';
   }
 
   @override
@@ -436,27 +424,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get goalRemoved => 'Goal removed';
-
-  @override
   String whatRestoringGoal(String name) {
     return 'Restoring the goal for $name';
   }
 
   @override
-  String get goalsTitle => 'Goals';
-
-  @override
   String get goalsEmpty =>
-      'No goals yet.\nOpen any sefer and tap the flag to set a target date.';
+      'No goals yet.\nSet a target date on the Calculator, or open any sefer and tap the flag.';
 
   @override
-  String get goalRowReached => 'Reached!';
-
-  @override
-  String goalRowStatus(String date, String rate, String status) {
-    return 'By $date · need $rate/day · $status';
-  }
+  String get goalsSetOne => 'Set a goal';
 
   @override
   String goalRemovedFor(String name) {
@@ -574,9 +551,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addChazaraReviewed => 'Reviewed:';
-
-  @override
-  String get addChazaraDuration => 'How long (minutes, optional)';
 
   @override
   String get addChazaraSubmit => 'Log chazara';
@@ -1051,9 +1025,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mefarshimProgressTitle => 'Mefarshim progress';
-
-  @override
   String get mefarshimProgressEmpty =>
       'Nothing learned yet.\nAs you check off mefarshim, their totals appear here.';
 
@@ -1097,9 +1068,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String chazaraReviewed(String unit) {
     return 'Reviewed $unit';
   }
-
-  @override
-  String get siyumTitle => 'Siyumim';
 
   @override
   String get siyumEmpty =>
@@ -1154,7 +1122,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchNoMatches => 'No matches.';
 
   @override
-  String get statsTitle => 'Statistics';
+  String get reportsTitle => 'Reports';
+
+  @override
+  String get reportTabOverview => 'Overview';
+
+  @override
+  String get reportTabCalculator => 'Calculator';
+
+  @override
+  String get reportTabGoals => 'Goals';
+
+  @override
+  String get reportTabSiyumim => 'Siyumim';
+
+  @override
+  String get reportTabMefarshim => 'Mefarshim';
 
   @override
   String get statsOverall => 'Overall';
@@ -1218,9 +1201,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statsNeedMoreData => 'Learn a few units to see your trend.';
 
   @override
-  String get calculatorTitle => 'Siyum Calculator';
-
-  @override
   String get calculatorWhatFinishing => 'What are you finishing?';
 
   @override
@@ -1272,6 +1252,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calculatorPickDate => 'Pick date';
+
+  @override
+  String get calculatorSaveGoal => 'Save as goal';
+
+  @override
+  String get calculatorGoalSaved => 'Saved as a goal';
+
+  @override
+  String calculatorGoalSetFor(String name) {
+    return 'Goal set for “$name”';
+  }
 
   @override
   String get calculatorAlreadyFinished => 'Already finished! 🎉';

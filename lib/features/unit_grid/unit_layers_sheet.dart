@@ -3,11 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
 import '../../domain/entities/catalog_node.dart';
-import '../../domain/entities/layer.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
-import 'unit_grid_screen.dart';
+import 'log_unit_sheet.dart';
 
 /// Per-unit meforish checklist: toggle each required (and any already-learned)
 /// layer for one daf. The unit is complete only once every required layer is
@@ -64,11 +63,10 @@ class _UnitLayersSheet extends ConsumerWidget {
     final heading = nodeAndUnit(l10n, node, unit);
 
     // An id with no matching meforish means one was deleted after this unit was
-    // marked. Name it as such — a raw UUID in a checkbox is unreadable.
-    String nameOf(String id) => layerName(
-        l10n,
-        allLayers.firstWhere((l) => l.id == id,
-            orElse: () => Layer(id: id, name: l10n.deletedMeforish)));
+    // marked. Name it as such — a raw UUID in a checkbox is unreadable. The
+    // lookup is [layerNameById] now, shared with the two other places that had
+    // written it out for themselves.
+    String nameOf(String id) => layerNameById(l10n, allLayers, id);
 
     return SafeArea(
       child: Padding(

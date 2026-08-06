@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/generated/app_localizations.dart';
-import '../features/calculator/calculator_screen.dart';
 import '../features/chazara/chazara_screen.dart';
 import '../features/custom_node/add_custom_node_screen.dart';
 import '../features/cycles/cycles_screen.dart';
 import '../features/cycles/edit_cycle_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
-import '../features/goals/goals_screen.dart';
 import '../features/history/bulk_history_screen.dart';
 import '../features/journal/notes_journal_screen.dart';
-import '../features/mefarshim/mefarshim_progress_screen.dart';
 import '../features/node/node_screen.dart';
 import '../features/profiles/profiles_screen.dart';
+import '../features/reports/report_screen.dart';
 import '../features/settings/crash_log_screen.dart';
 import '../features/settings/settings_screen.dart';
-import '../features/siyum/siyum_screen.dart';
-import '../features/stats/stats_screen.dart';
 import '../features/unit_grid/unit_grid_screen.dart';
 
 /// Every screen the app can reach, named.
@@ -39,15 +35,22 @@ import '../features/unit_grid/unit_grid_screen.dart';
 ///   is un-restorable because of what was passed to it.
 abstract final class Routes {
   static const dashboard = '/';
+
+  /// The five report routes. They are one screen — [ReportScreen], opened on a
+  /// different tab — and they stay five *names* because a name is what a deep
+  /// link, a home-screen shortcut and a restored route hand you. Merging the
+  /// screens is a design change; retiring the names would be a broken link, and
+  /// the two are not the same decision.
   static const stats = '/stats';
   static const calculator = '/calculator';
+  static const goals = '/goals';
+  static const siyumim = '/siyumim';
+  static const mefarshim = '/mefarshim';
+
   static const cycles = '/cycles';
   static const newCycle = '/cycles/new';
-  static const goals = '/goals';
   static const chazara = '/chazara';
-  static const siyumim = '/siyumim';
   static const journal = '/journal';
-  static const mefarshim = '/mefarshim';
   static const profiles = '/profiles';
   static const settings = '/settings';
   static const bulkHistory = '/settings/history';
@@ -86,16 +89,16 @@ abstract final class AppRouter {
     final uri = Uri.parse(name ?? Routes.dashboard);
     return switch (_segments(uri)) {
       [] => const DashboardScreen(),
-      ['stats'] => const StatsScreen(),
-      ['calculator'] => const CalculatorScreen(),
+      ['stats'] => const ReportScreen(),
+      ['calculator'] => const ReportScreen(section: ReportSection.calculator),
+      ['goals'] => const ReportScreen(section: ReportSection.goals),
+      ['siyumim'] => const ReportScreen(section: ReportSection.siyumim),
+      ['mefarshim'] => const ReportScreen(section: ReportSection.mefarshim),
       ['cycles'] => const CyclesScreen(),
       ['cycles', 'new'] => const EditCycleScreen(),
       ['cycles', 'edit', final id] => EditCycleScreen(cycleId: id),
-      ['goals'] => const GoalsScreen(),
       ['chazara'] => const ChazaraScreen(),
-      ['siyumim'] => const SiyumScreen(),
       ['journal'] => const NotesJournalScreen(),
-      ['mefarshim'] => const MefarshimProgressScreen(),
       ['profiles'] => const ProfilesScreen(),
       ['settings'] => const SettingsScreen(),
       ['settings', 'history'] => const BulkHistoryScreen(),

@@ -8,8 +8,8 @@ import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/features/dashboard/session_banner.dart';
 import 'package:chovos_hayom/features/journal/notes_journal_screen.dart';
-import 'package:chovos_hayom/features/siyum/siyum_screen.dart';
-import 'package:chovos_hayom/features/stats/stats_screen.dart';
+import 'package:chovos_hayom/features/reports/overview_section.dart';
+import 'package:chovos_hayom/features/reports/siyumim_section.dart';
 import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -72,8 +72,8 @@ void main() {
     /// which the backup interval does not touch. Before the `.select`s they
     /// watched the whole object and rebuilt on any settings write at all.
     for (final screen in <({String name, Widget widget})>[
-      (name: 'StatsScreen', widget: const StatsScreen()),
-      (name: 'SiyumScreen', widget: const SiyumScreen()),
+      (name: 'OverviewSection', widget: reportSection(const OverviewSection())),
+      (name: 'SiyumimSection', widget: reportSection(const SiyumimSection())),
       (name: 'NotesJournalScreen', widget: const NotesJournalScreen()),
     ]) {
       testWidgets('does not rebuild ${screen.name}', (tester) async {
@@ -103,7 +103,7 @@ void main() {
       // has quietly stopped updating.
       final repo = memoryRepository();
       await repo.addEvent(done(2));
-      await tester.pumpWidget(scoped(const StatsScreen(), repo));
+      await tester.pumpWidget(scoped(reportSection(const OverviewSection()), repo));
       await tester.pumpAndSettle();
 
       final ref = ProviderScope.containerOf(
@@ -114,7 +114,7 @@ void main() {
       await ref.read(settingsProvider.notifier).setCalendar(CalendarMode.hebrew);
       await tester.pumpAndSettle();
 
-      expect(rebuilds['StatsScreen'] ?? 0, greaterThan(0));
+      expect(rebuilds['OverviewSection'] ?? 0, greaterThan(0));
     });
   });
 

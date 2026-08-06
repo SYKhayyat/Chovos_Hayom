@@ -581,7 +581,7 @@ class _AppDrawer extends ConsumerWidget {
               ),
             // The way back, named.
             //
-            // Ten rows, every one of them somewhere else. Reported from the
+            // Every other row here is somewhere else. Reported from the
             // phone as "from that screen where you see Notes Journal etc, I
             // don't know how to get to the tree" — and there was no answer to
             // give: the drawer's scrim closes it on a tap, which needs a
@@ -605,11 +605,6 @@ class _AppDrawer extends ConsumerWidget {
               title: Text(l10n.navLearningCycles),
               onTap: () => _go(context, Routes.cycles),
             ),
-            ListTile(
-              leading: const Icon(Icons.flag),
-              title: Text(l10n.navGoals),
-              onTap: () => _go(context, Routes.goals),
-            ),
             Consumer(builder: (context, ref, _) {
               // The count, not the list. The drawer sits in the tree whether it
               // is open or not, and `chazaraDueProvider` re-derives on every
@@ -627,33 +622,24 @@ class _AppDrawer extends ConsumerWidget {
                 onTap: () => _go(context, Routes.chazara),
               );
             }),
-            ListTile(
-              leading: const Icon(Icons.emoji_events),
-              title: Text(l10n.navSiyumim),
-              onTap: () => _go(context, Routes.siyumim),
-            ),
-            // These two were app-bar icons until the bar ran out of room for the
-            // app's own name. They are destinations like everything else here, and
-            // a named row is easier to find than an unlabelled icon.
+            // Five rows until this one: Statistics, Siyum calculator, Goals,
+            // Siyumim and Mefarshim progress. Statistics and the calculator had
+            // been app-bar icons until the bar ran out of room for the app's own
+            // name, and became rows here; the other three had always been rows.
+            // Together they were nearly half a drawer that was already long
+            // enough to need a "way back" row, on a 324dp screen you cross with
+            // a D-pad. They are tabs of one report now, and this is the one door
+            // to it — the individual routes still resolve for anything that
+            // links to them.
             ListTile(
               leading: const Icon(Icons.insights),
-              title: Text(l10n.navStatistics),
+              title: Text(l10n.navReports),
               onTap: () => _go(context, Routes.stats),
-            ),
-            ListTile(
-              leading: const Icon(Icons.calculate),
-              title: Text(l10n.navSiyumCalculator),
-              onTap: () => _go(context, Routes.calculator),
             ),
             ListTile(
               leading: const Icon(Icons.menu_book_outlined),
               title: Text(l10n.navNotesJournal),
               onTap: () => _go(context, Routes.journal),
-            ),
-            ListTile(
-              leading: const Icon(Icons.layers_outlined),
-              title: Text(l10n.navMefarshimProgress),
-              onTap: () => _go(context, Routes.mefarshim),
             ),
             ListTile(
               leading: const Icon(Icons.people),

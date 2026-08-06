@@ -8,7 +8,7 @@ import '../../domain/usecases/chazara_schedule.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
-import '../unit_grid/add_chazara_sheet.dart';
+import '../unit_grid/log_unit_sheet.dart';
 
 /// Units due for a chazara (review) pass, on a spaced-repetition schedule.
 /// Reviewing an item logs a review and pushes its next due date out.
@@ -76,7 +76,7 @@ class _ChazaraRow extends ConsumerWidget {
             tooltip: l10n.chazaraLogWithDetails,
             onPressed: node == null
                 ? null
-                : () => showAddChazaraSheet(context, ref,
+                : () => logChazaraWithDetails(context, ref,
                     node: node, unit: item.unitIndex),
           ),
           FilledButton.tonal(

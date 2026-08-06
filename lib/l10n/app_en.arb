@@ -63,8 +63,6 @@
   },
   "tooltipSearch": "Search",
   "tooltipMore": "More actions",
-  "navStatistics": "Statistics",
-  "navSiyumCalculator": "Siyum calculator",
   "tooltipAddCustomSefer": "Add custom sefer",
   "nudgeHaventLearnedToday": "You haven't learned yet today — pick something below!",
   "drawerProfile": "Profile: {name}",
@@ -73,11 +71,9 @@
   },
   "navLearningTree": "Learning tree",
   "navLearningCycles": "Learning cycles",
-  "navGoals": "Goals",
+  "navReports": "Reports",
   "navChazaraDue": "Chazara due",
-  "navSiyumim": "Siyumim",
   "navNotesJournal": "Notes Journal",
-  "navMefarshimProgress": "Mefarshim progress",
   "navProfiles": "Profiles",
   "navAddCustomSefer": "Add custom sefer",
   "navSettings": "Settings",
@@ -221,9 +217,9 @@
   "itemMissingRenamed": "This item no longer exists.\nIt may have been removed or renamed.",
   "cycleMissing": "This cycle no longer exists.\nIt may have been deleted, or it belongs to another profile.",
 
-  "@_GOAL_BANNER": {},
+  "@_GOAL_STATUS": {},
   "goalReached": "Goal reached! 🎉",
-  "goalBanner": "Goal {date} · need {rate}/day · {status}",
+  "goalStatus": "By {date} · need {rate}/day · {status}",
   "@goalBanner": {
     "placeholders": {
       "date": { "type": "String" },
@@ -236,22 +232,12 @@
   "tooltipRemoveGoal": "Remove goal",
   "whatRemovingGoal": "Removing the goal for {name}",
   "@whatRemovingGoal": { "placeholders": { "name": { "type": "String" } } },
-  "goalRemoved": "Goal removed",
   "whatRestoringGoal": "Restoring the goal for {name}",
   "@whatRestoringGoal": { "placeholders": { "name": { "type": "String" } } },
 
-  "@_GOALS_SCREEN": {},
-  "goalsTitle": "Goals",
-  "goalsEmpty": "No goals yet.\nOpen any sefer and tap the flag to set a target date.",
-  "goalRowReached": "Reached!",
-  "goalRowStatus": "By {date} · need {rate}/day · {status}",
-  "@goalRowStatus": {
-    "placeholders": {
-      "date": { "type": "String" },
-      "rate": { "type": "String" },
-      "status": { "type": "String" }
-    }
-  },
+  "@_GOALS_SECTION": {},
+  "goalsEmpty": "No goals yet.\nSet a target date on the Calculator, or open any sefer and tap the flag.",
+  "goalsSetOne": "Set a goal",
   "goalRemovedFor": "Goal for “{name}” removed",
   "@goalRemovedFor": { "placeholders": { "name": { "type": "String" } } },
 
@@ -322,10 +308,9 @@
     }
   },
 
-  "@_ADD_CHAZARA_SHEET": {},
+  "@_CHAZARA_LOGGING": {},
   "addChazaraTitle": "Add chazara",
   "addChazaraReviewed": "Reviewed:",
-  "addChazaraDuration": "How long (minutes, optional)",
   "addChazaraSubmit": "Log chazara",
   "whatLoggingChazara": "Logging a chazara on {unit}",
   "@whatLoggingChazara": { "placeholders": { "unit": { "type": "String" } } },
@@ -544,8 +529,7 @@
   "whatAddingMeforish": "Adding the meforish “{name}”",
   "@whatAddingMeforish": { "placeholders": { "name": { "type": "String" } } },
 
-  "@_MEFARSHIM_PROGRESS": {},
-  "mefarshimProgressTitle": "Mefarshim progress",
+  "@_REPORT_MEFARSHIM": {},
   "mefarshimProgressEmpty": "Nothing learned yet.\nAs you check off mefarshim, their totals appear here.",
 
   "@_CHAZARA_SCREEN": {},
@@ -565,8 +549,7 @@
   "chazaraReviewed": "Reviewed {unit}",
   "@chazaraReviewed": { "placeholders": { "unit": { "type": "String" } } },
 
-  "@_SIYUM_SCREEN": {},
-  "siyumTitle": "Siyumim",
+  "@_REPORT_SIYUMIM": {},
   "siyumEmpty": "No siyumim yet.\nFinish every unit of a sefer — or of a whole seder — and it will appear here. חזק!",
   "siyumCount": "{count, plural, =1{1 siyum} other{{count} siyumim}} — יישר כח!",
   "@siyumCount": { "placeholders": { "count": { "type": "int" } } },
@@ -598,8 +581,15 @@
   "searchPrompt": "Search sefarim, mesechtos, dafim…",
   "searchNoMatches": "No matches.",
 
-  "@_STATS": {},
-  "statsTitle": "Statistics",
+  "@_REPORT": {},
+  "reportsTitle": "Reports",
+  "reportTabOverview": "Overview",
+  "reportTabCalculator": "Calculator",
+  "reportTabGoals": "Goals",
+  "reportTabSiyumim": "Siyumim",
+  "reportTabMefarshim": "Mefarshim",
+
+  "@_REPORT_OVERVIEW": {},
   "statsOverall": "Overall",
   "statsLearned": "Learned",
   "statsStreak": "Streak",
@@ -624,7 +614,6 @@
   "statsNeedMoreData": "Learn a few units to see your trend.",
 
   "@_CALCULATOR": {},
-  "calculatorTitle": "Siyum Calculator",
   "calculatorWhatFinishing": "What are you finishing?",
   "calculatorRemaining": "{remaining} of {total} left",
   "@calculatorRemaining": {
@@ -645,6 +634,10 @@
   "calculatorTarget": "Target: {date}",
   "@calculatorTarget": { "placeholders": { "date": { "type": "String" } } },
   "calculatorPickDate": "Pick date",
+  "calculatorSaveGoal": "Save as goal",
+  "calculatorGoalSaved": "Saved as a goal",
+  "calculatorGoalSetFor": "Goal set for “{name}”",
+  "@calculatorGoalSetFor": { "placeholders": { "name": { "type": "String" } } },
   "calculatorAlreadyFinished": "Already finished! 🎉",
   "calculatorEnterDailyAmount": "Enter a daily amount above 0.",
   "calculatorEnterAmounts": "Enter amounts, e.g. “5, 5, 0, 10”.",

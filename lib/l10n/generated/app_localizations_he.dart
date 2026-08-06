@@ -118,12 +118,6 @@ class AppLocalizationsHe extends AppLocalizations {
   String get tooltipMore => 'פעולות נוספות';
 
   @override
-  String get navStatistics => 'סטטיסטיקה';
-
-  @override
-  String get navSiyumCalculator => 'מחשבון סיום';
-
-  @override
   String get tooltipAddCustomSefer => 'הוספת ספר משלך';
 
   @override
@@ -142,19 +136,13 @@ class AppLocalizationsHe extends AppLocalizations {
   String get navLearningCycles => 'מחזורי לימוד';
 
   @override
-  String get navGoals => 'יעדים';
+  String get navReports => 'דוחות';
 
   @override
   String get navChazaraDue => 'חזרות לביצוע';
 
   @override
-  String get navSiyumim => 'סיומים';
-
-  @override
   String get navNotesJournal => 'יומן הערות';
-
-  @override
-  String get navMefarshimProgress => 'התקדמות במפרשים';
 
   @override
   String get navProfiles => 'פרופילים';
@@ -415,8 +403,8 @@ class AppLocalizationsHe extends AppLocalizations {
   String get goalReached => 'הגעת ליעד! 🎉';
 
   @override
-  String goalBanner(String date, String rate, String status) {
-    return 'יעד $date · נדרש $rate ליום · $status';
+  String goalStatus(Object date, Object rate, Object status) {
+    return 'עד $date · נדרש $rate ליום · $status';
   }
 
   @override
@@ -434,27 +422,16 @@ class AppLocalizationsHe extends AppLocalizations {
   }
 
   @override
-  String get goalRemoved => 'היעד הוסר';
-
-  @override
   String whatRestoringGoal(String name) {
     return 'החזרת היעד עבור $name';
   }
 
   @override
-  String get goalsTitle => 'יעדים';
-
-  @override
   String get goalsEmpty =>
-      'אין עדיין יעדים.\nפתח ספר כלשהו והקש על הדגל כדי לקבוע תאריך יעד.';
+      'אין עדיין יעדים.\nקבע תאריך יעד במחשבון, או פתח ספר כלשהו והקש על הדגל.';
 
   @override
-  String get goalRowReached => 'הושג!';
-
-  @override
-  String goalRowStatus(String date, String rate, String status) {
-    return 'עד $date · נדרש $rate ליום · $status';
-  }
+  String get goalsSetOne => 'קביעת יעד';
 
   @override
   String goalRemovedFor(String name) {
@@ -570,9 +547,6 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get addChazaraReviewed => 'נחזר:';
-
-  @override
-  String get addChazaraDuration => 'כמה זמן (דקות, רשות)';
 
   @override
   String get addChazaraSubmit => 'רישום החזרה';
@@ -1046,9 +1020,6 @@ class AppLocalizationsHe extends AppLocalizations {
   }
 
   @override
-  String get mefarshimProgressTitle => 'התקדמות במפרשים';
-
-  @override
   String get mefarshimProgressEmpty =>
       'עדיין לא נלמד דבר.\nככל שתסמן מפרשים, הסיכומים שלהם יופיעו כאן.';
 
@@ -1092,9 +1063,6 @@ class AppLocalizationsHe extends AppLocalizations {
   String chazaraReviewed(String unit) {
     return 'נערכה חזרה על $unit';
   }
-
-  @override
-  String get siyumTitle => 'סיומים';
 
   @override
   String get siyumEmpty =>
@@ -1149,7 +1117,22 @@ class AppLocalizationsHe extends AppLocalizations {
   String get searchNoMatches => 'אין תוצאות.';
 
   @override
-  String get statsTitle => 'סטטיסטיקה';
+  String get reportsTitle => 'דוחות';
+
+  @override
+  String get reportTabOverview => 'סקירה';
+
+  @override
+  String get reportTabCalculator => 'מחשבון';
+
+  @override
+  String get reportTabGoals => 'יעדים';
+
+  @override
+  String get reportTabSiyumim => 'סיומים';
+
+  @override
+  String get reportTabMefarshim => 'מפרשים';
 
   @override
   String get statsOverall => 'סך הכול';
@@ -1213,9 +1196,6 @@ class AppLocalizationsHe extends AppLocalizations {
   String get statsNeedMoreData => 'למד עוד כמה יחידות כדי לראות מגמה.';
 
   @override
-  String get calculatorTitle => 'מחשבון סיום';
-
-  @override
   String get calculatorWhatFinishing => 'מה אתה מסיים?';
 
   @override
@@ -1267,6 +1247,17 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get calculatorPickDate => 'בחירת תאריך';
+
+  @override
+  String get calculatorSaveGoal => 'שמירה כיעד';
+
+  @override
+  String get calculatorGoalSaved => 'נשמר כיעד';
+
+  @override
+  String calculatorGoalSetFor(String name) {
+    return 'נקבע יעד עבור ״$name״';
+  }
 
   @override
   String get calculatorAlreadyFinished => 'כבר סיימת! 🎉';

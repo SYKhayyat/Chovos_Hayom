@@ -38,18 +38,14 @@
   "tooltipSortActive": "מיון: {metric}",
   "tooltipSearch": "חיפוש",
   "tooltipMore": "פעולות נוספות",
-  "navStatistics": "סטטיסטיקה",
-  "navSiyumCalculator": "מחשבון סיום",
   "tooltipAddCustomSefer": "הוספת ספר משלך",
   "nudgeHaventLearnedToday": "עדיין לא למדת היום — בחר משהו מהרשימה!",
   "drawerProfile": "פרופיל: {name}",
   "navLearningTree": "עץ הלימוד",
   "navLearningCycles": "מחזורי לימוד",
-  "navGoals": "יעדים",
+  "navReports": "דוחות",
   "navChazaraDue": "חזרות לביצוע",
-  "navSiyumim": "סיומים",
   "navNotesJournal": "יומן הערות",
-  "navMefarshimProgress": "התקדמות במפרשים",
   "navProfiles": "פרופילים",
   "navAddCustomSefer": "הוספת ספר משלך",
   "navSettings": "הגדרות",
@@ -118,18 +114,15 @@
   "cycleMissing": "המחזור הזה כבר לא קיים.\nייתכן שנמחק, או שהוא שייך לפרופיל אחר.",
 
   "goalReached": "הגעת ליעד! 🎉",
-  "goalBanner": "יעד {date} · נדרש {rate} ליום · {status}",
+  "goalStatus": "עד {date} · נדרש {rate} ליום · {status}",
   "goalOnTrack": "בקצב",
   "goalBehind": "בפיגור",
   "tooltipRemoveGoal": "הסרת היעד",
   "whatRemovingGoal": "הסרת היעד עבור {name}",
-  "goalRemoved": "היעד הוסר",
   "whatRestoringGoal": "החזרת היעד עבור {name}",
 
-  "goalsTitle": "יעדים",
-  "goalsEmpty": "אין עדיין יעדים.\nפתח ספר כלשהו והקש על הדגל כדי לקבוע תאריך יעד.",
-  "goalRowReached": "הושג!",
-  "goalRowStatus": "עד {date} · נדרש {rate} ליום · {status}",
+  "goalsEmpty": "אין עדיין יעדים.\nקבע תאריך יעד במחשבון, או פתח ספר כלשהו והקש על הדגל.",
+  "goalsSetOne": "קביעת יעד",
   "goalRemovedFor": "היעד עבור ״{name}״ הוסר",
 
   "layersComplete": "הושלם — כל המפרשים הנדרשים נלמדו.",
@@ -166,7 +159,6 @@
 
   "addChazaraTitle": "הוספת חזרה",
   "addChazaraReviewed": "נחזר:",
-  "addChazaraDuration": "כמה זמן (דקות, רשות)",
   "addChazaraSubmit": "רישום החזרה",
   "whatLoggingChazara": "רישום חזרה על {unit}",
 
@@ -260,7 +252,6 @@
   "whatDeletingMeforish": "מחיקת ״{name}״",
   "whatAddingMeforish": "הוספת המפרש ״{name}״",
 
-  "mefarshimProgressTitle": "התקדמות במפרשים",
   "mefarshimProgressEmpty": "עדיין לא נלמד דבר.\nככל שתסמן מפרשים, הסיכומים שלהם יופיעו כאן.",
 
   "chazaraTitle": "חזרות לביצוע",
@@ -271,7 +262,6 @@
   "chazaraLogWithDetails": "רישום עם פרטים",
   "chazaraReviewed": "נערכה חזרה על {unit}",
 
-  "siyumTitle": "סיומים",
   "siyumEmpty": "אין עדיין סיומים.\nסיים כל יחידה בספר — או בסדר שלם — והוא יופיע כאן. חזק!",
   "siyumCount": "{count, plural, =1{סיום אחד} other{{count} סיומים}} — יישר כח!",
   "siyumCompleted": "הסתיים {date} · {units}",
@@ -287,7 +277,13 @@
   "searchPrompt": "חיפוש ספרים, מסכתות, דפים…",
   "searchNoMatches": "אין תוצאות.",
 
-  "statsTitle": "סטטיסטיקה",
+  "reportsTitle": "דוחות",
+  "reportTabOverview": "סקירה",
+  "reportTabCalculator": "מחשבון",
+  "reportTabGoals": "יעדים",
+  "reportTabSiyumim": "סיומים",
+  "reportTabMefarshim": "מפרשים",
+
   "statsOverall": "סך הכול",
   "statsLearned": "נלמד",
   "statsStreak": "רצף",
@@ -303,7 +299,6 @@
   "statsActivity": "פעילות (12 השבועות האחרונים)",
   "statsNeedMoreData": "למד עוד כמה יחידות כדי לראות מגמה.",
 
-  "calculatorTitle": "מחשבון סיום",
   "calculatorWhatFinishing": "מה אתה מסיים?",
   "calculatorRemaining": "נותרו {remaining} מתוך {total}",
   "calculatorModeRate": "קצב",
@@ -317,6 +312,9 @@
   "calculatorCycleDayHelper": "1 = הכמות הראשונה למעלה; 4 = אתה ביום הרביעי",
   "calculatorTarget": "יעד: {date}",
   "calculatorPickDate": "בחירת תאריך",
+  "calculatorSaveGoal": "שמירה כיעד",
+  "calculatorGoalSaved": "נשמר כיעד",
+  "calculatorGoalSetFor": "נקבע יעד עבור ״{name}״",
   "calculatorAlreadyFinished": "כבר סיימת! 🎉",
   "calculatorEnterDailyAmount": "הזן כמות יומית גדולה מ־0.",
   "calculatorEnterAmounts": "הזן כמויות, לדוגמה ״5, 5, 0, 10״.",

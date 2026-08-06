@@ -93,19 +93,32 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   details** — see and change when you finished, the duration, the haara, and its review history
   after the fact. A small note glyph marks units that carry recorded details. Review (chazara)
   passes are tracked per unit.
-- **Statistics**: overall %, current streak, 30-day pace, projected siyum date, a cumulative
-  progress line chart, and a 12-week activity heatmap.
-- **Siyum calculator**, three modes, for the whole Torah or any category:
-  *Rate* ("at X/day, +Y on Shabbos → finish date"), *Cycle* (a **custom repeating cycle of any
-  length** — set each cycle-day's amount and which day you're currently on, e.g. a 7- or 30-day plan),
-  and *By date* ("to finish by date D → learn R/day").
+- **One report, five tabs** — Overview, Calculator, Goals, Siyumim, Mefarshim. These were five
+  separate screens on five drawer rows, which on a 240dp keypad phone was nearly half a drawer you
+  cross with a D-pad, and which kept apart two things that compute the same number. Each still has
+  its own address (`/stats`, `/calculator`, `/goals`, `/siyumim`, `/mefarshim`), so a link or a
+  restored route opens the report on the tab it named.
+  - **Overview**: overall %, current streak, 30-day pace, projected siyum date, a cumulative
+    progress line chart, and a 12-week activity heatmap.
+  - **Calculator**, three modes, for the whole Torah or any category:
+    *Rate* ("at X/day, +Y on Shabbos → finish date"), *Cycle* (a **custom repeating cycle of any
+    length** — set each cycle-day's amount and which day you're currently on, e.g. a 7- or 30-day
+    plan), and *By date* ("to finish by date D → learn R/day") — whose answer you can now **keep
+    as a goal**, which is what it was describing all along.
 - **Hebrew or secular calendar** toggle applied to every date, plus light/dark theme.
 - **Multiple local profiles** (switch between users; each has its own log), **custom sefarim**
   (add your own trackable sefer or habit with your own unit counts), **global search** across
   everything, and **export/import** of all data as JSON. Settings persist across launches.
 - **Goals**: set a target finish date on any sefer and see whether you're on track and the daily
-  rate you need; a Goals screen lists them all. A **chazara menu** (long-press a unit) logs review
+  rate you need — from the sefer's own grid, or from the Calculator's *By date* mode, which works
+  out exactly that. The Goals tab lists them, and its empty state offers to make one rather than
+  naming a screen to go and find. A **chazara menu** (long-press a unit) logs review
   passes or un-marks; an optional **daily nudge** reminds you in-app if you haven't learned today.
+- **One form records learning, whichever kind it is.** Marking a daf, editing what you already
+  recorded and logging a chazara are the same sheet with a different verb — the same date-and-time
+  switch, duration, haara and meforish checklist. Logging a chazara used to be a second copy of it,
+  and every way the copy had drifted was a loss: no session timer on the one action where timing
+  what you are about to do is most of the point.
 - **A session timer that runs while you learn.** Start it, close the sheet, and go learn — it
   survives leaving the screen, backgrounding the app, and quitting it entirely, and a banner shows
   the live session wherever you are so you can pause or discard it. Stopping fills in the duration.
@@ -266,6 +279,7 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   whatever holds focus, anywhere in the app. Screens made only of figures — Statistics, Siyumim,
   Mefarshim progress — could not be scrolled *at all*, holding no focusable widget for the D-pad to
   move to, so everything below the fold was unreachable by any sequence of keys; they scroll now.
+  The drawer is shorter, too: five of its twelve rows were reports, and they are one row now.
   App bars fold their actions into a named menu rather than scaling the app's own name down to an
   illegible dash, floating buttons that sat on top of the content give way to bar actions, and the
   statistics tiles size to their contents instead of to a fixed 2.4 aspect ratio that made every
@@ -358,11 +372,18 @@ calendar) · `file_picker` (backup) · `shared_preferences` (settings) · `path_
   set, because a `Consumer` that sleeps under a pushed route wakes up flushing its ancestors, and a
   derived provider that went dirty in the meantime turns that into a `setState` during build — one
   extra provider between a banner and the log was enough to make the trip back throw every time.
-- **The four report screens are built by tests**, rather than constructed and asserted `isNotNull`:
-  Siyumim (a seder marked as bigger than a mesechta, asserted per row), Mefarshim progress (each
-  layer counted separately, the bar relative to the biggest), Chazara (an overdue row, and that the
+- **The report is built by tests**, rather than constructed and asserted `isNotNull`:
+  Siyumim (a seder marked as bigger than a mesechta, asserted per row), Mefarshim (each
+  layer counted separately, the bar relative to the biggest, and a meforish deleted since it was
+  learned named rather than printed as a raw UUID), Chazara (an overdue row, and that the
   quick Review button carries the mefarshim the unit was learned with), Goals (the required pace it
-  renders, and that removing one is undoable), plus the durable bulk-undo list — where the name of
+  renders, that removing one is undoable, and that the Calculator's answer can be kept as one),
+  plus the shell itself — every old route name still opening the report on its own tab. On the
+  Sonim's 240dp screen every tab is walked for overflow, and the D-pad round trip in and out of the
+  tab bar is asserted in both directions, because a tab bar is a second axis of navigation on a
+  device that has one comfortable one. `report_guard_test.dart` then fails the build if a section
+  grows a `Scaffold` of its own, if the goal sentence is rendered outside `goal_status.dart`, or if
+  a second date-and-duration logging form appears. Alongside them, the durable bulk-undo list — where the name of
   what you are undoing is computed by widget code no domain test runs. `lib/core/daf_yomi.dart`,
   imported by three production files, has its own test at last: the 14th cycle's first daf, the
   roll-over into the next mesechta, and the two days the Yerushalmi cycle skips.
@@ -383,8 +404,8 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 |---|---|---|
 | **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the release binary has now upgraded a real v10 database to the v11 schema in place, keeping every event ✅ |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36 (moto g stylus 2025). Measured on the device: the logging sheet's confirm button clears the navigation bar by 45px and a tap at its bottom edge registers, the Hebrew progress fraction paints `0 / 12,092  (0.0%)` in that order, the app bar fits `Chovos Hayom`, a backup exported from one profile imports into another, and a deep link opens the same screen whether the app was running or not ✅ |
-| **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, Statistics and Siyumim scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search. Also walked key by key: the app opens on the tree's first generation, three presses of *down* reach the backup banner's named dismiss, the message that replaces it leaves on its own within ten seconds, and the drawer's first row returns to the tree ✅ |
-| **CI** | analyze `--fatal-infos`, 556 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
+| **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, the report's figure-only tabs scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search. Also walked key by key: the app opens on the tree's first generation, three presses of *down* reach the backup banner's named dismiss, the message that replaces it leaves on its own within ten seconds, and the drawer's first row returns to the tree ✅ |
+| **CI** | analyze `--fatal-infos`, 579 tests, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher

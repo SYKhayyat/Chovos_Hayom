@@ -302,18 +302,6 @@ abstract class AppLocalizations {
   /// **'More actions'**
   String get tooltipMore;
 
-  /// No description provided for @navStatistics.
-  ///
-  /// In en, this message translates to:
-  /// **'Statistics'**
-  String get navStatistics;
-
-  /// No description provided for @navSiyumCalculator.
-  ///
-  /// In en, this message translates to:
-  /// **'Siyum calculator'**
-  String get navSiyumCalculator;
-
   /// No description provided for @tooltipAddCustomSefer.
   ///
   /// In en, this message translates to:
@@ -344,11 +332,11 @@ abstract class AppLocalizations {
   /// **'Learning cycles'**
   String get navLearningCycles;
 
-  /// No description provided for @navGoals.
+  /// No description provided for @navReports.
   ///
   /// In en, this message translates to:
-  /// **'Goals'**
-  String get navGoals;
+  /// **'Reports'**
+  String get navReports;
 
   /// No description provided for @navChazaraDue.
   ///
@@ -356,23 +344,11 @@ abstract class AppLocalizations {
   /// **'Chazara due'**
   String get navChazaraDue;
 
-  /// No description provided for @navSiyumim.
-  ///
-  /// In en, this message translates to:
-  /// **'Siyumim'**
-  String get navSiyumim;
-
   /// No description provided for @navNotesJournal.
   ///
   /// In en, this message translates to:
   /// **'Notes Journal'**
   String get navNotesJournal;
-
-  /// No description provided for @navMefarshimProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'Mefarshim progress'**
-  String get navMefarshimProgress;
 
   /// No description provided for @navProfiles.
   ///
@@ -758,11 +734,11 @@ abstract class AppLocalizations {
   /// **'Goal reached! 🎉'**
   String get goalReached;
 
-  /// No description provided for @goalBanner.
+  /// No description provided for @goalStatus.
   ///
   /// In en, this message translates to:
-  /// **'Goal {date} · need {rate}/day · {status}'**
-  String goalBanner(String date, String rate, String status);
+  /// **'By {date} · need {rate}/day · {status}'**
+  String goalStatus(Object date, Object rate, Object status);
 
   /// No description provided for @goalOnTrack.
   ///
@@ -788,41 +764,23 @@ abstract class AppLocalizations {
   /// **'Removing the goal for {name}'**
   String whatRemovingGoal(String name);
 
-  /// No description provided for @goalRemoved.
-  ///
-  /// In en, this message translates to:
-  /// **'Goal removed'**
-  String get goalRemoved;
-
   /// No description provided for @whatRestoringGoal.
   ///
   /// In en, this message translates to:
   /// **'Restoring the goal for {name}'**
   String whatRestoringGoal(String name);
 
-  /// No description provided for @goalsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Goals'**
-  String get goalsTitle;
-
   /// No description provided for @goalsEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No goals yet.\nOpen any sefer and tap the flag to set a target date.'**
+  /// **'No goals yet.\nSet a target date on the Calculator, or open any sefer and tap the flag.'**
   String get goalsEmpty;
 
-  /// No description provided for @goalRowReached.
+  /// No description provided for @goalsSetOne.
   ///
   /// In en, this message translates to:
-  /// **'Reached!'**
-  String get goalRowReached;
-
-  /// No description provided for @goalRowStatus.
-  ///
-  /// In en, this message translates to:
-  /// **'By {date} · need {rate}/day · {status}'**
-  String goalRowStatus(String date, String rate, String status);
+  /// **'Set a goal'**
+  String get goalsSetOne;
 
   /// No description provided for @goalRemovedFor.
   ///
@@ -1021,12 +979,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reviewed:'**
   String get addChazaraReviewed;
-
-  /// No description provided for @addChazaraDuration.
-  ///
-  /// In en, this message translates to:
-  /// **'How long (minutes, optional)'**
-  String get addChazaraDuration;
 
   /// No description provided for @addChazaraSubmit.
   ///
@@ -1556,12 +1508,6 @@ abstract class AppLocalizations {
   /// **'Adding the meforish “{name}”'**
   String whatAddingMeforish(String name);
 
-  /// No description provided for @mefarshimProgressTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Mefarshim progress'**
-  String get mefarshimProgressTitle;
-
   /// No description provided for @mefarshimProgressEmpty.
   ///
   /// In en, this message translates to:
@@ -1609,12 +1555,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reviewed {unit}'**
   String chazaraReviewed(String unit);
-
-  /// No description provided for @siyumTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Siyumim'**
-  String get siyumTitle;
 
   /// No description provided for @siyumEmpty.
   ///
@@ -1688,11 +1628,41 @@ abstract class AppLocalizations {
   /// **'No matches.'**
   String get searchNoMatches;
 
-  /// No description provided for @statsTitle.
+  /// No description provided for @reportsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Statistics'**
-  String get statsTitle;
+  /// **'Reports'**
+  String get reportsTitle;
+
+  /// No description provided for @reportTabOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get reportTabOverview;
+
+  /// No description provided for @reportTabCalculator.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculator'**
+  String get reportTabCalculator;
+
+  /// No description provided for @reportTabGoals.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals'**
+  String get reportTabGoals;
+
+  /// No description provided for @reportTabSiyumim.
+  ///
+  /// In en, this message translates to:
+  /// **'Siyumim'**
+  String get reportTabSiyumim;
+
+  /// No description provided for @reportTabMefarshim.
+  ///
+  /// In en, this message translates to:
+  /// **'Mefarshim'**
+  String get reportTabMefarshim;
 
   /// No description provided for @statsOverall.
   ///
@@ -1778,12 +1748,6 @@ abstract class AppLocalizations {
   /// **'Learn a few units to see your trend.'**
   String get statsNeedMoreData;
 
-  /// No description provided for @calculatorTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Siyum Calculator'**
-  String get calculatorTitle;
-
   /// No description provided for @calculatorWhatFinishing.
   ///
   /// In en, this message translates to:
@@ -1861,6 +1825,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pick date'**
   String get calculatorPickDate;
+
+  /// No description provided for @calculatorSaveGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as goal'**
+  String get calculatorSaveGoal;
+
+  /// No description provided for @calculatorGoalSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved as a goal'**
+  String get calculatorGoalSaved;
+
+  /// No description provided for @calculatorGoalSetFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal set for “{name}”'**
+  String calculatorGoalSetFor(String name);
 
   /// No description provided for @calculatorAlreadyFinished.
   ///

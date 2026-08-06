@@ -165,6 +165,7 @@ class DpadScroll extends StatefulWidget {
     super.key,
     required this.builder,
     this.autofocus = true,
+    this.skipTraversal = true,
   });
 
   /// Builds the scroll view, which must be given the controller passed in —
@@ -177,6 +178,22 @@ class DpadScroll extends StatefulWidget {
   /// Whether to claim focus on arrival. True is right for a screen with nothing
   /// else to focus; false where something more useful should start focused.
   final bool autofocus;
+
+  /// Whether directional focus steps *past* this wrapper rather than onto it.
+  ///
+  /// True — the default — is right for a whole screen made of figures: nothing
+  /// else here can hold focus, [autofocus] has already claimed it, and being
+  /// skipped is what keeps the wrapper out of the way on a screen that does
+  /// have focusable children.
+  ///
+  /// False is for a scroll view that sits *under* something focusable, which on
+  /// arrival is where focus starts. The report's tab bar is the case: pressing
+  /// down from a tab has to be able to land somewhere, and [autofocus] cannot
+  /// help — it only fires when nothing in the scope holds focus, and after a tab
+  /// switch the tab itself does. Skipped, the wrapper is unreachable and the
+  /// section below it never scrolls, which is the whole defect this class was
+  /// written to remove, arrived at from the other side.
+  final bool skipTraversal;
 
   @override
   State<DpadScroll> createState() => _DpadScrollState();
@@ -234,10 +251,11 @@ class _DpadScrollState extends State<DpadScroll> {
     return Focus(
       focusNode: _node,
       autofocus: widget.autofocus,
-      // Held, but never stopped at: traversal on a screen that *does* have
-      // focusable children should step between those, not through the wrapper
-      // around them.
-      skipTraversal: true,
+      // Held, but — by default — never stopped at: traversal on a screen that
+      // *does* have focusable children should step between those, not through
+      // the wrapper around them. See [skipTraversal] for the case that wants
+      // the opposite.
+      skipTraversal: widget.skipTraversal,
       onKeyEvent: _onKey,
       // A permanently visible thumb is the only clue on a keypad phone that
       // there is anything below the fold — there is no drag-to-discover. On

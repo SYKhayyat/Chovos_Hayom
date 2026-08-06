@@ -135,7 +135,12 @@ lib/
     common/           the one write guard, the one read-failure view, the
                       "this id no longer exists" screen, and naming.dart —
                       every domain value that has to become words
-    dashboard/  tree/  logging/  stats/  goals/  cycles/  profiles/  search/  settings/
+    reports/          the one report screen and its five tab bodies — Overview,
+                      Calculator, Goals, Siyumim, Mefarshim. Five routes, one
+                      Scaffold: they read the same providers and answer the same
+                      question at different zooms, and none of them is a surface
+                      you work on
+    dashboard/  unit_grid/  chazara/  journal/  cycles/  profiles/  search/  settings/
   l10n/            app_en.arb + app_he.arb (source) and generated/ (committed
                    output, diffed by CI the same way the .g.dart files are)
   main.dart

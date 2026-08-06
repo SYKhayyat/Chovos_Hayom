@@ -118,6 +118,27 @@ String layerName(AppLocalizations l10n, Layer layer) {
   return layer.name;
 }
 
+/// The meforish with this id, or a stand-in named *Deleted meforish*.
+///
+/// Everything that stores a meforish stores its **id** — a logged event's
+/// `layers`, a checkable set, a per-layer stat row — so every screen that
+/// renders one has to resolve it, and the resolution can fail: deleting a
+/// meforish does not go back and rewrite the events that mention it, by design,
+/// because the log is append-only and those units really were learned with it.
+///
+/// This existed as a private `nameOf` in three files, and **they disagreed**.
+/// Two named the missing meforish; `unit_details_sheet` fell back to the id
+/// itself, so a chazara line for a user-added meforish read as a raw UUID. The
+/// two that were right each carried a comment explaining why — which is how you
+/// get the same fix applied twice out of three.
+Layer layerById(AppLocalizations l10n, List<Layer> layers, String id) =>
+    layers.firstWhere((l) => l.id == id,
+        orElse: () => Layer(id: id, name: l10n.deletedMeforish));
+
+/// [layerById] in the reader's language — the form almost every call site wants.
+String layerNameById(AppLocalizations l10n, List<Layer> layers, String id) =>
+    layerName(l10n, layerById(l10n, layers, id));
+
 /// What one unit of [label] is called, singular ("daf", "perek").
 String unitLabelName(AppLocalizations l10n, UnitLabel? label) =>
     switch (label) {

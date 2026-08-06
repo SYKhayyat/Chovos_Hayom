@@ -3,7 +3,6 @@ import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/features/dashboard/sort_sheet.dart';
-import 'package:chovos_hayom/features/unit_grid/add_chazara_sheet.dart';
 import 'package:chovos_hayom/features/unit_grid/bulk_actions_sheet.dart';
 import 'package:chovos_hayom/features/unit_grid/log_unit_sheet.dart';
 import 'package:chovos_hayom/features/unit_grid/mefarshim_config_sheet.dart';
@@ -157,13 +156,18 @@ void main() {
             (context, ref) => showLogUnitSheet(context, title: 'Shabbos daf 5')));
   });
 
+  // "Log chazara" is the same sheet as "log unit" now — same builder, same
+  // SafeArea, same inset. It stays measured separately because the two used to
+  // be separate sheets that broke separately, and a geometry check that only
+  // covers one entry point into a shared widget is a check that will miss the
+  // day someone gives the other its own wrapper again.
   testWidgets('add chazara', (tester) async {
     expectClearOfNavBar(
         tester,
         await openAndMeasure(
             tester,
             (context, ref) =>
-                showAddChazaraSheet(context, ref, node: node, unit: 5)));
+                logChazaraWithDetails(context, ref, node: node, unit: 5)));
   });
 
   testWidgets('bulk actions', (tester) async {

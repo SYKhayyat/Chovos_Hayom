@@ -5,7 +5,7 @@ import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/stats.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
-import 'package:chovos_hayom/features/stats/stats_screen.dart';
+import 'package:chovos_hayom/features/reports/report_screen.dart';
 import 'package:chovos_hayom/features/unit_grid/unit_grid_screen.dart';
 import 'package:chovos_hayom/l10n/generated/app_localizations.dart';
 import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
@@ -32,7 +32,7 @@ void main() {
           progressRepositoryProvider.overrideWithValue(repo),
           clockProvider.overrideWithValue(() => DateTime(2026, 1, 10, 12)),
         ],
-        child: localizedApp(home: const StatsScreen(), locale: locale),
+        child: localizedApp(home: const ReportScreen(), locale: locale),
       );
 
   LearningEvent done(int unit, DateTime day) => LearningEvent(
@@ -53,11 +53,11 @@ void main() {
     await tester.pumpWidget(stats(repo, const Locale('he')));
     await tester.pumpAndSettle();
 
-    expect(find.text('סטטיסטיקה'), findsOneWidget);
+    expect(find.text('דוחות'), findsOneWidget);
     expect(find.text('רצף'), findsOneWidget);
     // The English these replaced must be gone — a missing key silently falling
     // back to the template locale is exactly the failure worth catching.
-    expect(find.text('Statistics'), findsNothing);
+    expect(find.text('Reports'), findsNothing);
     expect(find.text('Streak'), findsNothing);
   });
 
@@ -66,7 +66,7 @@ void main() {
     await tester.pumpWidget(stats(repo, const Locale('he')));
     await tester.pumpAndSettle();
 
-    expect(Directionality.of(tester.element(find.byType(StatsScreen))),
+    expect(Directionality.of(tester.element(find.byType(ReportScreen))),
         TextDirection.rtl);
   });
 
@@ -75,8 +75,8 @@ void main() {
     await tester.pumpWidget(stats(repo, const Locale('en')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Statistics'), findsOneWidget);
-    expect(Directionality.of(tester.element(find.byType(StatsScreen))),
+    expect(find.text('Reports'), findsOneWidget);
+    expect(Directionality.of(tester.element(find.byType(ReportScreen))),
         TextDirection.ltr);
   });
 

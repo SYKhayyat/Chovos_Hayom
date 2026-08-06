@@ -11,7 +11,6 @@ import '../../domain/usecases/unit_history.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
-import 'add_chazara_sheet.dart';
 import 'log_unit_sheet.dart';
 
 /// A bottom sheet showing everything recorded for one learned unit — when it was
@@ -117,7 +116,7 @@ class _UnitDetailsSheet extends ConsumerWidget {
                       icon: const Icon(Icons.refresh, size: 18),
                       label: Text(l10n.detailsAddChazara),
                       onPressed: () =>
-                          showAddChazaraSheet(context, ref, node: node, unit: unit),
+                          logChazaraWithDetails(context, ref, node: node, unit: unit),
                     ),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.undo, size: 18),
@@ -149,12 +148,14 @@ class _UnitDetailsSheet extends ConsumerWidget {
       LearningEvent review, CalendarMode mode) {
     final l10n = AppLocalizations.of(context);
     final allLayers = ref.read(allLayersProvider);
-    String nameOf(String id) => layerName(
-        l10n,
-        allLayers.firstWhere((l) => l.id == id,
-            orElse: () => Layer(id: id, name: id)));
-    final mefarshim =
-        review.layers.where((l) => l != mainLayerId).map(nameOf).toList();
+    final mefarshim = review.layers
+        .where((l) => l != mainLayerId)
+        // Was a third hand-written copy of this lookup, and the one that got it
+        // wrong: its fallback was the id itself, so a chazara recorded with a
+        // meforish the user has since deleted printed a raw UUID into the
+        // history line. See [layerNameById].
+        .map((id) => layerNameById(l10n, allLayers, id))
+        .toList();
     final head = <String>[
       l10n.chazaraPass(n),
       DateDisplay.format(review.occurredAt, mode),

@@ -2,6 +2,14 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
+> **Status, 2026-08-06 (last).** **Finding 6** (*"Four report screens are Stats sections wearing
+> routes"*) is now resolved — see the note below it, including the one place its arithmetic is
+> wrong (the `DpadScroll` count), the one claim that has gone stale since it was written, and the
+> keypad interaction the sweep could not have reached. Two rows of **finding 5** go with it: the
+> date+time+duration+haara form and `nameOf`.
+>
+> ---
+>
 > **Status, 2026-08-06 (later still, again).** Four rows of **finding 5** — the pace scalar, the
 > log→numbers pass, distinct-units-learned-on-a-day and the per-meforish counts — are now resolved.
 > See the note below the finding. The rest of finding 5's inventory stands as written.
@@ -593,9 +601,9 @@ places that cannot see each other:
 | ~~the pace scalar~~ **✅ Resolved** | ~~once per goal, per tick~~ — one `paceProvider`, and a `double` has real `==`, so an unchanged pace notifies no goal row at all | ~~N goals ⇒ N+1 identical full-log scans per rebuild~~ — measured at ten passes for ten goal rows; now zero |
 | ~~per-meforish counts~~ **✅ Resolved** | ~~2~~ — `MefarshimStats.of(forest)` sums the roll-up the dashboard bars are drawn from | ~~same number, two derivations, no test pinning them together~~ — and they could genuinely disagree, on a node whose parent id points at nothing |
 | ~~the log→numbers pass~~ **✅ Resolved** | ~~**5 passes in `statsProvider`**~~ — it now watches the two indexes and never the log; every answer is a map lookup | ~~`fold_log.dart:11-14` states the point of the fold was "five ordered passes where one will do"~~ — enforced now, at two passes, by `log_pass_count_test.dart` |
-| the date+time+duration+haara form | 2 full copies (`log_unit_sheet`, `add_chazara_sheet`) | two ARB keys for one duration field |
+| ~~the date+time+duration+haara form~~ **✅ Resolved** | ~~2 full copies~~ — one `showLogUnitSheet` with an action's title, checklist label and save label passed in; `add_chazara_sheet.dart` deleted | ~~two ARB keys for one duration field~~ — and worse: the copy read the wall clock instead of `clockProvider` and had no session timer. See the note on finding 6 |
 | the meforish checkbox list | 3 | — |
-| `nameOf` (layer name with deleted fallback) | 3, and **they disagree** — `unit_details_sheet.dart:155` prints a raw UUID where the other two print a translated string | same fix applied twice out of three |
+| ~~`nameOf` (layer name with deleted fallback)~~ **✅ Resolved** | ~~3, and **they disagree**~~ — one `layerById`/`layerNameById` in `naming.dart`; the mefarshim stat rows were a fourth, and also wrong | ~~same fix applied twice out of three~~ — the raw UUID was real and is now a test |
 | the catalog picker | 3 (`cycles_screen:332`, `edit_cycle_screen:237`, `calculator_screen:92`), two of them with cross-referencing comments and **different clamps** (320/400 vs 340/420) | — |
 | controller-owning dialog | the shared `text_prompt.dart` + 2 hand-rolls | the bug it was written to end |
 | `requiredPerDay` rendering | 3 (`calculator:252`, `goals_screen:69`, `unit_grid_screen:349`) | the Calculator's "By date" mode is a goal you can't save |
@@ -615,7 +623,85 @@ new file, four deletions, no behaviour change. Do that one first, this week.
 
 ---
 
-### 6. Four report screens are Stats sections wearing routes. `delete`.
+### 6. Four report screens are Stats sections wearing routes. `delete`. **✅ Resolved**
+
+> **The thesis held and the arithmetic did not.** Every line count is right to within seven lines
+> (Calculator is 293, not 286), the four screens really do read the same providers, Goals really
+> could not create the thing it listed, and *"the Calculator's 'By date' mode is a goal you can't
+> save"* — a one-line aside in the inventory of finding 5 — turned out to be the most useful
+> sentence in the finding. It is the reason the merge is worth doing rather than merely tidy: the
+> two screens that compute `requiredPerDay` were three drawer rows apart and could not see each
+> other, so the mode that works out the pace needed to finish by a date threw the answer away and
+> sent you off to find the sefer and tap a flag. Saving it is four lines and was impossible while
+> they were separate routes.
+>
+> **Where the prescription is arithmetically wrong: "two `DpadScroll` copies" out.** It is zero.
+> `DpadScroll` wraps a scroll view, and a tabbed report has one scroll view per tab, so the three
+> figure-only sections still each need one — they are in one folder now instead of three, which is
+> not the same claim. The finding reasons about the workaround as though it were per *route*; it is
+> per *scrollable*. Nothing else in the paragraph depends on this, but "~525 lines out" should be
+> read the same way: the four files are ~548 lines and the five sections plus the shell are ~700,
+> because the shell, the shared empty state and the shared goal rendering are real code that did not
+> exist. What actually leaves is **five drawer rows for one**, four `Scaffold`s, five ARB titles and
+> five nav strings, one of two `requiredPerDay` renderings, one of two goal sentences, one of two
+> remove-with-undo flows, and — with the second half of the finding — 223 lines of chazara sheet.
+> Fewer lines was never the point; fewer places for the same idea to live was.
+>
+> **And one claim has gone stale since it was written.** *"None of the four has a widget test of its
+> own, which is exactly what makes the merge cheap"* was true on 2026-08-05 and stopped being true
+> when finding 7 landed: `report_screens_test.dart` builds all four. That is better than what the
+> finding wanted — the tests made the merge *safe* rather than cheap, and every one of them survived
+> it with its assertions unchanged.
+>
+> **The second half was worse than reported, in the copy's favour.** `add_chazara_sheet.dart` is
+> described as differing in "`EventAction.reviewed`, the seed set, and one ARB key". It also read
+> `DateTime.now()` directly instead of `clockProvider` — the finding-1 defect, in a file no test
+> could place in time — and had **no session timer**, on the one action in the app where timing what
+> you are about to do is most of the point. The finding predicts the user *gains* the timer; it does
+> not notice they had lost it. Its `nameOf` fallback was also dead: candidates were built from
+> `allLayers`, so the deleted-meforish branch could not be reached.
+>
+> **What the sweep could not reach is that a tab bar is a second axis of navigation on a device
+> that has one.** `DpadScroll` claims focus on arrival and turns up/down into scrolling, releasing
+> the key at either end so focus can leave — so getting *out* of a section to the tabs worked
+> already. Getting back in did not, and silently: the wrapper is `skipTraversal: true`, which makes
+> it invisible to directional focus, and its `autofocus` only fires when nothing in the scope holds
+> focus, which after a tab switch is false because the tab does. Reachable one way and not the
+> other, which would have left four fifths of the report unreachable on the Sonim. `DpadScroll` grew
+> a documented `skipTraversal` parameter; `keypad_test.dart` walks the round trip in both directions
+> and was watched fail on the old shape.
+>
+> **The 240dp check earned itself on its first run.** Walking all five tabs at the Sonim's size
+> found the Goals empty state overflowing its tab by 88 pixels — the message *and* the new button
+> both below a fold that could not be scrolled. Three hand-rolled `Center` → `Padding(32)` → `Text`
+> towers became one `ReportEmpty` that is centred while it fits and scrolls when it does not, which
+> is the same shape the summary grid was rebuilt into after "the statistics screen looks very
+> glitchy".
+>
+> Resolved by `lib/features/reports/` (`report_screen.dart` — the shell, the `ReportSection` enum
+> and `ReportEmpty` — plus `overview_`, `calculator_`, `goals_`, `siyumim_` and
+> `mefarshim_section.dart`), `lib/features/common/goal_status.dart` (one sentence, one colour, one
+> icon, one remove-with-undo, and the `GoalBanner` the unit grid wears), and
+> `layerById`/`layerNameById` in `naming.dart`, which closes the *`nameOf` × 3, and they disagree*
+> row of finding 5 — `unit_details_sheet.dart:155` was printing a raw UUID into the chazara history
+> for any meforish deleted since. `add_chazara_sheet.dart` is gone into `log_unit_sheet.dart`, which
+> now holds the one form and its two actions; `unit_grid_screen.dart` gave up its copy of
+> `logWithDetails` to the same file and its `_GoalBanner` to `goal_status.dart`, and its goal date
+> now comes from `clockProvider` rather than the wall clock. Five ARB titles, five nav strings,
+> `goalBanner`/`goalRowStatus`/`goalRowReached`/`goalRemoved` and `addChazaraDuration` deleted; the
+> five route names kept, each mapping to a tab.
+>
+> **And the rule is enforced rather than stated.** `test/features/report_guard_test.dart` reads
+> `lib/` and fails the build on a `Scaffold` inside `reports/` (a section that has become a route
+> again), on the goal sentence rendered outside `goal_status.dart`, and on a second date-and-duration
+> logging form — plus a plain existence check on the six deleted paths, because the cheapest way for
+> this to come undone is a file reappearing. Each ban was fed a violation and watched catch it. 579
+> tests pass; `analyze --fatal-infos` is clean.
+>
+> **Not done, and still true:** the *catalog picker × 3* row of finding 5. Goal creation deliberately
+> reuses the Calculator's dropdown rather than adding a fourth copy, which is why the Goals tab sends
+> you there instead of growing a picker — but `cycles_screen:332` and `edit_cycle_screen:237` still
+> hold two more, with different clamps.
 
 | screen | lines | how often a user asks its question |
 |---|---|---|
@@ -945,7 +1031,12 @@ CMake caches just as aggressively, and the CMake target-id failure that once bro
    mark and an un-mark in the same second were ordered by their random UUIDs. Schema v13. See the
    status note on finding 7 for that, for the eleven one-shot reads dressed as live queries, and
    for what the finding got stale about.
-7. Delete `fixes.md`, both GRADEs and BUILD (carving ~55 lines of measurement lore into
+7. ~~Merge the four report screens into a tabbed Stats.~~ **✅ Done** — five tabs, not four
+   sections, since Statistics is one of them; the five route names kept and mapped to tabs; the
+   drawer down from twelve rows to eight. It was not the `~525 lines out` the finding costs it at
+   (see the note), and the win it did not predict is that the Calculator's *By date* answer can now
+   be saved as a goal — which is what it had been computing all along.
+8. Delete `fixes.md`, both GRADEs and BUILD (carving ~55 lines of measurement lore into
    `docs/MEASURING.md`); cut the README to ~120 lines and `ARCHITECTURE.md` to §10.
 
 ---
