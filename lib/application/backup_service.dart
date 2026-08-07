@@ -317,7 +317,7 @@ class BackupService {
     final existing = existingEvents.map((e) => e.id).toSet();
     final added = [
       for (final e in data.events)
-        if (!existing.contains(e.id)) _rescope(e, targetProfileId),
+        if (!existing.contains(e.id)) e.rescopedTo(targetProfileId),
     ];
     final backupIds = data.events.map((e) => e.id).toSet();
     final stale = mode.replacesLog
@@ -416,20 +416,6 @@ class BackupService {
   Future<int> customisationsAtRisk(String profileId, BackupData data) async =>
       (await _customisationsToRemove(profileId, data)).count;
 
-  static LearningEvent _rescope(LearningEvent e, String profileId) =>
-      LearningEvent(
-        id: e.id,
-        profileId: profileId,
-        nodeId: e.nodeId,
-        unitIndex: e.unitIndex,
-        action: e.action,
-        occurredAt: e.occurredAt,
-        loggedAt: e.loggedAt,
-        durationMin: e.durationMin,
-        note: e.note,
-        layers: e.layers,
-        batchId: e.batchId,
-      );
 }
 
 /// The rows a [ImportMode.restoreEverything] has to delete, by kind.

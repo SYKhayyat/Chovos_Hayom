@@ -85,6 +85,35 @@ class LearningEvent {
         batchId: batchId,
       );
 
+  /// The same event, belonging to [profileId].
+  ///
+  /// This is the *other* reason to copy an event, and it lived in
+  /// `BackupService` as eleven fields listed by hand — which is `copyWith`
+  /// again, minus the compiler's help. Importing a backup re-scopes every event
+  /// in it, so a field added to this class and not to that list would be
+  /// silently dropped from every imported event, at the one moment a user is
+  /// restoring data they cannot lose.
+  ///
+  /// Named rather than general, for the reason [withDetails] gives: there is no
+  /// parameter here whose null could mean two things.
+  ///
+  /// Event ids are unique *within* a profile, not across the store, so the id is
+  /// deliberately kept — the same backup imported into two profiles putting the
+  /// same ids in both is the feature, not a collision.
+  LearningEvent rescopedTo(String profileId) => LearningEvent(
+        id: id,
+        profileId: profileId,
+        nodeId: nodeId,
+        unitIndex: unitIndex,
+        action: action,
+        occurredAt: occurredAt,
+        loggedAt: loggedAt,
+        durationMin: durationMin,
+        note: note,
+        layers: layers,
+        batchId: batchId,
+      );
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'profileId': profileId,

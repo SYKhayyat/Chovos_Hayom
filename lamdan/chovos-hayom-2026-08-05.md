@@ -2,7 +2,27 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-07 (last).** Row 7 of *The claim* — *"the lint is what keeps new ones from
+> **Status, 2026-08-07 (last).** Row 8 of *The claim* — `copyWith` deleted while `_rescope`
+> hand-listed all eleven fields — is now resolved.
+>
+> **The deletion's argument was right and is kept.** `copyWith` sat next to `withDetails`, whose
+> null means *clear this field*, while `copyWith`'s null means *keep it*: two near-identical methods
+> with inverted null semantics, waiting for whoever reaches for the familiar name. Bringing it back
+> would re-create that. What the deletion missed is that something *was* doing the job — so the fix
+> is to name the operation instead. `LearningEvent.rescopedTo(profileId)` changes one field and has
+> no parameter whose null could mean two things.
+>
+> **And there are six of these, not one.** `withDetails`, `rescopedTo`, `toJson`, `fromJson`, and
+> both halves of the Drift mapping each enumerate all eleven fields by hand. A field added to the
+> class and missed in any one of them is dropped **silently** — on an import, on an edit, or at
+> rest. That is the compiler's help the row is about, and no amount of naming brings it back, so it
+> is a test: every one of the six is held to the *constructor*, read out of the source, with the two
+> fields that are deliberately spelled differently at the storage boundary named as such. Fed a new
+> field and watched to name all six.
+>
+> ---
+>
+> **Status, 2026-08-07 (previously last).** Row 7 of *The claim* — *"the lint is what keeps new ones from
 > drifting back out of the guard"* — is now resolved.
 >
 > **The finding is right and understates itself by one shape.** Compiled and run rather than
@@ -500,7 +520,7 @@ design writing in the repository. The problem is what happens next to them:
 | `text_prompt.dart` exists because five dialogs each hand-rolled a controller and threw *used after being disposed* | `_LayerNameDialog` (`mefarshim_config_sheet.dart:400`) and `_RangeDialog` (`bulk_actions_sheet.dart:329`) hand-roll it again. **✅ Resolved** — and neither author had forgotten the rule: the shared prompt took one field and could not reject input, and both of them needed more. A shared thing that does not cover the second case gets copied. See finding 5. |
 | `README.md:358` — *"a message is one whole ARB entry, never a sentence glued together"* | `dateTimeLabel` exists, is translated into Hebrew, and has **zero call sites**; `log_unit_sheet.dart:194` and `add_chazara_sheet.dart:173` each glue the string by hand. **✅ Resolved** — one hand-glue by then, and it was a fourth copy of `DateDisplay.formatWithTime` that ignored the calendar setting. See finding 10. |
 | `README.md:373` — *"the lint is what keeps new ones from drifting back out of [the guard]"* | `unawaited_futures` fires on expression statements in **async** bodies. The dominant shape here is `onPressed: () => guarded(...)` — a sync arrow closure. Not flagged, any of them. **✅ Resolved** — verified by probe: the sync *block* body is not flagged either, so two of the three shapes escape. The claim is now a test that derives its verbs, and it found one unguarded write. See the status note |
-| `learning_event.dart:62-68` — `copyWith` deleted because *"nothing called it"* | `backup_service.dart:353` hand-lists all eleven fields to rescope an event. That *is* `copyWith`, minus the compiler's help. |
+| `learning_event.dart:62-68` — `copyWith` deleted because *"nothing called it"* | `backup_service.dart:353` hand-lists all eleven fields to rescope an event. That *is* `copyWith`, minus the compiler's help. **✅ Resolved** — and not by bringing `copyWith` back: the argument for deleting it was right. `rescopedTo` is the operation that was actually being hand-written. There were **six** hand-listed copiers, not one. See the status note |
 | `sorting.dart:56-65` — ten lines condemning conditional watches | see row 2. **✅ Resolved** with it, and now guarded: `notify_guard_test.dart`. |
 | `backup_service.dart:398-403` — the validator justified by two crashes it prevents | Neither crash exists: `catalog.dart:47` and `inherited_layer_set.dart:38` already refuse to revisit a node, and `catalog_node.dart:101` uses `Iterable.generate`, which is empty for a negative count. The guards that make the validator unnecessary say so in *their own* comments. **✅ Resolved** — and the second half of this row is itself wrong: two more walks had *no* guard, and one of them never returns. See finding 9. |
 

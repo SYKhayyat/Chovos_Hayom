@@ -60,6 +60,7 @@ fail the build on the shape of the mistake rather than on its consequences:
 | `application/backup_parse_once_test.dart` | a second decode of a backup file — the parse is a trust boundary and happens where the bytes arrive |
 | `application/profile_delete_test.dart` | a per-profile preference key or a profile-scoped table that profile deletion does not reach |
 | `application/import_scope_test.dart` | a store a backup writes into that does not take an `ImportMode` |
+| `domain/learning_event_fields_test.dart` | a field added to `LearningEvent` and left out of one of the six places that copy one |
 | `domain/layer_role_guard_test.dart` | a second resolver, table or stream of layer settings, and a screen working out a unit's mefarshim from the roles and the fold itself |
 | `features/report_guard_test.dart` | a report screen re-added as its own route, and a section wiring up its own D-pad scrolling instead of using `ReportBody` |
 | `features/node_picker_guard_test.dart` | a fifth way to offer the catalog — a hand-rolled picker dialog, node dropdown, or list label |
