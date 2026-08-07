@@ -94,6 +94,9 @@ class PrefKeys {
   static const deviceWideMigrated = 'deviceWideSettingsMigrated';
 
   /// Every setting that belongs to a profile rather than the device.
+  ///
+  /// This is the list a *backup* and *Clear settings* walk: things the learner
+  /// chose. It is deliberately not the same list as [ownedBy] — see there.
   static const perProfile = [
     reminderEnabled,
     sortMetric,
@@ -106,6 +109,15 @@ class PrefKeys {
     backupIntervalDays,
   ];
 
+  /// Per-profile **state**, as opposed to per-profile settings.
+  ///
+  /// Neither of these is something the learner chose, so neither rides in a
+  /// backup and neither is reset by *Clear settings* — but both belong to the
+  /// profile and both go when it does. They were named one at a time at the
+  /// delete site, in a comment explaining that they are not in [perProfile];
+  /// naming them here is what makes the next one of them impossible to forget.
+  static const perProfileState = [sessionTimer, lastBackupAt];
+
   /// The profile-scoped form of [key].
   static String scoped(String profileId, String key) => '$profileId/$key';
 
@@ -113,4 +125,29 @@ class PrefKeys {
   /// fixed key, so goals follow the profile they belong to — and so deleting a
   /// profile has a single key to remove.
   static String goalsFor(String profileId) => 'goals:$profileId';
+
+  /// **Every preference key [profileId] owns.** The one list a profile deletion
+  /// walks.
+  ///
+  /// Deleting a profile touches two stores. The repository cascades its five
+  /// tables; nothing cascades preferences, because [AppPreferences] cannot
+  /// enumerate keys — so a key left behind here outlives the profile forever,
+  /// and a new profile that happened to reuse the id would inherit a stranger's
+  /// calendar, cycles, sort order and target dates.
+  ///
+  /// That has already happened once: goals were the only removal here for a
+  /// long time, then `cycles` and nine other keys were added *next to* them and
+  /// orphaned on every delete. Looping [perProfile] fixed those nine and left
+  /// three keys still named by hand at the call site — two because they are
+  /// state rather than settings, one because it has its own key shape. Three
+  /// hand-written exceptions is where the next one goes missing.
+  ///
+  /// `profile_delete_test.dart` holds every key `PrefKeys` declares to this
+  /// list, so a key that is neither app-wide nor device-wide nor here fails the
+  /// build rather than the user.
+  static List<String> ownedBy(String profileId) => [
+        for (final key in perProfile) scoped(profileId, key),
+        for (final key in perProfileState) scoped(profileId, key),
+        goalsFor(profileId),
+      ];
 }

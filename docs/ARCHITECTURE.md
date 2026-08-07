@@ -115,6 +115,12 @@ Rules:
 - Undo = append an inverse event; redo = replay. Export = dump the log.
 - **Custom sources:** when a user creates a custom sefer/category, *they* fill in the unit label and
   count. Same schema as the bundled catalog, so every feature works on it identically.
+- **A profile is spread across two stores, and *deleting* one has to reach both.** The repository
+  cascades its five tables; nothing cascades preferences, because `AppPreferences` cannot enumerate
+  keys — so a key left behind outlives the profile forever and a reused id inherits a stranger's
+  settings. `PrefKeys.ownedBy` is the one list the delete walks, and
+  `test/application/profile_delete_test.dart` holds every key `PrefKeys` declares (and every table
+  with a `profileId` column) to it.
 - **A profile is spread across two stores, and a backup has to reconcile both.** The five tables
   above, plus the preferences noted on `Profile` — settings and goals. `ImportMode` says how much of
   a profile an import may replace, and it has to mean the same thing in both stores: it reached the

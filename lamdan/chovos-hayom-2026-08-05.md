@@ -2,7 +2,37 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-07 (last).** The **JSON parse per restore** row of finding 5 is now resolved.
+> **Status, 2026-08-07 (last).** The **profile deletion** row of finding 5 is now resolved.
+>
+> **The two paths are not the finding, and cannot be.** A profile lives in five database tables and
+> in preferences, and those are two stores with two mechanisms; a single call site would still be
+> two loops. What is real is that only one of them **cascades**. The repository drops its tables in
+> a transaction. Nothing drops the preferences, because `AppPreferences` cannot enumerate keys — so
+> a key left behind is unreachable forever, and a new profile that reused the id would inherit a
+> stranger's calendar, cycles, sort order and target dates.
+>
+> **It had already gone wrong twice, in the same direction.** First goals were the *only* removal,
+> and ten scoped settings keys were orphaned. Then a loop over `perProfile` fixed those and left
+> **three** keys still named by hand at the call site — the session timer and the last-backup stamp,
+> because they are per-profile *state* rather than settings, and goals, because they have their own
+> key shape and no loop over `scoped` can ever reach them. Each of the three carried a comment
+> explaining why it was an exception. Three hand-written exceptions is where the fourth goes
+> missing, and the row's *worst consequence* column — "kept in sync by hand" — is the whole of it.
+>
+> The last-backup stamp is the one worth naming: a profile inheriting it is *reassured*. It would be
+> told its learning had been exported when it never was, by the feature whose entire reason for
+> existing is that the export is the only copy that survives a lost device.
+>
+> Resolved by `PrefKeys.ownedBy(profileId)` — settings, state and goals in one list — walked once.
+> **And three guards, each fed a violation:** every key `PrefKeys` declares must be app-wide,
+> device-wide or owned; every profile-scoped key *shape* (a `xFor(profileId)` function, the kind no
+> loop can find) must be named inside `ownedBy`; and every Drift table with a `profileId` column
+> must be cleared by `deleteProfile`. The last one guards the store that *does* cascade, because it
+> only cascades over the tables somebody remembered to name.
+>
+> ---
+>
+> **Status, 2026-08-07 (previously last).** The **JSON parse per restore** row of finding 5 is now resolved.
 >
 > **Four, and the fourth is the funny one.** The preview parses the file; the customisation count
 > the preview shows parses it again; the write parses it a third time; and the merge path parses it
@@ -980,7 +1010,7 @@ places that cannot see each other:
 | ~~"the four customisation lists"~~ **✅ Resolved** | ~~3~~ — one `ProfileCustomisations.of`, and `BackupService.export` **reads** the three rather than taking them, so there is nowhere left to pass a list in | ~~shipped a bug: `.asData?.value ?? const []` silently exporting empty lists~~ — fixed twice at two of the three sites, one paragraph each, and the third was written afterwards. See the status note |
 | ~~"is this a positive integer"~~ **✅ Resolved** | ~~3 layers each, for both interval settings~~ — and five more in the cycle editor, the node editor, the range dialog and the log sheet. One `core/parse.dart` | ~~—~~ the empty column again: the copies **disagreed**, visibly, two rows apart on one screen — and one of them was storing a negative duration. See the status note |
 | ~~JSON parse per restore~~ **✅ Resolved** | ~~3–4 full decodes of the same file before anything is written~~ — one, at the boundary; `importInto`, `customisationsAtRisk` and `restoreDiff` take a `BackupData` | ~~on a Sonim, with a Shas-sized log~~ — and the fix is a *type*, not a cache: there is no longer a String to hand them |
-| profile deletion | 2 paths (`drift_progress_repository:120` for 6 tables, `providers.dart:141` for the goals key) | kept in sync by hand |
+| ~~profile deletion~~ **✅ Resolved** | ~~2 paths~~ — still two stores, because they *are* two stores; what went is the hand-written part. One `PrefKeys.ownedBy`, and three guards holding both halves to it | ~~kept in sync by hand~~ — it had already gone wrong twice in the same direction. See the status note |
 | ~~`DpadScroll`~~ **✅ Resolved** | ~~3 call sites — exactly the three report screens~~ — it was **4** by the time it was looked at, and merging the routes did not reduce it: the three sections kept their own copies and `ReportEmpty` had grown a fourth. One `ReportBody`, and a guard rule | ~~the tax for splitting one report into three routes~~ — the tax was never the routes. `skipTraversal: false` is a fact about the *tab bar*, and three sections were each asserting it locally |
 
 **The change is not "deduplicate."** It is: for each row, build the thing that makes the second
