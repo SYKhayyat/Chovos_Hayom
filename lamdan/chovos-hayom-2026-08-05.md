@@ -2,7 +2,44 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-06 (last).** Two rows of **finding 5** that looked already-resolved are now
+> **Status, 2026-08-06 (last).** The **catalog picker** row of finding 5 is now resolved.
+>
+> **It was three and it is four, and the fourth is the one worth having.** The row names
+> `cycles_screen`, `edit_cycle_screen` and the Calculator; the node editor's *parent* dropdown is a
+> fourth, and while the three the sweep found differ only in cosmetics — two `SimpleDialog`s with
+> hard-coded widths of 320 and 340, one of them commented "see the same clamp in
+> cycles_screen.dart" *beside a different number*, and both wider than the 240dp screen this app is
+> built for — the fourth differs in a way a user can feel. It sorted by `a.name`, the **raw English
+> field**, whatever language the reader was in, and labelled each row with the bare name rather
+> than the qualified one. So a Hebrew reader choosing where to file a sefer got a list ordered by
+> strings that were not on their screen, containing four rows all reading "שבת". Every one of the
+> other three carried a comment explaining why its list is qualified. The one written last had
+> neither the comment nor the qualifier, which is the finding's own thesis: a rule stated four
+> times is a rule nobody owns.
+>
+> Resolved by `lib/features/common/node_picker.dart` — `nodeChoices` (which nodes, in what order,
+> under what label), `showNodePicker` (one clamp, sized to the screen it is on) and `NodeDropdown`
+> (the indent, the ellipsis, and a fallback for a value the list no longer contains). All four
+> sites migrated. `node_picker_guard_test.dart` refuses a fifth and **names the one deliberate
+> exception** — the search delegate, which navigates rather than returns and puts the qualifier in
+> a subtitle beside the unit count. The guard asserts the exception is still shaped the way its
+> reason says, so it cannot outlive it.
+>
+> **The Calculator got cheaper on the way past.** It watched `progressForestProvider` and walked
+> all 312 nodes into a parallel list on every build to read `remaining` and `total` off *one* of
+> them, so a mark anywhere in the catalog rebuilt the tab. It reads `progressNodeProvider(id)` now:
+> one map lookup, auto-disposed, with value equality on the other side of it.
+>
+> **And the guards had grown the defect they exist to catch.** Five of them had written the same
+> source scanner out for themselves — comment stripping, generated-code skipping, thirty lines —
+> and four were byte-identical. The fifth, `layer_role_guard_test.dart`, had quietly dropped the
+> **escape hatch**: every guard's docstring says it is a speed bump rather than a wall, and that
+> one was a wall with nothing saying so. `test/support/source_scan.dart` is the one scanner now,
+> and it takes the marker as a *required* argument, so a guard cannot forget to have one.
+>
+> ---
+>
+> **Status, 2026-08-06 (previously last).** Two rows of **finding 5** that looked already-resolved are now
 > settled on their own terms, which is the point of checking rather than assuming: one of them was
 > resolved and the other had got *worse* since the count was taken.
 >
@@ -749,7 +786,7 @@ places that cannot see each other:
 | ~~the date+time+duration+haara form~~ **✅ Resolved** | ~~2 full copies~~ — one `showLogUnitSheet` with an action's title, checklist label and save label passed in; `add_chazara_sheet.dart` deleted | ~~two ARB keys for one duration field~~ — and worse: the copy read the wall clock instead of `clockProvider` and had no session timer. See the note on finding 6 |
 | the meforish checkbox list | 3 | — |
 | ~~`nameOf` (layer name with deleted fallback)~~ **✅ Resolved** | ~~3, and **they disagree**~~ — one `layerById`/`layerNameById` in `naming.dart`; the mefarshim stat rows were a fourth, and also wrong | ~~same fix applied twice out of three~~ — the raw UUID was real and is now a test |
-| the catalog picker | 3 (`cycles_screen:332`, `edit_cycle_screen:237`, `calculator_screen:92`), two of them with cross-referencing comments and **different clamps** (320/400 vs 340/420) | — |
+| ~~the catalog picker~~ **✅ Resolved** | ~~3~~ — **4**: the node editor's parent dropdown is one too, and it is the one that mattered. One `node_picker.dart`: `nodeChoices` decides which nodes and in what order, `showNodePicker` owns the clamp, `NodeDropdown` owns the indent | ~~—~~ the missing consequence: the fourth picker sorted by the **raw English** `name` and did not qualify, so a Hebrew reader picking a parent got a list ordered by strings not on their screen, with four rows reading "שבת". See the status note |
 | controller-owning dialog | the shared `text_prompt.dart` + 2 hand-rolls | the bug it was written to end |
 | `requiredPerDay` rendering | 3 (`calculator:252`, `goals_screen:69`, `unit_grid_screen:349`) | the Calculator's "By date" mode is a goal you can't save |
 | ~~the goal banner widget~~ **✅ Resolved** (carried by finding 6's work, and verified rather than assumed) | ~~2 byte-identical~~ — one `GoalBanner`, one `goalStatusText`, one `removeGoalWithUndo`, and `report_guard_test.dart` rule 2 refuses a second reader of `l10n.goalStatus` | ~~2 ARB keys for one sentence~~ — one now, and the *residue of that merge* is the row's real finding: the surviving key's metadata block was still called `@goalBanner`, so it described nothing and `goalStatus`'s three placeholders were re-inferred as `Object`. See the status note |

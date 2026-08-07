@@ -160,8 +160,11 @@ lib/
   features/        self-contained feature modules (see §10); each owns its
                    presentation + application (Riverpod notifiers/providers).
     common/           the one write guard, the one read-failure view, the
-                      "this id no longer exists" screen, and naming.dart —
-                      every domain value that has to become words
+                      "this id no longer exists" screen, naming.dart — every
+                      domain value that has to become words — and
+                      node_picker.dart, the one way the catalog is offered to
+                      be chosen from (a dialog, a dropdown, and the three
+                      decisions both of them make the same way)
     reports/          the one report screen and its five tab bodies — Overview,
                       Calculator, Goals, Siyumim, Mefarshim. Five routes, one
                       Scaffold: they read the same providers and answer the same

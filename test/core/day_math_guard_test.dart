@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/source_scan.dart';
+
 /// The rule this file enforces: **`lib/core/day.dart` is the only place in the
 /// app that does calendar-day arithmetic.**
 ///
@@ -66,38 +68,6 @@ void main() {
   /// trip them. The escape-hatch marker is read from the raw line first.
   const escapeHatch = 'day-math: ok';
 
-  List<({int line, String text})> codeLines(String source) {
-    final out = <({int line, String text})>[];
-    var inBlock = false;
-    final lines = source.split('\n');
-    for (var i = 0; i < lines.length; i++) {
-      final raw = lines[i];
-      if (raw.contains(escapeHatch)) continue;
-      var text = raw;
-      if (inBlock) {
-        final end = text.indexOf('*/');
-        if (end < 0) continue;
-        text = text.substring(end + 2);
-        inBlock = false;
-      }
-      final block = text.indexOf('/*');
-      if (block >= 0) {
-        final end = text.indexOf('*/', block + 2);
-        if (end < 0) {
-          text = text.substring(0, block);
-          inBlock = true;
-        } else {
-          text = text.substring(0, block) + text.substring(end + 2);
-        }
-      }
-      final line = text.indexOf('//');
-      if (line >= 0) text = text.substring(0, line);
-      if (text.trim().isEmpty) continue;
-      out.add((line: i + 1, text: text));
-    }
-    return out;
-  }
-
   test('the regexes actually match the shapes they ban', () {
     for (final ban in bans) {
       expect(RegExp(ban.pattern).hasMatch(ban.sample), isTrue,
@@ -114,7 +84,7 @@ void main() {
    comment mentioning b.difference(a).inDays. */
 final ok = DateTime(x.year, x.month, x.day); // day-math: ok — deliberate
 final real = 86400000;
-''');
+''', escapeHatch: escapeHatch);
     expect(scanned, hasLength(1));
     expect(scanned.single.text, contains('final real'));
   });
@@ -122,16 +92,11 @@ final real = 86400000;
   test('lib/ does calendar-day arithmetic in exactly one place', () {
     final violations = <String>[];
 
-    for (final entity in Directory('lib').listSync(recursive: true)) {
-      if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      final path = entity.path.replaceAll(r'\', '/');
+    for (final path in dartSourcesUnder()) {
       if (path.endsWith(home)) continue;
-      // Generated code is not ours to hold to this.
-      if (path.contains('/l10n/generated/') || path.endsWith('.g.dart')) {
-        continue;
-      }
 
-      for (final line in codeLines(entity.readAsStringSync())) {
+      for (final line
+          in codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch)) {
         for (final ban in bans) {
           if (!RegExp(ban.pattern).hasMatch(line.text)) continue;
           violations.add('$path:${line.line} ${ban.why}\n'

@@ -4,13 +4,13 @@ import 'package:uuid/uuid.dart';
 
 import '../../application/backup_service.dart';
 import '../../application/providers.dart';
-import '../../domain/entities/catalog.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/enums.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/missing_item.dart';
 import '../common/naming.dart';
+import '../common/node_picker.dart';
 
 /// Create or edit a node. In edit mode ([nodeId] set) it writes a per-profile
 /// override keyed by that node's id — so *any* node, built-in included, can be
@@ -92,16 +92,25 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
   @override
   Widget build(BuildContext context) {
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
-    // Any node can be a parent (attach anywhere) except the node itself/its
-    // descendants (that would orphan the subtree).
-    final banned =
-        _isEdit ? _descendantIds(catalog, widget.existing!.id) : const <String>{};
-    final parents = catalog == null
-        ? <CatalogNode>[]
-        : (catalog.all.where((n) => !banned.contains(n.id)).toList()
-          ..sort((a, b) => a.name.compareTo(b.name)));
-
     final l10n = AppLocalizations.of(context);
+    // Any node can be a parent (attach anywhere) except the node itself and its
+    // descendants — filing a node under its own child orphans the subtree. The
+    // exclusion is a *region* of the tree, which is why it goes to
+    // [nodeChoices] as `exclude` rather than as a filter: skipping the node
+    // stops the walk there, so the descendants cost nothing to leave out.
+    //
+    // Tree order and qualified, like the Calculator's. This list used to be
+    // sorted by `a.name` — the raw English field, whatever language the reader
+    // was in — and labelled with the bare name, so a Hebrew reader got a list
+    // ordered by strings that were not on their screen containing four rows all
+    // reading "שבת".
+    final parents = catalog == null
+        ? const <NodeChoice>[]
+        : nodeChoices(
+            l10n,
+            catalog,
+            exclude: _isEdit ? {widget.existing!.id} : const {},
+          );
     return Scaffold(
       appBar: AppBar(
           title: Text(_isEdit
@@ -128,15 +137,11 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
             ),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String?>(
-            initialValue: parents.any((p) => p.id == _parentId) ? _parentId : null,
-            decoration: InputDecoration(labelText: l10n.addNodeParent),
-            items: [
-              DropdownMenuItem(value: null, child: Text(l10n.addNodeTopLevel)),
-              for (final c in parents)
-                DropdownMenuItem(
-                    value: c.id, child: Text(nodeName(l10n, c))),
-            ],
+          NodeDropdown(
+            label: l10n.addNodeParent,
+            choices: parents,
+            value: _parentId,
+            noneLabel: l10n.addNodeTopLevel,
             onChanged: (v) => setState(() => _parentId = v),
           ),
           const SizedBox(height: 12),
@@ -197,19 +202,6 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
         ],
       ),
     );
-  }
-
-  Set<String> _descendantIds(Catalog? catalog, String id) {
-    final result = <String>{id};
-    if (catalog == null) return result;
-    final queue = <String>[id];
-    while (queue.isNotEmpty) {
-      final cur = queue.removeLast();
-      for (final child in catalog.childrenOf(cur)) {
-        if (result.add(child.id)) queue.add(child.id);
-      }
-    }
-    return result;
   }
 
   Future<void> _save() async {

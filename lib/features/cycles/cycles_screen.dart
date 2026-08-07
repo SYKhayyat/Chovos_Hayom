@@ -9,10 +9,10 @@ import '../../application/stats.dart';
 import '../../core/calendar.dart';
 import '../../core/daf_yomi.dart';
 import '../../core/keypad.dart';
-import '../../domain/entities/catalog_node.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
+import '../common/node_picker.dart';
 
 /// Learning cycles: what each of your cycles calls for today, with one tap to
 /// log it.
@@ -331,45 +331,22 @@ class _LinkPrompt extends ConsumerWidget {
     if (catalog == null) return;
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
-    final leaves = [
-      for (final n in catalog.all)
-        if (n.isLeaf) n,
-    ]..sort((a, b) => nodeName(l10n, a).compareTo(nodeName(l10n, b)));
 
-    final chosen = await showDialog<CatalogNode>(
-      context: context,
-      builder: (dialogContext) => SimpleDialog(
-        title: Text(l10n.cycleLinkTitle(seferName)),
-        children: [
-          SizedBox(
-            // Clamped, not fixed: 320 is wider than the whole 240dp Sonim
-            // screen, and a dialog wider than the display is one whose right
-            // edge — where a "choose" row's chevron lives — cannot be seen.
-            // The 80/64 leave room for the dialog's own insets and title.
-            width: (MediaQuery.sizeOf(context).width - 80).clamp(200.0, 320.0),
-            height:
-                (MediaQuery.sizeOf(context).height - 160).clamp(200.0, 400.0),
-            child: ListView.builder(
-              itemCount: leaves.length,
-              itemBuilder: (_, i) {
-                // Qualified: this list is every leaf in the catalog, flat and
-                // alphabetical, so four rows read "Shabbos" with nothing to
-                // choose between them until the ancestor is named.
-                final primary = qualifiedNodeName(l10n, catalog, leaves[i]);
-                final secondary = primary == leaves[i].name
-                    ? leaves[i].nameHebrew
-                    : leaves[i].name;
-                return ListTile(
-                  title: Text(primary),
-                  subtitle: secondary == null || secondary == primary
-                      ? null
-                      : Text(secondary),
-                  onTap: () => Navigator.pop(dialogContext, leaves[i]),
-                );
-              },
-            ),
-          ),
-        ],
+    // Leaves only — a cycle's sefer name resolves to something with units in
+    // it — and by name, because this list is one you are *matching* a spelling
+    // against rather than a tree you are navigating. Both the second line and
+    // the dialog's size come from [showNodePicker]; this used to be the copy
+    // whose clamp a second picker's comment pointed at while using a different
+    // number.
+    final chosen = await showNodePicker(
+      context,
+      title: l10n.cycleLinkTitle(seferName),
+      choices: nodeChoices(
+        l10n,
+        catalog,
+        where: (n) => n.isLeaf,
+        order: NodeOrder.name,
+        secondary: nodeOtherName,
       ),
     );
     if (chosen == null) return;

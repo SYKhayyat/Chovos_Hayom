@@ -60,11 +60,19 @@ fail the build on the shape of the mistake rather than on its consequences:
 | `application/import_scope_test.dart` | a store a backup writes into that does not take an `ImportMode` |
 | `domain/layer_role_guard_test.dart` | a second resolver, table or stream of layer settings |
 | `features/report_guard_test.dart` | a report screen re-added as its own route, and a section wiring up its own D-pad scrolling instead of using `ReportBody` |
+| `features/node_picker_guard_test.dart` | a fifth way to offer the catalog — a hand-rolled picker dialog, node dropdown, or list label |
 | `l10n/arb_guard_test.dart` | a translated key nothing displays, a key that is its own translation, an `@metadata` block whose message has been renamed out from under it, and a placeholder left undeclared (and therefore typed `Object`) |
 
 The rot mode worth guarding is the **silent** one — the change that compiles, passes, and quietly
 stops something working. A field left out of an `==` does not throw; it shows up as a screen that
 has stopped updating.
+
+They all read source the same way, through `test/support/source_scan.dart`: comments stripped so
+that the docstring explaining a ban does not trip it, generated code skipped, and **an escape hatch
+that is a required argument**. That last part is not tidiness. Five of these files had written the
+scanner out for themselves and four were byte-identical; the fifth had quietly dropped the escape
+hatch, so one rule was a wall while its neighbours were speed bumps and nothing said so. A guard is
+supposed to make the next copy argue for itself, not make it impossible.
 
 ## Toolchain
 

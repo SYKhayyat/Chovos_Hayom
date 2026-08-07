@@ -6,6 +6,7 @@ import 'package:chovos_hayom/domain/usecases/layer_roles.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/layer_roles_dsl.dart';
+import '../support/source_scan.dart';
 
 /// The rule this file enforces: **a layer's role is one answer, stored once and
 /// resolved once.**
@@ -56,38 +57,16 @@ void main() {
     /// it is what reads them for the last time.
     const exempt = {'lib/data/drift/database.dart'};
 
-    /// Comments are stripped before matching, so the doc comments explaining
-    /// what went away — including this file's own subject matter — do not trip
-    /// the bans.
-    List<({int line, String text})> codeLines(String source) {
-      final out = <({int line, String text})>[];
-      var inBlock = false;
-      final lines = source.split('\n');
-      for (var i = 0; i < lines.length; i++) {
-        var text = lines[i];
-        if (inBlock) {
-          final end = text.indexOf('*/');
-          if (end < 0) continue;
-          text = text.substring(end + 2);
-          inBlock = false;
-        }
-        final block = text.indexOf('/*');
-        if (block >= 0) {
-          final end = text.indexOf('*/', block + 2);
-          if (end < 0) {
-            text = text.substring(0, block);
-            inBlock = true;
-          } else {
-            text = text.substring(0, block) + text.substring(end + 2);
-          }
-        }
-        final line = text.indexOf('//');
-        if (line >= 0) text = text.substring(0, line);
-        if (text.trim().isEmpty) continue;
-        out.add((line: i + 1, text: text));
-      }
-      return out;
-    }
+    /// A line that genuinely needs one of these shapes marks itself and is
+    /// skipped, the way every other guard in this suite works.
+    ///
+    /// This file did not have one. Its scanner was a copy of the others' with
+    /// the escape-hatch check quietly dropped, so the rule below was a wall
+    /// while its neighbours were speed bumps and nothing said so — which is
+    /// what a rule written out five times gets you. The shared scanner in
+    /// `source_scan.dart` takes the marker as a required argument for exactly
+    /// that reason: a guard cannot forget to have one.
+    const escapeHatch = 'layer-role: ok';
 
     test('the regexes actually match the shapes they ban', () {
       for (final ban in bans) {
@@ -100,15 +79,11 @@ void main() {
     test('no file under lib/ rebuilds the required/offered split', () {
       final offences = <String>[];
       var scanned = 0;
-      for (final f in Directory('lib').listSync(recursive: true)) {
-        if (f is! File || !f.path.endsWith('.dart')) continue;
-        final rel = f.path.replaceAll(r'\', '/');
-        if (rel.contains('/l10n/generated/') || rel.endsWith('.g.dart')) {
-          continue;
-        }
+      for (final rel in dartSourcesUnder()) {
         if (exempt.contains(rel)) continue;
         scanned++;
-        for (final line in codeLines(f.readAsStringSync())) {
+        for (final line in codeLines(File(rel).readAsStringSync(),
+            escapeHatch: escapeHatch)) {
           for (final ban in bans) {
             if (RegExp(ban.pattern).hasMatch(line.text)) {
               offences.add('$rel:${line.line} — ${ban.why}\n    ${line.text.trim()}');

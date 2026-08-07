@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'source_scan.dart';
+
 /// The rule this file enforces: **there is one `ProgressRepository`, and the
 /// tests run against it.**
 ///
@@ -64,38 +66,6 @@ void main() {
 
   const escapeHatch = 'repo-double: ok';
 
-  List<({int line, String text})> codeLines(String source) {
-    final out = <({int line, String text})>[];
-    var inBlock = false;
-    final lines = source.split('\n');
-    for (var i = 0; i < lines.length; i++) {
-      final raw = lines[i];
-      if (raw.contains(escapeHatch)) continue;
-      var text = raw;
-      if (inBlock) {
-        final end = text.indexOf('*/');
-        if (end < 0) continue;
-        text = text.substring(end + 2);
-        inBlock = false;
-      }
-      final block = text.indexOf('/*');
-      if (block >= 0) {
-        final end = text.indexOf('*/', block + 2);
-        if (end < 0) {
-          text = text.substring(0, block);
-          inBlock = true;
-        } else {
-          text = text.substring(0, block) + text.substring(end + 2);
-        }
-      }
-      final line = text.indexOf('//');
-      if (line >= 0) text = text.substring(0, line);
-      if (text.trim().isEmpty) continue;
-      out.add((line: i + 1, text: text));
-    }
-    return out;
-  }
-
   test('the regexes actually match the shapes they ban', () {
     // The failure mode of every source-scanning check ever written is quietly
     // matching nothing, so each ban carries the line it exists to catch.
@@ -110,12 +80,7 @@ void main() {
     final violations = <String>[];
 
     for (final root in ['lib', 'test']) {
-      for (final entity in Directory(root).listSync(recursive: true)) {
-        if (entity is! File || !entity.path.endsWith('.dart')) continue;
-        final path = entity.path.replaceAll(r'\', '/');
-        if (path.contains('/l10n/generated/') || path.endsWith('.g.dart')) {
-          continue;
-        }
+      for (final path in dartSourcesUnder(root)) {
         // This file quotes every shape it bans, so that the patterns cannot rot
         // into matching nothing. It cannot also be subject to them.
         if (path.endsWith('repository_double_guard_test.dart')) continue;
@@ -125,7 +90,8 @@ void main() {
         final isProduction =
             path == 'lib/data/repositories/drift_progress_repository.dart';
 
-        for (final line in codeLines(entity.readAsStringSync())) {
+        for (final line in codeLines(File(path).readAsStringSync(),
+            escapeHatch: escapeHatch)) {
           for (final ban in bans) {
             if (path == ban.allow) continue;
             if (isProduction && ban.allow == wrapper) continue;

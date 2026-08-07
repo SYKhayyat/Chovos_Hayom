@@ -6,12 +6,12 @@ import '../../application/cycles.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
-import '../../domain/entities/catalog_node.dart';
 import '../../domain/usecases/learning_cycle.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/missing_item.dart';
 import '../common/naming.dart';
+import '../common/node_picker.dart';
 
 /// Build a learning cycle: pick the sefarim, in order, set the pace and the day
 /// it started.
@@ -160,7 +160,7 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
           TextButton.icon(
             icon: const Icon(Icons.add),
             label: Text(l10n.editCycleAddSefer),
-            onPressed: catalog == null ? null : () => _addSegment(catalog.all),
+            onPressed: catalog == null ? null : _addSegment,
           ),
           const SizedBox(height: 24),
           FilledButton(
@@ -227,41 +227,23 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
 
   /// Adds a leaf, or every leaf under a category — so "all of Shas, in order"
   /// is one action rather than thirty-seven.
-  Future<void> _addSegment(Iterable<CatalogNode> all) async {
+  Future<void> _addSegment() async {
     final catalog = ref.read(mergedCatalogProvider).asData?.value;
     if (catalog == null) return;
     final l10n = AppLocalizations.of(context);
-    final choices = all.toList()
-      ..sort((a, b) => nodeName(l10n, a).compareTo(nodeName(l10n, b)));
 
-    final chosen = await showDialog<CatalogNode>(
-      context: context,
-      builder: (dialogContext) => SimpleDialog(
-        title: Text(l10n.editCycleAddDialogTitle),
-        children: [
-          SizedBox(
-            // See the same clamp in cycles_screen.dart: a fixed 340 overflows
-            // a 240dp screen outright.
-            width: (MediaQuery.sizeOf(context).width - 80).clamp(200.0, 340.0),
-            height:
-                (MediaQuery.sizeOf(context).height - 160).clamp(200.0, 420.0),
-            child: ListView.builder(
-              itemCount: choices.length,
-              itemBuilder: (_, i) {
-                final n = choices[i];
-                return ListTile(
-                  leading: Icon(n.isLeaf ? Icons.menu_book : Icons.folder),
-                  // Qualified: a flat, alphabetical list of the whole catalog.
-                  title: Text(qualifiedNodeName(l10n, catalog, n)),
-                  subtitle: Text(n.isLeaf
-                      ? unitCount(l10n, n.unitCount, n.unitLabel)
-                      : l10n.editCycleEverythingUnderneath),
-                  onTap: () => Navigator.pop(dialogContext, n),
-                );
-              },
-            ),
-          ),
-        ],
+    // Everything, categories included, because picking one is how "all of Shas"
+    // becomes a cycle. By name for the same reason the link picker is: you
+    // arrive knowing what you are looking for.
+    final chosen = await showNodePicker(
+      context,
+      title: l10n.editCycleAddDialogTitle,
+      showKindIcon: true,
+      choices: nodeChoices(
+        l10n,
+        catalog,
+        order: NodeOrder.name,
+        secondary: nodeSizeLine,
       ),
     );
     if (chosen == null) return;

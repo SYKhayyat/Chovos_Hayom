@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/source_scan.dart';
+
 /// The rules this file enforces, because the last time they were only stated
 /// they were broken within a month:
 ///
@@ -85,38 +87,6 @@ void main() {
     'DpadScroll': 'lib/features/reports/',
   };
 
-  List<({int line, String text})> codeLines(String source) {
-    final out = <({int line, String text})>[];
-    var inBlock = false;
-    final lines = source.split('\n');
-    for (var i = 0; i < lines.length; i++) {
-      final raw = lines[i];
-      if (raw.contains(escapeHatch)) continue;
-      var text = raw;
-      if (inBlock) {
-        final end = text.indexOf('*/');
-        if (end < 0) continue;
-        text = text.substring(end + 2);
-        inBlock = false;
-      }
-      final block = text.indexOf('/*');
-      if (block >= 0) {
-        final end = text.indexOf('*/', block + 2);
-        if (end < 0) {
-          text = text.substring(0, block);
-          inBlock = true;
-        } else {
-          text = text.substring(0, block) + text.substring(end + 2);
-        }
-      }
-      final line = text.indexOf('//');
-      if (line >= 0) text = text.substring(0, line);
-      if (text.trim().isEmpty) continue;
-      out.add((line: i + 1, text: text));
-    }
-    return out;
-  }
-
   test('the regexes actually match the shapes they ban', () {
     for (final ban in bans) {
       expect(RegExp(ban.pattern).hasMatch(ban.sample), isTrue,
@@ -151,14 +121,9 @@ void main() {
   test('lib/ keeps each of these in exactly one place', () {
     final violations = <String>[];
 
-    for (final entity in Directory('lib').listSync(recursive: true)) {
-      if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      final path = entity.path.replaceAll(r'\', '/');
-      if (path.contains('/l10n/generated/') || path.endsWith('.g.dart')) {
-        continue;
-      }
-
-      final lines = codeLines(entity.readAsStringSync());
+    for (final path in dartSourcesUnder()) {
+      final lines =
+          codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch);
       for (final ban in bans) {
         if (path.endsWith(homes[ban.home]!)) continue;
         final scope = scopes[ban.home];

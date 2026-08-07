@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/source_scan.dart';
+
 /// The rule this file enforces: **the event log is folded, and then questions
 /// are asked of the folds — not of the log.**
 ///
@@ -51,38 +53,6 @@ void main() {
 
   const escapeHatch = 'log-pass: ok';
 
-  List<({int line, String text})> codeLines(String source) {
-    final out = <({int line, String text})>[];
-    var inBlock = false;
-    final lines = source.split('\n');
-    for (var i = 0; i < lines.length; i++) {
-      final raw = lines[i];
-      if (raw.contains(escapeHatch)) continue;
-      var text = raw;
-      if (inBlock) {
-        final end = text.indexOf('*/');
-        if (end < 0) continue;
-        text = text.substring(end + 2);
-        inBlock = false;
-      }
-      final block = text.indexOf('/*');
-      if (block >= 0) {
-        final end = text.indexOf('*/', block + 2);
-        if (end < 0) {
-          text = text.substring(0, block);
-          inBlock = true;
-        } else {
-          text = text.substring(0, block) + text.substring(end + 2);
-        }
-      }
-      final line = text.indexOf('//');
-      if (line >= 0) text = text.substring(0, line);
-      if (text.trim().isEmpty) continue;
-      out.add((line: i + 1, text: text));
-    }
-    return out;
-  }
-
   test('the pattern still matches the shape it bans', () {
     // The failure mode of every source-scanning check is quietly matching
     // nothing, so it is asserted against the line it exists to catch.
@@ -102,7 +72,7 @@ void main() {
       final file = File(entry.key);
       expect(file.existsSync(), isTrue, reason: '${entry.key} is gone');
       expect(
-          codeLines(file.readAsStringSync())
+          codeLines(file.readAsStringSync(), escapeHatch: escapeHatch)
               .any((l) => logParameter.hasMatch(l.text)),
           isTrue,
           reason: '${entry.key} is allowed to take the whole log for '
@@ -113,12 +83,7 @@ void main() {
   test('nothing else in lib/ takes the whole event log', () {
     final violations = <String>[];
 
-    for (final entity in Directory('lib').listSync(recursive: true)) {
-      if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      final path = entity.path.replaceAll(r'\', '/');
-      if (path.contains('/l10n/generated/') || path.endsWith('.g.dart')) {
-        continue;
-      }
+    for (final path in dartSourcesUnder()) {
       if (allowed.containsKey(path)) continue;
       // The repository layer is the log's own boundary: its interface and its
       // implementation are what a `List<LearningEvent>` comes *out of*.
@@ -127,7 +92,8 @@ void main() {
         continue;
       }
 
-      for (final line in codeLines(entity.readAsStringSync())) {
+      for (final line
+          in codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch)) {
         if (!logParameter.hasMatch(line.text)) continue;
         violations.add('$path:${line.line}\n    ${line.text.trim()}');
       }

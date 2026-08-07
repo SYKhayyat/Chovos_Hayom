@@ -8,12 +8,12 @@ import '../../application/stats.dart';
 import '../../core/calendar.dart';
 import '../../core/day.dart';
 import '../../core/keypad.dart';
-import '../../domain/entities/catalog.dart';
 import '../../domain/entities/progress_node.dart';
 import '../../domain/usecases/predictor.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
+import '../common/node_picker.dart';
 
 enum _CalcMode { rate, cycle, target }
 
@@ -74,67 +74,57 @@ class _CalculatorSectionState extends ConsumerState<CalculatorSection>
     super.dispose();
   }
 
-  /// Every node worth targeting: roots, their categories, and individual leaves
-  /// (a single mesechta/sefer) so you can compute a siyum for one thing, not
-  /// only whole categories. Labels are indented by depth for readability.
-  List<_Selectable> _selectable(List<ProgressNode> forest) {
-    final out = <_Selectable>[];
-    void walk(ProgressNode n, int depth) {
-      out.add(_Selectable(n, depth));
-      if (depth < 3) {
-        for (final c in n.children) {
-          walk(c, depth + 1);
-        }
-      }
-    }
-
-    for (final r in forest) {
-      walk(r, 0);
-    }
-    return out;
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin
-    final forest = ref.watch(progressForestProvider).asData?.value;
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
     final mode = ref.watch(settingsProvider.select((s) => s.calendar));
     final now = ref.watch(clockProvider)();
     final l10n = AppLocalizations.of(context);
 
-    if (forest == null || catalog == null) {
+    if (catalog == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    return _body(context, l10n, catalog, _selectable(forest), mode, now);
+    // Every node worth targeting: roots, their categories, and individual
+    // leaves (a single mesechta/sefer) so a siyum can be computed for one
+    // thing, not only for whole categories. Four levels is where a tree of
+    // sefarim stops being a list of destinations and starts being a list of
+    // dapim.
+    final choices = nodeChoices(l10n, catalog, maxDepth: 3);
+    if (choices.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    // The *subtree*, not the whole forest. This used to watch
+    // `progressForestProvider` and walk all 312 nodes into a parallel list on
+    // every build, to read `remaining` and `total` off one of them — so a mark
+    // anywhere in the catalog rebuilt this tab. `progressNodeProvider` is a map
+    // lookup with value equality on the other side of it, so it notifies only
+    // when the thing being counted down actually moved.
+    final selectedId = choices.any((c) => c.id == _nodeId)
+        ? _nodeId!
+        : choices.first.id;
+    final selected = ref.watch(progressNodeProvider(selectedId));
+    if (selected == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return _body(context, l10n, choices, selectedId, selected, mode, now);
   }
 
-  Widget _body(BuildContext context, AppLocalizations l10n, Catalog catalog,
-      List<_Selectable> nodes, CalendarMode mode, DateTime now) {
-    final selectedEntry =
-        nodes.firstWhere((s) => s.node.id == _nodeId, orElse: () => nodes.first);
-    final selected = selectedEntry.node;
+  Widget _body(
+      BuildContext context,
+      AppLocalizations l10n,
+      List<NodeChoice> choices,
+      String selectedId,
+      ProgressNode selected,
+      CalendarMode mode,
+      DateTime now) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        DropdownButtonFormField<String>(
-          initialValue: selected.id,
-          isExpanded: true,
-          decoration: InputDecoration(labelText: l10n.calculatorWhatFinishing),
-          items: [
-            for (final s in nodes)
-              DropdownMenuItem(
-                value: s.node.id,
-                // Qualified, because a closed dropdown shows one line with no
-                // indentation and no neighbours: "Shabbos" alone could be the
-                // Bavli, the Yerushalmi, the Mishnayos or the Rambam. The
-                // indentation still carries the tree while the list is open.
-                child: Text(
-                    '${'   ' * s.depth}'
-                    '${qualifiedNodeName(l10n, catalog, s.node.node)}',
-                    overflow: TextOverflow.ellipsis),
-              ),
-          ],
+        NodeDropdown(
+          label: l10n.calculatorWhatFinishing,
+          choices: choices,
+          value: selectedId,
           onChanged: (v) => setState(() => _nodeId = v),
         ),
         const SizedBox(height: 8),
@@ -330,13 +320,6 @@ class _SaveAsGoal extends ConsumerWidget {
       success: l10n.calculatorGoalSetFor(name),
     );
   }
-}
-
-/// A catalog node plus its tree depth, for indented dropdown display.
-class _Selectable {
-  const _Selectable(this.node, this.depth);
-  final ProgressNode node;
-  final int depth;
 }
 
 class _Result extends StatelessWidget {
