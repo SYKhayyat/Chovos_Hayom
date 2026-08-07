@@ -66,6 +66,7 @@ fail the build on the shape of the mistake rather than on its consequences:
 | `features/text_prompt_guard_test.dart` | a dialog that owns its own `TextEditingController` — the shape that throws one frame after it closes |
 | `application/profile_customisations_test.dart` | a fourth hand-written read of the three collections a profile has made |
 | `core/parse_test.dart` | a hand-written `int.tryParse` on something a person typed |
+| `features/write_guard_scan_test.dart` | a user-initiated write that does not go through `guarded()` — the rule `unawaited_futures` was wrongly credited with |
 | `l10n/arb_guard_test.dart` | a translated key nothing displays, a key that is its own translation, an `@metadata` block whose message has been renamed out from under it, and a placeholder left undeclared (and therefore typed `Object`) |
 
 The rot mode worth guarding is the **silent** one — the change that compiles, passes, and quietly

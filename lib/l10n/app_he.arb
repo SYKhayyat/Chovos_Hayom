@@ -519,6 +519,7 @@
   "backupSaveDialogTitle": "שמירת גיבוי",
   "backupChooseFile": "בחירת קובץ גיבוי",
   "backupChooseRestoreFile": "בחירת גיבוי לשחזור",
+  "whatRecordingBackup": "רישום שייצאת גיבוי",
   "whatExportingBackup": "ייצוא הגיבוי",
   "whatExportingClipboard": "ייצוא ללוח",
   "whatImportingBackup": "ייבוא הגיבוי",

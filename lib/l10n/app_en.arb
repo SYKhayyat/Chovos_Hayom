@@ -964,6 +964,7 @@
   "backupSaveDialogTitle": "Save backup",
   "backupChooseFile": "Choose a backup file",
   "backupChooseRestoreFile": "Choose a backup to restore",
+  "whatRecordingBackup": "Recording that you exported a backup",
   "whatExportingBackup": "Exporting your backup",
   "whatExportingClipboard": "Exporting to the clipboard",
   "whatImportingBackup": "Importing your backup",

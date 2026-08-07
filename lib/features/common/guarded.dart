@@ -20,8 +20,11 @@ import '../../l10n/generated/app_localizations.dart';
 /// order:
 ///
 /// 1. **Awaits the write.** Nothing is fire-and-forget, so nothing can fail
-///    silently. (`unawaited_futures` catches the ones inside `async` bodies; the
-///    rest were found by hand and are now all here.)
+///    silently. `unawaited_futures` catches only the ones inside `async`
+///    bodies — measured, not assumed: neither `() => write()` nor
+///    `() { write(); }` is flagged, and the first is the shape almost every
+///    write in this app is written in. `write_guard_scan_test.dart` is what
+///    actually holds the rule.
 /// 2. **Reports success only after it succeeded.** The optional [success]
 ///    message is shown *after* the await returns, never before it.
 /// 3. **Records the failure** to the on-device [CrashLog], tagged with what the

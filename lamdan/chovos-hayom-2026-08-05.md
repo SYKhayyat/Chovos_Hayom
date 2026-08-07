@@ -2,7 +2,38 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-07 (last).** The **profile deletion** row of finding 5 is now resolved.
+> **Status, 2026-08-07 (last).** Row 7 of *The claim* — *"the lint is what keeps new ones from
+> drifting back out of the guard"* — is now resolved.
+>
+> **The finding is right and understates itself by one shape.** Compiled and run rather than
+> reasoned: `unawaited_futures` fires on `onPressed: () async { write(); }` and on **neither**
+> `onPressed: () => write()` nor `onPressed: () { write(); }`. The lint only sees an expression
+> statement inside an *async* body. The finding names the arrow closure; the sync block body escapes
+> too.
+>
+> Resolved by `write_guard_scan_test.dart`, and the design of it is the part worth keeping. The
+> write verbs are **derived** — every non-`get`/`watch` method on `ProgressRepository`, every public
+> future on `LoggingService`, every public future on a Riverpod `Notifier` in `application/` — so a
+> list typed into the test cannot go stale the first time somebody adds a setter. And it matches on
+> the **receiver** as well as the verb, which turned out to be necessary rather than fastidious:
+> `remove`, `record`, `save`, `reset` and `delete` are each a write on some controller *and* an
+> ordinary method on a `Set`, a `Map` or the crash log. Verb-only matching gave thirteen hits, nine
+> of them `Set.remove`.
+>
+> **It found one real unguarded write.** `_recordBackup` — the stamp that says when this profile was
+> last exported — ran outside any guard and outside any `try`, in both export paths. A failure there
+> escapes as an unhandled error, and its user-visible shape is the worst kind of quiet: *Saved
+> backup* is reported, the standing tile goes on saying the profile has never been exported, and the
+> reminder goes on nagging about learning that is in fact safe. The one signal a user has about
+> whether their only copy exists, wrong, with nothing said.
+>
+> Two lines are excused, with the marker naming why: `_applyImport`'s two preference writes run
+> inside the guard in both of its callers. Two exceptions, both stated, is the shape a speed bump is
+> supposed to have.
+>
+> ---
+>
+> **Status, 2026-08-07 (previously last).** The **profile deletion** row of finding 5 is now resolved.
 >
 > **The two paths are not the finding, and cannot be.** A profile lives in five database tables and
 > in preferences, and those are two stores with two mechanisms; a single call site would still be
@@ -468,7 +499,7 @@ design writing in the repository. The problem is what happens next to them:
 | `stats.dart:79-82` — *"watching the tick here means every dependent provider re-derives when the day rolls over"* | `return DateTime.now;` — a static tear-off, which Dart canonicalizes. Nothing re-derives. Ever. **✅ Resolved** — see finding 1. |
 | `text_prompt.dart` exists because five dialogs each hand-rolled a controller and threw *used after being disposed* | `_LayerNameDialog` (`mefarshim_config_sheet.dart:400`) and `_RangeDialog` (`bulk_actions_sheet.dart:329`) hand-roll it again. **✅ Resolved** — and neither author had forgotten the rule: the shared prompt took one field and could not reject input, and both of them needed more. A shared thing that does not cover the second case gets copied. See finding 5. |
 | `README.md:358` — *"a message is one whole ARB entry, never a sentence glued together"* | `dateTimeLabel` exists, is translated into Hebrew, and has **zero call sites**; `log_unit_sheet.dart:194` and `add_chazara_sheet.dart:173` each glue the string by hand. **✅ Resolved** — one hand-glue by then, and it was a fourth copy of `DateDisplay.formatWithTime` that ignored the calendar setting. See finding 10. |
-| `README.md:373` — *"the lint is what keeps new ones from drifting back out of [the guard]"* | `unawaited_futures` fires on expression statements in **async** bodies. The dominant shape here is `onPressed: () => guarded(...)` — a sync arrow closure. Not flagged, any of them. |
+| `README.md:373` — *"the lint is what keeps new ones from drifting back out of [the guard]"* | `unawaited_futures` fires on expression statements in **async** bodies. The dominant shape here is `onPressed: () => guarded(...)` — a sync arrow closure. Not flagged, any of them. **✅ Resolved** — verified by probe: the sync *block* body is not flagged either, so two of the three shapes escape. The claim is now a test that derives its verbs, and it found one unguarded write. See the status note |
 | `learning_event.dart:62-68` — `copyWith` deleted because *"nothing called it"* | `backup_service.dart:353` hand-lists all eleven fields to rescope an event. That *is* `copyWith`, minus the compiler's help. |
 | `sorting.dart:56-65` — ten lines condemning conditional watches | see row 2. **✅ Resolved** with it, and now guarded: `notify_guard_test.dart`. |
 | `backup_service.dart:398-403` — the validator justified by two crashes it prevents | Neither crash exists: `catalog.dart:47` and `inherited_layer_set.dart:38` already refuse to revisit a node, and `catalog_node.dart:101` uses `Iterable.generate`, which is empty for a negative count. The guards that make the validator unnecessary say so in *their own* comments. **✅ Resolved** — and the second half of this row is itself wrong: two more walks had *no* guard, and one of them never returns. See finding 9. |

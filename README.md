@@ -318,10 +318,24 @@ dashboard's tile tree can skip rebuilding), `avoid_dynamic_calls`, `unawaited_fu
 `--fatal-infos`, all of it is enforced. There is deliberately no formatting rule — the source is
 hand-wrapped so its explanatory comments read as prose.
 
-`unawaited_futures` is the one with teeth: a dropped Future is a write nobody is waiting on and
-nobody will hear fail, which is exactly what `lib/features/common/guarded.dart` exists to end. Every
-write in `features/` goes through that guard, and the lint is what keeps new ones from drifting back
-out of it.
+A dropped Future is a write nobody is waiting on and nobody will hear fail, which is exactly what
+`lib/features/common/guarded.dart` exists to end. Every write in `features/` goes through that
+guard — and **the thing that keeps new ones from drifting back out of it is a test, not
+`unawaited_futures`.** That claim used to be here, and it was checked and it is wrong:
+
+```dart
+onPressed: () => write(),         // not flagged  ← the dominant shape in this app
+onPressed: () { write(); },       // not flagged
+onPressed: () async { write(); }  // flagged
+```
+
+The lint only fires on an expression statement inside an **async** body, and almost every write here
+is a sync arrow closure handed to `onPressed`, `onChanged` or `onTap`. `unawaited_futures` stays on
+— it catches the third shape, which is real — but `test/features/write_guard_scan_test.dart` is what
+enforces the rule. It derives the write verbs from `ProgressRepository`, `LoggingService` and every
+Riverpod `Notifier` in `application/` rather than listing them, matches on the *receiver* as well as
+the verb (`remove` is a write on a controller and an ordinary method on a `Set`), and requires each
+call to sit inside a `guarded(…)` or `guard.run(…)`.
 
 ### Releasing
 

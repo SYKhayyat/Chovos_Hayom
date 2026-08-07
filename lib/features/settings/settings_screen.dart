@@ -445,9 +445,15 @@ class SettingsScreen extends ConsumerWidget {
     // setting in the profile with the file's, while *restore everything* left
     // behind every goal set since the backup. The scope of a destructive action
     // has to be the same in all of the places that implement it.
-    await ref.read(settingsProvider.notifier).applyBackup(data.settings, mode);
-    final deletedGoals =
-        await ref.read(goalsProvider.notifier).applyBackup(data.goals, mode);
+    // This whole method runs inside the guard, in both of its callers
+    // (`_importFromFile` and `_import`), so these two writes are already
+    // awaited, reported and — on failure — recorded under one label.
+    await ref
+        .read(settingsProvider.notifier)
+        .applyBackup(data.settings, mode); // write-guard: ok — see above
+    final deletedGoals = await ref
+        .read(goalsProvider.notifier)
+        .applyBackup(data.goals, mode); // write-guard: ok — see above
     // Cycles ride in the settings map (they are a per-profile preference) but
     // are owned by a separate controller that read the pref at build time, so it
     // must re-read now that applyBackup has rewritten it — otherwise the imported
@@ -558,14 +564,25 @@ class SettingsScreen extends ConsumerWidget {
     // actually chose a destination. Stamping it before the dialog — or on a
     // cancel — would mark the profile safe when nothing was written, which is
     // the one failure mode this whole feature exists to prevent.
-    if (!cancelled) await _recordBackup(ref);
+    if (!cancelled) await _recordBackup(guard, ref);
     guard.report(cancelled ? l10n.backupExportCancelled : l10n.backupSaved);
   }
 
   /// Stamp the profile as exported, now.
-  Future<void> _recordBackup(WidgetRef ref) => ref
-      .read(lastBackupProvider.notifier)
-      .record(ref.read(clockProvider)());
+  ///
+  /// Guarded like every other write, and it was not. A stamp that fails to
+  /// persist is quiet in the worst direction: the user is told *Saved backup*,
+  /// the tile keeps saying the profile has never been exported, and the reminder
+  /// goes on nagging about learning that is in fact safe — so the one signal the
+  /// user has about whether their only copy exists is wrong, with nothing said.
+  /// It also ran outside any `try`, so a failure escaped as an unhandled error
+  /// rather than reaching the crash log.
+  Future<void> _recordBackup(WriteGuard guard, WidgetRef ref) => guard.run(
+        () => ref
+            .read(lastBackupProvider.notifier)
+            .record(ref.read(clockProvider)()),
+        what: AppLocalizations.of(ref.context).whatRecordingBackup,
+      );
 
   Future<void> _importFromFile(BuildContext context, WidgetRef ref,
       {ImportMode mode = ImportMode.merge}) async {
@@ -811,7 +828,7 @@ class SettingsScreen extends ConsumerWidget {
     );
     // A clipboard export counts: the data left the app, which is what the
     // reminder is asking about. Where the user pastes it is their business.
-    if (ok) await _recordBackup(ref);
+    if (ok) await _recordBackup(guard, ref);
   }
 
   Future<void> _import(BuildContext context, WidgetRef ref) async {
