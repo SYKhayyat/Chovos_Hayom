@@ -2,7 +2,38 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-07 (last).** The **"four customisation lists"** row of finding 5 is now
+> **Status, 2026-08-07 (last).** The **"is this a positive integer"** row of finding 5 is now
+> resolved, and its *Worst consequence* column — empty, again — held two.
+>
+> **The copies disagreed, and a user could see it.** Typing `2, 5, x` into the chazara intervals
+> silently saved `[2, 5]` and closed: a typo shortened the review schedule with nothing said. Typing
+> `x` into the backup interval — **two rows down the same screen** — closed the dialog and complained
+> on a snackbar. Two settings, one screen, two answers to what happens to input neither of them can
+> use. *"Do not clamp a wrong value, find out why it is wrong"* is the first line of
+> `CONTRIBUTING.md`.
+>
+> **And the guard found a third thing, which is the one that damaged data.** The log sheet's duration
+> field was `int.tryParse`, so a minus sign — one key away on any desktop keyboard — stored a
+> **negative** `durationMin`. Minutes are summed into the time statistics, so it silently subtracts
+> from a total the user is reading. That is one of exactly four shapes `BackupValidator` refuses in
+> an imported file, with a comment explaining why. The app could produce locally the row it rejects
+> from a backup.
+>
+> Resolved by `lib/core/parse.dart` — `positiveInt`, `nonNegativeInt` (for the one quantity where
+> zero is a real answer: a leaf's first unit index) and `positiveIntList`, which returns **what it
+> could not read** as well as what it could, because a list is only worth taking if the user can be
+> told which part of it was not understood. Ten sites migrated. The layers now differ only in what
+> they do about a failure: the dialog says so and stays open — through the validator finding 5's
+> previous row added — the store refuses, and the loader falls back, because a preference file
+> edited by hand has to read as *something* and there is nobody to ask.
+>
+> **The rule is enforced rather than stated:** `int.tryParse` is banned outside `parse.dart`, with
+> two files excused for reading strings the app itself wrote. That ban is what found the duration
+> bug and two more; every one of the new tests was watched to fail on the pre-fix shape.
+>
+> ---
+>
+> **Status, 2026-08-07 (previously last).** The **"four customisation lists"** row of finding 5 is now
 > resolved.
 >
 > **The six duplicated lines were never the cost.** What mattered is *where the copies read from*.
@@ -920,7 +951,7 @@ places that cannot see each other:
 | ~~`requiredPerDay` rendering~~ **✅ Resolved** | ~~3~~ — 2 by the time it was reached (the third went with `goal_status.dart`), both writing `toStringAsFixed(2)` for themselves. One `requiredPerDayText` | ~~the Calculator's "By date" mode is a goal you can't save~~ — fixed by finding 6. What the duplication was *hiding* is the real one: both rounded **down**. See the status note |
 | ~~the goal banner widget~~ **✅ Resolved** (carried by finding 6's work, and verified rather than assumed) | ~~2 byte-identical~~ — one `GoalBanner`, one `goalStatusText`, one `removeGoalWithUndo`, and `report_guard_test.dart` rule 2 refuses a second reader of `l10n.goalStatus` | ~~2 ARB keys for one sentence~~ — one now, and the *residue of that merge* is the row's real finding: the surviving key's metadata block was still called `@goalBanner`, so it described nothing and `goalStatus`'s three placeholders were re-inferred as `Object`. See the status note |
 | ~~"the four customisation lists"~~ **✅ Resolved** | ~~3~~ — one `ProfileCustomisations.of`, and `BackupService.export` **reads** the three rather than taking them, so there is nowhere left to pass a list in | ~~shipped a bug: `.asData?.value ?? const []` silently exporting empty lists~~ — fixed twice at two of the three sites, one paragraph each, and the third was written afterwards. See the status note |
-| "is this a positive integer" | 3 layers each, for both interval settings | — |
+| ~~"is this a positive integer"~~ **✅ Resolved** | ~~3 layers each, for both interval settings~~ — and five more in the cycle editor, the node editor, the range dialog and the log sheet. One `core/parse.dart` | ~~—~~ the empty column again: the copies **disagreed**, visibly, two rows apart on one screen — and one of them was storing a negative duration. See the status note |
 | JSON parse per restore | 3–4 full decodes of the same file before anything is written | on a Sonim, with a Shas-sized log |
 | profile deletion | 2 paths (`drift_progress_repository:120` for 6 tables, `providers.dart:141` for the goals key) | kept in sync by hand |
 | ~~`DpadScroll`~~ **✅ Resolved** | ~~3 call sites — exactly the three report screens~~ — it was **4** by the time it was looked at, and merging the routes did not reduce it: the three sections kept their own copies and `ReportEmpty` had grown a fourth. One `ReportBody`, and a guard rule | ~~the tax for splitting one report into three routes~~ — the tax was never the routes. `skipTraversal: false` is a fact about the *tab bar*, and three sections were each asserting it locally |

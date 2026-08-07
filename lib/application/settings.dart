@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/calendar.dart';
 import '../core/equality.dart';
+import '../core/parse.dart';
 import '../core/preferences.dart';
 import '../domain/usecases/backup_reminder.dart';
 import '../domain/usecases/chazara_schedule.dart';
@@ -194,14 +195,11 @@ class SettingsNotifier extends Notifier<SettingsState> {
       // Absent reads as ON — an install that predates this setting is exactly
       // the one whose learning has never been exported.
       backupReminderEnabled: _get(PrefKeys.backupReminderEnabled) != 'false',
-      backupIntervalDays: _parsePositive(_get(PrefKeys.backupIntervalDays),
-          fallback: BackupReminder.defaultIntervalDays),
+      // Same shape as the intervals above: the parse is shared, the fallback is
+      // this layer's own answer to a value nobody can be asked about.
+      backupIntervalDays: positiveInt(_get(PrefKeys.backupIntervalDays)) ??
+          BackupReminder.defaultIntervalDays,
     );
-  }
-
-  static int _parsePositive(String? raw, {required int fallback}) {
-    final n = int.tryParse(raw?.trim() ?? '');
-    return (n == null || n <= 0) ? fallback : n;
   }
 
   static Set<String> _parseIdSet(String? raw) {
@@ -212,15 +210,25 @@ class SettingsNotifier extends Notifier<SettingsState> {
     };
   }
 
+  /// The stored intervals, or the defaults.
+  ///
+  /// The parse is [positiveIntList]'s, the same one the dialog validates
+  /// through; what is different *here* is the failure. A stored value can be
+  /// absent (a fresh profile), older than a change to the format, or edited by
+  /// hand — and there is nobody to ask about it, so a load falls back rather
+  /// than refusing. That is the one place a substitution is honest, and it used
+  /// to be three.
   static List<int> _parseIntervals(String? raw) {
-    if (raw == null || raw.trim().isEmpty) return ChazaraSchedule.defaultIntervals;
-    final parsed = [
-      for (final part in raw.split(','))
-        if (int.tryParse(part.trim()) case final n?) if (n > 0) n,
-    ];
+    final parsed = positiveIntList(raw).values;
     return parsed.isEmpty ? ChazaraSchedule.defaultIntervals : parsed;
   }
 
+  /// Store the chazara schedule.
+  ///
+  /// The floor stays: a schedule with nothing in it is not a schedule, and the
+  /// chazara screen would simply be empty forever. Non-positive intervals are
+  /// dropped here as well as rejected at the dialog — belt and braces on the one
+  /// value in this file that would silently disable a whole screen.
   Future<void> setChazaraIntervals(List<int> intervals) async {
     final clean = intervals.where((n) => n > 0).toList();
     final effective = clean.isEmpty ? ChazaraSchedule.defaultIntervals : clean;

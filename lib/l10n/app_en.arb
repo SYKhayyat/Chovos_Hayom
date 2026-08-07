@@ -874,6 +874,12 @@
   "settingsIntervalsTitle": "Chazara review intervals",
   "settingsIntervalsBody": "Days after each pass before the next review is due, e.g. “1, 3, 7, 16, 35, 70”. The last value repeats after that.",
   "settingsIntervalsHint": "1, 3, 7, 16, 35, 70",
+  "settingsIntervalsInvalid": "Not a number of days: {parts}",
+  "@settingsIntervalsInvalid": {
+    "description": "Shown in the intervals dialog when part of what was typed is not a positive whole number. {parts} lists those parts as typed.",
+    "placeholders": { "parts": { "type": "String" } }
+  },
+  "settingsIntervalsNeedOne": "Give at least one interval, in days.",
   "whatSavingIntervals": "Saving your chazara intervals",
   "settingsSectionMeforishBars": "Mefarshim bars",
   "settingsMeforishBarsExplainer": "Show or hide each meforish’s coverage line under the tree’s progress bars.",

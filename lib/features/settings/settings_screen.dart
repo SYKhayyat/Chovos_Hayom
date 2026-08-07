@@ -9,13 +9,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/routes.dart';
 import '../../application/backup_service.dart';
 import '../../application/backup_status.dart';
-import '../../application/profile_customisations.dart';
 import '../../application/cycles.dart';
 import '../../application/goals.dart';
+import '../../application/profile_customisations.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
+import '../../core/parse.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/entities/learning_event.dart';
 import '../../domain/repositories/progress_repository.dart';
@@ -351,14 +352,23 @@ class SettingsScreen extends ConsumerWidget {
       initialValue: current.join(', '),
       confirmLabel: l10n.actionSave,
       cancelLabel: l10n.actionCancel,
+      // Says which part it could not read, rather than keeping the parts it
+      // could. `2, 5, x` used to save `[2, 5]` and close, so a typo silently
+      // shortened the schedule — and the *other* interval setting, two rows
+      // down this screen, rejected the same input out loud. One parse, and both
+      // of them now say so and stay open.
+      validate: (v) {
+        final parsed = positiveIntList(v);
+        if (parsed.rejected.isNotEmpty) {
+          return l10n.settingsIntervalsInvalid(parsed.rejected.join(', '));
+        }
+        return parsed.values.isEmpty ? l10n.settingsIntervalsNeedOne : null;
+      },
     );
     if (text == null) return;
-    final intervals = [
-      for (final part in text.split(','))
-        if (int.tryParse(part.trim()) case final n?) if (n > 0) n,
-    ];
     final settings = ref.read(settingsProvider.notifier);
-    await guard.run(() => settings.setChazaraIntervals(intervals),
+    await guard.run(
+        () => settings.setChazaraIntervals(positiveIntList(text).values),
         what: l10n.whatSavingIntervals);
   }
 
@@ -375,15 +385,16 @@ class SettingsScreen extends ConsumerWidget {
       keyboardType: TextInputType.number,
       confirmLabel: l10n.actionSave,
       cancelLabel: l10n.actionCancel,
+      // In the dialog rather than on a snackbar after it closed, which is what
+      // the intervals row above does too. Same parse, same place to say no.
+      validate: (v) =>
+          positiveInt(v) == null ? l10n.settingsBackupIntervalInvalid : null,
     );
     if (text == null) return;
-    final days = int.tryParse(text.trim()) ?? 0;
-    if (days <= 0) {
-      guard.report(l10n.settingsBackupIntervalInvalid);
-      return;
-    }
     await guard.run(
-        () => ref.read(settingsProvider.notifier).setBackupIntervalDays(days),
+        () => ref
+            .read(settingsProvider.notifier)
+            .setBackupIntervalDays(positiveInt(text)!),
         what: l10n.whatSavingBackupInterval);
   }
 

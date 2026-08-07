@@ -97,6 +97,34 @@ void main() {
     expect(tester.widget<CheckboxListTile>(row).value, isFalse);
   });
 
+  testWidgets('a duration the log sheet cannot read is not recorded, and a '
+      'negative one is never stored', (tester) async {
+    // Minutes are summed into the time statistics, so a negative duration
+    // silently subtracts from a total the user is reading — which is one of the
+    // four things `BackupValidator` refuses in an imported file. The sheet used
+    // `int.tryParse`, so the app could produce locally exactly the row it
+    // rejects from a backup. A minus sign is one key away on any desktop
+    // keyboard.
+    final repo = memoryRepository();
+    await tester.pumpWidget(grid(repo));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('3'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Log with date / duration / note'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+        find.widgetWithText(TextField, 'How long it took (minutes, optional)'), '-45');
+    await tester.tap(find.widgetWithText(FilledButton, 'Mark learned'));
+    await tester.pumpAndSettle();
+
+    final events = await repo.getEvents('default');
+    expect(events, hasLength(1));
+    expect(events.single.durationMin, isNull,
+        reason: 'the same answer an empty box gives — not recorded');
+  });
+
   testWidgets('but a fresh log does not offer it, because the unit does not '
       'ask for it any more', (tester) async {
     await tester.pumpWidget(grid(await profileWithADeletedMeforish()));

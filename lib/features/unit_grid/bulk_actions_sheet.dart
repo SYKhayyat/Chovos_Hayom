@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/bulk_marker.dart';
 import '../../application/providers.dart';
+import '../../core/parse.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -357,8 +358,11 @@ class _BulkActionsSheet extends ConsumerWidget {
 /// Ordered rather than validated for order: "from 12 to 4" is a range somebody
 /// meant, and rejecting it would be pedantry about which box they typed first.
 UnitRange? _rangeOf(Map<String, String> values) {
-  final from = int.tryParse(values['from'] ?? '');
-  final to = int.tryParse(values['to'] ?? '');
+  // Non-negative rather than positive: a leaf's units start at its own offset,
+  // and a sefer numbered from zero has a daf 0. The bounds check below is what
+  // rejects a number this leaf does not have.
+  final from = nonNegativeInt(values['from']);
+  final to = nonNegativeInt(values['to']);
   if (from == null || to == null) return null;
   return from <= to ? UnitRange(from, to) : UnitRange(to, from);
 }

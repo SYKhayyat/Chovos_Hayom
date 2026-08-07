@@ -7,6 +7,7 @@ import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
 import '../../core/day.dart';
+import '../../core/parse.dart';
 import '../../core/keypad.dart';
 import '../../domain/entities/progress_node.dart';
 import '../../domain/usecases/predictor.dart';
@@ -255,7 +256,10 @@ class _CalculatorSectionState extends ConsumerState<CalculatorSection>
             .map((s) => double.tryParse(s.trim()) ?? 0)
             .toList();
         if (amounts.isEmpty) return l10n.calculatorEnterAmounts;
-        final startDay = int.tryParse(_cycleStartCtrl.text.trim()) ?? 1;
+        // Falls back rather than refusing: this is a live readout that
+        // recomputes on every keystroke, so a half-typed box is a normal state
+        // and not an error to report.
+        final startDay = positiveInt(_cycleStartCtrl.text) ?? 1;
         final date = Predictor.finishDateWithCycle(
           remaining: remaining,
           amounts: amounts,

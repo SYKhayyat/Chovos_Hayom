@@ -135,6 +135,9 @@ lib/
                                       dependency-rule note below
                      - calendar.dart  DateDisplay: formatting a date for a human, Gregorian
                                       or Hebrew. Presentation only
+                     - parse.dart     reading a number a person typed. One parse; the
+                                      dialog, the store and the loader differ only in
+                                      what they do about a failure
   domain/          pure Dart. NO Flutter, NO Drift imports.
     entities/         CatalogNode, Catalog, LearningEvent, Profile, ProgressNode, Layer
     repositories/     abstract interfaces (CatalogRepository, ProgressRepository, ...)

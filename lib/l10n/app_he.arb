@@ -459,6 +459,8 @@
   "settingsIntervalsTitle": "מרווחי החזרה",
   "settingsIntervalsBody": "מספר הימים לאחר כל חזרה עד לחזרה הבאה, לדוגמה ״1, 3, 7, 16, 35, 70״. הערך האחרון חוזר על עצמו מכאן והלאה.",
   "settingsIntervalsHint": "1, 3, 7, 16, 35, 70",
+  "settingsIntervalsInvalid": "אינו מספר ימים: {parts}",
+  "settingsIntervalsNeedOne": "יש להזין לפחות מרווח אחד, בימים.",
   "whatSavingIntervals": "שמירת מרווחי החזרה",
   "settingsSectionMeforishBars": "פסי מפרשים",
   "settingsMeforishBarsExplainer": "הצגה או הסתרה של פס הכיסוי של כל מפרש מתחת לפסי ההתקדמות בעץ.",

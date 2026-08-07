@@ -6,6 +6,7 @@ import '../../application/cycles.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
+import '../../core/parse.dart';
 import '../../domain/usecases/learning_cycle.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
@@ -269,8 +270,11 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
       guard.report(l10n.editCycleNeedName);
       return;
     }
-    final perDay = int.tryParse(_perDay.text.trim()) ?? 0;
-    if (perDay <= 0) {
+    // Through [positiveInt], like every other "is this a positive integer" in
+    // the app: the three that were written out by hand disagreed about what
+    // happens to input none of them could use.
+    final perDay = positiveInt(_perDay.text);
+    if (perDay == null) {
       guard.report(l10n.editCycleNeedPerDay);
       return;
     }

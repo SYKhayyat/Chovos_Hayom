@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../application/backup_service.dart';
 import '../../application/providers.dart';
+import '../../core/parse.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/enums.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -218,19 +219,26 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
       guard.report(l10n.addNodeNeedNameEither);
       return;
     }
-    final count = int.tryParse(_count.text.trim()) ?? 0;
-    final offset = int.tryParse(_offset.text.trim()) ?? 1;
-    if (_isLeaf && count <= 0) {
+    // The same parse the interval settings and the cycle editor use. The
+    // offset is the one quantity in the app where **zero is a real answer** — a
+    // sefer numbered from zero — so it has its own function rather than a
+    // hand-written `>= 0` beside a `> 0`.
+    final count = positiveInt(_count.text);
+    final offset = nonNegativeInt(_offset.text);
+    if (_isLeaf && count == null) {
       guard.report(l10n.addNodeNeedUnits);
       return;
     }
     // Same bounds the backup importer enforces, so a node can't be created here
     // that a backup of it would then be rejected for.
-    if (_isLeaf && count > BackupValidator.maxUnitCount) {
+    if (_isLeaf && count! > BackupValidator.maxUnitCount) {
       guard.report(l10n.addNodeTooManyUnits);
       return;
     }
-    if (_isLeaf && offset < 0) {
+    // Was `int.tryParse(...) ?? 1`, so typing anything unreadable in the
+    // first-unit box silently became 1 — a sefer that starts on a different daf
+    // than the one the user asked for, with nothing said about it.
+    if (_isLeaf && offset == null) {
       guard.report(l10n.addNodeNegativeOffset);
       return;
     }
@@ -241,7 +249,7 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
     while (names.isNotEmpty && names.last.trim().isEmpty) {
       names.removeLast();
     }
-    if (names.length > count) {
+    if (_isLeaf && names.length > count!) {
       guard.report(l10n.addNodeTooManyNames(names.length, count));
       return;
     }
@@ -254,8 +262,8 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
       sortOrder: widget.existing?.sortOrder ?? 0,
       kind: _isLeaf ? NodeKind.leaf : NodeKind.category,
       unitLabel: _isLeaf ? _label : null,
-      unitCount: _isLeaf ? count : 0,
-      unitOffset: _isLeaf ? offset : 0,
+      unitCount: _isLeaf ? count! : 0,
+      unitOffset: _isLeaf ? offset! : 0,
       unitNames: names,
     );
 

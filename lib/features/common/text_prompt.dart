@@ -252,6 +252,11 @@ Future<String?> promptForText(
   TextInputType? keyboardType,
   int maxLines = 1,
   bool trim = true,
+
+  /// Returns a message to show *and keep the dialog open*. See
+  /// [TextPromptDialog.validate] — a prompt that closes before it complains has
+  /// thrown away what the user typed.
+  String? Function(String value)? validate,
 }) async {
   final values = await promptForFields(
     context,
@@ -259,6 +264,7 @@ Future<String?> promptForText(
     confirmLabel: confirmLabel,
     cancelLabel: cancelLabel,
     body: body,
+    validate: validate == null ? null : (v) => validate(v['text']!),
     fields: [
       PromptField(
         key: 'text',

@@ -8,6 +8,7 @@ import '../../application/session_timer.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
+import '../../core/parse.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
 import '../../domain/usecases/unit_mefarshim.dart';
@@ -270,7 +271,13 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
   }
 
   Future<void> _save() async {
-    final duration = int.tryParse(_durationCtrl.text.trim());
+    // Non-negative, and null for anything else — which is the same answer an
+    // empty box gives, *not recorded*. It was `int.tryParse`, so a minus sign
+    // (reachable on any desktop keyboard) stored a negative duration: minutes
+    // are summed into the time statistics, so it silently subtracted from a
+    // total the user is reading. `BackupValidator` rejects exactly that shape
+    // arriving in a backup file, and the app could produce it locally.
+    final duration = nonNegativeInt(_durationCtrl.text);
     final note = _noteCtrl.text.trim();
     // The session ends when it is recorded; leaving it running would let it
     // bleed into whatever is logged next. A failure here is worth saying — the
