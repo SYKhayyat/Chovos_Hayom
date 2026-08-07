@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/routes.dart';
 import 'application/crash_log.dart';
-import 'core/keypad.dart';
+import 'core/breakpoints.dart';
+import 'core/focus.dart';
 import 'application/providers.dart';
 import 'application/settings.dart';
 import 'application/stats.dart';

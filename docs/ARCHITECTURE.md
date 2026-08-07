@@ -139,6 +139,12 @@ lib/
                      - day.dart       Day: a calendar day as a whole-day count. The single
                                       answer to "which calendar day is this" — see the
                                       dependency-rule note below
+                     - breakpoints.dart / bar_actions.dart / focus.dart
+                                      what used to be one keypad.dart. Only the
+                                      first is about the 240dp device; the app bar
+                                      folding and the focus work are unconditional
+                                      cross-platform improvements, and the file
+                                      names now say which is which
                      - calendar.dart  DateDisplay: formatting a date for a human, Gregorian
                                       or Hebrew. Presentation only
                      - parse.dart     reading a number a person typed. One parse; the

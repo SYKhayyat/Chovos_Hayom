@@ -8,7 +8,7 @@ import '../../application/stats.dart';
 import '../../core/calendar.dart';
 import '../../core/day.dart';
 import '../../core/parse.dart';
-import '../../core/keypad.dart';
+import '../../core/breakpoints.dart';
 import '../../domain/entities/progress_node.dart';
 import '../../domain/usecases/predictor.dart';
 import '../../l10n/generated/app_localizations.dart';

@@ -2,7 +2,21 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-07 (last).** **Finding 11** (`wrong-but-keep`) is now settled — all three
+> **Status, 2026-08-07 (last).** The last bullet of *What I couldn't beat* — the keypad file's name
+> — is now done, as specified: `core/keypad.dart` is `breakpoints.dart` (68), `bar_actions.dart`
+> (88) and `focus.dart` (304), and nothing was deleted.
+>
+> The finding's diagnosis is exactly right and worth restating, because it is the only entry in this
+> document about a **name**: three of the six parts are unconditional cross-platform improvements,
+> and a screen importing `keypad.dart` to decide whether to show a checkmark in a segmented button
+> was importing a file that did not describe what it was being asked for. Five of the nine importers
+> wanted only `isCompact`; they now say so. The device story stays in `breakpoints.dart` because
+> that is the file holding the measurement, and the other two carry a paragraph each saying they are
+> not about the device and pointing back to it.
+>
+> ---
+>
+> **Status, 2026-08-07 (previously last).** **Finding 11** (`wrong-but-keep`) is now settled — all three
 > bullets, and two of the three answers are not the ones the finding expects.
 >
 > **`ProgressRepository`: keep, and the reason is not the one anybody was arguing about.** The

@@ -1,35 +1,17 @@
+/// Making focus visible, and reachable, with no pointer.
+///
+/// Two of these three are unconditional improvements: a keyboard user on a
+/// desktop gets a far clearer focus ring than Material paints on its own, and a
+/// screen made entirely of figures becomes scrollable with the arrow keys.
+/// Only the decision to show the ring *before* the first key press is
+/// keypad-specific, and it says so where it is made. See `breakpoints.dart` for
+/// the device, and for why these three files are three files.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Support for phones that have no touchscreen at all — a D-pad, a centre key
-/// and a numeric keypad, and nothing else.
-///
-/// The device this was built against is a Sonim XP5s: Android 7.1.2, a 320x432
-/// screen at 213dpi, which is **240 x 324 logical pixels**. Material's smallest
-/// design target is 320x480, so this is a quarter narrower and a third shorter
-/// than anything upstream accounts for, and every fixed width or fixed aspect
-/// ratio in the app was written for a screen that is not this one.
-///
-/// Measured on that device before any of this existed: the app ran, focus moved
-/// on the D-pad and the centre key activated things — Flutter gives all of that
-/// for free — but *nothing on screen ever changed to say what was selected*.
-/// Pressing the centre key on the unit grid opened "Bulk actions", because focus
-/// had started on an app bar icon and there was no way to know. One more press
-/// would have marked an entire sefer learned. That is the defect this file
-/// exists to remove: the app was operable and blind.
-
-/// Widths below this belong to a keypad phone rather than a small touchscreen.
-///
-/// The narrowest ordinary phone is 320dp and a common one is 360dp, so this
-/// threshold cannot fire on a real touchscreen; the target device is 240dp.
-const double kCompactWidth = 300;
-
-/// Whether the app is drawing on a keypad-phone screen.
-///
-/// Layout decisions keyed off this are about *width*, not about the input
-/// device — a 240dp screen needs one column whether or not it can be touched.
-bool isCompact(BuildContext context) =>
-    MediaQuery.sizeOf(context).width < kCompactWidth;
+import 'breakpoints.dart';
 
 /// The keys that open a context menu on the focused control.
 ///
@@ -41,109 +23,6 @@ Map<ShortcutActivator, VoidCallback> contextMenuBindings(VoidCallback open) => {
       const SingleActivator(LogicalKeyboardKey.f10, shift: true): open,
       const SingleActivator(LogicalKeyboardKey.contextMenu): open,
     };
-
-/// Applies the handful of theme tweaks a 240dp screen needs, or nothing at all
-/// on any other screen.
-///
-/// This sits in `MaterialApp.builder` rather than in the `ThemeData` itself
-/// because the decision needs a `MediaQuery`, which does not exist yet where the
-/// theme is built.
-Widget compactTheme(BuildContext context, Widget child) {
-  if (!isCompact(context)) return child;
-  final theme = Theme.of(context);
-  return Theme(
-    data: theme.copyWith(
-      appBarTheme: theme.appBarTheme.copyWith(
-        // Material's 22sp title needs about 160dp for two ordinary words, and
-        // "Learning cycles" was arriving as "Learning…" on a bar that had the
-        // room and was just asking for too much of it. One step down, plus half
-        // the usual gap after the back button, fits the longest title this app
-        // has — and it is still the largest text on the screen.
-        titleTextStyle: theme.textTheme.titleMedium
-            ?.copyWith(color: theme.colorScheme.onSurface),
-        titleSpacing: 8,
-      ),
-    ),
-    child: child,
-  );
-}
-
-/// One app bar action, described rather than built, so the same list can be
-/// rendered either as icons or as rows in a menu.
-class BarAction {
-  const BarAction({
-    required this.icon,
-    required this.label,
-    this.onPressed,
-    this.tint,
-  });
-
-  final IconData icon;
-
-  /// Its tooltip on a wide screen and its visible name in the overflow menu.
-  final String label;
-
-  /// Null disables it, in the bar and in the menu alike.
-  final VoidCallback? onPressed;
-
-  /// A colour the icon carries state in — the sort button's "a sort is active".
-  /// Whatever tint the actions carry is also given to the overflow icon, so
-  /// folding them away does not hide the fact that one of them is switched on.
-  final Color? tint;
-}
-
-/// Lays out app bar [actions]: separate buttons where there is room, one
-/// overflow menu where there is not.
-///
-/// A 240dp bar has room for a drawer button and about one action. With three it
-/// left the title roughly ten pixels, and since both bars in this app scale
-/// their title to fit rather than truncate it, what you got was the app's name
-/// shrunk to an illegible dash — on every screen, including the unit grid, which
-/// therefore never said which sefer you were looking at.
-///
-/// Folding costs nothing: a menu row carries a label as well as an icon, so on
-/// the phone these become *more* discoverable than unlabelled icons were.
-List<Widget> barActions(
-  BuildContext context,
-  List<BarAction> actions, {
-  required String moreTooltip,
-}) {
-  // A single action is left alone even on the phone: a back button, a title and
-  // one icon fit in 240dp, and burying one item under a menu costs a key press
-  // to reveal what the icon already said.
-  if (!isCompact(context) || actions.length <= 1) {
-    return [
-      for (final a in actions)
-        IconButton(
-          icon: Icon(a.icon),
-          color: a.tint,
-          tooltip: a.label,
-          onPressed: a.onPressed,
-        ),
-    ];
-  }
-  final tint = actions.map((a) => a.tint).firstWhere((c) => c != null,
-      orElse: () => null);
-  return [
-    PopupMenuButton<int>(
-      icon: Icon(Icons.more_vert, color: tint),
-      tooltip: moreTooltip,
-      onSelected: (i) => actions[i].onPressed?.call(),
-      itemBuilder: (context) => [
-        for (var i = 0; i < actions.length; i++)
-          PopupMenuItem<int>(
-            value: i,
-            enabled: actions[i].onPressed != null,
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(actions[i].icon, color: actions[i].tint),
-              title: Text(actions[i].label),
-            ),
-          ),
-      ],
-    ),
-  ];
-}
 
 /// Makes a scroll view reachable with a D-pad when nothing inside it can focus.
 ///

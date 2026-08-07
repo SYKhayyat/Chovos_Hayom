@@ -6,7 +6,7 @@ import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
 import '../../core/day.dart';
-import '../../core/keypad.dart';
+import '../../core/breakpoints.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/naming.dart';
 import 'report_screen.dart';

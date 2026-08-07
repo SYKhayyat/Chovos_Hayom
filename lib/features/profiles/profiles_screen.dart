@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
-import '../../core/keypad.dart';
+import '../../core/bar_actions.dart';
+import '../../core/breakpoints.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/error_view.dart';
 import '../common/guarded.dart';

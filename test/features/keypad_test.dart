@@ -1,6 +1,7 @@
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/stats.dart';
-import 'package:chovos_hayom/core/keypad.dart';
+import 'package:chovos_hayom/core/breakpoints.dart';
+import 'package:chovos_hayom/core/focus.dart';
 import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';

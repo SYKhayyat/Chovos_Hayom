@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../core/keypad.dart';
+import '../../core/breakpoints.dart';
+import '../../core/focus.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'calculator_section.dart';
 import 'goals_section.dart';
