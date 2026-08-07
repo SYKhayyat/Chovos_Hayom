@@ -2,7 +2,9 @@ import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/features/common/text_prompt.dart';
 import 'package:chovos_hayom/features/profiles/profiles_screen.dart';
+import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:chovos_hayom/features/settings/settings_screen.dart';
+import 'package:chovos_hayom/features/unit_grid/unit_grid_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -201,6 +203,180 @@ void main() {
       final field = tester.widget<TextField>(find.byType(TextField));
       expect(field.onSubmitted, isNull);
       expect(field.maxLines, 6);
+    });
+  });
+
+  /// The two things the prompt could not do, which is why two dialogs
+  /// hand-rolled the controller-ownership it exists to hold: more than one
+  /// field, and rejecting input without closing.
+  group('more than one field, and saying no', () {
+    Future<Map<String, String>?> show(
+      WidgetTester tester, {
+      String? Function(Map<String, String>)? validate,
+      PromptLayout layout = PromptLayout.column,
+    }) async {
+      Map<String, String>? result;
+      await tester.pumpWidget(localizedApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () async => result = await promptForFields(
+                context,
+                title: 'Title',
+                confirmLabel: 'OK',
+                cancelLabel: 'Cancel',
+                footer: 'Either is enough',
+                validate: validate,
+                layout: layout,
+                fields: const [
+                  PromptField(key: 'from', label: 'From', initialValue: '2'),
+                  PromptField(key: 'to', label: 'To', initialValue: '10'),
+                ],
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      return result;
+    }
+
+    testWidgets('returns every field, keyed, and seeds each one',
+        (tester) async {
+      await show(tester);
+      expect(find.text('2'), findsOneWidget);
+      expect(find.text('10'), findsOneWidget);
+      expect(find.text('Either is enough'), findsOneWidget);
+
+      await tester.enterText(find.widgetWithText(TextField, '2'), ' 4 ');
+      await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+      await tester.pumpAndSettle();
+      expectNoFrameworkError();
+    });
+
+    testWidgets('only the last single-line field submits on Enter',
+        (tester) async {
+      await show(tester);
+      final fields = tester.widgetList<TextField>(find.byType(TextField));
+      expect(fields.first.onSubmitted, isNull);
+      expect(fields.last.onSubmitted, isNotNull);
+    });
+
+    testWidgets('a rejected value keeps the dialog open with the typing in it',
+        (tester) async {
+      // The whole reason the range dialog owned its own state. Closing and
+      // then complaining throws away two numbers, which on a keypad phone is a
+      // dozen key presses to re-enter.
+      var calls = 0;
+      await show(tester, validate: (v) {
+        calls++;
+        return v['from'] == '99' ? 'Out of range' : null;
+      });
+
+      await tester.enterText(find.widgetWithText(TextField, '2'), '99');
+      await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+      await tester.pumpAndSettle();
+
+      expect(calls, 1);
+      expect(find.text('Out of range'), findsOneWidget);
+      expect(find.text('Title'), findsOneWidget, reason: 'still open');
+      expect(find.text('99'), findsOneWidget, reason: 'and still typed in');
+
+      await tester.enterText(find.widgetWithText(TextField, '99'), '3');
+      await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+      await tester.pumpAndSettle();
+      expect(find.text('Title'), findsNothing);
+      expectNoFrameworkError();
+    });
+
+    testWidgets('cancelling never runs the validator', (tester) async {
+      var calls = 0;
+      await show(tester, validate: (_) {
+        calls++;
+        return 'no';
+      });
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(calls, 0);
+      expectNoFrameworkError();
+    });
+  });
+
+  /// The two dialogs that had hand-rolled all of the above, driven through the
+  /// app rather than through the prompt.
+  group('the two that hand-rolled it', () {
+    /// The unit grid, which is where both of these are reached from.
+    Widget grid(ProgressRepository repo) => ProviderScope(
+          overrides: [
+            catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+            progressRepositoryProvider.overrideWithValue(repo),
+            crashLogProvider.overrideWithValue(RecordingCrashLog()),
+          ],
+          child: localizedApp(
+              home: const UnitGridScreen(nodeId: 'shas.moed.shabbos')),
+        );
+
+    testWidgets('adding a meforish still takes both names', (tester) async {
+      final repo = memoryRepository();
+      await tester.pumpWidget(grid(repo));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Mefarshim'));
+      await tester.pumpAndSettle();
+      // Eleven built-in mefarshim above it, so the button is below the fold.
+      await tester.ensureVisible(find.text('Add a meforish'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add a meforish'));
+      await tester.pumpAndSettle();
+
+      // Two fields, the Hebrew one right-to-left whatever locale the app is in,
+      // and the "either is enough" note under them — all of which the
+      // hand-rolled dialog had built for itself.
+      final fields = tester.widgetList<TextField>(find.byType(TextField));
+      expect(fields, hasLength(2));
+      expect(fields.last.textDirection, TextDirection.rtl);
+      expect(find.textContaining('Either one is enough'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).first, 'Maharam');
+      await tester.enterText(find.byType(TextField).last, 'מהר״ם');
+      await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+      await tester.pumpAndSettle();
+
+      expectNoFrameworkError();
+      final layers = await repo.getCustomLayers('default');
+      expect(layers.single.name, 'Maharam');
+      expect(layers.single.nameHebrew, 'מהר״ם');
+    });
+
+    testWidgets('an out-of-range finish stays open and says why',
+        (tester) async {
+      await tester.pumpWidget(grid(memoryRepository()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Finish all / clear all'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Finish a range…'));
+      await tester.pumpAndSettle();
+
+      // Shabbos runs 2..157, so 500 is not a daf it has.
+      await tester.enterText(find.widgetWithText(TextField, '157'), '500');
+      await tester.tap(find.widgetWithText(FilledButton, 'Finish'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Units run from 2 to 157.'), findsOneWidget);
+      expect(find.text('500'), findsOneWidget,
+          reason: 'a rejected range must not throw away what was typed');
+
+      // And a good one goes through to the confirmation, which counts units.
+      await tester.enterText(find.widgetWithText(TextField, '500'), '5');
+      await tester.tap(find.widgetWithText(FilledButton, 'Finish'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('4 units'), findsOneWidget);
+      expectNoFrameworkError();
     });
   });
 }

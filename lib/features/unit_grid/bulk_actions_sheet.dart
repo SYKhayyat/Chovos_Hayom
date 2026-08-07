@@ -8,6 +8,7 @@ import '../../domain/entities/layer.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
+import '../common/text_prompt.dart';
 
 /// Bulk finish/clear for a whole node — one leaf, or a category cascading to
 /// every descendant leaf. Offers:
@@ -258,14 +259,44 @@ class _BulkActionsSheet extends ConsumerWidget {
     );
   }
 
+  /// Two numbers, in the one dialog that owns its controllers.
+  ///
+  /// This was a hand-rolled `StatefulWidget` with its own pair of controllers,
+  /// its own `dispose`, and its own copy of the paragraph explaining why the
+  /// controllers cannot live beside the `showDialog` call — despite
+  /// `text_prompt.dart` existing to hold exactly that. It hand-rolled it
+  /// because the shared prompt took one field and had nowhere to put an error;
+  /// it takes a list and a validator now, and the validator is what keeps a
+  /// rejected range **on screen** rather than closing the dialog and throwing
+  /// away two numbers the user just typed on a keypad.
   Future<void> _finishRange(AppLocalizations l10n, String name) async {
     final first = node.unitOffset;
     final last = node.unitOffset + node.unitCount - 1;
-    final range = await showDialog<UnitRange>(
-      context: host,
-      builder: (_) => _RangeDialog(first: first, last: last),
+    final values = await promptForFields(
+      host,
+      title: l10n.rangeDialogTitle,
+      body: l10n.rangeDialogBody(first, last),
+      confirmLabel: l10n.actionFinish,
+      cancelLabel: l10n.actionCancel,
+      layout: PromptLayout.row,
+      fields: [
+        PromptField(
+          key: 'from',
+          label: l10n.rangeFrom,
+          initialValue: '$first',
+          keyboardType: TextInputType.number,
+        ),
+        PromptField(
+          key: 'to',
+          label: l10n.rangeTo,
+          initialValue: '$last',
+          keyboardType: TextInputType.number,
+        ),
+      ],
+      validate: (v) => _rangeError(l10n, v, first: first, last: last),
     );
-    if (range == null) return;
+    if (values == null) return;
+    final range = _rangeOf(values)!;
     await _run(
       l10n,
       title: l10n.bulkRangeTitle(range.start, range.end, name),
@@ -321,92 +352,25 @@ class _BulkActionsSheet extends ConsumerWidget {
   }
 }
 
-/// Two-field start/end picker for a unit range, defaulting to the full leaf.
-class _RangeDialog extends StatefulWidget {
-  const _RangeDialog({required this.first, required this.last});
-  final int first;
-  final int last;
-
-  @override
-  State<_RangeDialog> createState() => _RangeDialogState();
+/// The range those two numbers name, or null when they are not two numbers.
+///
+/// Ordered rather than validated for order: "from 12 to 4" is a range somebody
+/// meant, and rejecting it would be pedantry about which box they typed first.
+UnitRange? _rangeOf(Map<String, String> values) {
+  final from = int.tryParse(values['from'] ?? '');
+  final to = int.tryParse(values['to'] ?? '');
+  if (from == null || to == null) return null;
+  return from <= to ? UnitRange(from, to) : UnitRange(to, from);
 }
 
-class _RangeDialogState extends State<_RangeDialog> {
-  late final TextEditingController _startCtrl =
-      TextEditingController(text: '${widget.first}');
-  late final TextEditingController _endCtrl =
-      TextEditingController(text: '${widget.last}');
-  String? _error;
-
-  @override
-  void dispose() {
-    _startCtrl.dispose();
-    _endCtrl.dispose();
-    super.dispose();
+/// Why that range is not usable, or null if it is. Pure, so the arithmetic that
+/// decides whether a bulk action can run is testable without a dialog.
+String? _rangeError(AppLocalizations l10n, Map<String, String> values,
+    {required int first, required int last}) {
+  final range = _rangeOf(values);
+  if (range == null) return l10n.rangeErrorTwoNumbers;
+  if (range.start < first || range.end > last) {
+    return l10n.rangeErrorBounds(first, last);
   }
-
-  void _submit() {
-    final l10n = AppLocalizations.of(context);
-    final start = int.tryParse(_startCtrl.text.trim());
-    final end = int.tryParse(_endCtrl.text.trim());
-    if (start == null || end == null) {
-      setState(() => _error = l10n.rangeErrorTwoNumbers);
-      return;
-    }
-    final lo = start <= end ? start : end;
-    final hi = start <= end ? end : start;
-    if (lo < widget.first || hi > widget.last) {
-      setState(
-          () => _error = l10n.rangeErrorBounds(widget.first, widget.last));
-      return;
-    }
-    Navigator.pop(context, UnitRange(lo, hi));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Text(l10n.rangeDialogTitle),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(l10n.rangeDialogBody(widget.first, widget.last)),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _startCtrl,
-                  autofocus: true,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: l10n.rangeFrom),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _endCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: l10n.rangeTo),
-                  onSubmitted: (_) => _submit(),
-                ),
-              ),
-            ],
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 8),
-            Text(_error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          ],
-        ],
-      ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.actionCancel)),
-        FilledButton(onPressed: _submit, child: Text(l10n.actionFinish)),
-      ],
-    );
-  }
+  return null;
 }

@@ -10,6 +10,7 @@ import '../../domain/usecases/layer_roles.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
+import '../common/text_prompt.dart';
 
 /// Editor for a node's mefarshim. Each one is in exactly one of three states:
 ///
@@ -308,13 +309,36 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
   Future<void> _editCustomLayer({Layer? existing}) async {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
-    final result = await showDialog<({String name, String hebrew})>(
-      context: context,
-      builder: (_) => _LayerNameDialog(existing: existing),
+    // Through the shared prompt, which owns the controllers. This was a
+    // hand-rolled `StatefulWidget` with its own pair of them and its own copy
+    // of the paragraph explaining why they cannot be disposed beside the
+    // `showDialog` call — the third copy of that knowledge in a codebase that
+    // has a file for it.
+    final result = await promptForFields(
+      context,
+      title: existing == null
+          ? l10n.mefarshimNewTitle
+          : l10n.mefarshimEditTitle(layerName(l10n, existing)),
+      confirmLabel: existing == null ? l10n.actionAdd : l10n.actionSave,
+      cancelLabel: l10n.actionCancel,
+      footer: l10n.namePairHelp,
+      fields: [
+        PromptField(
+          key: 'name',
+          label: l10n.labelNameEnglish,
+          initialValue: existing?.name ?? '',
+        ),
+        PromptField(
+          key: 'hebrew',
+          label: l10n.labelNameHebrew,
+          initialValue: existing?.nameHebrew ?? '',
+          textDirection: TextDirection.rtl,
+        ),
+      ],
     );
     if (result == null) return;
-    final typed = result.name;
-    final hebrew = result.hebrew;
+    final typed = result['name']!;
+    final hebrew = result['hebrew']!;
     // Either field alone is enough. Someone working entirely in Hebrew should
     // not have to invent a transliteration to get past the form, so the Hebrew
     // stands in as the primary name — which is also the fallback every
@@ -346,80 +370,6 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
         _roles![id] = LayerRole.optional;
       });
     }
-  }
-}
-
-/// The add/rename dialog for a custom meforish.
-///
-/// A `StatefulWidget` so it *owns* its controllers and disposes them in its own
-/// `dispose`. Creating them beside `showDialog` and disposing as soon as the
-/// await returns looks equivalent and is not: the route's exit animation is
-/// still running, its `TextField`s still reference the controllers, and the next
-/// frame throws "A TextEditingController was used after being disposed". Letting
-/// the dialog own them means they die exactly when the widgets that use them do.
-class _LayerNameDialog extends StatefulWidget {
-  const _LayerNameDialog({this.existing});
-
-  final Layer? existing;
-
-  @override
-  State<_LayerNameDialog> createState() => _LayerNameDialogState();
-}
-
-class _LayerNameDialogState extends State<_LayerNameDialog> {
-  late final TextEditingController _name =
-      TextEditingController(text: widget.existing?.name ?? '');
-  late final TextEditingController _hebrew =
-      TextEditingController(text: widget.existing?.nameHebrew ?? '');
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _hebrew.dispose();
-    super.dispose();
-  }
-
-  void _submit() => Navigator.pop(
-        context,
-        (name: _name.text.trim(), hebrew: _hebrew.text.trim()),
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final existing = widget.existing;
-    return AlertDialog(
-      title: Text(existing == null
-          ? l10n.mefarshimNewTitle
-          : l10n.mefarshimEditTitle(layerName(l10n, existing))),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _name,
-            autofocus: true,
-            decoration: InputDecoration(labelText: l10n.labelNameEnglish),
-          ),
-          TextField(
-            controller: _hebrew,
-            textDirection: TextDirection.rtl,
-            decoration: InputDecoration(labelText: l10n.labelNameHebrew),
-            onSubmitted: (_) => _submit(),
-          ),
-          const SizedBox(height: 8),
-          Text(l10n.namePairHelp,
-              style: Theme.of(context).textTheme.bodySmall),
-        ],
-      ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.actionCancel)),
-        FilledButton(
-            onPressed: _submit,
-            child: Text(existing == null ? l10n.actionAdd : l10n.actionSave)),
-      ],
-    );
   }
 }
 

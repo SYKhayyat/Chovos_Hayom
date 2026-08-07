@@ -2,7 +2,38 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-06 (last).** The **meforish checkbox list** row of finding 5 is now resolved,
+> **Status, 2026-08-06 (last).** The **controller-owning dialog** row of finding 5 — which is also
+> row 5 of *The claim* — is now resolved, and the interesting part is **why the rule was broken by
+> two dialogs that had a file written to stop them**.
+>
+> `text_prompt.dart` took **one field**. `_LayerNameDialog` wanted two (a name and its Hebrew), and
+> `_RangeDialog` wanted two *and* something else the prompt could not do at all: reject its own
+> input and **stay open**. Closing and then complaining throws away what the user typed, which on a
+> keypad phone is a dozen key presses to re-enter. So each of them grew a `State`, a pair of
+> controllers, a `dispose` and a paragraph explaining the use-after-dispose bug — three copies of
+> one piece of knowledge, two of them out of reach of the file that holds it.
+>
+> That is a sharper version of this document's thesis than "the author forgot". Neither author
+> forgot; both read the rule, found the shared thing could not do the job, and wrote the exception
+> correctly. **A shared implementation that does not cover the second case is a shared
+> implementation that will be copied**, and the copy is where the knowledge rots — the copies here
+> happen to be right, and there was nothing making them so.
+>
+> Resolved by giving the prompt a `List<PromptField>`, a `PromptLayout` (the range's two numbers are
+> one answer and read as two questions stacked), a `footer`, and a `validate` callback that returns
+> a message and keeps the dialog open. `promptForText` is now a one-field wrapper over it, so all
+> five existing callers are untouched. Both hand-rolls are deleted; the range's bounds check came
+> out as two pure functions on the way.
+>
+> **And the rule is enforced rather than stated.** `text_prompt_guard_test.dart` fails the build on
+> a file that builds an `AlertDialog` *and* constructs a `TextEditingController` — per file rather
+> than per line, because that is the shape of the mistake. Screens and sheets own controllers all
+> the time and should: a form's controller dies with its route, not one frame before it. Fed a
+> violation and watched to fail.
+>
+> ---
+>
+> **Status, 2026-08-06 (previously last).** The **meforish checkbox list** row of finding 5 is now resolved,
 > and its *Worst consequence* column — which is empty in the table — turned out to hold the only
 > live defect left in the inventory.
 >
@@ -284,7 +315,7 @@ design writing in the repository. The problem is what happens next to them:
 | `dashboard_screen.dart:198-200` — *"Watched unconditionally, so this widget's set of subscriptions is the same on every build."* | `dashboard_screen.dart:269` — `ref.watch(backupStatusProvider)` inside the `data:` branch. 68 lines below the rule, same `build` method. **✅ Resolved** — lifted to the unconditional block, as a `.select` on `.due`. |
 | `progress_series.dart:20-23` — *"the same key `PaceEngine` and `ChazaraSchedule` use"* | …and then copy-pastes `_dayNumber` a fourth time rather than importing either. **✅ Resolved** — `lib/core/day.dart`, and a guard test that fails the build on a fifth copy. |
 | `stats.dart:79-82` — *"watching the tick here means every dependent provider re-derives when the day rolls over"* | `return DateTime.now;` — a static tear-off, which Dart canonicalizes. Nothing re-derives. Ever. **✅ Resolved** — see finding 1. |
-| `text_prompt.dart` exists because five dialogs each hand-rolled a controller and threw *used after being disposed* | `_LayerNameDialog` (`mefarshim_config_sheet.dart:400`) and `_RangeDialog` (`bulk_actions_sheet.dart:329`) hand-roll it again. |
+| `text_prompt.dart` exists because five dialogs each hand-rolled a controller and threw *used after being disposed* | `_LayerNameDialog` (`mefarshim_config_sheet.dart:400`) and `_RangeDialog` (`bulk_actions_sheet.dart:329`) hand-roll it again. **✅ Resolved** — and neither author had forgotten the rule: the shared prompt took one field and could not reject input, and both of them needed more. A shared thing that does not cover the second case gets copied. See finding 5. |
 | `README.md:358` — *"a message is one whole ARB entry, never a sentence glued together"* | `dateTimeLabel` exists, is translated into Hebrew, and has **zero call sites**; `log_unit_sheet.dart:194` and `add_chazara_sheet.dart:173` each glue the string by hand. **✅ Resolved** — one hand-glue by then, and it was a fourth copy of `DateDisplay.formatWithTime` that ignored the calendar setting. See finding 10. |
 | `README.md:373` — *"the lint is what keeps new ones from drifting back out of [the guard]"* | `unawaited_futures` fires on expression statements in **async** bodies. The dominant shape here is `onPressed: () => guarded(...)` — a sync arrow closure. Not flagged, any of them. |
 | `learning_event.dart:62-68` — `copyWith` deleted because *"nothing called it"* | `backup_service.dart:353` hand-lists all eleven fields to rescope an event. That *is* `copyWith`, minus the compiler's help. |
@@ -822,7 +853,7 @@ places that cannot see each other:
 | ~~the meforish checkbox list~~ **✅ Resolved** | ~~3~~ — 3 checkbox lists over **4** hand-built answers to *which mefarshim does this unit have*: the checklist, *log with details*, *log a chazara*, and the Chazara screen's one-tap review. One `UnitMefarshim`, three named slices, one `MeforishChecklist` | ~~—~~ the empty column was the finding: the four answers **disagreed**, and the chazara sheet's could submit a layer with no checkbox in it. See the status note |
 | ~~`nameOf` (layer name with deleted fallback)~~ **✅ Resolved** | ~~3, and **they disagree**~~ — one `layerById`/`layerNameById` in `naming.dart`; the mefarshim stat rows were a fourth, and also wrong | ~~same fix applied twice out of three~~ — the raw UUID was real and is now a test |
 | ~~the catalog picker~~ **✅ Resolved** | ~~3~~ — **4**: the node editor's parent dropdown is one too, and it is the one that mattered. One `node_picker.dart`: `nodeChoices` decides which nodes and in what order, `showNodePicker` owns the clamp, `NodeDropdown` owns the indent | ~~—~~ the missing consequence: the fourth picker sorted by the **raw English** `name` and did not qualify, so a Hebrew reader picking a parent got a list ordered by strings not on their screen, with four rows reading "שבת". See the status note |
-| controller-owning dialog | the shared `text_prompt.dart` + 2 hand-rolls | the bug it was written to end |
+| ~~controller-owning dialog~~ **✅ Resolved** | ~~the shared `text_prompt.dart` + 2 hand-rolls~~ — the prompt takes a *list* of fields and a validator now, so both hand-rolls are gone and there is nothing left to hand-roll | ~~the bug it was written to end~~ — and the reason it was hand-rolled anyway: the shared file took **one field** and had nowhere to put a rejection. Both copies wanted two fields, and one of them wanted to say no. See the status note |
 | `requiredPerDay` rendering | 3 (`calculator:252`, `goals_screen:69`, `unit_grid_screen:349`) | the Calculator's "By date" mode is a goal you can't save |
 | ~~the goal banner widget~~ **✅ Resolved** (carried by finding 6's work, and verified rather than assumed) | ~~2 byte-identical~~ — one `GoalBanner`, one `goalStatusText`, one `removeGoalWithUndo`, and `report_guard_test.dart` rule 2 refuses a second reader of `l10n.goalStatus` | ~~2 ARB keys for one sentence~~ — one now, and the *residue of that merge* is the row's real finding: the surviving key's metadata block was still called `@goalBanner`, so it described nothing and `goalStatus`'s three placeholders were re-inferred as `Object`. See the status note |
 | "the four customisation lists" | 3 (`settings_screen:289`, `:390`, `backup_service:311`) | shipped a bug: `.asData?.value ?? const []` silently exporting empty lists |

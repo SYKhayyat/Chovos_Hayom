@@ -61,6 +61,7 @@ fail the build on the shape of the mistake rather than on its consequences:
 | `domain/layer_role_guard_test.dart` | a second resolver, table or stream of layer settings, and a screen working out a unit's mefarshim from the roles and the fold itself |
 | `features/report_guard_test.dart` | a report screen re-added as its own route, and a section wiring up its own D-pad scrolling instead of using `ReportBody` |
 | `features/node_picker_guard_test.dart` | a fifth way to offer the catalog — a hand-rolled picker dialog, node dropdown, or list label |
+| `features/text_prompt_guard_test.dart` | a dialog that owns its own `TextEditingController` — the shape that throws one frame after it closes |
 | `l10n/arb_guard_test.dart` | a translated key nothing displays, a key that is its own translation, an `@metadata` block whose message has been renamed out from under it, and a placeholder left undeclared (and therefore typed `Object`) |
 
 The rot mode worth guarding is the **silent** one — the change that compiles, passes, and quietly

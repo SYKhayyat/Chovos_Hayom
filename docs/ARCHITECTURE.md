@@ -166,10 +166,12 @@ lib/
                    presentation + application (Riverpod notifiers/providers).
     common/           the one write guard, the one read-failure view, the
                       "this id no longer exists" screen, naming.dart — every
-                      domain value that has to become words — and
-                      node_picker.dart, the one way the catalog is offered to
-                      be chosen from (a dialog, a dropdown, and the three
-                      decisions both of them make the same way)
+                      domain value that has to become words — node_picker.dart,
+                      the one way the catalog is offered to be chosen from (a
+                      dialog, a dropdown, and the three decisions both of them
+                      make the same way), and text_prompt.dart, the one dialog
+                      that owns text controllers (any number of fields, with a
+                      validator that can say no without closing)
     reports/          the one report screen and its five tab bodies — Overview,
                       Calculator, Goals, Siyumim, Mefarshim. Five routes, one
                       Scaffold: they read the same providers and answer the same
