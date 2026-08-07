@@ -166,14 +166,18 @@ lib/
                       Calculator, Goals, Siyumim, Mefarshim. Five routes, one
                       Scaffold: they read the same providers and answer the same
                       question at different zooms, and none of them is a surface
-                      you work on
+                      you work on. A section made of figures wraps itself in
+                      ReportBody, which owns the D-pad scrolling the three
+                      focusable-widget-free ones need; Goals and the Calculator
+                      are controls and do not
     dashboard/  unit_grid/  chazara/  journal/  cycles/  profiles/  search/  settings/
   l10n/            app_en.arb + app_he.arb (source) and generated/ (gitignored —
                    `flutter pub get` rebuilds it in ~2s from the two files beside
                    it, so unlike the .g.dart files it has no stale state to diff.
                    test/l10n/arb_guard_test.dart holds the .arb pair to the rules
                    the generator has no opinion about: no dead key, no key that
-                   is its own translation)
+                   is its own translation, no @metadata block orphaned by a
+                   rename, no placeholder left undeclared and therefore Object)
   main.dart
 assets/
   catalog/          shas.json, tanach.json, rambam.json, ... + catalog_index.json

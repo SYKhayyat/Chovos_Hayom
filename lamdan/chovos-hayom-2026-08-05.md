@@ -2,7 +2,37 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-06 (last).** **Finding 9** (*"The validator defends a door that three other
+> **Status, 2026-08-06 (last).** Two rows of **finding 5** that looked already-resolved are now
+> settled on their own terms, which is the point of checking rather than assuming: one of them was
+> resolved and the other had got *worse* since the count was taken.
+>
+> **The goal banner really is one widget**, and every part of the row checked out — one `GoalBanner`,
+> one `goalStatusText`, one `removeGoalWithUndo`, one ARB key, and `report_guard_test.dart` already
+> refusing a second reader of it. What the row could not see is the **residue of its own fix**. The
+> two ARB keys became one, and the metadata block beside the survivor was still named for the key
+> that went: `@goalBanner` describing a `goalStatus` that no longer existed. Nothing failed, because
+> gen-l10n does not require metadata — so the block was ignored and the three placeholders it
+> declared as `String` were silently re-inferred as **`Object`**. That is not cosmetic:
+> `goalStatus(Object, Object, Object)` accepts the `double` that `requiredPerDay` actually is, and
+> renders `2.4285714285714284` into a sentence the declared version will not compile. A declaration
+> that has come loose from its message is worse than no declaration, because the table still reads
+> as though the types are stated. Both halves are now rules in `arb_guard_test.dart`, fed the real
+> violation rather than assumed to work.
+>
+> **`DpadScroll` was three call sites and is four.** Merging the four report routes into one screen
+> did not reduce the count — each section kept its own copy, and `ReportEmpty` grew a fourth — so
+> the row's *worst consequence*, "the tax for splitting one report into three routes", is wrong
+> about where the tax came from. The wrapper's `skipTraversal: false` is a fact about the **tab bar
+> above** all of them, not about any one section, and three sections were each asserting it locally
+> with the same paragraph of explanation above it. One `ReportBody` owns it now, and the guard
+> refuses a fifth copy inside `reports/`. The two sections that do *not* use it — Goals and the
+> Calculator — are deliberate and are said so in the code: they are full of focusable widgets, and
+> claiming the arrow keys ahead of traversal would make the D-pad scroll *past* the controls
+> instead of onto them.
+>
+> ---
+>
+> **Status, 2026-08-06 (previously last).** **Finding 9** (*"The validator defends a door that three other
 > doors already lock"*) is now resolved — see the note below it. Its first claim was right and was
 > measured rather than believed; its second is **wrong**, and the prescription that follows from it
 > would have shipped two crashes. There are eight walks over the parent relation, not three, and the
@@ -722,12 +752,12 @@ places that cannot see each other:
 | the catalog picker | 3 (`cycles_screen:332`, `edit_cycle_screen:237`, `calculator_screen:92`), two of them with cross-referencing comments and **different clamps** (320/400 vs 340/420) | — |
 | controller-owning dialog | the shared `text_prompt.dart` + 2 hand-rolls | the bug it was written to end |
 | `requiredPerDay` rendering | 3 (`calculator:252`, `goals_screen:69`, `unit_grid_screen:349`) | the Calculator's "By date" mode is a goal you can't save |
-| the goal banner widget | 2 byte-identical (`goals_screen:43`, `unit_grid_screen:331`), incl. the delete-with-undo | 2 ARB keys for one sentence |
+| ~~the goal banner widget~~ **✅ Resolved** (carried by finding 6's work, and verified rather than assumed) | ~~2 byte-identical~~ — one `GoalBanner`, one `goalStatusText`, one `removeGoalWithUndo`, and `report_guard_test.dart` rule 2 refuses a second reader of `l10n.goalStatus` | ~~2 ARB keys for one sentence~~ — one now, and the *residue of that merge* is the row's real finding: the surviving key's metadata block was still called `@goalBanner`, so it described nothing and `goalStatus`'s three placeholders were re-inferred as `Object`. See the status note |
 | "the four customisation lists" | 3 (`settings_screen:289`, `:390`, `backup_service:311`) | shipped a bug: `.asData?.value ?? const []` silently exporting empty lists |
 | "is this a positive integer" | 3 layers each, for both interval settings | — |
 | JSON parse per restore | 3–4 full decodes of the same file before anything is written | on a Sonim, with a Shas-sized log |
 | profile deletion | 2 paths (`drift_progress_repository:120` for 6 tables, `providers.dart:141` for the goals key) | kept in sync by hand |
-| `DpadScroll` | 3 call sites — exactly the three report screens | the tax for splitting one report into three routes |
+| ~~`DpadScroll`~~ **✅ Resolved** | ~~3 call sites — exactly the three report screens~~ — it was **4** by the time it was looked at, and merging the routes did not reduce it: the three sections kept their own copies and `ReportEmpty` had grown a fourth. One `ReportBody`, and a guard rule | ~~the tax for splitting one report into three routes~~ — the tax was never the routes. `skipTraversal: false` is a fact about the *tab bar*, and three sections were each asserting it locally |
 
 **The change is not "deduplicate."** It is: for each row, build the thing that makes the second
 copy impossible. A `core/day.dart` value type. One `LogEntryForm` parameterized by action and

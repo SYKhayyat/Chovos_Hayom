@@ -220,7 +220,7 @@
   "@_GOAL_STATUS": {},
   "goalReached": "Goal reached! 🎉",
   "goalStatus": "By {date} · need {rate}/day · {status}",
-  "@goalBanner": {
+  "@goalStatus": {
     "placeholders": {
       "date": { "type": "String" },
       "rate": { "type": "String" },

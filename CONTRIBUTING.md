@@ -59,8 +59,8 @@ fail the build on the shape of the mistake rather than on its consequences:
 | `application/log_pass_guard_test.dart` | a new function that takes the whole event log |
 | `application/import_scope_test.dart` | a store a backup writes into that does not take an `ImportMode` |
 | `domain/layer_role_guard_test.dart` | a second resolver, table or stream of layer settings |
-| `features/report_guard_test.dart` | a report screen re-added as its own route |
-| `l10n/arb_guard_test.dart` | a translated key nothing displays, and a key that is its own translation |
+| `features/report_guard_test.dart` | a report screen re-added as its own route, and a section wiring up its own D-pad scrolling instead of using `ReportBody` |
+| `l10n/arb_guard_test.dart` | a translated key nothing displays, a key that is its own translation, an `@metadata` block whose message has been renamed out from under it, and a placeholder left undeclared (and therefore typed `Object`) |
 
 The rot mode worth guarding is the **silent** one — the change that compiles, passes, and quietly
 stops something working. A field left out of an `==` does not throw; it shows up as a screen that

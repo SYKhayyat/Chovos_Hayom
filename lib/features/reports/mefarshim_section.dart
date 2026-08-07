@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
-import '../../core/keypad.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/naming.dart';
 import 'report_screen.dart';
@@ -28,9 +27,8 @@ class MefarshimSection extends ConsumerWidget {
 
     // Rows of bars and figures, none of them focusable, so a D-pad had
     // nothing to move focus to and this list never scrolled a pixel on a
-    // keypad phone. See [DpadScroll], and the Overview tab, which had the same.
-    return DpadScroll(
-      skipTraversal: false,
+    // keypad phone. See [ReportBody], and the Overview tab, which had the same.
+    return ReportBody(
       builder: (context, controller) => ListView.separated(
         controller: controller,
         padding: const EdgeInsets.symmetric(vertical: 8),

@@ -9,6 +9,7 @@ import '../../core/day.dart';
 import '../../core/keypad.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/naming.dart';
+import 'report_screen.dart';
 
 /// The headline figures, the curve and the heatmap — what used to be the whole
 /// of `/stats`, now the first tab of the report.
@@ -26,11 +27,9 @@ class OverviewSection extends ConsumerWidget {
     // Nothing on this section can hold focus — it is entirely figures — so a
     // D-pad had no way to move it and the list never scrolled at all. Verified
     // on the Sonim: the chart and the heatmap below the fold could not be
-    // reached by any sequence of keys. [DpadScroll] turns up and down into
-    // scrolling for exactly this case; `skipTraversal: false` is what lets
-    // pressing down from the tab bar arrive here in the first place.
-    return DpadScroll(
-      skipTraversal: false,
+    // reached by any sequence of keys. [ReportBody] is where that is dealt
+    // with, once, for every section that is figures rather than controls.
+    return ReportBody(
       builder: (context, controller) => ListView(
         controller: controller,
         padding: const EdgeInsets.all(16),

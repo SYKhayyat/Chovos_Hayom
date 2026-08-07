@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
-import '../../core/keypad.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/naming.dart';
 import 'report_screen.dart';
@@ -28,9 +27,9 @@ class SiyumimSection extends ConsumerWidget {
     // A roll of honour, not a menu: every row here is a `ListTile` with no
     // `onTap`, so none of them can hold focus and a D-pad had nothing to
     // move to. Without this the list was frozen at whatever the first
-    // screenful happened to be. Same defect as the Overview tab.
-    return DpadScroll(
-      skipTraversal: false,
+    // screenful happened to be. Same defect as the Overview tab, and now the
+    // same [ReportBody].
+    return ReportBody(
       builder: (context, controller) => ListView(
         controller: controller,
         children: [

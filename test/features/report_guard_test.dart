@@ -11,12 +11,20 @@ import 'package:flutter_test/flutter_test.dart';
 ///    own `Scaffold` has quietly become a route again, and the drawer row and
 ///    the `DpadScroll` copy follow it back.
 ///
-/// 2. **A goal is rendered in one place.** The unit grid's banner and the Goals
+/// 2. **A report section reaches its D-pad scrolling through `ReportBody`.**
+///    Three of the five sections are figures with nothing focusable in them, so
+///    on a keypad phone the list never scrolls a pixel — and all three had
+///    pasted the same `DpadScroll(skipTraversal: false, …)` with the same
+///    paragraph above it. That flag is a fact about the tab bar overhead, not
+///    about any one section, and a fourth figures-only section that forgets it
+///    is not broken in any way a test on a touchscreen can see.
+///
+/// 3. **A goal is rendered in one place.** The unit grid's banner and the Goals
 ///    section used to write the same three facts out separately, against two ARB
 ///    templates that differed only in their first word. `goal_status.dart` is
 ///    where that sentence lives; `l10n.goalStatus` may only be read there.
 ///
-/// 3. **There is one form that records learning.** `add_chazara_sheet.dart` was
+/// 4. **There is one form that records learning.** `add_chazara_sheet.dart` was
 ///    the log sheet again, and every one of the three ways it had drifted was a
 ///    regression: the wall clock instead of `clockProvider`, no session timer,
 ///    and a second ARB key asking for the same duration. A second sheet built
@@ -32,6 +40,7 @@ void main() {
   /// The file each rule is *supposed* to live in.
   const homes = <String, String>{
     'Scaffold': 'lib/features/reports/report_screen.dart',
+    'DpadScroll': 'lib/features/reports/report_screen.dart',
     'goalStatus': 'lib/features/common/goal_status.dart',
     'logSheetManualDateTime': 'lib/features/unit_grid/log_unit_sheet.dart',
   };
@@ -43,6 +52,13 @@ void main() {
       pattern: r'\bScaffold\(',
       sample: '      body: Scaffold(appBar: AppBar()),',
       home: 'Scaffold',
+    ),
+    (
+      why: 'wires up its own D-pad scrolling — ReportBody owns that decision '
+          'for every section, including the ones not written yet',
+      pattern: r'\bDpadScroll\(',
+      sample: '    return DpadScroll(skipTraversal: false, builder: b);',
+      home: 'DpadScroll',
     ),
     (
       why: 'renders the goal sentence outside goal_status.dart — that is how '
@@ -60,8 +76,14 @@ void main() {
     ),
   ];
 
-  /// Rule 1 applies only inside `reports/`; the other two apply to all of `lib`.
-  const scopes = <String, String>{'Scaffold': 'lib/features/reports/'};
+  /// Rules 1 and 2 apply only inside `reports/` — a screen elsewhere is
+  /// entitled to a `Scaffold`, and `DpadScroll` is a general-purpose wrapper
+  /// that any screen made of figures may reach for. The other two apply to all
+  /// of `lib`.
+  const scopes = <String, String>{
+    'Scaffold': 'lib/features/reports/',
+    'DpadScroll': 'lib/features/reports/',
+  };
 
   List<({int line, String text})> codeLines(String source) {
     final out = <({int line, String text})>[];

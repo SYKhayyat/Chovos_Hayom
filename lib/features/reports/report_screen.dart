@@ -49,6 +49,42 @@ enum ReportSection {
       };
 }
 
+/// A report section whose content is figures rather than controls.
+///
+/// Three of the five sections are made entirely of text, bars and tiles: not one
+/// widget in Overview, Siyumim or Mefarshim can hold focus. Directional focus
+/// moves *between focusable widgets* and scrolls only as a side effect of
+/// bringing one into view, so on a keypad phone those three lists were frozen at
+/// whatever the first screenful happened to be — measured on the Sonim, where
+/// the Overview chart and heatmap could not be reached by any sequence of keys.
+///
+/// [DpadScroll] is the fix and it was pasted three times, with the same
+/// `skipTraversal: false` and the same paragraph explaining it above each copy.
+/// That flag is not a fact about any one section: it is a fact about the **tab
+/// bar above all of them**, which holds focus after a tab switch, so a wrapper
+/// that traversal steps past is a wrapper that pressing *down* from a tab can
+/// never reach. Deciding it once, here, is what makes a sixth section arrive
+/// scrollable instead of arriving frozen and waiting for somebody to notice on
+/// a device they do not have.
+///
+/// The two sections that do **not** use this are not oversights. Goals is rows
+/// of remove buttons and the Calculator is a form; both are full of focusable
+/// widgets, so ordinary traversal reaches them and scrolls as it goes, and
+/// claiming the arrow keys ahead of it would make the D-pad scroll *past* the
+/// controls instead of onto them.
+class ReportBody extends StatelessWidget {
+  const ReportBody({super.key, required this.builder});
+
+  /// Builds the scroll view, which must take the controller passed in — that is
+  /// what the arrow keys move. See [DpadScroll.builder].
+  final Widget Function(BuildContext context, ScrollController controller)
+      builder;
+
+  @override
+  Widget build(BuildContext context) =>
+      DpadScroll(skipTraversal: false, builder: builder);
+}
+
 /// What a report section shows before there is anything to report.
 ///
 /// Three of the five are empty for months, so this is the state a new user
@@ -73,8 +109,7 @@ class ReportEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      builder: (context, constraints) => DpadScroll(
-        skipTraversal: false,
+      builder: (context, constraints) => ReportBody(
         builder: (context, controller) => SingleChildScrollView(
           controller: controller,
           child: ConstrainedBox(

@@ -281,7 +281,7 @@ hadn't — a gate whose only failure mode was created by the decision to commit.
 generated churn per line of `.arb`, and a two-line translation fix arrived as a fourteen-line diff.
 
 What is worth enforcing is enforced, and none of it was the diff. A key missing from a shipped
-locale still fails CI. `test/l10n/arb_guard_test.dart` adds the two rules the untranslated-locale
+locale still fails CI. `test/l10n/arb_guard_test.dart` adds the rules the untranslated-locale
 gate cannot see: **every key in the template is read by something in `lib/`** — five were not, each
 one written, described, translated and displayed nowhere — and **no key is its own translation**,
 which is a template entry and its Hebrew being the same bytes. That second one is subtler than "no
@@ -293,6 +293,15 @@ in both, so the gate called it translated; identical in both, so it was one lite
 places, spelling `דף` next to the `unitLabelDaf` that already spells it. The Daf Yomi row now
 composes that line out of the Hebrew table itself (`hebrewDafLine`, in `naming.dart`), and shows it
 only when the heading above is not already saying the same three words.
+
+Two more rules are about the `@key` blocks rather than the messages: **every block describes a
+message that exists**, and **every placeholder a message uses is declared**. Those sound like
+tidiness and are not. `goalBanner` became `goalStatus` when the unit grid's banner and the Goals
+row stopped writing the same sentence twice; the rename reached the message and left `@goalBanner`
+behind. Nothing failed — metadata is optional — so the block was ignored and the three placeholders
+it declared as `String` were silently re-inferred as **`Object`**. `goalStatus(Object, Object,
+Object)` accepts the `double` that `requiredPerDay` actually is, and would render
+`2.4285714285714284` into a sentence the declared version refuses to compile.
 
 Two rules keep the domain out of it. `domain/` is pure Dart with no locale, so it holds only what is
 genuinely data — a unit's own name, or its number — and everything whose wording depends on the

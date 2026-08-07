@@ -27,6 +27,18 @@ import 'package:flutter_test/flutter_test.dart';
 ///   translator changing one copy would have made the same line render
 ///   differently in the two locales with nothing to notice.
 ///
+/// * **A metadata block whose message has been renamed.** `goalBanner` became
+///   `goalStatus` when the unit grid's banner and the Goals row stopped writing
+///   the same sentence twice, and the rename reached the message and not the
+///   `@goalBanner` block beside it. Nothing failed: gen-l10n does not require
+///   metadata, so the orphan block was ignored and the three placeholders it
+///   declared as `String` were re-inferred as **`Object`**. The signature
+///   `goalStatus(Object, Object, Object)` accepts the `double` that
+///   `requiredPerDay` is, and renders `2.4285714285714284` into a sentence the
+///   `String` version would not have compiled. A declaration that has come
+///   loose from its message is worse than no declaration, because the table
+///   still reads as though the types are stated.
+///
 /// **The naive version of the second rule is wrong, and worth saying so here so
 /// nobody "fixes" it into existence.** "No Hebrew in the English template"
 /// would reject `settingsLanguage` (`"Hebrew (עברית)"` — a language named in its
@@ -139,6 +151,67 @@ void main() {
             'own `unitLabelDaf` in features/common/naming.dart.');
   });
 
+  /// The placeholder names a message actually interpolates: `{name}` and the
+  /// `{count, plural, …}` head alike, since both are arguments to the generated
+  /// method. Nested placeholders inside a plural's arms name the same argument
+  /// as the head, so a set is the right shape.
+  Set<String> placeholdersIn(String value) => {
+        for (final m in RegExp(r'\{\s*(\w+)\s*[,}]').allMatches(value))
+          m.group(1)!,
+      };
+
+  /// What `@key` declares, or the empty set when there is no block.
+  Set<String> declaredFor(String key, Map<String, dynamic> arb) {
+    final meta = arb['@$key'];
+    if (meta is! Map || meta['placeholders'] is! Map) return const {};
+    return {for (final k in (meta['placeholders'] as Map).keys) '$k'};
+  }
+
+  test('the placeholder reader sees both shapes and invents nothing', () {
+    expect(placeholdersIn('By {date} · need {rate}/day · {status}'),
+        {'date', 'rate', 'status'});
+    expect(placeholdersIn('{count, plural, =1{1 goal} other{{count} goals}}'),
+        {'count'});
+    expect(placeholdersIn('Nothing to interpolate here'), isEmpty);
+  });
+
+  test('every @metadata block belongs to a message that exists', () {
+    final en = arb('en');
+    final orphans = [
+      for (final key in en.keys)
+        // `@@locale` is a header and `@_SECTION` blocks are the table's own
+        // dividers; neither describes a message.
+        if (key.startsWith('@') &&
+            !key.startsWith('@@') &&
+            !key.startsWith('@_') &&
+            !en.containsKey(key.substring(1)))
+          key,
+    ];
+
+    expect(orphans, isEmpty,
+        reason: 'these blocks describe messages that are not in the table, so '
+            'they declare nothing and the message they were written for — if '
+            'it was renamed rather than deleted — now has its placeholders '
+            'inferred as Object. That is how `@goalBanner` outlived '
+            '`goalBanner`.');
+  });
+
+  test('every placeholder a message uses is declared with a type', () {
+    final en = arb('en');
+    final undeclared = [
+      for (final key in en.keys.where(isMessage))
+        for (final name in placeholdersIn(en[key] as String))
+          if (!declaredFor(key, en).contains(name)) '$key ← {$name}',
+    ];
+
+    expect(undeclared, isEmpty,
+        reason: 'gen-l10n types an undeclared placeholder as `Object`, so the '
+            'generated method accepts anything and interpolates its '
+            '`toString()`. The declaration is the only thing that makes '
+            '`String date` mean a date somebody has already formatted.\n\n'
+            '${undeclared.join('\n')}');
+  });
+
   test('the two rules fail on a violation, rather than only passing', () {
     // The negative controls. Both rules are "look through a list and find
     // nothing", which is the assertion shape that passes when the list is empty
@@ -154,5 +227,24 @@ void main() {
     expect(letter.hasMatch(withoutPlaceholders(pureTemplate)), isFalse,
         reason: 'and must not see a bare placeholder template as words, or '
             'every separator in the table becomes a violation');
+
+    // And the same for the two rules above, fed the exact table that produced
+    // them: a block left behind by a rename, and the message it stopped
+    // describing.
+    const rotted = <String, dynamic>{
+      'goalStatus': 'By {date} · need {rate}/day',
+      '@goalBanner': {
+        'placeholders': {
+          'date': {'type': 'String'},
+          'rate': {'type': 'String'},
+        },
+      },
+    };
+    expect(rotted.containsKey('goalBanner'), isFalse,
+        reason: 'the orphan rule must find a block whose message is gone');
+    expect(declaredFor('goalStatus', rotted), isEmpty,
+        reason: 'and the placeholder rule must read the orphaned block as '
+            'declaring nothing for the message that is actually there');
+    expect(placeholdersIn(rotted['goalStatus'] as String), {'date', 'rate'});
   });
 }
