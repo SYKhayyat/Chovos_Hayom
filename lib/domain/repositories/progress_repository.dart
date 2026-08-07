@@ -7,6 +7,35 @@ import '../usecases/layer_roles.dart';
 /// Persists the append-only event log, profiles, and user-defined custom nodes.
 /// The log is the single source of truth; nothing derived is stored here.
 ///
+/// **Why this interface exists, having been revisited and kept.**
+///
+/// Twenty-four members over 109 lines, one production implementation, and one
+/// test double — and the double *delegates*, so it is not a second answer to
+/// anything. Those numbers are the case for deleting it, and the case is real:
+/// a ~20-line wrapper that forwarded to `DriftProgressRepository` would need
+/// every one of the twenty-four members anyway, so nothing is bought by the
+/// swap either.
+///
+/// What it does buy is the **dependency rule**, and not the one its address
+/// suggests. Nothing in `domain/` consumes this interface — the readers are
+/// `application/` (the backup service, the logging service, the customisations
+/// reader, the providers) and one screen. Without it, every one of them would
+/// import `data/drift/`, and `drift` would be a compile-time dependency of the
+/// layer that holds the app's rules. `test/data/dependency_rule_test.dart` is
+/// what actually holds that line: only the two composition roots — `providers`
+/// and `main` — may reach into `data/`, and this interface is what lets
+/// everything else keep away from it.
+///
+/// The other thing it buys is `FailingProgressRepository`: a write cannot be
+/// made to fail on demand through Drift, and the write guard's whole reason for
+/// existing is what happens when one does.
+///
+/// The co-change signal is real and is not an argument against it. This file
+/// moved with its implementation five times in eleven changes, because it is a
+/// *faithful mirror* of a persistence surface rather than an abstraction over
+/// several — which is the correct shape here and the reason the shape is
+/// stated rather than left to be re-litigated.
+///
 /// **Event ids are unique within a profile, not across the store.** The same
 /// backup imported into two profiles puts the same ids in both — that is the
 /// feature — so every operation that names an event also names the profile it

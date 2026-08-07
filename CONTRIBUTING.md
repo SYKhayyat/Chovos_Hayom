@@ -54,6 +54,7 @@ fail the build on the shape of the mistake rather than on its consequences:
 
 | Guard | What it refuses |
 |---|---|
+| `data/dependency_rule_test.dart` | an import of `data/` from anywhere but the two composition roots, and any Flutter/Drift import inside `domain/` |
 | `core/day_math_guard_test.dart` | a fifth hand-rolled answer to "which calendar day is this" |
 | `application/notify_guard_test.dart` | a family without `autoDispose`, an unselected `settingsProvider` watch, a field added to a value type and left out of its `==` |
 | `application/log_pass_guard_test.dart` | a new function that takes the whole event log |

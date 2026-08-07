@@ -2,7 +2,41 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-07 (last).** Row 8 of *The claim* — `copyWith` deleted while `_rescope`
+> **Status, 2026-08-07 (last).** **Finding 11** (`wrong-but-keep`) is now settled — all three
+> bullets, and two of the three answers are not the ones the finding expects.
+>
+> **`ProgressRepository`: keep, and the reason is not the one anybody was arguing about.** The
+> numbers are 24 members over 109 lines (the finding says 27 and 109), one production implementation
+> and one test double which *delegates*. The finding's own note says the revisit's answer "is less
+> obvious than it looks, since the delegating wrapper would still need all 27 members" — right, and
+> that means the swap buys nothing either way. What settles it is a fact neither count reaches:
+> **nothing in `domain/` consumes this interface.** Its readers are four files in `application/` and
+> one screen, and without it every one of them would import `data/drift/` — making `drift` a
+> compile-time dependency of the layer that holds the app's rules. That is what the 109 lines buy,
+> and it was worth nothing as an opinion, so it is now
+> `test/data/dependency_rule_test.dart`: only the two composition roots may reach into `data/`, and
+> `domain/` may import no Flutter, Riverpod or Drift at all. Fed a violation.
+>
+> **`CatalogRepository`: keep, and the finding's cost estimate is wrong.** *"Deleting it is
+> net-negative-cost. It is also 7 lines."* It has **five** implementations under `test/` — a
+> four-node fake, two fixed ones, a 500,000-unit one for the cost tests, and one that throws so the
+> read-failure view can be seen — used by about fifty test files. Seven lines that let the whole
+> suite run against a four-node catalog instead of the 312-node asset is not an interface with one
+> implementation. The finding is right that its *stated* extension point is dead — "remote/custom
+> sources later" shipped as `custom_nodes` merged in a provider, bypassing it — and that is now
+> written in the file, so the next reader does not delete it for having a dead reason.
+>
+> **`reminders_policy.dart`: keep, against the finding.** *"22 lines — one boolean AND with one
+> caller — worth folding into the single call site."* The line count is not what the file is worth.
+> It holds the choice of **axis**: the nudge asks *did I record anything today*, keyed on `loggedAt`
+> and not `occurredAt`, so a backdated session still counts as activity. That is one character away
+> from its opposite, silent when wrong, and testable in isolation only while it is out of a widget's
+> `build`. The other half of the same bullet — `time_stats.dart` — was folded away correctly, and
+> for a different reason: half of it had no callers at all.
+>
+> ---
+>
+> **Status, 2026-08-07 (previously last).** Row 8 of *The claim* — `copyWith` deleted while `_rescope`
 > hand-listed all eleven fields — is now resolved.
 >
 > **The deletion's argument was right and is kept.** `copyWith` sat next to `withDetails`, whose
@@ -1656,7 +1690,9 @@ apparatus against `'$verb $n unit(s)'` while shipping the same expressiveness un
   production implementation, *one* test double, and 27 methods across 109 lines, because the three
   one-shot getters the eleven `.first` call sites were improvising had to be added. The revisit is
   worth doing; the answer is less obvious than it looks, since the delegating wrapper would still
-  need all 27 members.
+  need all 27 members. **✅ Revisited — keep.** 24 members, not 27, and the deciding fact is in
+  neither count: nothing in `domain/` consumes it, so what it actually buys is keeping `drift` out
+  of `application/`. Now enforced rather than assumed. See the status note.
 
 ---
 

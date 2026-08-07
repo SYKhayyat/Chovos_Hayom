@@ -166,7 +166,10 @@ lib/
                         - BatchHistory   (log -> the undoable bulk actions in it)
                         - SiyumFinder    (progress forest -> completed nodes at
                                           every level, not just leaves)
-  data/            depends on domain.
+  data/            depends on domain. Only lib/application/providers.dart and
+                   lib/main.dart may import it — the two composition roots.
+                   test/data/dependency_rule_test.dart holds that line, which is
+                   what ProgressRepository is actually for
     drift/            database.dart, tables, DAOs
     catalog/          JSON asset loader + version reconciler (pluggable source)
     repositories/     Drift-backed implementations of domain interfaces
