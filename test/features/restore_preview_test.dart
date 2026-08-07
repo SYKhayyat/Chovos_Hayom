@@ -42,14 +42,12 @@ void main() {
   Future<String> textOnlyBackup() async {
     final source = memoryRepository();
     await source.addEvents([mark('e2', 2, mainLayerId), mark('e3', 3, mainLayerId)]);
-    return BackupService(source).export(
+    await source.setLayerConfig(
       'p1',
-      customNodes: const [],
-      layerConfigs: [
-        LayerConfigEntry(
-            nodeId: nodeId, unitIndex: -1, roles: roles(required: [mainLayerId])),
-      ],
+      LayerConfigEntry(
+          nodeId: nodeId, unitIndex: -1, roles: roles(required: [mainLayerId])),
     );
+    return BackupService(source).export('p1');
   }
 
   test('a backup that relaxes the requirement is previewed under its own rules',
@@ -135,16 +133,14 @@ void main() {
     // more than this profile does, so units marked today stop qualifying.
     final source = memoryRepository();
     await source.addEvent(mark('e2', 2, mainLayerId));
-    final json = await BackupService(source).export(
+    await source.setLayerConfig(
       'p1',
-      customNodes: const [],
-      layerConfigs: [
-        LayerConfigEntry(
-            nodeId: nodeId,
-            unitIndex: -1,
-            roles: roles(required: [mainLayerId, 'rashi'])),
-      ],
+      LayerConfigEntry(
+          nodeId: nodeId,
+          unitIndex: -1,
+          roles: roles(required: [mainLayerId, 'rashi'])),
     );
+    final json = await BackupService(source).export('p1');
 
     final repo = memoryRepository();
     await repo.addEvent(mark('e2', 2, mainLayerId));
@@ -173,8 +169,8 @@ void main() {
     // while throwing away every date the learner is working towards.
     Future<String> backupWithGoal() async {
       final source = memoryRepository();
-      return BackupService(source).export('p1',
-          customNodes: const [], goals: {nodeId: DateTime(2027, 3, 1)});
+      return BackupService(source)
+          .export('p1', goals: {nodeId: DateTime(2027, 3, 1)});
     }
 
     test('the wide restore counts a goal the backup does not name', () async {

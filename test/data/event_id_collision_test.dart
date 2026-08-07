@@ -45,7 +45,7 @@ void main() {
     // p1 learns a daf, and exports.
     await repo.addEvent(event('evt-1', 'p1'));
     final service = BackupService(repo);
-    final json = await service.export('p1', customNodes: const []);
+    final json = await service.export('p1');
 
     // The same file is imported into the second profile — a documented
     // feature (profiles + import/restore), and the obvious way to move

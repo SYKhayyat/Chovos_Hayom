@@ -269,6 +269,9 @@ Explicit product requirements, enforced architecturally:
   lie anywhere a *decision* is made from it, because "not loaded" and "there is none" become the
   same answer. A backup built that way omits your custom sefarim and reports success; a clear built
   that way deletes nothing and reports success. Write paths await the repository's own streams.
+  The three collections that kept getting this wrong are now one value, `ProfileCustomisations`,
+  read in one place — and `BackupService.export` reads it rather than taking it, so there is
+  nowhere left to pass the wrong list in.
 - **One policy for every write.** `features/common/guarded.dart` is the only place a
   user-initiated write is awaited, reported, and recorded. Success is reported *after* the write
   succeeds — never alongside it — a failure is recorded to the on-device `CrashLog` labelled with

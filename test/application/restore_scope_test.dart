@@ -44,7 +44,7 @@ void main() {
   Future<String> backupThenAddASefer() async {
     await repo.addProfile(
         Profile(id: 'p1', name: 'Reuven', createdAt: DateTime(2026)));
-    final backup = await BackupService(repo).export('p1', customNodes: const []);
+    final backup = await BackupService(repo).export('p1');
     await repo.addCustomNode(
       'p1',
       const CatalogNode(

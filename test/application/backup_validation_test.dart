@@ -312,7 +312,7 @@ void main() {
       repo = memoryRepository();
       await repo.addEvent(ev('done-1', EventAction.done, DateTime(2026, 7, 24, 10)));
       // The backup is taken while the unit is marked.
-      json = await BackupService(repo).export('a', customNodes: const []);
+      json = await BackupService(repo).export('a');
       // ...and then the user un-marks it, which appends rather than deletes.
       await repo
           .addEvent(ev('undone-1', EventAction.undone, DateTime(2026, 7, 24, 11)));
@@ -370,7 +370,6 @@ void main() {
     final source = memoryRepository();
     final json = await BackupService(source).export(
       'a',
-      customNodes: const [],
       goals: {'shas': DateTime(2030, 6, 1)},
     );
     final target = memoryRepository();
@@ -390,7 +389,7 @@ void main() {
       loggedAt: DateTime(2026, 1, 1),
       batchId: 'batch-7',
     ));
-    final json = await BackupService(source).export('a', customNodes: const []);
+    final json = await BackupService(source).export('a');
     final target = memoryRepository();
     await BackupService(target).importInto('b', json);
     expect((await target.getEvents('b')).single.batchId, 'batch-7');
@@ -400,8 +399,9 @@ void main() {
     final repo = memoryRepository();
     const category = CatalogNode(
         id: 'cat', parentId: null, name: 'Category', kind: NodeKind.category);
-    final json = await BackupService(memoryRepository())
-        .export('a', customNodes: const [category]);
+    final source = memoryRepository();
+    await source.addCustomNode('a', category);
+    final json = await BackupService(source).export('a');
     await BackupService(repo).importInto('b', json);
     expect((await repo.getCustomNodes('b')).single.id, 'cat');
   });

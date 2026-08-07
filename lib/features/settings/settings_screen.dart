@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/routes.dart';
 import '../../application/backup_service.dart';
 import '../../application/backup_status.dart';
+import '../../application/profile_customisations.dart';
 import '../../application/cycles.dart';
 import '../../application/goals.dart';
 import '../../application/providers.dart';
@@ -301,14 +302,11 @@ class SettingsScreen extends ConsumerWidget {
 
     await guard.run(
       () async {
-        // Straight from the repository, not from the providers that cache it.
-        // These were `.asData?.value ?? const []`, which turns a provider
-        // still in flight — or one nothing on this screen keeps alive — into an
-        // empty list: a clear that silently skips exactly the rows it was asked
-        // to remove, and then reports success for it.
-        final customNodes = await repo.getCustomNodes(profileId);
-        final customLayers = await repo.getCustomLayers(profileId);
-        final layerConfigs = await repo.getLayerConfigs(profileId);
+        // Straight from the repository, not from the providers that cache it —
+        // and through the same reader the export and the restore's teardown
+        // use, so "everything this profile has made" is one answer rather than
+        // three hand-written triples that could each be wrong differently.
+        final made = await ProfileCustomisations.of(repo, profileId);
 
         await settings.clearAll();
         // Goals are configuration, not history: they travel with the settings
@@ -325,13 +323,13 @@ class SettingsScreen extends ConsumerWidget {
         // used to leave some custom sefarim gone and others still there, with
         // nothing to tell the user which.
         await repo.transaction(() async {
-          for (final n in customNodes) {
+          for (final n in made.nodes) {
             await repo.removeCustomNode(profileId, n.id);
           }
-          for (final l in customLayers) {
+          for (final l in made.layers) {
             await repo.removeCustomLayer(profileId, l.id);
           }
-          for (final c in layerConfigs) {
+          for (final c in made.configs) {
             await repo.clearLayerConfig(profileId, c.nodeId, c.unitIndex);
           }
         });
@@ -389,23 +387,21 @@ class SettingsScreen extends ConsumerWidget {
         what: l10n.whatSavingBackupInterval);
   }
 
-  /// Everything the backup carries, read from where it lives.
+  /// Everything the backup carries.
   ///
-  /// The four repository-backed lists used to come off their providers as
-  /// `.asData?.value ?? const []`. A provider still in flight — or one nothing
-  /// on this screen keeps alive — reads as an **empty list**, which means a
-  /// backup that silently leaves out your custom sefarim, your custom mefarshim
-  /// and every layer setting, and says "Saved backup" about it. That is
-  /// the same defect goals had before they were added here, and a backup you
-  /// only discover is incomplete when you restore it is the worst kind.
+  /// The three repository-backed lists are not passed in any more — [export]
+  /// reads them itself, from the repository. They used to come off their
+  /// providers here as `.asData?.value ?? const []`, and a provider still in
+  /// flight (or one nothing on this screen keeps alive) reads as an **empty
+  /// list**: a backup that silently leaves out your custom sefarim, your custom
+  /// mefarshim and every layer setting, and says "Saved backup" about it.
+  ///
+  /// What is left here is the pair that really does live outside the
+  /// repository, in preferences, and so has to be handed over.
   Future<String> _buildExport(WidgetRef ref) async {
     final repo = ref.read(progressRepositoryProvider);
-    final profileId = ref.read(activeProfileProvider);
     return BackupService(repo).export(
-      profileId,
-      customNodes: await repo.getCustomNodes(profileId),
-      customLayers: await repo.getCustomLayers(profileId),
-      layerConfigs: await repo.getLayerConfigs(profileId),
+      ref.read(activeProfileProvider),
       settings: ref.read(settingsProvider.notifier).toBackup(),
       goals: ref.read(goalsProvider),
     );

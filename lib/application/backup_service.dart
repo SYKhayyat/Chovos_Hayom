@@ -5,6 +5,7 @@ import '../domain/entities/layer.dart';
 import '../domain/entities/learning_event.dart';
 import '../domain/repositories/progress_repository.dart';
 import '../domain/usecases/layer_roles.dart';
+import 'profile_customisations.dart';
 
 /// Raised when a backup is unusable. Carries a message meant to be shown to the
 /// user verbatim — "what is wrong with this file" is more useful than "failed".
@@ -134,22 +135,33 @@ class BackupService {
   static const currentVersion = 5;
 
   /// Build a portable JSON string for [profileId].
+  ///
+  /// The three repository-backed collections are **read here**, not passed in.
+  /// They used to be three parameters, which meant the screen calling this had
+  /// to know where they live — and for a month it got that wrong, taking them
+  /// off providers as `.asData?.value ?? const []` and exporting empty lists
+  /// for a profile whose custom sefarim had not finished loading. A backup you
+  /// only discover is incomplete when you restore it is the worst kind, and the
+  /// fix that holds is having nowhere to pass the wrong thing in.
+  ///
+  /// [settings] and [goals] stay parameters because they genuinely do not live
+  /// in the repository — they are preferences, owned by two controllers — and a
+  /// service that reached into Riverpod to fetch them would be a worse coupling
+  /// than an argument.
   Future<String> export(
     String profileId, {
-    required List<CatalogNode> customNodes,
-    List<Layer> customLayers = const [],
-    List<LayerConfigEntry> layerConfigs = const [],
     Map<String, dynamic> settings = const {},
     Map<String, DateTime> goals = const {},
   }) async {
     final events = await _repo.getEvents(profileId);
+    final made = await ProfileCustomisations.of(_repo, profileId);
     return jsonEncode({
       'version': currentVersion,
       'exportedFrom': profileId,
       'events': events.map((e) => e.toJson()).toList(),
-      'customNodes': customNodes.map((n) => n.toJson()).toList(),
-      'customLayers': customLayers.map((l) => l.toJson()).toList(),
-      'layerConfigs': layerConfigs.map((r) => r.toJson()).toList(),
+      'customNodes': made.nodes.map((n) => n.toJson()).toList(),
+      'customLayers': made.layers.map((l) => l.toJson()).toList(),
+      'layerConfigs': made.configs.map((r) => r.toJson()).toList(),
       'settings': settings,
       'goals': goals.map((k, v) => MapEntry(k, v.toIso8601String())),
     });
@@ -361,9 +373,10 @@ class BackupService {
   /// preview comes to disagree with the outcome.
   Future<_Teardown> _customisationsToRemove(
       String profileId, BackupData data) async {
-    final nodes = await _repo.getCustomNodes(profileId);
-    final layers = await _repo.getCustomLayers(profileId);
-    final configs = await _repo.getLayerConfigs(profileId);
+    final made = await ProfileCustomisations.of(_repo, profileId);
+    final nodes = made.nodes;
+    final layers = made.layers;
+    final configs = made.configs;
 
     final keepNodes = {for (final n in data.customNodes) n.id};
     final keepLayers = {for (final l in data.customLayers) l.id};

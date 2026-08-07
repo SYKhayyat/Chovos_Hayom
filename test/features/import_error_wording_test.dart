@@ -82,7 +82,7 @@ void main() {
     await repo.addEvent(event('evt-1', 'p1'));
 
     final service = BackupService(repo);
-    final json = await service.export('p1', customNodes: const []);
+    final json = await service.export('p1');
     repo.failWrites = true;
 
     Object? thrown;

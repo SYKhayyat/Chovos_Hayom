@@ -40,17 +40,10 @@ void main() {
       ),
     );
 
-    final json = await BackupService(source).export('a', customNodes: const [
-      CatalogNode(
-        id: 'custom1',
-        parentId: null,
-        name: 'My Sefer',
-        kind: NodeKind.leaf,
-        unitLabel: UnitLabel.perek,
-        unitCount: 5,
-        unitOffset: 1,
-      ),
-    ]);
+    // The export reads the profile's own rows rather than being handed a list
+    // — which is the point: a caller that could pass a *different* list is a
+    // caller that could pass an empty one.
+    final json = await BackupService(source).export('a');
 
     final target = memoryRepository();
     final result = await BackupService(target).importInto('b', json);
@@ -68,7 +61,7 @@ void main() {
   test('re-import is idempotent (dedup by id)', () async {
     final source = memoryRepository();
     await source.addEvent(ev('e1'));
-    final json = await BackupService(source).export('a', customNodes: const []);
+    final json = await BackupService(source).export('a');
 
     final target = memoryRepository();
     await BackupService(target).importInto('b', json);
@@ -95,16 +88,16 @@ void main() {
     await source.addCustomLayer(
         'a', const Layer(id: 'my-meforish', name: 'My Meforish'));
 
+    await source.setLayerConfig(
+      'a',
+      LayerConfigEntry(
+          nodeId: 'shas',
+          unitIndex: -1,
+          roles: roles(required: ['main', 'rashi'], optional: ['maharsha'])),
+    );
+
     final json = await BackupService(source).export(
       'a',
-      customNodes: const [],
-      customLayers: const [Layer(id: 'my-meforish', name: 'My Meforish')],
-      layerConfigs: [
-        LayerConfigEntry(
-            nodeId: 'shas',
-            unitIndex: -1,
-            roles: roles(required: ['main', 'rashi'], optional: ['maharsha'])),
-      ],
       settings: const {'chazaraIntervals': '2,4,8'},
     );
 

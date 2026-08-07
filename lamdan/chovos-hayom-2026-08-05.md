@@ -2,7 +2,41 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-06 (last).** The **`requiredPerDay` rendering** row of finding 5 is now
+> **Status, 2026-08-07 (last).** The **"four customisation lists"** row of finding 5 is now
+> resolved.
+>
+> **The six duplicated lines were never the cost.** What mattered is *where the copies read from*.
+> All three sites took the same triple — custom sefarim, custom mefarshim, layer settings — and all
+> three originally took it off providers as `.asData?.value ?? const []`. A provider still in flight,
+> or one nothing on the screen keeps alive, reads as an **empty list**: invisible in a list (it draws
+> as "nothing yet" and the next frame corrects it) and a silent lie in a decision. A backup that
+> leaves out every custom sefer and reports *Saved backup*. A clear that removes nothing and reports
+> success.
+>
+> That bug was found and fixed **twice**, at two of the three sites, each with its own paragraph
+> explaining the trap — and the third site was written after both of them. Which is this document's
+> thesis with the timeline attached: the knowledge existed, in prose, in the same file, and the next
+> copy did not inherit it.
+>
+> Resolved by `ProfileCustomisations` — one value, one reader, straight from the repository — and by
+> deleting the three parameters from `BackupService.export`, which is what the finding's own
+> prescription asks for. There is no list to hand over now, so there is no empty one to hand over by
+> accident. `settings` and `goals` stay arguments and the file says why: they genuinely live in
+> preferences, and a service reaching into Riverpod for them would be a worse coupling than a
+> parameter.
+>
+> **Six test fixtures had to change, and that is the fix working.** They built exports out of lists
+> that had never been written to the repository — the same shape as the defect, in the tests that
+> were supposed to cover it. They put the rows in the repository now.
+>
+> **And the rule is enforced rather than stated:** no file outside the reader may call all three
+> getters. One or two is a genuinely different question — the meforish delete asks which configs name
+> a layer, the restore preview asks what the roles are *now* — and the guard says so rather than
+> banning them.
+>
+> ---
+>
+> **Status, 2026-08-06 (previously last).** The **`requiredPerDay` rendering** row of finding 5 is now
 > resolved, and it is the row where the duplication turned out to be the *smaller* half of the
 > problem.
 >
@@ -885,7 +919,7 @@ places that cannot see each other:
 | ~~controller-owning dialog~~ **✅ Resolved** | ~~the shared `text_prompt.dart` + 2 hand-rolls~~ — the prompt takes a *list* of fields and a validator now, so both hand-rolls are gone and there is nothing left to hand-roll | ~~the bug it was written to end~~ — and the reason it was hand-rolled anyway: the shared file took **one field** and had nowhere to put a rejection. Both copies wanted two fields, and one of them wanted to say no. See the status note |
 | ~~`requiredPerDay` rendering~~ **✅ Resolved** | ~~3~~ — 2 by the time it was reached (the third went with `goal_status.dart`), both writing `toStringAsFixed(2)` for themselves. One `requiredPerDayText` | ~~the Calculator's "By date" mode is a goal you can't save~~ — fixed by finding 6. What the duplication was *hiding* is the real one: both rounded **down**. See the status note |
 | ~~the goal banner widget~~ **✅ Resolved** (carried by finding 6's work, and verified rather than assumed) | ~~2 byte-identical~~ — one `GoalBanner`, one `goalStatusText`, one `removeGoalWithUndo`, and `report_guard_test.dart` rule 2 refuses a second reader of `l10n.goalStatus` | ~~2 ARB keys for one sentence~~ — one now, and the *residue of that merge* is the row's real finding: the surviving key's metadata block was still called `@goalBanner`, so it described nothing and `goalStatus`'s three placeholders were re-inferred as `Object`. See the status note |
-| "the four customisation lists" | 3 (`settings_screen:289`, `:390`, `backup_service:311`) | shipped a bug: `.asData?.value ?? const []` silently exporting empty lists |
+| ~~"the four customisation lists"~~ **✅ Resolved** | ~~3~~ — one `ProfileCustomisations.of`, and `BackupService.export` **reads** the three rather than taking them, so there is nowhere left to pass a list in | ~~shipped a bug: `.asData?.value ?? const []` silently exporting empty lists~~ — fixed twice at two of the three sites, one paragraph each, and the third was written afterwards. See the status note |
 | "is this a positive integer" | 3 layers each, for both interval settings | — |
 | JSON parse per restore | 3–4 full decodes of the same file before anything is written | on a Sonim, with a Shas-sized log |
 | profile deletion | 2 paths (`drift_progress_repository:120` for 6 tables, `providers.dart:141` for the goals key) | kept in sync by hand |
