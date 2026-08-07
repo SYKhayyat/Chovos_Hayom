@@ -2,6 +2,12 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
+> **Every item in this document has now been worked.** Findings 1–11, the ten rows of *The claim*,
+> the keypad file in *What I couldn't beat*, and both halves of *The one gate that is missing*. The
+> status notes below run newest first and each says what the finding got right, what it got wrong,
+> and what the sweep could not have reached; three of them disagree with the finding and argue it
+> rather than quietly doing something else.
+
 > **Status, 2026-08-07 (last).** ***The one gate that is missing*** is now two gates that exist.
 >
 > **The coverage flag meant nothing and now means something.** `--coverage` ran on every push and
@@ -1846,6 +1852,27 @@ isn't one. The path in that check was verified against a real release build rath
    argument for that is in the note. What this item does not say, and is the reason it was worth
    more than a tidy-up, is that finding 8 contains the only live behavioural defect left in this
    document: `ImportMode` reached one of the two stores a profile lives in.
+
+9. **The rest of finding 5's inventory, finding 11, and the two loose ends.** ✅ Done — the nine
+   remaining rows, all three `wrong-but-keep` bullets, the keypad file's name, and both halves of
+   *The one gate that is missing*. Two of finding 11's three answers came out **against** the
+   finding, argued in the status notes rather than by silence.
+
+   *"Ten instances. That is not carelessness"* is the sentence at the top of this document, and
+   working the rest of it turned that count into a shape. Every row costed as *N copies of one idea*
+   had, underneath the copies, **one live defect the count did not name** — a chazara submitted
+   against a meforish with no checkbox, a negative duration stored where the backup validator
+   refuses one, a required pace rounded down so it does not reach the date it names, a Hebrew
+   reader's picker ordered by an English field, a backup stamp written outside every guard. Four of
+   the eight rows had an *empty* worst-consequence column; three of those four turned out to hold
+   the most user-visible thing in the row.
+
+   The pattern under that: the duplication was rarely carelessness and usually a **shared thing that
+   did not cover the second case**. `text_prompt.dart` took one field, so the two dialogs that
+   wanted two hand-rolled it correctly, comment and all. And the fix that holds is almost never
+   "deduplicate" — it is making the second copy unrepresentable, then writing the test that fails
+   when somebody types it anyway. Eleven guards now do that, and every one of them was fed a real
+   violation before being kept.
 
 ---
 
