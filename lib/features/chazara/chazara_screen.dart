@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
 import '../../application/stats.dart';
-import '../../domain/entities/layer.dart';
 import '../../domain/usecases/chazara_schedule.dart';
+import '../../domain/usecases/unit_mefarshim.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
@@ -95,9 +95,16 @@ class _ChazaraRow extends ConsumerWidget {
   /// depending on where you tapped it.
   Future<void> _quickReview(BuildContext context, WidgetRef ref,
       AppLocalizations l10n, String heading) async {
-    final fold = ref.read(foldProvider).asData?.value;
-    final learned =
-        fold?.completedLayers(item.nodeId, item.unitIndex) ?? const <String>{};
+    // The same question the Add-chazara sheet asks, asked the same way — this
+    // was a fourth hand-written answer to it, and "which is what the sheet
+    // defaults to" was a promise nothing kept.
+    final learned = UnitMefarshim.of(
+      roles: ref.read(layerRolesProvider),
+      fold: ref.read(foldProvider).asData?.value,
+      layerOrder: [for (final l in ref.read(allLayersProvider)) l.id],
+      nodeId: item.nodeId,
+      unitIndex: item.unitIndex,
+    ).done;
     final logger = ref.read(loggingServiceProvider);
     await guarded(
       context,
@@ -105,7 +112,9 @@ class _ChazaraRow extends ConsumerWidget {
       () => logger.markReview(
         item.nodeId,
         item.unitIndex,
-        layers: learned.isEmpty ? const [mainLayerId] : learned.toList(),
+        layers: learned.isEmpty
+            ? UnitMefarshim.justTheText.toList()
+            : learned.toList(),
       ),
       what: l10n.whatLoggingChazara(heading),
       success: l10n.chazaraReviewed(heading),

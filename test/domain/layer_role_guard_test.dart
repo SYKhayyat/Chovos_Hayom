@@ -99,6 +99,88 @@ void main() {
     });
   });
 
+  group('a screen does not work out a unit\'s mefarshim for itself', () {
+    /// The second half of the same rule, one layer up.
+    ///
+    /// The roles are resolved once — that is the group above. *Which mefarshim
+    /// to show for this unit, and in what state* was then worked out from those
+    /// roles and the fold separately by four screens, and they disagreed on the
+    /// case that matters: a meforish learned on a unit and turned off or
+    /// deleted since.
+    ///
+    /// The chazara sheet's version filtered its options through the mefarshim
+    /// list while seeding its selection from the log, so such a layer was
+    /// **selected and invisible** — submitted with no checkbox to untick it
+    /// from. `UnitMefarshim` answers it once and hands out named slices;
+    /// `unit_mefarshim_test.dart` holds each of them.
+    const escapeHatch = 'unit-mefarshim: ok';
+
+    /// Where the question is allowed to be asked from first principles.
+    const home = 'lib/domain/usecases/unit_mefarshim.dart';
+
+    const bans = <({String why, String pattern, String sample})>[
+      (
+        why: 'reads the log\'s per-unit layers inside features/ — that is one '
+            'half of the question UnitMefarshim answers, and every screen that '
+            'took just this half got the deleted-meforish case wrong',
+        pattern: r'\.completedLayers\(',
+        sample: 'final learned = fold.completedLayers(node.id, unit);',
+      ),
+      (
+        why: 'reads a unit\'s required set inside features/ — the other half',
+        pattern: r'\.requiredFor\(',
+        sample: 'final required = roles.requiredFor(node.id, unit);',
+      ),
+    ];
+
+    // `forUnit` is deliberately **not** banned, and not by oversight. On its
+    // own it is a role map with no done-state in it, so it cannot produce a
+    // checklist without the first ban above — and the name collides with
+    // `UnitHistoryFinder.forUnit`, which is a different question about the same
+    // two arguments. A pattern that catches both is a pattern that has to be
+    // argued with rather than obeyed.
+    //
+    // `checkableForNode` is likewise allowed: the bulk sheet and the tree's
+    // coverage bars ask about a *node*, where there is no unit and no fold, and
+    // that genuinely is a different question.
+
+    test('the regexes actually match the shapes they ban', () {
+      for (final ban in bans) {
+        expect(RegExp(ban.pattern).hasMatch(ban.sample), isTrue,
+            reason: 'the pattern for "${ban.why}" no longer matches its own '
+                'sample, so it is guarding nothing');
+      }
+    });
+
+    test('the question still has somewhere to be asked', () {
+      expect(File(home).existsSync(), isTrue);
+    });
+
+    test('nothing under features/ builds the answer itself', () {
+      final offences = <String>[];
+      var scanned = 0;
+      for (final rel in dartSourcesUnder('lib/features')) {
+        scanned++;
+        for (final line in codeLines(File(rel).readAsStringSync(),
+            escapeHatch: escapeHatch)) {
+          for (final ban in bans) {
+            if (!RegExp(ban.pattern).hasMatch(line.text)) continue;
+            offences.add('$rel:${line.line} — ${ban.why}\n'
+                '    ${line.text.trim()}');
+          }
+        }
+      }
+
+      expect(scanned, greaterThan(20),
+          reason: 'the scan found almost nothing to read, so it is not '
+              'guarding the tree it thinks it is');
+      expect(offences, isEmpty,
+          reason: 'ask UnitMefarshim.of(...) and take the slice you want — '
+              '`checkable` to log, `reviewable` for a chazara, `all` for the '
+              'checklist:\n${offences.join('\n')}');
+    });
+  });
+
   group('every role survives the round trip', () {
     // The silent rot mode: someone adds a third role, and it reads back as
     // `optional` because a decoder was not updated. Nothing throws; a required
@@ -162,8 +244,8 @@ void main() {
       'shas': roles(required: ['main', 'rashi'], optional: ['maharsha'])
     });
     for (final id in r.requiredFor('shas', 0)) {
-      expect(r.checkableFor('shas', 0), contains(id));
+      expect(r.forUnit('shas', 0).keys, contains(id));
     }
-    expect(r.checkableFor('shas', 0), {'main', 'rashi', 'maharsha'});
+    expect(r.forUnit('shas', 0).keys, {'main', 'rashi', 'maharsha'});
   });
 }

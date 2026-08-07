@@ -10,9 +10,11 @@ import '../../application/stats.dart';
 import '../../core/calendar.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
+import '../../domain/usecases/unit_mefarshim.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
+import 'meforish_checklist.dart';
 
 /// Result of the logging sheet. [occurredAt] is null when the user did not set a
 /// date/time manually, so the caller auto-fills "now".
@@ -73,7 +75,14 @@ Future<LogUnitResult?> showLogUnitSheet(
   /// it has to be resolved from a context — so the default is expressed as
   /// absence and filled in where the sheet is built.
   String? saveLabel,
-  List<Layer> layerOptions = const [],
+
+  /// The mefarshim to offer, already resolved against the unit — see
+  /// [UnitMefarshim]. Empty means this unit is a one-tap toggle and the sheet
+  /// shows no checklist at all.
+  List<UnitMeforish> layerOptions = const [],
+
+  /// Every meforish the app knows about, for turning the ids above into names.
+  List<Layer> layers = const [],
   Set<String> initialLayers = const {mainLayerId},
 
   /// Null uses "What you learned:". Absence for the same reason as [saveLabel].
@@ -107,6 +116,7 @@ Future<LogUnitResult?> showLogUnitSheet(
         initialNote: initialNote,
         saveLabel: saveLabel,
         layerOptions: layerOptions,
+        layers: layers,
         initialLayers: initialLayers,
         checklistLabel: checklistLabel,
         nodeId: nodeId,
@@ -122,6 +132,7 @@ class _LogUnitSheet extends ConsumerStatefulWidget {
     this.subtitle,
     this.saveLabel,
     required this.layerOptions,
+    required this.layers,
     required this.initialLayers,
     this.checklistLabel,
     this.initialOccurredAt,
@@ -138,7 +149,8 @@ class _LogUnitSheet extends ConsumerStatefulWidget {
   final DateTime? initialOccurredAt;
   final int? initialDurationMin;
   final String? initialNote;
-  final List<Layer> layerOptions;
+  final List<UnitMeforish> layerOptions;
+  final List<Layer> layers;
   final Set<String> initialLayers;
   final String? nodeId;
   final int? unitIndex;
@@ -310,20 +322,18 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
             if (widget.layerOptions.isNotEmpty) ...[
               Text(widget.checklistLabel ?? l10n.logSheetWhatYouLearned,
                   style: Theme.of(context).textTheme.labelLarge),
-              for (final layer in widget.layerOptions)
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  value: _selectedLayers.contains(layer.id),
-                  title: Text(layerName(l10n, layer)),
-                  onChanged: (v) => setState(() {
-                    if (v == true) {
-                      _selectedLayers.add(layer.id);
-                    } else {
-                      _selectedLayers.remove(layer.id);
-                    }
-                  }),
-                ),
+              MeforishChecklist(
+                mefarshim: widget.layerOptions,
+                layers: widget.layers,
+                isChecked: _selectedLayers.contains,
+                onChanged: (id, checked) => setState(() {
+                  if (checked) {
+                    _selectedLayers.add(id);
+                  } else {
+                    _selectedLayers.remove(id);
+                  }
+                }),
+              ),
               const Divider(),
             ],
             SwitchListTile(
@@ -440,26 +450,32 @@ Future<void> logWithDetails(
   final l10n = AppLocalizations.of(context);
   final heading = nodeAndUnit(l10n, node, unit);
 
-  final layered = roles.isLayered(node.id, unit);
-  final checkable =
-      layered ? roles.checkableFor(node.id, unit) : const <String>{};
-  final learned = fold?.completedLayers(node.id, unit) ?? const <String>{};
-  final required = layered ? roles.requiredFor(node.id, unit) : const <String>{};
-  // Default to what's still outstanding; if nothing is, to everything required.
-  final outstanding = required.where((l) => !learned.contains(l)).toSet();
+  final layered = UnitMefarshim.isLayered(roles, node.id, unit);
+  final mefarshim = UnitMefarshim.of(
+    roles: roles,
+    fold: fold,
+    layerOrder: [for (final l in allLayers) l.id],
+    nodeId: node.id,
+    unitIndex: unit,
+  );
 
   final result = await showLogUnitSheet(
     context,
     title: heading,
     nodeId: node.id,
     unitIndex: unit,
-    layerOptions: [
-      for (final l in allLayers)
-        if (checkable.contains(l.id)) l,
-    ],
+    // What this unit offers to be ticked — not what was learned on it. A
+    // meforish turned off or deleted since is history, and history is what a
+    // chazara records; this is a *new* learning.
+    layerOptions: layered ? mefarshim.checkable : const [],
+    layers: allLayers,
+    // Default to what is still outstanding; if nothing is, to everything
+    // required.
     initialLayers: layered
-        ? (outstanding.isNotEmpty ? outstanding : required)
-        : const {mainLayerId},
+        ? (mefarshim.outstanding.isNotEmpty
+            ? mefarshim.outstanding
+            : mefarshim.required)
+        : UnitMefarshim.justTheText,
   );
   if (result == null) return;
   await guard.run(
@@ -494,15 +510,23 @@ Future<void> logChazaraWithDetails(
   final l10n = AppLocalizations.of(context);
   final heading = nodeAndUnit(l10n, node, unit);
 
-  final completed = fold?.completedLayers(node.id, unit) ?? const <String>{};
-  final requiredSet = roles.requiredFor(node.id, unit);
+  final mefarshim = UnitMefarshim.of(
+    roles: roles,
+    fold: fold,
+    layerOrder: [for (final l in allLayers) l.id],
+    nodeId: node.id,
+    unitIndex: unit,
+  );
   // What can be reviewed: everything this unit needs, plus anything already
   // learned on it that it no longer needs.
-  var options = [
-    for (final l in allLayers)
-      if (requiredSet.contains(l.id) || completed.contains(l.id)) l,
-  ];
-  if (options.isEmpty) options = [layerById(l10n, allLayers, mainLayerId)];
+  //
+  // That second half used to be filtered through the mefarshim list, which
+  // *drops* a meforish deleted since the unit was marked — while the seed below
+  // still selected it, because the seed came from the log and the options did
+  // not. The sheet then submitted a layer with no checkbox in it. One list
+  // answers both now, so a row and its tick cannot come apart.
+  final options = mefarshim.reviewable;
+  final completed = mefarshim.done;
 
   final result = await showLogUnitSheet(
     context,
@@ -513,10 +537,11 @@ Future<void> logChazaraWithDetails(
     saveLabel: l10n.addChazaraSubmit,
     checklistLabel: l10n.addChazaraReviewed,
     layerOptions: options,
+    layers: allLayers,
     // A fresh pass defaults to reviewing everything currently learned.
     initialLayers: completed.isEmpty
-        ? {for (final l in options) l.id}
-        : completed.toSet(),
+        ? {for (final m in options) m.layerId}
+        : completed,
   );
   if (result == null) return;
   await guard.run(

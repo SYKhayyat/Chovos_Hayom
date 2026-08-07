@@ -141,10 +141,6 @@ class LayerRoles {
   Set<String> requiredFor(String nodeId, int unitIndex) =>
       _required(forUnit(nodeId, unitIndex));
 
-  /// Every layer that may be checked off on this unit.
-  Set<String> checkableFor(String nodeId, int unitIndex) =>
-      forUnit(nodeId, unitIndex).keys.toSet();
-
   /// Layers that gate completion at node level (inherited).
   Set<String> requiredForNode(String nodeId) => _required(forNode(nodeId));
 

@@ -58,7 +58,7 @@ fail the build on the shape of the mistake rather than on its consequences:
 | `application/notify_guard_test.dart` | a family without `autoDispose`, an unselected `settingsProvider` watch, a field added to a value type and left out of its `==` |
 | `application/log_pass_guard_test.dart` | a new function that takes the whole event log |
 | `application/import_scope_test.dart` | a store a backup writes into that does not take an `ImportMode` |
-| `domain/layer_role_guard_test.dart` | a second resolver, table or stream of layer settings |
+| `domain/layer_role_guard_test.dart` | a second resolver, table or stream of layer settings, and a screen working out a unit's mefarshim from the roles and the fold itself |
 | `features/report_guard_test.dart` | a report screen re-added as its own route, and a section wiring up its own D-pad scrolling instead of using `ReportBody` |
 | `features/node_picker_guard_test.dart` | a fifth way to offer the catalog — a hand-rolled picker dialog, node dropdown, or list label |
 | `l10n/arb_guard_test.dart` | a translated key nothing displays, a key that is its own translation, an `@metadata` block whose message has been renamed out from under it, and a placeholder left undeclared (and therefore typed `Object`) |

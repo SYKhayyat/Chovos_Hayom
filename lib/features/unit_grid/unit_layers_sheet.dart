@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
 import '../../domain/entities/catalog_node.dart';
+import '../../domain/usecases/unit_mefarshim.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
 import 'log_unit_sheet.dart';
+import 'meforish_checklist.dart';
 
 /// Per-unit meforish checklist: toggle each required (and any already-learned)
 /// layer for one daf. The unit is complete only once every required layer is
@@ -38,24 +40,21 @@ class _UnitLayersSheet extends ConsumerWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
 
-    final completed = fold?.completedLayers(node.id, unit) ?? const {};
-    final requiredSet = roles.requiredFor(node.id, unit);
-    // Everything checkable here. Optional mefarshim appear too, but only required
-    // ones gate completion.
-    final checkableSet = roles.checkableFor(node.id, unit);
+    // Which mefarshim this unit has and what state each is in — asked through
+    // [UnitMefarshim], which is also what the two logging sheets ask. This used
+    // to be four set operations and a safety loop written out here, and the two
+    // sheets each had their own version of it that answered differently.
+    final mefarshim = UnitMefarshim.of(
+      roles: roles,
+      fold: fold,
+      layerOrder: [for (final l in allLayers) l.id],
+      nodeId: node.id,
+      unitIndex: unit,
+    );
+    final completed = mefarshim.done;
+    final requiredSet = mefarshim.required;
 
-    // Show checkable layers first, then any extra already-learned ones, in a
-    // stable order that follows the mefarshim list.
-    final shown = <String>[
-      for (final l in allLayers)
-        if (checkableSet.contains(l.id) || completed.contains(l.id)) l.id,
-    ];
-    // Include anything checkable/completed that isn't in the known list (safety).
-    for (final id in {...checkableSet, ...completed}) {
-      if (!shown.contains(id)) shown.add(id);
-    }
-
-    final missing = requiredSet.where((l) => !completed.contains(l)).length;
+    final missing = mefarshim.outstanding.length;
     final logger = ref.read(loggingServiceProvider);
     // Captured here rather than per-callback: "Clear this unit" pops the sheet
     // and then writes, so by then this context is gone.
@@ -63,9 +62,7 @@ class _UnitLayersSheet extends ConsumerWidget {
     final heading = nodeAndUnit(l10n, node, unit);
 
     // An id with no matching meforish means one was deleted after this unit was
-    // marked. Name it as such — a raw UUID in a checkbox is unreadable. The
-    // lookup is [layerNameById] now, shared with the two other places that had
-    // written it out for themselves.
+    // marked. Name it as such — a raw UUID in a checkbox is unreadable.
     String nameOf(String id) => layerNameById(l10n, allLayers, id);
 
     return SafeArea(
@@ -86,24 +83,20 @@ class _UnitLayersSheet extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              for (final id in shown)
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  value: completed.contains(id),
-                  title: Text(nameOf(id)),
-                  subtitle: requiredSet.contains(id)
-                      ? Text(l10n.labelRequired)
-                      : Text(l10n.labelOptional),
-                  onChanged: (v) => guard.run(
-                    () => v == true
-                        ? logger.markDone(node.id, unit, layers: [id])
-                        : logger.markUndone(node.id, unit, layers: [id]),
-                    what: v == true
-                        ? l10n.whatMarkingLayer(nameOf(id), heading)
-                        : l10n.whatUnmarkingLayer(nameOf(id), heading),
-                  ),
+              MeforishChecklist(
+                mefarshim: mefarshim.all,
+                layers: allLayers,
+                showRole: true,
+                isChecked: completed.contains,
+                onChanged: (id, checked) => guard.run(
+                  () => checked
+                      ? logger.markDone(node.id, unit, layers: [id])
+                      : logger.markUndone(node.id, unit, layers: [id]),
+                  what: checked
+                      ? l10n.whatMarkingLayer(nameOf(id), heading)
+                      : l10n.whatUnmarkingLayer(nameOf(id), heading),
                 ),
+              ),
               const Divider(),
               Align(
                 alignment: AlignmentDirectional.centerStart,
@@ -111,9 +104,7 @@ class _UnitLayersSheet extends ConsumerWidget {
                   icon: const Icon(Icons.done_all, size: 18),
                   label: Text(l10n.markAllRequiredLearned),
                   onPressed: () {
-                    final toAdd = requiredSet
-                        .where((l) => !completed.contains(l))
-                        .toList();
+                    final toAdd = mefarshim.outstanding.toList();
                     if (toAdd.isEmpty) return;
                     guard.run(
                       () => logger.markDone(node.id, unit, layers: toAdd),

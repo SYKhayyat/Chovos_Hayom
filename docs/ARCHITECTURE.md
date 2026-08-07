@@ -149,6 +149,11 @@ lib/
                         - SequentialCycle / CycleMapper
                                          (a user-defined cycle -> "today's unit",
                                           plus name -> catalog node resolution)
+                        - UnitMefarshim  (roles + fold -> which mefarshim one unit
+                                          has and what state each is in. Three
+                                          sheets took three slices of it by hand
+                                          and disagreed about a meforish learned
+                                          and deleted since)
                         - BatchHistory   (log -> the undoable bulk actions in it)
                         - SiyumFinder    (progress forest -> completed nodes at
                                           every level, not just leaves)

@@ -168,7 +168,7 @@ void main() {
           });
 
       expect(r.requiredFor('a', 2), {'main'});
-      expect(r.checkableFor('a', 2), {'main', 'rashi'});
+      expect(r.forUnit('a', 2).keys, {'main', 'rashi'});
       // An optional meforish still makes the unit layered (shows a checklist).
       expect(r.isLayered('a', 2), isTrue);
 
@@ -189,8 +189,9 @@ void main() {
           nodeConfig: {
             'a': roles(required: ['main', 'tosafos'])
           });
-      expect(r.checkableFor('a', 2).containsAll(r.requiredFor('a', 2)), isTrue);
-      expect(r.checkableFor('a', 2), {'main', 'tosafos'});
+      expect(r.forUnit('a', 2).keys.toSet().containsAll(r.requiredFor('a', 2)),
+          isTrue);
+      expect(r.forUnit('a', 2).keys, {'main', 'tosafos'});
     });
 
     test('text-only unit is not layered', () {

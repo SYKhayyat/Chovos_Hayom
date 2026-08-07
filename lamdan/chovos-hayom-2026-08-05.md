@@ -2,7 +2,42 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-06 (last).** The **catalog picker** row of finding 5 is now resolved.
+> **Status, 2026-08-06 (last).** The **meforish checkbox list** row of finding 5 is now resolved,
+> and its *Worst consequence* column — which is empty in the table — turned out to hold the only
+> live defect left in the inventory.
+>
+> **Three lists, four answers.** The row counts the renderings. What is duplicated underneath them
+> is the question *which mefarshim does this unit have, and in what state*, and it was worked out
+> from the roles and the fold separately by the per-unit checklist, *log with details*, *log a
+> chazara* and — a fourth the sweep did not reach — the Chazara screen's one-tap review, whose
+> comment claims it does "what the Add-chazara sheet defaults to" and which nothing held to it.
+>
+> **They disagreed, on the one case that is not hypothetical.** The log is append-only, so a
+> meforish deleted after a unit was marked keeps its id in the events — deliberately, because the
+> daf really was learned with it. The checklist handled that with a safety loop appending anything
+> the mefarshim list did not contain. *Log with details* did not need to. And the chazara sheet
+> filtered its **options** through the mefarshim list while seeding its **selection** from the log,
+> so that layer was *selected and invisible*: no row, no way to untick it, and submitted anyway. A
+> chazara recorded against something the user could neither see nor refuse. Reproduced through the
+> real screens in `meforish_checklist_test.dart`, and two of its three assertions were watched to
+> fail on the pre-fix shape before being kept.
+>
+> Resolved by `lib/domain/usecases/unit_mefarshim.dart` — one ordered list where a role of `null`
+> is a real state (*learned here, not asked for any more*) rather than an absence — with `all`,
+> `checkable`, `reviewable`, `required`, `done` and `outstanding` as the slices the four sites take.
+> `MeforishChecklist` draws the rows. `LayerRoles.checkableFor` went with them: nothing called it
+> once the last hand-built answer was gone.
+>
+> **And the rule is enforced rather than stated.** `layer_role_guard_test.dart` grew a second
+> group: nothing under `features/` may read `completedLayers` or `requiredFor`, because those are
+> the two halves that were being recombined by hand. `forUnit` is deliberately *not* banned and the
+> file says why — on its own it carries no done-state, and the name collides with
+> `UnitHistoryFinder.forUnit`, which is a different question about the same two arguments. Fed a
+> violation rather than assumed to work.
+>
+> ---
+>
+> **Status, 2026-08-06 (previously last).** The **catalog picker** row of finding 5 is now resolved.
 >
 > **It was three and it is four, and the fourth is the one worth having.** The row names
 > `cycles_screen`, `edit_cycle_screen` and the Calculator; the node editor's *parent* dropdown is a
@@ -784,7 +819,7 @@ places that cannot see each other:
 | ~~per-meforish counts~~ **✅ Resolved** | ~~2~~ — `MefarshimStats.of(forest)` sums the roll-up the dashboard bars are drawn from | ~~same number, two derivations, no test pinning them together~~ — and they could genuinely disagree, on a node whose parent id points at nothing |
 | ~~the log→numbers pass~~ **✅ Resolved** | ~~**5 passes in `statsProvider`**~~ — it now watches the two indexes and never the log; every answer is a map lookup | ~~`fold_log.dart:11-14` states the point of the fold was "five ordered passes where one will do"~~ — enforced now, at two passes, by `log_pass_count_test.dart` |
 | ~~the date+time+duration+haara form~~ **✅ Resolved** | ~~2 full copies~~ — one `showLogUnitSheet` with an action's title, checklist label and save label passed in; `add_chazara_sheet.dart` deleted | ~~two ARB keys for one duration field~~ — and worse: the copy read the wall clock instead of `clockProvider` and had no session timer. See the note on finding 6 |
-| the meforish checkbox list | 3 | — |
+| ~~the meforish checkbox list~~ **✅ Resolved** | ~~3~~ — 3 checkbox lists over **4** hand-built answers to *which mefarshim does this unit have*: the checklist, *log with details*, *log a chazara*, and the Chazara screen's one-tap review. One `UnitMefarshim`, three named slices, one `MeforishChecklist` | ~~—~~ the empty column was the finding: the four answers **disagreed**, and the chazara sheet's could submit a layer with no checkbox in it. See the status note |
 | ~~`nameOf` (layer name with deleted fallback)~~ **✅ Resolved** | ~~3, and **they disagree**~~ — one `layerById`/`layerNameById` in `naming.dart`; the mefarshim stat rows were a fourth, and also wrong | ~~same fix applied twice out of three~~ — the raw UUID was real and is now a test |
 | ~~the catalog picker~~ **✅ Resolved** | ~~3~~ — **4**: the node editor's parent dropdown is one too, and it is the one that mattered. One `node_picker.dart`: `nodeChoices` decides which nodes and in what order, `showNodePicker` owns the clamp, `NodeDropdown` owns the indent | ~~—~~ the missing consequence: the fourth picker sorted by the **raw English** `name` and did not qualify, so a Hebrew reader picking a parent got a list ordered by strings not on their screen, with four rows reading "שבת". See the status note |
 | controller-owning dialog | the shared `text_prompt.dart` + 2 hand-rolls | the bug it was written to end |
