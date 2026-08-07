@@ -86,6 +86,20 @@ jobs:
 
       - run: flutter test --coverage
 
+      # The flag used to produce an artifact nobody read: no threshold, no
+      # badge, no diff. A number nobody looks at only ever goes down, and a gate
+      # that cannot fail is not a gate — the same argument this file makes about
+      # the stale-l10n check it deleted. So either `--coverage` means something
+      # or it should go; this is the smallest version of meaning something.
+      #
+      # Per layer, not blended: `domain/` is pure Dart with no framework, so a
+      # 90% floor there is a low bar, while a screen's last few percent are error
+      # branches needing a broken database. One number would hide a collapse in
+      # the first behind the second. The floors and the reason for each are in
+      # the tool.
+      - name: Coverage floors
+        run: dart run tool/check_coverage.dart
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -124,3 +138,38 @@ jobs:
         run: |
           test -f build/app/outputs/mapping/release/mapping.txt \
             || (echo "::error::No R8 mapping file — minify is off in the release build (see android/app/build.gradle.kts)." && exit 1)
+
+  build-windows:
+    # The app ships on Windows and every Windows build until now happened on the
+    # author's own machine — which is not a coverage hole so much as one waiting
+    # for the week that machine stops being the one they are sitting at.
+    #
+    # The argument for it is this file's own, made two jobs up about R8: that
+    # assertion is documented as toothless locally because Gradle reuses a stale
+    # mapping, and meaningful only on a clean checkout. CMake caches at least as
+    # aggressively, and the CMake target-id failure that once broke the Windows
+    # build *completely* is exactly the class a warm build tree hides. A clean
+    # runner is the only place that class of failure is visible at all.
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build windows --release
+
+      # An assertion that can fail, for the same reason the R8 one exists: the
+      # build command exits zero whether or not it produced something you can
+      # run, and "it compiled" is not the question this job is asking.
+      - name: Assert the release build produced an executable
+        shell: bash
+        run: |
+          if [ ! -f build/windows/x64/runner/Release/chovos_hayom.exe ]; then
+            echo "::error::No Windows executable — the release build exited zero without producing one."
+            ls -R build/windows/x64/runner || true
+            exit 1
+          fi

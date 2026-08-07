@@ -201,7 +201,7 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 | **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the real on-disk database here, 35 events deep, has been carried through the whole migration chain and then adopted by the squashed schema, keeping every event ✅ |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36 (moto g stylus 2025). Measured on the device: the logging sheet's confirm button clears the navigation bar by 45px and a tap at its bottom edge registers, the Hebrew progress fraction paints `0 / 12,092  (0.0%)` in that order, the app bar fits `Chovos Hayom`, a backup exported from one profile imports into another, and a deep link opens the same screen whether the app was running or not ✅ |
 | **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, the report's figure-only tabs scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search. Also walked key by key: the app opens on the tree's first generation, three presses of *down* reach the backup banner's named dismiss, the message that replaces it leaves on its own within ten seconds, and the drawer's first row returns to the tree ✅ |
-| **CI** | analyze `--fatal-infos`, the full suite, stale-codegen, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
+| **CI** | analyze `--fatal-infos`, the full suite, per-layer coverage floors, stale-codegen, untranslated-locale, release APK + R8 assertion, **release Windows build + executable assertion** | Green on `main` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher
@@ -252,12 +252,30 @@ flutter analyze               # clean
 flutter test                  # all green (CI publishes the count)
 ```
 
-CI runs all of the above on every push and pull request, plus a release APK build, and is **green on
-`main`** — which is worth stating, because for a long time it wasn't running at all: the workflow
-existed while the work sat uncommitted, so nothing it promised was actually being enforced. It fails
-if the generated Drift/Riverpod code is stale, if any shipped locale is missing a string, or if R8
-didn't actually run on the release build. There is deliberately no stale-l10n gate — see
-*Translating* for why that one was checking for a defect it had itself created.
+CI runs all of the above on every push and pull request, plus a release APK build **and a release
+Windows build**, and is **green on `main`** — which is worth stating, because for a long time it
+wasn't running at all: the workflow existed while the work sat uncommitted, so nothing it promised
+was actually being enforced. It fails if the generated Drift/Riverpod code is stale, if any shipped
+locale is missing a string, if coverage has slipped below a layer's floor, if R8 didn't actually run
+on the release build, or if the Windows build exits zero without producing an executable. There is
+deliberately no stale-l10n gate — see *Translating* for why that one was checking for a defect it
+had itself created.
+
+Two of those are new, and both existed as a flag or an absence rather than a gate. `--coverage` ran
+and uploaded `lcov.info` as an artifact that **nothing read** — no threshold, no badge, no diff — and
+a number nobody looks at only ever goes down. `tool/check_coverage.dart` sets a floor **per layer**
+(`domain/` 90%, `application/` and `core/` 85%, `data/` 70%, `features/` 65%, 75% overall on
+hand-written code, generated code excluded), each a few points below what the suite achieves today,
+so ordinary work never trips it and a real slide does. The reason for each floor is in that file; it
+also prints the five least-covered files every run, because a gate that speaks only when it fails
+teaches nobody anything.
+
+And there was **no Windows job at all**, on a platform the app ships to — every Windows build
+happened on the author's machine. That is not a coverage hole so much as one waiting for the week
+that machine stops being the one they are sitting at. The argument is the workflow's own, made about
+R8: that assertion is documented as toothless locally because Gradle reuses a stale mapping, and
+meaningful only on a clean checkout. CMake caches at least as aggressively, and the CMake target-id
+failure that once broke the Windows build outright is exactly the class a warm build tree hides.
 
 The Flutter version is **pinned** (`FLUTTER_VERSION` in the workflow) rather than tracking `stable`:
 two dependencies are held back precisely because of that version (see *Toolchain notes*), so

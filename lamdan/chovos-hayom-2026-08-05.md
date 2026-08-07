@@ -2,7 +2,35 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-07 (last).** The last bullet of *What I couldn't beat* — the keypad file's name
+> **Status, 2026-08-07 (last).** ***The one gate that is missing*** is now two gates that exist.
+>
+> **The coverage flag meant nothing and now means something.** `--coverage` ran on every push and
+> uploaded `lcov.info` as an artifact nothing read: no threshold, no badge, no diff. A number nobody
+> looks at only ever goes down, and this repo has already made that argument about itself — it
+> deleted the stale-l10n check for being a gate whose only failure mode it had created.
+>
+> `tool/check_coverage.dart` floors it **per layer** rather than blending it: `domain/` 90%,
+> `application/` and `core/` 85%, `data/` 70%, `features/` 65%, 75% overall. One number would hide a
+> collapse in the pure layer behind a screen's error branches. Generated code is excluded and said
+> to be — that alone moves the headline from 63% to 79%, because the localization table and the
+> `.g.dart` files were most of what was missing. Every floor sits a few points under today's figure,
+> so it is a ratchet and not a target, and each carries its reason in the file.
+>
+> **And it says something on the way past.** It prints the five least-covered files on every run,
+> pass or fail, because a gate that speaks only when it fails teaches nobody anything. The first of
+> them is `edit_cycle_screen.dart` at **1.4%** — the screen that builds a learning cycle, essentially
+> untested. That is not something this document found and it is not fixed here; it is now visible on
+> every CI run instead of being a fact nobody had.
+>
+> **The Windows job is twenty lines rather than four, for the finding's own reason.** A job that only
+> runs `flutter build windows --release` is the R8 job before it grew an assertion: the command exits
+> zero whether or not it produced something you can run. It checks for the executable and prints the
+> build tree when there is none — and the path in that check was verified against a real release
+> build here rather than guessed.
+>
+> ---
+>
+> **Status, 2026-08-07 (previously last).** The last bullet of *What I couldn't beat* — the keypad file's name
 > — is now done, as specified: `core/keypad.dart` is `breakpoints.dart` (68), `bar_actions.dart`
 > (88) and `focus.dart` (304), and nothing was deleted.
 >
@@ -1756,12 +1784,25 @@ CI has six gates and all six earn their runtime — stale codegen, stale l10n, u
 `analyze --fatal-infos`, tests, R8 mapping. The `--coverage` flag does not: nothing reads
 `lcov.info`, there is no threshold, no badge, no diff.
 
+**✅ Both resolved.** `tool/check_coverage.dart` reads it and fails on a floor **per layer** rather
+than one blended number — `domain/` 90%, `application/` and `core/` 85%, `data/` 70%, `features/`
+65%, 75% overall — with generated code excluded, which alone moves the headline from 63% to 79%
+because the localization table and the `.g.dart` files were dragging it down. Each floor sits a few
+points under today's figure, so it is a ratchet rather than a target, and the reason for each is in
+the file. It prints the five least-covered files on every run, pass or fail; the first of them is
+`edit_cycle_screen.dart` at **1.4%**, which is worth knowing and was not visible before.
+
 **There is no Windows job.** The author builds and runs Windows locally, so this is not a coverage
 hole — it is a coverage hole *waiting for the week Windows stops being the machine you happen to be
 sitting at*. The residual argument is the repo's own, made about R8: that assertion is documented as
 toothless locally because Gradle reuses a stale mapping, and meaningful only on a clean checkout.
 CMake caches just as aggressively, and the CMake target-id failure that once broke the Windows build
 *completely* is exactly the class a warm build tree hides. Four lines of YAML, someday — not urgent.
+
+**✅ Done**, and it is twenty rather than four, because a job that only runs `flutter build windows
+--release` is the R8 job before it grew an assertion: the command exits zero whether or not it
+produced something you can run. It checks for the executable, and prints the build tree when there
+isn't one. The path in that check was verified against a real release build rather than guessed.
 
 ---
 
