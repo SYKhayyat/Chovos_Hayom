@@ -44,10 +44,17 @@ class InheritedLayerRoles {
   /// The roles that apply to [nodeId] at node level (inherited from ancestors).
   ///
   /// Walks upward iteratively and refuses to visit a node twice. A parent cycle
-  /// would otherwise recurse forever — an unrecoverable hang on every rebuild,
-  /// from data that is merely wrong. Import validation and the node editor both
-  /// stop a cycle from being created; this makes the resolver safe regardless of
-  /// where its `parentOf` map came from.
+  /// would otherwise loop forever — an unrecoverable hang on every rebuild, from
+  /// data that is merely wrong.
+  ///
+  /// [Catalog] guarantees the relation it hands out cannot loop, and that covers
+  /// every production read of this class but one: the restore preview builds a
+  /// `parentOf` map **by hand**, from the merged catalog with a backup's rows
+  /// laid over it, in order to show what the tree *will* look like before any of
+  /// it is written (`settings_screen.dart`). That map has never been through a
+  /// [Catalog], and it is exactly the case a hand-edited file can bend. So the
+  /// guard stays, and its reason is that one call site rather than a general
+  /// suspicion of the data.
   Map<String, LayerRole> forNode(String nodeId) {
     final cached = _nodeCache[nodeId];
     if (cached != null) return cached;

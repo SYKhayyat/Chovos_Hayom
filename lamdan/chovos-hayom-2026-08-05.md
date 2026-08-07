@@ -2,7 +2,21 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-06 (last).** **Finding 10** (*"Committed generated localizations"*) is now
+> **Status, 2026-08-06 (last).** **Finding 9** (*"The validator defends a door that three other
+> doors already lock"*) is now resolved — see the note below it. Its first claim was right and was
+> measured rather than believed; its second is **wrong**, and the prescription that follows from it
+> would have shipped two crashes. There are eight walks over the parent relation, not three, and the
+> two the sweep never reached had no guard at all: one does not return and the other overflows the
+> stack, both demonstrated rather than argued. The fix is neither keeping the check nor deleting it —
+> `Catalog` now guarantees a forest, so the shape is unrepresentable and the check is genuinely
+> redundant for a reason the finding did not have. The line count is a disagreement, argued in the
+> note, and so is what survives: four checks earn their place on evidence, and the `knownParents` map
+> threaded through two screens to feed the deleted ones goes with them. Findings 5 (nine rows) and 11
+> remain.
+>
+> ---
+>
+> **Status, 2026-08-06 (previously last).** **Finding 10** (*"Committed generated localizations"*) is now
 > resolved — see the note below it. Its headline claim was tested rather than believed (the directory
 > was deleted and `pub get` rebuilt it byte-identical), the ratio it rests on survived exactly while
 > one of its flourishes expired, and the best evidence for it was already written inside the CI step
@@ -173,7 +187,7 @@ design writing in the repository. The problem is what happens next to them:
 | `README.md:373` — *"the lint is what keeps new ones from drifting back out of [the guard]"* | `unawaited_futures` fires on expression statements in **async** bodies. The dominant shape here is `onPressed: () => guarded(...)` — a sync arrow closure. Not flagged, any of them. |
 | `learning_event.dart:62-68` — `copyWith` deleted because *"nothing called it"* | `backup_service.dart:353` hand-lists all eleven fields to rescope an event. That *is* `copyWith`, minus the compiler's help. |
 | `sorting.dart:56-65` — ten lines condemning conditional watches | see row 2. **✅ Resolved** with it, and now guarded: `notify_guard_test.dart`. |
-| `backup_service.dart:398-403` — the validator justified by two crashes it prevents | Neither crash exists: `catalog.dart:47` and `inherited_layer_set.dart:38` already refuse to revisit a node, and `catalog_node.dart:101` uses `Iterable.generate`, which is empty for a negative count. The guards that make the validator unnecessary say so in *their own* comments. |
+| `backup_service.dart:398-403` — the validator justified by two crashes it prevents | Neither crash exists: `catalog.dart:47` and `inherited_layer_set.dart:38` already refuse to revisit a node, and `catalog_node.dart:101` uses `Iterable.generate`, which is empty for a negative count. The guards that make the validator unnecessary say so in *their own* comments. **✅ Resolved** — and the second half of this row is itself wrong: two more walks had *no* guard, and one of them never returns. See finding 9. |
 
 Ten instances. That is not carelessness — every one of these was written by someone who
 understood the principle well enough to state it clearly. It is a structural fact: **the only
@@ -1033,7 +1047,8 @@ prose in them; it is the best documentation in the repository.**
 >
 > **Not done, and adjacent:** finding 9. `BackupValidator` is still 166 lines defending a door
 > `catalog.dart:47` and `inherited_layer_roles.dart` already lock, and `importInto` still calls it on
-> every path touched above.
+> every path touched above. **✅ Since resolved**, and the door was not locked: two more walks had no
+> guard, one of which never returns. See the note on finding 9.
 
 2,801 lines of markdown outside the code — **3,033 by the time this was worked.**
 
@@ -1056,7 +1071,98 @@ code, then the prose.
 
 ---
 
-### 9. The validator defends a door that three other doors already lock. `delete` (146 of 166 lines).
+### 9. The validator defends a door that three other doors already lock. `delete` (146 of 166 lines). **✅ Resolved**
+
+> ### Both claims were checked by running them. The first is right, the second is wrong, and the prescription it leads to would have shipped a hang
+>
+> **Claim one holds, and it was measured rather than reasoned.** `RollUp` over a node with
+> `unitCount: -5` returns `learned=0 total=-5` and throws nothing, exactly as the finding says. The
+> justification written at `:398-403` was false on the day it was written.
+>
+> **But "it does not throw" is itself incomplete.** `unit_grid_screen.dart:145` passes `unitCount`
+> straight to `GridView.builder` as its `itemCount`, which defaults `semanticChildCount` to the same
+> value, and `ScrollView`'s constructor asserts on a negative one. The dashboard renders `0 / -5`;
+> opening the sefer throws. The crash the finding correctly says does not exist had moved one screen
+> over, and neither line of the report looks there.
+>
+> **Claim two is wrong, and this is the one that matters.** The two guards it names are real, but
+> *"the downstream guards would have sufficed alone"* does not follow from two of them, and there are
+> not three walks over the parent relation — there are **eight**. Six keep a visited-set.
+> `naming.nodePath` is capped at depth 16. And two have nothing at all:
+> `BulkHistoryScreen._commonAncestor` and `CatalogEditor.cloneStructure`. Both were run against a
+> loop rather than argued about: the first **does not return** — a `while (current != null)` with a
+> `chain.insert(0, …)` inside it, so it is a wedged process and a growing list, demonstrated by a
+> test that had to be killed at 120 seconds — and the second dies with `StackOverflowError`. Deleting
+> the cycle check as prescribed would have removed the only thing standing between a hand-edited
+> backup and those two.
+>
+> **So the diagnosis is right and worse than stated, and the prescription is wrong.** *"Cycle
+> detection now exists in three places with three theories of who is responsible"* is the finding's
+> best sentence; the answer is not to delete one theory and leave seven. It is to make the shape
+> unrepresentable in the thing all eight of them walk. `Catalog` now guarantees a forest: every
+> parent link resolves, no node is its own ancestor, and a violating link is **detached** rather than
+> the file refused — the node becomes a root, visible and re-fileable, where a dangling parent used
+> to leave it in `byId`, in search results, and under no root at all, which is the one state there is
+> no way out of from inside the app. A ring is cut at exactly one link, chosen as the lowest id so
+> two devices restoring the same file agree.
+>
+> **That is wider than the check it retires**, which is the argument for doing it this way rather
+> than adding a seventh and eighth visited-set: the validator only ever saw *imports*, and the node
+> editor and the clone can build a loop with no file involved.
+>
+> **A defect the sweep could not have reached, found while proving the invariant.** `childrenOf` was
+> built from the raw node list and `byId` from the same list keyed by id, so a repeated id put one
+> row in the index and both in the child map — a walk up and a walk down then disagreed about who a
+> node's parent was, and the downward one could loop over a pair the upward one considered fine. Both
+> are now built from one de-duplicated index.
+>
+> **On the arithmetic, a disagreement.** *146 of 166 lines* is too many. Every remaining check was
+> put in front of the running app before being kept or cut, and four of them earn their place on
+> evidence: a repeated **event** id reaches `addEvents` and comes back as
+> `SqliteException(1555): UNIQUE constraint failed` — a driver error shown to someone restoring a
+> backup; a repeated **node or meforish** id is worse because it is silent, since the rows are
+> written with `insertOnConflictUpdate` and the second replaces the first; a negative `unitCount`
+> leaves a sefer permanently uncountable, because `containsUnit` is false for every index; and a
+> negative duration is summed into the time statistics. The absurd-`unitCount` ceiling stays too — it
+> is the only one with real teeth, since it bounds what a single *Finish all* enumerates. What went
+> is 98 of the class's 156 lines: the cycle walk, the parent-resolution check, and the checks for an
+> empty id, an empty name, a negative unit offset, a negative unit index, an empty layer list, more
+> unit names than units, and the layer-config bounds — each of which is now a test asserting the data
+> is *inert* rather than a deleted assertion, because "the file is refused" and "the app is safe"
+> are different claims and this class was making the first while stating the second.
+>
+> **The finding misses the plumbing, which is the cheapest thing in it.** The deleted checks needed
+> `knownParents` — a map of the entire bundled catalog, built by the settings screen and threaded
+> through `importInto` on every import — for no purpose except giving the cycle walk something to
+> walk. It is gone with them.
+>
+> Resolved by `Catalog._asForest` and a private index-taking constructor
+> (`lib/domain/entities/catalog.dart`); `CatalogNode.copyWith` taking the same sentinel for
+> `parentId` as its other nullable fields, since `parentId: null` means *make this a root* and a
+> plain `??` cannot say it; `BackupValidator` down from 156 lines to 58; `knownParents` deleted from
+> `importInto` and from `settings_screen.dart`; and the three comments that argued the old theory —
+> in `catalog.dart`, `inherited_layer_roles.dart` and `naming.dart` — rewritten to say which of them
+> now relies on the invariant and which does not. `InheritedLayerRoles` keeps its guard, and its
+> reason is now one named call site rather than a general suspicion: the restore preview builds a
+> parent map by hand, from a backup that has not been through a `Catalog`.
+>
+> **And the rule is enforced rather than stated.** `catalog_forest_test.dart` is the property over
+> eleven adversarial shapes — self-loop, two- and three-node rings, a ring with a tail, two
+> independent rings, a chain dangling into one, repeated ids, a repeated id looping against its own
+> earlier row — asserting from every node that the chain terminates *and* that every node is reached
+> exactly once walking down from the roots, which is the direction the clone takes. Eight of its
+> twelve tests were watched fail against the old constructor. `catalog_forest_guard_test.dart` reads
+> `lib/` and fails the build on `knownParents` returning or a second cycle check growing back, and
+> was fed a violation rather than assumed to work. `cyclic_catalog_test.dart` is the end-to-end pair:
+> it imports the loop the way a user would acquire one, then pumps the bulk history screen and calls
+> the real `CatalogEditor` — the two walks that had no guard — because the old shape did not fail
+> there, it failed to return, and a test that reasons about a walk cannot tell you the screen came
+> back. 614 tests pass; `analyze --fatal-infos` is clean.
+>
+> **Not done, and still true:** `catalog_clone_test.dart` lifts `cloneStructure`'s `collect` walk out
+> into the test file and asserts against the copy, which is why it could never have seen this. The
+> new end-to-end test drives the real editor, so the behaviour is covered — but the duplicate is
+> still sitting there, and it is finding 5's shape appearing in a test rather than in `lib/`.
 
 `BackupValidator` (`backup_service.dart:396-561`) justifies itself at `:398-403` with two claims:
 

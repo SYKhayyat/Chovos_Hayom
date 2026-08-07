@@ -68,8 +68,13 @@ class CatalogNode {
   }
 
   /// A copy with selected fields changed (for building override rows / edits).
+  ///
+  /// [parentId] takes the same sentinel treatment as the other nullable fields,
+  /// because `parentId: null` has a meaning here — *make this a root* — that a
+  /// plain `??` cannot express. [Catalog] needs exactly that when it detaches a
+  /// link to keep the tree a forest.
   CatalogNode copyWith({
-    String? parentId,
+    Object? parentId = _keep,
     String? name,
     Object? nameHebrew = _keep,
     int? sortOrder,
@@ -82,7 +87,7 @@ class CatalogNode {
   }) =>
       CatalogNode(
         id: id,
-        parentId: parentId ?? this.parentId,
+        parentId: parentId == _keep ? this.parentId : parentId as String?,
         name: name ?? this.name,
         nameHebrew: nameHebrew == _keep ? this.nameHebrew : nameHebrew as String?,
         sortOrder: sortOrder ?? this.sortOrder,

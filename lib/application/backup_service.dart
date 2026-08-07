@@ -263,14 +263,14 @@ class BackupService {
   /// re-scoped and de-duplicated by id; custom sefarim, mefarshim, and layer
   /// settings are merged in.
   ///
-  /// The payload is fully validated *before* anything is written (see
-  /// [BackupValidator]), and the whole write runs in a transaction — so a
-  /// malformed backup can neither persist a node that crashes the dashboard nor
-  /// leave half of itself behind. [knownParents] maps each id the app already
-  /// knows (the bundled catalog) to its parent, so a custom node parented onto a
-  /// built-in one validates — and so the cycle check can see a loop an *override*
-  /// row creates by re-parenting a built-in beneath its own descendant, which
-  /// knowing only the ids cannot.
+  /// The payload is checked *before* anything is written (see
+  /// [BackupValidator]) and the whole write runs in a transaction, so a
+  /// malformed backup cannot leave half of itself behind. Note what that pair of
+  /// sentences no longer claims: the check is not what keeps a bad file from
+  /// breaking the app — [Catalog] is, by refusing to hold a shape the app cannot
+  /// walk. This used to take a `knownParents` map of the whole bundled catalog,
+  /// built by the settings screen on every import, for no other purpose than
+  /// giving the deleted cycle check something to walk.
   ///
   /// Returns the parsed data (so the caller can apply settings and goals, which
   /// live outside the repository) with [BackupData.events] holding only the
@@ -287,11 +287,10 @@ class BackupService {
   Future<BackupData> importInto(
     String targetProfileId,
     String jsonStr, {
-    Map<String, String?> knownParents = const {},
     ImportMode mode = ImportMode.merge,
   }) async {
     final data = parse(jsonStr);
-    BackupValidator.validate(data, knownParents: knownParents);
+    BackupValidator.validate(data);
 
     final existingEvents = await _repo.getEvents(targetProfileId);
     final existing = existingEvents.map((e) => e.id).toSet();
@@ -434,13 +433,44 @@ class _Teardown {
   int get count => nodeIds.length + layerIds.length + layerConfigs.length;
 }
 
-/// Checks a parsed backup for anything that would corrupt the app if persisted.
+/// Turns a corrupt backup into a sentence, before it becomes rows.
 ///
-/// This is the app's trust boundary. Everything it rejects is something that,
-/// once in SQLite, has no in-app cure: a negative `unitCount` makes
-/// `RollUp` throw on every dashboard build, and a `parentId` cycle makes the
-/// inheritance walk recurse forever. Both would be permanent, because the bad
-/// row is in the database before the crash is visible.
+/// **This is not a safety boundary, and it used to say it was.** It justified
+/// itself with two crashes: that a negative `unitCount` makes `RollUp` throw on
+/// every dashboard build, and that a `parentId` cycle makes the inheritance walk
+/// recurse forever. Neither claim was true when it was written. `RollUp` assigns
+/// `unitCount` to `total` and never divides by it, so a negative one renders
+/// `0 / -5` and throws nothing — measured, not reasoned. And the cycle is now
+/// structurally impossible: [Catalog] guarantees a forest, which is a stronger
+/// promise than this class could make anyway, because it also covers the loops
+/// this never sees — the ones the node editor and the clone can create with no
+/// file involved.
+///
+/// What survives is the checks that earn a message on their own terms, and each
+/// one here has a demonstrated consequence rather than an imagined one:
+///
+/// - **repeated ids.** An event id repeated inside one file reaches
+///   `addEvents` and comes back as `SqliteException(1555): UNIQUE constraint
+///   failed` — a raw driver error in front of a user who asked to import a
+///   backup. A repeated node or meforish id is quieter and worse: the rows are
+///   written with `insertOnConflictUpdate`, so the second silently replaces the
+///   first and a sefer disappears without anyone being told.
+/// - **a negative `unitCount`.** Survivable but never right: the sefer reads
+///   `0 / -5`, its grid is empty, and no mark on it can ever count, because
+///   `containsUnit` is false for every index.
+/// - **an absurd `unitCount`.** The only one of these with teeth. It is what
+///   bounds a single *Finish all*, which enumerates the whole range in one
+///   batch.
+/// - **a negative duration.** Minutes are summed into the time statistics, so a
+///   negative one silently subtracts from a total the user is reading.
+///
+/// Deleted with the two false claims: the parent-resolution check and the cycle
+/// walk (both now [Catalog]'s promise, and the `knownParents` map that was
+/// threaded through two screens to feed them), and the checks for an empty id,
+/// an empty name, a negative unit offset, a negative unit index, an empty layer
+/// list, more unit names than units, and the layer-config bounds. Each was
+/// tested against the running app first: every one of them is inert — ignored by
+/// the fold, unread by the renderer, or repairable in the node editor.
 ///
 /// Pure, framework-free, and separately testable.
 class BackupValidator {
@@ -454,27 +484,18 @@ class BackupValidator {
   static const maxUnitCount = 100000;
 
   /// Throws [BackupFormatException] on the first problem found.
-  static void validate(BackupData data,
-      {Map<String, String?> knownParents = const {}}) {
-    _validateNodes(data.customNodes, knownParents);
+  static void validate(BackupData data) {
+    _validateNodes(data.customNodes);
     _validateEvents(data.events);
     _validateLayers(data.customLayers);
-    _validateConfigs(data.layerConfigs, 'mefarshim');
   }
 
-  static void _validateNodes(
-      List<CatalogNode> nodes, Map<String, String?> knownParents) {
-    final byId = <String, CatalogNode>{};
+  static void _validateNodes(List<CatalogNode> nodes) {
+    final seen = <String>{};
     for (final n in nodes) {
-      if (n.id.trim().isEmpty) {
-        throw const BackupFormatException('A custom sefer has an empty id.');
-      }
-      if (byId.containsKey(n.id)) {
+      if (!seen.add(n.id)) {
         throw BackupFormatException(
             'Custom sefer “${n.name}” appears twice (id ${n.id}).');
-      }
-      if (n.name.trim().isEmpty) {
-        throw BackupFormatException('Custom sefer ${n.id} has no name.');
       }
       if (n.unitCount < 0) {
         throw BackupFormatException(
@@ -485,84 +506,14 @@ class BackupValidator {
             '“${n.name}” claims ${n.unitCount} units, which is not a real '
             'sefer — the file is corrupt.');
       }
-      if (n.unitOffset < 0) {
-        throw BackupFormatException(
-            '“${n.name}” starts at unit ${n.unitOffset}; units cannot be '
-            'negative.');
-      }
-      if (n.unitNames.length > n.unitCount) {
-        throw BackupFormatException(
-            '“${n.name}” lists ${n.unitNames.length} unit names but only has '
-            '${n.unitCount} units.');
-      }
-      byId[n.id] = n;
-    }
-
-    // A parent must resolve — to another node in this backup or to one the app
-    // already knows. Anything else would import a node the tree can never show.
-    for (final n in nodes) {
-      final parent = n.parentId;
-      if (parent == null) continue;
-      if (!byId.containsKey(parent) && !knownParents.containsKey(parent)) {
-        throw BackupFormatException(
-            '“${n.name}” is filed under a sefer that does not exist '
-            '(parent $parent).');
-      }
-    }
-
-    // Cycle check, over the *merged* parent map — the backup's rows overlaid on
-    // the catalog the app already knows. A backup node whose id matches a
-    // built-in is an override that *replaces* that node's parent, so a single
-    // row can re-parent a built-in beneath its own descendant (`{shas ->
-    // shas.berachos}` when the catalog has `shas.berachos -> shas`). Every id in
-    // that loop is "known", so walking only the backup's own rows — as this once
-    // did — cannot see it, and the loop lands in SQLite and empties the tree.
-    //
-    // Any cycle the backup introduces must contain at least one backup node
-    // (the known catalog alone is a valid tree), so starting from each backup
-    // node and following merged parents reaches it.
-    final parentOf = <String, String?>{...knownParents};
-    for (final n in nodes) {
-      parentOf[n.id] = n.parentId;
-    }
-    for (final start in nodes) {
-      var current = parentOf[start.id];
-      var steps = 0;
-      while (current != null && parentOf.containsKey(current)) {
-        if (current == start.id) {
-          throw BackupFormatException(
-              '“${start.name}” is its own ancestor — the file has a loop in its '
-              'sefer hierarchy.');
-        }
-        if (++steps > parentOf.length) {
-          throw const BackupFormatException(
-              'The custom sefer hierarchy contains a loop.');
-        }
-        current = parentOf[current];
-      }
     }
   }
 
   static void _validateEvents(List<LearningEvent> events) {
     final seen = <String>{};
     for (final e in events) {
-      if (e.id.trim().isEmpty) {
-        throw const BackupFormatException('An event has an empty id.');
-      }
       if (!seen.add(e.id)) {
         throw BackupFormatException('Event ${e.id} appears twice.');
-      }
-      if (e.nodeId.trim().isEmpty) {
-        throw BackupFormatException('Event ${e.id} has no sefer.');
-      }
-      if (e.unitIndex < 0) {
-        throw BackupFormatException(
-            'Event ${e.id} points at unit ${e.unitIndex}; units cannot be '
-            'negative.');
-      }
-      if (e.layers.isEmpty) {
-        throw BackupFormatException(
-            'Event ${e.id} marks nothing — it has an empty layer list.');
       }
       if (e.durationMin != null && e.durationMin! < 0) {
         throw BackupFormatException(
@@ -574,27 +525,8 @@ class BackupValidator {
   static void _validateLayers(List<Layer> layers) {
     final seen = <String>{};
     for (final l in layers) {
-      if (l.id.trim().isEmpty) {
-        throw const BackupFormatException('A meforish has an empty id.');
-      }
       if (!seen.add(l.id)) {
         throw BackupFormatException('Meforish “${l.name}” appears twice.');
-      }
-      if (l.name.trim().isEmpty) {
-        throw BackupFormatException('Meforish ${l.id} has no name.');
-      }
-    }
-  }
-
-  static void _validateConfigs(List<LayerConfigEntry> entries, String what) {
-    for (final e in entries) {
-      if (e.nodeId.trim().isEmpty) {
-        throw BackupFormatException('A $what setting has no sefer.');
-      }
-      // -1 is the node-level default; anything below that is meaningless.
-      if (e.unitIndex < -1) {
-        throw BackupFormatException(
-            'A $what setting on ${e.nodeId} points at unit ${e.unitIndex}.');
       }
     }
   }

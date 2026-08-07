@@ -126,8 +126,9 @@ String nodePath(AppLocalizations l10n, Catalog catalog, CatalogNode node) {
   final parts = <String>[];
   var current =
       node.parentId == null ? null : catalog.byId(node.parentId!);
-  // Bounded: the per-profile override layer can (via a hand-edited import)
-  // contain a parent cycle, and this runs while building a list.
+  // The cap is a display rule, not a safety one: [Catalog] guarantees the walk
+  // terminates, and sixteen ancestors is already more breadcrumb than any row
+  // can show. It used to be here to survive a parent cycle.
   for (var depth = 0; current != null && depth < 16; depth++) {
     if (current.parentId == null) break; // the root names nothing useful
     parts.add(nodeName(l10n, current));

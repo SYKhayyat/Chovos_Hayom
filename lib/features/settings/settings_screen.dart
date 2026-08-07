@@ -426,16 +426,9 @@ class SettingsScreen extends ConsumerWidget {
       {ImportMode mode = ImportMode.merge, RestoreDiff? diff}) async {
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
-    // The catalog's ids, so a custom sefer filed under a built-in one validates
-    // instead of being rejected as an orphan.
-    final catalog = ref.read(mergedCatalogProvider).asData?.value;
     final data = await BackupService(repo).importInto(
       profileId,
       jsonStr,
-      knownParents: {
-        if (catalog != null)
-          for (final n in catalog.all) n.id: n.parentId,
-      },
       mode: mode,
     );
     // The two stores that live in preferences rather than in the repository, and

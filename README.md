@@ -15,6 +15,20 @@ prediction-from-actual-pace for free.
 ## Architecture (short version)
 
 - **Catalog** — immutable reference data (*what exists in Torah*), seeded from JSON assets.
+- **The catalog is a forest, and that is a guarantee rather than a hope** —
+  [`lib/domain/entities/catalog.dart`](lib/domain/entities/catalog.dart). Every parent link
+  resolves and no node is its own ancestor, because anything arriving otherwise is repaired on
+  the way in: the offending link is detached, so the node becomes a top-level sefer you can see
+  and re-file, rather than being deleted or refused. The bundled data is a tree, but the
+  per-profile override layer is not obliged to be — one row whose id matches a built-in replaces
+  that node's parent, so a single hand-edited line can file a sefer under its own descendant.
+  Eight places in the app walk that relation, and each used to decide for itself whether a loop
+  was possible: six kept a visited-set, and two — the undo list's *what did this batch cover* and
+  the subtree clone — did not, and were an infinite loop and a stack overflow respectively. One
+  invariant replaces eight opinions, and it is wider than the import check it retired, because it
+  also covers the loops the node editor and the clone can create with no file involved.
+  `test/domain/catalog_forest_test.dart` holds the property and
+  `catalog_forest_guard_test.dart` fails the build if a rival cycle check grows back.
 - **Progress** — a per-profile append-only event log (*what you learned, and when*), in SQLite.
 - **Everything derived** — counts, percentages, roll-ups, pace, and predictions are folds over the
   log, never stored.
@@ -160,8 +174,9 @@ become" are different intentions and only one of them deletes a sefer:
 Both restores say exactly what they will change *before* they change it — units, sefarim and goals —
 and report afterwards in units rather than log entries, because putting a daf back is done by
 deleting an event, so an event-level tally would read "removed 2, added 0" while a completion
-visibly returns. Imported files are validated before anything is written and applied in one
-transaction. And Settings tells you where you stand — "last exported 3 March · 41 units learned since
+visibly returns. Imported files are checked before anything is written and applied in one
+transaction — though the check is not what keeps a bad file from breaking the app; see *the catalog
+is a forest* below. And Settings tells you where you stand — "last exported 3 March · 41 units learned since
 — they exist only on this device" — counting units rather than log entries, going quiet the moment
 there is nothing unsaved, and never warning an empty profile.
 

@@ -1,11 +1,14 @@
 import 'package:chovos_hayom/application/backup_service.dart';
+import 'package:chovos_hayom/domain/entities/catalog.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
+import 'package:chovos_hayom/domain/usecases/roll_up.dart';
 import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/fake_catalog.dart';
 import '../support/memory_database.dart';
 import 'dart:convert';
 
@@ -25,6 +28,7 @@ Map<String, dynamic> backup({
 Map<String, dynamic> node(
   String id, {
   String? parentId,
+  String? name,
   int unitCount = 5,
   int unitOffset = 1,
   List<String> unitNames = const [],
@@ -32,7 +36,7 @@ Map<String, dynamic> node(
     {
       'id': id,
       'parentId': parentId,
-      'name': 'Sefer $id',
+      'name': name ?? 'Sefer $id',
       'kind': 'leaf',
       'unitLabel': 'perek',
       'unitCount': unitCount,
@@ -40,7 +44,13 @@ Map<String, dynamic> node(
       'unitNames': unitNames,
     };
 
-Map<String, dynamic> event(String id, {int unitIndex = 2}) => {
+Map<String, dynamic> event(
+  String id, {
+  int unitIndex = 2,
+  int? durationMin,
+  List<String>? layers,
+}) =>
+    {
       'id': id,
       'profileId': 'a',
       'nodeId': 'shas.moed.shabbos',
@@ -48,6 +58,8 @@ Map<String, dynamic> event(String id, {int unitIndex = 2}) => {
       'action': 'done',
       'occurredAt': '2026-01-01T00:00:00.000',
       'loggedAt': '2026-01-01T00:00:00.000',
+      'durationMin': ?durationMin,
+      'layers': ?layers,
     };
 
 Future<void> expectRejected(String json, Matcher messageMatcher) async {
@@ -62,9 +74,23 @@ Future<void> expectRejected(String json, Matcher messageMatcher) async {
   expect(await repo.getCustomNodes('b'), isEmpty);
 }
 
+/// Imports [json] and returns what landed, for the cases that are *not*
+/// rejected — the deletions in this file are only defensible if the data they
+/// used to refuse is genuinely harmless, and asserting that is more work than
+/// deleting a test, which is the point.
+Future<List<CatalogNode>> expectAccepted(String json) async {
+  final repo = memoryRepository();
+  await BackupService(repo).importInto('b', json);
+  return repo.getCustomNodes('b');
+}
+
 void main() {
   group('import rejects data that would corrupt the app', () {
     test('a negative unit count', () async {
+      // Kept, and its reason is now the honest one: nothing throws — `RollUp`
+      // renders `0 / -5` — but the sefer is permanently uncountable, because
+      // `containsUnit` is false for every index, so no mark on it can ever
+      // register. That is worth a sentence.
       await expectRejected(
         jsonEncode(backup(nodes: [node('bad', unitCount: -3)])),
         contains('negative unit count'),
@@ -78,57 +104,31 @@ void main() {
       );
     });
 
-    test('a negative unit offset', () async {
-      await expectRejected(
-        jsonEncode(backup(nodes: [node('bad', unitOffset: -1)])),
-        contains('cannot be negative'),
-      );
-    });
-
-    test('a parent that does not exist', () async {
-      await expectRejected(
-        jsonEncode(backup(nodes: [node('orphan', parentId: 'nowhere')])),
-        contains('does not exist'),
-      );
-    });
-
-    test('a parent cycle', () async {
-      await expectRejected(
-        jsonEncode(backup(nodes: [
-          node('a', parentId: 'b'),
-          node('b', parentId: 'a'),
-        ])),
-        contains('loop'),
-      );
-    });
-
-    test('a node that is its own parent', () async {
-      await expectRejected(
-        jsonEncode(backup(nodes: [node('a', parentId: 'a')])),
-        contains('own ancestor'),
-      );
-    });
-
-    test('more unit names than units', () async {
-      await expectRejected(
-        jsonEncode(backup(nodes: [
-          node('a', unitCount: 2, unitNames: ['x', 'y', 'z'])
-        ])),
-        contains('unit names'),
-      );
-    });
-
     test('a duplicate node id', () async {
+      // The rows go in with `insertOnConflictUpdate`, so without this the
+      // second silently replaces the first and a sefer is gone with no error.
       await expectRejected(
         jsonEncode(backup(nodes: [node('a'), node('a')])),
         contains('appears twice'),
       );
     });
 
-    test('a negative unit index on an event', () async {
+    test('a duplicate event id', () async {
+      // Without this, `addEvents` hands the user
+      // `SqliteException(1555): UNIQUE constraint failed` — a driver error in
+      // front of somebody who asked to restore a backup.
       await expectRejected(
-        jsonEncode(backup(events: [event('e1', unitIndex: -4)])),
-        contains('cannot be negative'),
+        jsonEncode(backup(events: [event('e1'), event('e1')])),
+        contains('appears twice'),
+      );
+    });
+
+    test('a negative duration', () async {
+      // Minutes are summed into the time statistics, so this subtracts from a
+      // total the user reads.
+      await expectRejected(
+        jsonEncode(backup(events: [event('e1', durationMin: -90)])),
+        contains('negative duration'),
       );
     });
 
@@ -148,29 +148,130 @@ void main() {
     });
   });
 
-  test('an override row that re-parents a built-in beneath its own child', () async {
-    // The catalog has shas.berachos -> shas. This override makes shas ->
-    // shas.berachos, closing a loop in which *every* id is already "known" —
-    // invisible to a cycle check that walks only the backup's own rows, and it
-    // empties the whole tree once in SQLite.
-    final repo = memoryRepository();
-    final json =
-        jsonEncode(backup(nodes: [node('shas', parentId: 'shas.berachos')]));
-    await expectLater(
-      BackupService(repo).importInto('b', json,
-          knownParents: {'shas': null, 'shas.berachos': 'shas'}),
-      throwsA(isA<BackupFormatException>()
-          .having((e) => e.message, 'message', contains('loop'))),
-    );
-    expect(await repo.getCustomNodes('b'), isEmpty);
+  group('import no longer refuses what it cannot be hurt by', () {
+    // Every one of these was a rejection. Each is now asserted to be inert
+    // instead — because "the file is refused" and "the app is safe" are
+    // different claims, and this class was making the first while stating the
+    // second.
+
+    test('a negative unit offset only moves the labels', () async {
+      final nodes = await expectAccepted(
+          jsonEncode(backup(nodes: [node('bad', unitOffset: -1)])));
+      expect(nodes.single.unitOffset, -1);
+      // The units are still enumerable and still count; they are labelled from
+      // -1, which is wrong and is fixable in the node editor.
+      expect(nodes.single.unitIndices, [-1, 0, 1, 2, 3]);
+    });
+
+    test('more unit names than units leaves the extras unread', () async {
+      final nodes = await expectAccepted(jsonEncode(backup(nodes: [
+        node('a', unitCount: 2, unitNames: ['x', 'y', 'z'])
+      ])));
+      final n = nodes.single;
+      // `unitDisplay` is bounded by the range, so the third name is simply
+      // never asked for — there is no index that reaches it.
+      expect(n.unitIndices.map(n.unitDisplay), ['x', 'y']);
+    });
+
+    test('a negative unit index on an event is ignored by the fold', () async {
+      final repo = memoryRepository();
+      await BackupService(repo)
+          .importInto('b', jsonEncode(backup(events: [event('e1', unitIndex: -4)])));
+      final fold = FoldLog.fold(await repo.getEvents('b'));
+      // It is in the log and out of every node's range, which is the same
+      // handling a mark on a sefer that later shrank gets.
+      expect(fold.doneUnits('shas.moed.shabbos'), {-4});
+      expect(
+        RollUp.buildNode(fakeCatalog(), 'shas.moed.shabbos', fold)!.learned,
+        0,
+        reason: 'out-of-range marks never reach a progress number',
+      );
+    });
+
+    test('an event with an empty layer list marks nothing', () async {
+      final repo = memoryRepository();
+      await BackupService(repo).importInto(
+          'b', jsonEncode(backup(events: [event('e1', layers: const [])])));
+      final fold = FoldLog.fold(await repo.getEvents('b'));
+      expect(fold.doneUnits('shas.moed.shabbos'), isEmpty,
+          reason: 'the text layer is not among the completed ones, so the '
+              'unit is simply not done');
+    });
+
+    test('an empty name and an empty id are carried, not refused', () async {
+      final nodes = await expectAccepted(
+          jsonEncode(backup(nodes: [node('', name: '')])));
+      expect(nodes.single.name, '');
+      // A blank row in the tree, and the node editor can rename it. That is a
+      // worse backup than it should be; it is not a broken app.
+    });
+  });
+
+  group('a shape the tree cannot hold is repaired rather than refused', () {
+    // These used to be the validator's two headline rejections. They are now
+    // `Catalog`'s promise, which is a wider one — it also covers the loops the
+    // node editor and the clone can make with no file involved.
+    // `catalog_forest_test.dart` holds the invariant; these hold the seam.
+
+    test('a parent that does not exist becomes a root', () async {
+      final nodes = await expectAccepted(
+          jsonEncode(backup(nodes: [node('orphan', parentId: 'nowhere')])));
+      expect(nodes.single.id, 'orphan');
+      final catalog = Catalog([...fakeCatalog().all, ...nodes]);
+      expect(catalog.roots.map((n) => n.id), contains('orphan'),
+          reason: 'visible and re-fileable, where it used to be in `byId` and '
+              'under no root at all');
+    });
+
+    test('a parent cycle imports and is cut once', () async {
+      final nodes = await expectAccepted(jsonEncode(backup(nodes: [
+        node('a', parentId: 'b'),
+        node('b', parentId: 'a'),
+      ])));
+      expect(nodes.map((n) => n.id).toSet(), {'a', 'b'});
+      final catalog = Catalog(nodes);
+      expect(catalog.roots.map((n) => n.id), ['a']);
+      expect(catalog.childrenOf('a').map((n) => n.id), ['b']);
+    });
+
+    test('a node that is its own parent imports and is detached', () async {
+      final nodes =
+          await expectAccepted(jsonEncode(backup(nodes: [node('a', parentId: 'a')])));
+      expect(Catalog(nodes).byId('a')!.parentId, isNull);
+    });
+
+    test('an override row that re-parents a built-in beneath its own child',
+        () async {
+      // The loop in which *every* id belongs to the bundled catalog — the case
+      // that needed the whole `knownParents` map threaded through the settings
+      // screen for the old check to be able to see it at all. It needs nothing
+      // now: the catalog that gets built cannot hold the shape.
+      final nodes = await expectAccepted(jsonEncode(backup(nodes: [
+        {
+          'id': 'shas',
+          'parentId': 'shas.moed',
+          'name': 'Shas',
+          'kind': 'category',
+        }
+      ])));
+      final catalog = Catalog([
+        ...fakeCatalog().all.where((n) => n.id != 'shas'),
+        ...nodes,
+      ]);
+      // Shas is lifted to the top rather than left dangling under its own
+      // grandchild, and everything beneath it keeps its place. The user's tree
+      // is rearranged by one link, which is the whole cost of the repair.
+      expect(catalog.byId('shas')!.parentId, isNull);
+      expect(catalog.leavesUnder('shas').map((n) => n.id),
+          ['shas.moed.shabbos']);
+    });
   });
 
   test('a parent in the bundled catalog is accepted', () async {
     final repo = memoryRepository();
     final json =
         jsonEncode(backup(nodes: [node('mine', parentId: 'shas.moed')]));
-    await BackupService(repo)
-        .importInto('b', json, knownParents: {'shas.moed': null});
+    await BackupService(repo).importInto('b', json);
     expect((await repo.getCustomNodes('b')).single.id, 'mine');
   });
 
