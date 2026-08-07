@@ -87,7 +87,7 @@ void main() {
 
     Object? thrown;
     try {
-      await service.importInto('p2', json);
+      await service.importInto('p2', BackupService.parse(json));
     } catch (e) {
       thrown = e;
     }

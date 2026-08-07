@@ -46,7 +46,7 @@ void main() {
     final json = await BackupService(source).export('a');
 
     final target = memoryRepository();
-    final result = await BackupService(target).importInto('b', json);
+    final result = await BackupService(target).importInto('b', BackupService.parse(json));
 
     expect(result.events.length, 2);
     final events = await target.getEvents('b');
@@ -64,8 +64,8 @@ void main() {
     final json = await BackupService(source).export('a');
 
     final target = memoryRepository();
-    await BackupService(target).importInto('b', json);
-    final addedAgain = await BackupService(target).importInto('b', json);
+    await BackupService(target).importInto('b', BackupService.parse(json));
+    final addedAgain = await BackupService(target).importInto('b', BackupService.parse(json));
 
     expect(addedAgain.events, isEmpty);
     expect(await target.getEvents('b'), hasLength(1));
@@ -102,7 +102,7 @@ void main() {
     );
 
     final target = memoryRepository();
-    final result = await BackupService(target).importInto('b', json);
+    final result = await BackupService(target).importInto('b', BackupService.parse(json));
 
     // Event keeps its haara + layers.
     final events = await target.getEvents('b');

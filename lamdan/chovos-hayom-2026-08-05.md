@@ -2,7 +2,34 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-07 (last).** The **"is this a positive integer"** row of finding 5 is now
+> **Status, 2026-08-07 (last).** The **JSON parse per restore** row of finding 5 is now resolved.
+>
+> **Four, and the fourth is the funny one.** The preview parses the file; the customisation count
+> the preview shows parses it again; the write parses it a third time; and the merge path parses it
+> a fourth — to answer *"were there no events in the file, or were they all already here?"*, a
+> sentence that exists so a correct no-op does not read as a failure. Its own comment said
+> "re-parsing costs one pass over a file the user just chose, and only on this path", which is true
+> and was the third re-parse rather than the first.
+>
+> **The fix is a type, not a cache.** Parsing is the trust boundary, so it happens once, where the
+> untrusted bytes arrive — and everything downstream takes the parsed value. `importInto`,
+> `customisationsAtRisk` and `SettingsScreen.restoreDiff` take a `BackupData`; there is no longer a
+> String to hand them, so there is nothing to remember not to do.
+>
+> **One test had to change shape, and it is the interesting fallout.** `expectRejected` wrapped
+> `importInto(...)` in a `throwsA`, which worked only because the parse happened *inside* the
+> future. Split apart, a truncated file now throws while the argument is being evaluated and sails
+> straight past the matcher. The helper takes a closure now — and the split is the honest one: a
+> malformed file dies at the parse, and a negative unit count dies at the validate, and those were
+> never the same gate.
+>
+> **The rule is enforced rather than stated:** `BackupService.parse` may be called from exactly two
+> places outside its own file — the file the user picked and the text they pasted — and the guard
+> asserts the count is *two*, so a third decode fails and so does deleting the boundary.
+>
+> ---
+>
+> **Status, 2026-08-07 (previously last).** The **"is this a positive integer"** row of finding 5 is now
 > resolved, and its *Worst consequence* column — empty, again — held two.
 >
 > **The copies disagreed, and a user could see it.** Typing `2, 5, x` into the chazara intervals
@@ -952,7 +979,7 @@ places that cannot see each other:
 | ~~the goal banner widget~~ **✅ Resolved** (carried by finding 6's work, and verified rather than assumed) | ~~2 byte-identical~~ — one `GoalBanner`, one `goalStatusText`, one `removeGoalWithUndo`, and `report_guard_test.dart` rule 2 refuses a second reader of `l10n.goalStatus` | ~~2 ARB keys for one sentence~~ — one now, and the *residue of that merge* is the row's real finding: the surviving key's metadata block was still called `@goalBanner`, so it described nothing and `goalStatus`'s three placeholders were re-inferred as `Object`. See the status note |
 | ~~"the four customisation lists"~~ **✅ Resolved** | ~~3~~ — one `ProfileCustomisations.of`, and `BackupService.export` **reads** the three rather than taking them, so there is nowhere left to pass a list in | ~~shipped a bug: `.asData?.value ?? const []` silently exporting empty lists~~ — fixed twice at two of the three sites, one paragraph each, and the third was written afterwards. See the status note |
 | ~~"is this a positive integer"~~ **✅ Resolved** | ~~3 layers each, for both interval settings~~ — and five more in the cycle editor, the node editor, the range dialog and the log sheet. One `core/parse.dart` | ~~—~~ the empty column again: the copies **disagreed**, visibly, two rows apart on one screen — and one of them was storing a negative duration. See the status note |
-| JSON parse per restore | 3–4 full decodes of the same file before anything is written | on a Sonim, with a Shas-sized log |
+| ~~JSON parse per restore~~ **✅ Resolved** | ~~3–4 full decodes of the same file before anything is written~~ — one, at the boundary; `importInto`, `customisationsAtRisk` and `restoreDiff` take a `BackupData` | ~~on a Sonim, with a Shas-sized log~~ — and the fix is a *type*, not a cache: there is no longer a String to hand them |
 | profile deletion | 2 paths (`drift_progress_repository:120` for 6 tables, `providers.dart:141` for the goals key) | kept in sync by hand |
 | ~~`DpadScroll`~~ **✅ Resolved** | ~~3 call sites — exactly the three report screens~~ — it was **4** by the time it was looked at, and merging the routes did not reduce it: the three sections kept their own copies and `ReportEmpty` had grown a fourth. One `ReportBody`, and a guard rule | ~~the tax for splitting one report into three routes~~ — the tax was never the routes. `skipTraversal: false` is a fact about the *tab bar*, and three sections were each asserting it locally |
 

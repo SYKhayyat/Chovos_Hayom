@@ -61,7 +61,7 @@ void main() {
       ]);
 
   Future<ProviderContainer> withLoopImported(ProgressRepository repo) async {
-    await BackupService(repo).importInto(profile, loop);
+    await BackupService(repo).importInto(profile, BackupService.parse(loop));
     final c = container(repo);
     addTearDown(c.dispose);
     final sub = c.listen(mergedCatalogProvider, (_, _) {});
@@ -111,7 +111,7 @@ void main() {
           batchId: 'b1',
         ),
     ]);
-    await BackupService(repo).importInto(profile, loop);
+    await BackupService(repo).importInto(profile, BackupService.parse(loop));
 
     await tester.pumpWidget(ProviderScope(
       overrides: [
@@ -134,7 +134,7 @@ void main() {
 
   testWidgets('cloning a subtree returns on a looped catalog', (tester) async {
     final repo = memoryRepository();
-    await BackupService(repo).importInto(profile, loop);
+    await BackupService(repo).importInto(profile, BackupService.parse(loop));
 
     late WidgetRef captured;
     await tester.pumpWidget(ProviderScope(

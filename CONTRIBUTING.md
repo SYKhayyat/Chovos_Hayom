@@ -57,6 +57,7 @@ fail the build on the shape of the mistake rather than on its consequences:
 | `core/day_math_guard_test.dart` | a fifth hand-rolled answer to "which calendar day is this" |
 | `application/notify_guard_test.dart` | a family without `autoDispose`, an unselected `settingsProvider` watch, a field added to a value type and left out of its `==` |
 | `application/log_pass_guard_test.dart` | a new function that takes the whole event log |
+| `application/backup_parse_once_test.dart` | a second decode of a backup file — the parse is a trust boundary and happens where the bytes arrive |
 | `application/import_scope_test.dart` | a store a backup writes into that does not take an `ImportMode` |
 | `domain/layer_role_guard_test.dart` | a second resolver, table or stream of layer settings, and a screen working out a unit's mefarshim from the roles and the fold itself |
 | `features/report_guard_test.dart` | a report screen re-added as its own route, and a section wiring up its own D-pad scrolling instead of using `ReportBody` |

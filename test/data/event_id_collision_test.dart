@@ -50,7 +50,7 @@ void main() {
     // The same file is imported into the second profile — a documented
     // feature (profiles + import/restore), and the obvious way to move
     // progress to a family member's profile on the same device.
-    await service.importInto('p2', json);
+    await service.importInto('p2', BackupService.parse(json));
 
     expect((await repo.getEvents('p2')).length, 1,
         reason: 'p2 should now hold the backed-up event');

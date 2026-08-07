@@ -271,7 +271,7 @@ class BackupService {
     return out;
   }
 
-  /// Import [jsonStr] into [targetProfileId] as one atomic write: events are
+  /// Import [data] into [targetProfileId] as one atomic write: events are
   /// re-scoped and de-duplicated by id; custom sefarim, mefarshim, and layer
   /// settings are merged in.
   ///
@@ -296,12 +296,21 @@ class BackupService {
   /// is already present) while the later `undone` still wins — so the unit stays
   /// un-marked and the "restore" restores nothing. Only removing the events
   /// recorded since the backup puts it back.
+  /// Takes a parsed [BackupData] rather than the file's text, and that is the
+  /// whole of the change: **a backup is decoded once per restore.** It used to
+  /// be three or four times — the preview parsed it, the preview's
+  /// customisation count parsed it again, this parsed it a third, and the merge
+  /// path's "how many events were in the file, then?" a fourth — each one a
+  /// full `jsonDecode` of a file that on a Shas-sized log is megabytes, on a
+  /// phone whose whole reason for existing is that it is not a fast one.
+  ///
+  /// The parse is a trust boundary, so it happens where the untrusted bytes
+  /// arrive and nowhere else. Everything downstream takes the parsed value.
   Future<BackupData> importInto(
     String targetProfileId,
-    String jsonStr, {
+    BackupData data, {
     ImportMode mode = ImportMode.merge,
   }) async {
-    final data = parse(jsonStr);
     BackupValidator.validate(data);
 
     final existingEvents = await _repo.getEvents(targetProfileId);
@@ -401,11 +410,11 @@ class BackupService {
     );
   }
 
-  /// How many customisations a [ImportMode.restoreEverything] of [jsonStr] would
+  /// How many customisations a [ImportMode.restoreEverything] of [data] would
   /// delete from [profileId] — the number the confirmation has to show, computed
   /// by the same code that will do the deleting.
-  Future<int> customisationsAtRisk(String profileId, String jsonStr) async =>
-      (await _customisationsToRemove(profileId, parse(jsonStr))).count;
+  Future<int> customisationsAtRisk(String profileId, BackupData data) async =>
+      (await _customisationsToRemove(profileId, data)).count;
 
   static LearningEvent _rescope(LearningEvent e, String profileId) =>
       LearningEvent(

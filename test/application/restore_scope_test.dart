@@ -64,7 +64,7 @@ void main() {
     final backup = await backupThenAddASefer();
 
     final result = await BackupService(repo)
-        .importInto('p1', backup, mode: ImportMode.restoreEverything);
+        .importInto('p1', BackupService.parse(backup), mode: ImportMode.restoreEverything);
 
     expect(await repo.getCustomNodes('p1'), isEmpty,
         reason: 'this is the restore that promises to undo everything recorded '
@@ -77,7 +77,7 @@ void main() {
     final backup = await backupThenAddASefer();
 
     final result = await BackupService(repo)
-        .importInto('p1', backup, mode: ImportMode.restoreLog);
+        .importInto('p1', BackupService.parse(backup), mode: ImportMode.restoreLog);
 
     expect((await repo.getCustomNodes('p1')).single.id, 'custom.oops',
         reason: 'the narrow restore reconciles the log and nothing else — '

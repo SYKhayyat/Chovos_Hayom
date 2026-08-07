@@ -62,10 +62,19 @@ Map<String, dynamic> event(
       'layers': ?layers,
     };
 
+/// A backup that must not land, whichever of the two gates stops it.
+///
+/// There are two now, and that is the point of the split: **parsing** is the
+/// trust boundary, and it happens once, where the untrusted bytes arrive;
+/// **validating** is what the write refuses. A truncated file dies in the first
+/// and a negative unit count in the second, and a caller that only wrapped the
+/// second would let the first escape past its matcher — which is exactly what
+/// happened when `importInto` stopped taking a string.
 Future<void> expectRejected(String json, Matcher messageMatcher) async {
   final repo = memoryRepository();
   await expectLater(
-    BackupService(repo).importInto('b', json),
+    () async =>
+        BackupService(repo).importInto('b', BackupService.parse(json)),
     throwsA(isA<BackupFormatException>()
         .having((e) => e.message, 'message', messageMatcher)),
   );
@@ -80,7 +89,7 @@ Future<void> expectRejected(String json, Matcher messageMatcher) async {
 /// deleting a test, which is the point.
 Future<List<CatalogNode>> expectAccepted(String json) async {
   final repo = memoryRepository();
-  await BackupService(repo).importInto('b', json);
+  await BackupService(repo).importInto('b', BackupService.parse(json));
   return repo.getCustomNodes('b');
 }
 
@@ -176,7 +185,9 @@ void main() {
     test('a negative unit index on an event is ignored by the fold', () async {
       final repo = memoryRepository();
       await BackupService(repo)
-          .importInto('b', jsonEncode(backup(events: [event('e1', unitIndex: -4)])));
+          .importInto('b',
+              BackupService.parse(
+                  jsonEncode(backup(events: [event('e1', unitIndex: -4)]))));
       final fold = FoldLog.fold(await repo.getEvents('b'));
       // It is in the log and out of every node's range, which is the same
       // handling a mark on a sefer that later shrank gets.
@@ -191,7 +202,9 @@ void main() {
     test('an event with an empty layer list marks nothing', () async {
       final repo = memoryRepository();
       await BackupService(repo).importInto(
-          'b', jsonEncode(backup(events: [event('e1', layers: const [])])));
+          'b',
+          BackupService.parse(
+              jsonEncode(backup(events: [event('e1', layers: const [])]))));
       final fold = FoldLog.fold(await repo.getEvents('b'));
       expect(fold.doneUnits('shas.moed.shabbos'), isEmpty,
           reason: 'the text layer is not among the completed ones, so the '
@@ -271,7 +284,7 @@ void main() {
     final repo = memoryRepository();
     final json =
         jsonEncode(backup(nodes: [node('mine', parentId: 'shas.moed')]));
-    await BackupService(repo).importInto('b', json);
+    await BackupService(repo).importInto('b', BackupService.parse(json));
     expect((await repo.getCustomNodes('b')).single.id, 'mine');
   });
 
@@ -283,7 +296,7 @@ void main() {
       events: [event('e1'), event('e2')],
       nodes: [node('bad', unitCount: -1)],
     ));
-    await expectLater(BackupService(repo).importInto('b', json),
+    await expectLater(BackupService(repo).importInto('b', BackupService.parse(json)),
         throwsA(isA<BackupFormatException>()));
     expect(await repo.getEvents('b'), isEmpty);
   });
@@ -319,7 +332,7 @@ void main() {
     });
 
     test('a merge cannot bring the un-marked unit back', () async {
-      final data = await BackupService(repo).importInto('a', json);
+      final data = await BackupService(repo).importInto('a', BackupService.parse(json));
 
       expect(data.events, isEmpty, reason: 'every id is already present');
       expect(data.removedEvents, 0);
@@ -331,7 +344,7 @@ void main() {
     test('a restore removes the later undone, so the unit is marked again',
         () async {
       final data = await BackupService(repo)
-          .importInto('a', json, mode: ImportMode.restoreLog);
+          .importInto('a', BackupService.parse(json), mode: ImportMode.restoreLog);
 
       expect(data.removedEvents, 1);
       final events = await repo.getEvents('a');
@@ -341,9 +354,9 @@ void main() {
     });
 
     test('restoring twice is a no-op the second time', () async {
-      await BackupService(repo).importInto('a', json, mode: ImportMode.restoreLog);
+      await BackupService(repo).importInto('a', BackupService.parse(json), mode: ImportMode.restoreLog);
       final again = await BackupService(repo)
-          .importInto('a', json, mode: ImportMode.restoreLog);
+          .importInto('a', BackupService.parse(json), mode: ImportMode.restoreLog);
 
       expect(again.removedEvents, 0);
       expect(again.events, isEmpty);
@@ -360,7 +373,7 @@ void main() {
         loggedAt: DateTime(2026, 7, 24, 10),
       ));
 
-      await BackupService(repo).importInto('a', json, mode: ImportMode.restoreLog);
+      await BackupService(repo).importInto('a', BackupService.parse(json), mode: ImportMode.restoreLog);
 
       expect((await repo.getEvents('b')).map((e) => e.id), ['other-1']);
     });
@@ -373,7 +386,7 @@ void main() {
       goals: {'shas': DateTime(2030, 6, 1)},
     );
     final target = memoryRepository();
-    final data = await BackupService(target).importInto('b', json);
+    final data = await BackupService(target).importInto('b', BackupService.parse(json));
     expect(data.goals, {'shas': DateTime(2030, 6, 1)});
   });
 
@@ -391,7 +404,7 @@ void main() {
     ));
     final json = await BackupService(source).export('a');
     final target = memoryRepository();
-    await BackupService(target).importInto('b', json);
+    await BackupService(target).importInto('b', BackupService.parse(json));
     expect((await target.getEvents('b')).single.batchId, 'batch-7');
   });
 
@@ -402,7 +415,7 @@ void main() {
     final source = memoryRepository();
     await source.addCustomNode('a', category);
     final json = await BackupService(source).export('a');
-    await BackupService(repo).importInto('b', json);
+    await BackupService(repo).importInto('b', BackupService.parse(json));
     expect((await repo.getCustomNodes('b')).single.id, 'cat');
   });
 }

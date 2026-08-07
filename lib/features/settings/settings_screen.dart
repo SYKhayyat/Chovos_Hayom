@@ -429,13 +429,13 @@ class SettingsScreen extends ConsumerWidget {
   /// "Imported 0 new events" makes look like a failure. So the message says
   /// which of the two it was.
   Future<String> _applyImport(
-      WidgetRef ref, AppLocalizations l10n, String jsonStr,
+      WidgetRef ref, AppLocalizations l10n, BackupData backup,
       {ImportMode mode = ImportMode.merge, RestoreDiff? diff}) async {
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
     final data = await BackupService(repo).importInto(
       profileId,
-      jsonStr,
+      backup,
       mode: mode,
     );
     // The two stores that live in preferences rather than in the repository, and
@@ -475,9 +475,9 @@ class SettingsScreen extends ConsumerWidget {
     final added = data.events.length;
     if (added > 0) return l10n.backupImported(added);
     // Nothing new. Say which kind of nothing it was, because "0" alone reads as
-    // a failed import. Re-parsing costs one pass over a file the user just
-    // chose, and only on this path.
-    final inFile = BackupService.parse(jsonStr).events.length;
+    // a failed import. This used to re-parse the file to find out; the parsed
+    // value is right here.
+    final inFile = backup.events.length;
     return inFile == 0
         ? l10n.backupNoEvents
         : l10n.backupAlreadyUpToDate(inFile);
@@ -598,12 +598,25 @@ class SettingsScreen extends ConsumerWidget {
       return;
     }
 
+    // **Decoded once**, here, where the untrusted bytes arrive. Everything
+    // downstream — the preview, the count it shows, the write — takes the
+    // parsed value. It used to take the string, and parsed it three or four
+    // times over: on a Shas-sized log that is megabytes of `jsonDecode`
+    // repeated, on the phone this app is built for.
+    final BackupData backup;
+    try {
+      backup = BackupService.parse(json);
+    } catch (e) {
+      guard.report(importError(l10n, e));
+      return;
+    }
+
     // A restore undoes learning, so it says exactly what it will change before
     // it does — computed from the file the user just chose, not estimated.
     RestoreDiff? diff;
     if (replace) {
       try {
-        diff = await _restoreDiff(ref, json, mode: mode);
+        diff = await _restoreDiff(ref, backup, mode: mode);
       } catch (e) {
         guard.report(importError(l10n, e));
         return;
@@ -615,7 +628,7 @@ class SettingsScreen extends ConsumerWidget {
     String? outcome;
     await guard.run(
       () async => outcome =
-          await _applyImport(ref, l10n, json, mode: mode, diff: diff),
+          await _applyImport(ref, l10n, backup, mode: mode, diff: diff),
       what: replace ? l10n.whatRestoringBackup : l10n.whatImportingBackup,
       describe: (e) => importError(l10n, e),
     );
@@ -637,7 +650,7 @@ class SettingsScreen extends ConsumerWidget {
   /// today's for today, and for the outcome the settings the chosen [mode] will
   /// leave behind (the backup's alone for a full restore; the backup's overlaid
   /// on what is here for the narrower one, which upserts rather than replaces).
-  Future<RestoreDiff> _restoreDiff(WidgetRef ref, String json,
+  Future<RestoreDiff> _restoreDiff(WidgetRef ref, BackupData backup,
           {required ImportMode mode}) =>
       restoreDiff(
         repo: ref.read(progressRepositoryProvider),
@@ -646,7 +659,7 @@ class SettingsScreen extends ConsumerWidget {
         catalogParents:
             parentsOf(ref.read(mergedCatalogProvider).asData?.value),
         currentGoals: ref.read(goalsProvider),
-        json: json,
+        backup: backup,
         mode: mode,
       );
 
@@ -661,10 +674,9 @@ class SettingsScreen extends ConsumerWidget {
     required LayerRoles currentRoles,
     required Map<String, String?> catalogParents,
     required Map<String, DateTime> currentGoals,
-    required String json,
+    required BackupData backup,
     required ImportMode mode,
   }) async {
-    final backup = BackupService.parse(json);
     final current = await repo.getEvents(profileId);
 
     // Inheritance walks the tree, and the backup may bring nodes of its own, so
@@ -705,7 +717,7 @@ class SettingsScreen extends ConsumerWidget {
       // Counted by the same method that will do the deleting, so the warning and
       // the outcome cannot disagree.
       customisations: mode.replacesCustomisation
-          ? await BackupService(repo).customisationsAtRisk(profileId, json)
+          ? await BackupService(repo).customisationsAtRisk(profileId, backup)
           : 0,
       goals:
           GoalsController.goalsRemovedBy(currentGoals, backup.goals, mode).length,
@@ -818,7 +830,11 @@ class SettingsScreen extends ConsumerWidget {
 
     var outcome = '';
     final ok = await guard.run(
-      () async => outcome = await _applyImport(ref, l10n, payload),
+      // Parsed inside the guard rather than before it: a pasted string is as
+      // untrusted as a file, and this is the one place its format error has to
+      // reach the user.
+      () async =>
+          outcome = await _applyImport(ref, l10n, BackupService.parse(payload)),
       what: l10n.whatImportingBackup,
       describe: (e) => importError(l10n, e),
     );

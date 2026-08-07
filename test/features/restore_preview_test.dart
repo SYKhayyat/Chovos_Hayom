@@ -71,7 +71,7 @@ void main() {
       currentRoles: currentRoles,
       catalogParents: const {nodeId: 'shas.moed'},
       currentGoals: const {},
-      json: json,
+      backup: BackupService.parse(json),
       mode: ImportMode.restoreEverything,
     );
 
@@ -107,7 +107,7 @@ void main() {
       currentRoles: currentRoles,
       catalogParents: const {nodeId: 'shas.moed', 'other': null},
       currentGoals: const {},
-      json: json,
+      backup: BackupService.parse(json),
       mode: ImportMode.restoreLog,
     );
     final dropped = await SettingsScreen.restoreDiff(
@@ -116,7 +116,7 @@ void main() {
       currentRoles: currentRoles,
       catalogParents: const {nodeId: 'shas.moed', 'other': null},
       currentGoals: const {},
-      json: json,
+      backup: BackupService.parse(json),
       mode: ImportMode.restoreEverything,
     );
 
@@ -151,7 +151,7 @@ void main() {
       currentRoles: LayerRoles.fromEntries(const []),
       catalogParents: const {nodeId: 'shas.moed'},
       currentGoals: const {},
-      json: json,
+      backup: BackupService.parse(json),
       mode: ImportMode.restoreEverything,
     );
 
@@ -180,7 +180,7 @@ void main() {
         currentRoles: LayerRoles.fromEntries(const []),
         catalogParents: const {nodeId: 'shas.moed'},
         currentGoals: {nodeId: DateTime(2027), 'shas.moed.eruvin': DateTime(2027)},
-        json: await backupWithGoal(),
+        backup: BackupService.parse(await backupWithGoal()),
         mode: ImportMode.restoreEverything,
       );
 
@@ -197,7 +197,7 @@ void main() {
         currentRoles: LayerRoles.fromEntries(const []),
         catalogParents: const {nodeId: 'shas.moed'},
         currentGoals: {'shas.moed.eruvin': DateTime(2027)},
-        json: await backupWithGoal(),
+        backup: BackupService.parse(await backupWithGoal()),
         mode: ImportMode.restoreLog,
       );
 
