@@ -43,31 +43,36 @@ jobs:
 
       - run: flutter pub get
 
-      # Generated files are committed, so a mismatch means someone edited a
-      # schema or provider without regenerating — which fails at runtime, not
-      # at compile time, and is exactly what CI should catch.
+      # The Drift/Riverpod `.g.dart` files *are* committed — build_runner is slow
+      # and needs its own dependency tree, so the checkout is worth its diff — and
+      # a mismatch means someone edited a schema or provider without regenerating,
+      # which fails at runtime rather than at compile time. That is exactly what
+      # CI should catch. (The localizations are the other case entirely; see the
+      # step below.)
       - name: Check generated code is up to date
         run: |
           dart run build_runner build
           git diff --exit-code -- '*.g.dart' \
             || (echo "::error::Generated code is stale. Run: dart run build_runner build" && exit 1)
 
-      # The localizations are generated and committed for the same reason, and
-      # go stale the same way: edit an .arb, forget to regenerate, and the app
-      # compiles against yesterday's string table. `flutter pub get` runs
-      # gen-l10n already; this proves the committed output matches the .arb it
-      # claims to come from.
-      - name: Check localizations are up to date
-        run: |
-          flutter gen-l10n
-          git diff --exit-code -- 'lib/l10n/generated' \
-            || (echo "::error::Generated localizations are stale. Run: flutter gen-l10n" && exit 1)
-
+      # There is deliberately no staleness check for the localizations: the
+      # generated table is not committed (see .gitignore), and `flutter pub get`
+      # above regenerated it from the .arb files in about two seconds. A table
+      # that is built from scratch on every checkout has no stale state to
+      # detect. The step that used to live here diffed a fresh generate against
+      # the committed one — a gate whose only failure mode was created by the
+      # decision to commit.
+      #
+      # What is real is the gate below. gen-l10n is re-run explicitly rather than
+      # relying on `pub get`'s side effect, so the report this reads is produced
+      # by a command in this file.
+      #
       # A key in the English template with no translation is a screen that
       # silently falls back to English for a Hebrew reader. gen-l10n reports
       # them rather than failing, so the failing is done here.
       - name: Assert every shipped locale is fully translated
         run: |
+          flutter gen-l10n
           if [ -s l10n_untranslated.json ] && [ "$(tr -d '[:space:]' < l10n_untranslated.json)" != "{}" ]; then
             echo "::error::Untranslated messages — see below."
             cat l10n_untranslated.json

@@ -155,7 +155,6 @@
   "whatPausingTimer": "השהיית שעון הלימוד",
   "whatResettingTimer": "איפוס שעון הלימוד",
   "whatEndingTimer": "סיום שעון הלימוד",
-  "dateTimeLabel": "{date} · {time}",
 
   "addChazaraTitle": "הוספת חזרה",
   "addChazaraReviewed": "נחזר:",
@@ -242,7 +241,6 @@
   "mefarshimNeedName": "תן למפרש שם, באחת מהשפות.",
   "tooltipEditMeforish": "עריכת המפרש",
   "whatSavingMeforish": "שמירת המפרש ״{name}״",
-  "mefarshimHebrewOptional": "עברית (רשות)",
   "tooltipDeleteMeforish": "מחיקת המפרש",
   "mefarshimDeleteTitle": "למחוק את ״{name}״?",
   "mefarshimDeleteRequiredWarning": "{count, plural, =1{הוא מוגדר כחובה במקום אחד.} other{הוא מוגדר כחובה ב־{count} מקומות.}} היחידות האלה לא יזדקקו לו עוד, וכל מה שהמתין לו ייחשב גמור.",
@@ -353,7 +351,6 @@
   "cycleLinkTitle": "קישור ״{name}״ אל…",
   "whatLinkingSefer": "קישור ״{from}״ אל {to}",
   "cycleLinked": "״{from}״ קושר אל {to}",
-  "cycleDafHebrew": "{sefer} · דף {unit}",
 
   "editCycleTitle": "עריכת מחזור",
   "newCycleTitle": "מחזור חדש",
@@ -382,7 +379,6 @@
 
   "addNodeTitle": "הוספה",
   "editNodeTitle": "עריכת ״{name}״",
-  "addNodeHebrewName": "שם בעברית (רשות)",
   "addNodeParent": "פריט אב",
   "addNodeTopLevel": "— רמה עליונה —",
   "addNodeIsLeaf": "ספר למעקב (בעל יחידות)",
@@ -393,7 +389,6 @@
   "addNodeUnitNames": "שמות היחידות (רשות, אחד בכל שורה)",
   "addNodeUnitNamesHelper": "לדוגמה שמות פרשיות או סימנים — יוצגו במקום מספרים, לפי הסדר מהיחידה הראשונה.",
   "addNodeLoweringCount": "הקטנת המספר מסתירה את ההתקדמות ביחידות שהוסרו אך שומרת אותה — הגדל אותו שוב כדי להחזירן.",
-  "addNodeNeedName": "אנא הזן שם.",
   "addNodeNeedNameEither": "תן לו שם, באחת מהשפות.",
   "addNodeNeedUnits": "מספר היחידות חייב להיות גדול מ־0.",
   "addNodeTooManyUnits": "זה יותר יחידות ממה שיש בכל ספר.",
@@ -563,7 +558,6 @@
   "whatCopyingCrashLog": "העתקת יומן הקריסות",
   "crashLogEmpty": "דבר לא קרס.\n\nאם משהו יקרוס אי־פעם, הפרטים יגיעו לכאן — במכשיר הזה בלבד — כדי שתוכל להעתיק אותם לדיווח על תקלה.",
 
-  "errorTitle": "משהו השתבש",
   "errorCatalogTitle": "לא ניתן היה לטעון את הקטלוג",
   "errorCatalogBody": "רשימת הספרים המובנית לא נטענה, ולכן אי אפשר להציג את העץ. יומן הלימוד שלך לא נפגע.",
   "errorLogTitle": "לא ניתן היה לקרוא את יומן הלימוד",

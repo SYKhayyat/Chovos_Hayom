@@ -49,8 +49,27 @@ coverage/
 
 # The gen-l10n report of keys present in the template and missing from a
 # translation (see l10n.yaml). A build artifact, regenerated on every run — CI
-# fails when it is non-empty. The *generated* localizations under
-# lib/l10n/generated/ are deliberately NOT ignored: they are committed and
-# diffed the same way the Drift/Riverpod .g.dart files are, so a stale
-# translation table fails the build instead of surfacing as a missing string.
+# fails when it is non-empty.
 l10n_untranslated.json
+
+# The generated string table.
+#
+# Not committed, and the .g.dart precedent does not transfer. build_runner is
+# slow, needs its own dependency tree and describes a database schema, so
+# committing its output buys real time and a real diff. `flutter gen-l10n` runs
+# automatically as part of `flutter pub get` (pubspec: generate: true), takes
+# about two seconds, and reads nothing but the two .arb files beside it — so
+# there is no window in which a checkout has the .arb and not the table.
+#
+# This was committed once, and the argument for it was circular: a committed
+# table can go stale, so CI diffed it against a fresh generate to prove it
+# hadn't — a gate guarding a defect that only existed because of the decision to
+# commit. It cost 4.8 lines of generated churn per line of .arb (+8,253 against
+# +1,715 over its lifetime), and a two-line translation fix arrived as a
+# fourteen-line diff.
+#
+# What is genuinely worth enforcing survives untouched: a key missing from a
+# shipped locale still fails CI (l10n_untranslated.json, above), and
+# arb_guard_test.dart holds the .arb files themselves to rules the generator
+# has no opinion about.
+lib/l10n/generated/

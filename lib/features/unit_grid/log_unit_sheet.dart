@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
 import '../../application/session_timer.dart';
+import '../../application/settings.dart';
 import '../../application/stats.dart';
+import '../../core/calendar.dart';
 import '../../domain/entities/catalog_node.dart';
 import '../../domain/entities/layer.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -231,15 +233,6 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
         '${(s % 60).toString().padLeft(2, '0')}';
   }
 
-  String get _dateTimeLabel {
-    final d = _date;
-    final date =
-        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-    final time =
-        '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
-    return '$date · $time';
-  }
-
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -295,6 +288,13 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
     _syncTicker(session.isRunning);
     final elapsed = session.elapsedAt(_now);
     final l10n = AppLocalizations.of(context);
+    // The one date this sheet displays, read the same way every other date in
+    // the app is. This used to be a private `_dateTimeLabel` that formatted
+    // `yyyy-MM-dd · HH:mm` by hand — so the *only* screen where you choose a
+    // date was the only screen that ignored the Hebrew calendar setting, and
+    // showed you a Gregorian date to confirm a mark every other surface would
+    // then render as a Hebrew one.
+    final calendar = ref.watch(settingsProvider.select((s) => s.calendar));
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + bottomInset),
       child: SingleChildScrollView(
@@ -329,8 +329,9 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(l10n.logSheetManualDateTime),
-              subtitle: Text(
-                  _manualDate ? _dateTimeLabel : l10n.logSheetDefaultsToNow),
+              subtitle: Text(_manualDate
+                  ? DateDisplay.formatWithTime(_date, calendar)
+                  : l10n.logSheetDefaultsToNow),
               value: _manualDate,
               onChanged: (v) => setState(() => _manualDate = v),
             ),

@@ -300,13 +300,6 @@
   "whatPausingTimer": "Pausing the session timer",
   "whatResettingTimer": "Resetting the session timer",
   "whatEndingTimer": "Ending the session timer",
-  "dateTimeLabel": "{date} · {time}",
-  "@dateTimeLabel": {
-    "placeholders": {
-      "date": { "type": "String" },
-      "time": { "type": "String" }
-    }
-  },
 
   "@_CHAZARA_LOGGING": {},
   "addChazaraTitle": "Add chazara",
@@ -511,7 +504,6 @@
   "tooltipEditMeforish": "Edit meforish",
   "whatSavingMeforish": "Saving the meforish “{name}”",
   "@whatSavingMeforish": { "placeholders": { "name": { "type": "String" } } },
-  "mefarshimHebrewOptional": "Hebrew (optional)",
   "tooltipDeleteMeforish": "Delete meforish",
   "mefarshimDeleteTitle": "Delete “{name}”?",
   "@mefarshimDeleteTitle": { "placeholders": { "name": { "type": "String" } } },
@@ -724,14 +716,6 @@
       "to": { "type": "String" }
     }
   },
-  "cycleDafHebrew": "{sefer} · דף {unit}",
-  "@cycleDafHebrew": {
-    "description": "The Hebrew-script line under a Daf Yomi heading. Kept Hebrew in every locale — it is the daf's own name.",
-    "placeholders": {
-      "sefer": { "type": "String" },
-      "unit": { "type": "int" }
-    }
-  },
 
   "@_EDIT_CYCLE": {},
   "editCycleTitle": "Edit cycle",
@@ -773,7 +757,6 @@
   "addNodeTitle": "Add",
   "editNodeTitle": "Edit “{name}”",
   "@editNodeTitle": { "placeholders": { "name": { "type": "String" } } },
-  "addNodeHebrewName": "Hebrew name (optional)",
   "addNodeParent": "Parent",
   "addNodeTopLevel": "— Top level —",
   "addNodeIsLeaf": "Trackable sefer (has units)",
@@ -784,7 +767,6 @@
   "addNodeUnitNames": "Unit names (optional, one per line)",
   "addNodeUnitNamesHelper": "e.g. parsha or siman titles — shown instead of numbers, in order from the first unit.",
   "addNodeLoweringCount": "Lowering the count keeps any progress on the removed units hidden but intact — raise it again to restore them.",
-  "addNodeNeedName": "Please enter a name.",
   "addNodeNeedNameEither": "Give it a name, in either language.",
   "addNodeNeedUnits": "Number of units must be greater than 0.",
   "addNodeTooManyUnits": "That is more units than any sefer has.",
@@ -1060,7 +1042,6 @@
   "crashLogEmpty": "Nothing has crashed.\n\nIf something ever does, the details land here — on this device only — so you can copy them into a bug report.",
 
   "@_ERROR_VIEW": {},
-  "errorTitle": "Something went wrong",
   "errorCatalogTitle": "The catalog could not be loaded",
   "errorCatalogBody": "The bundled list of sefarim failed to load, so the tree cannot be shown. Your learning log is untouched.",
   "errorLogTitle": "Your learning log could not be read",

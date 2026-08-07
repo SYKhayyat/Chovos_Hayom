@@ -60,6 +60,7 @@ fail the build on the shape of the mistake rather than on its consequences:
 | `application/import_scope_test.dart` | a store a backup writes into that does not take an `ImportMode` |
 | `domain/layer_role_guard_test.dart` | a second resolver, table or stream of layer settings |
 | `features/report_guard_test.dart` | a report screen re-added as its own route |
+| `l10n/arb_guard_test.dart` | a translated key nothing displays, and a key that is its own translation |
 
 The rot mode worth guarding is the **silent** one — the change that compiles, passes, and quietly
 stops something working. A field left out of an `==` does not throw; it shows up as a screen that

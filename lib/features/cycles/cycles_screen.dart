@@ -237,6 +237,13 @@ class _UnitRow extends ConsumerWidget {
     final title = node == null
         ? '${day.sefer} ${day.unit}'
         : nodeAndUnit(l10n, node, day.unit);
+    // Whether the heading above already says this in Hebrew. It does when the
+    // sefer resolved to a catalog node and the reader is in Hebrew — every
+    // bundled node carries a `nameHebrew` — and in that case the Hebrew line
+    // below was printing the same three words a second time. It is still worth
+    // showing to an English reader, and to a Hebrew one whose sefer has not been
+    // linked to a node yet, where the heading is a transliteration.
+    final headingIsHebrew = node != null && nameIsHebrew(l10n, node);
     final isDone = unit.isLoggable &&
         (fold?.doneUnits(node!.id, layers).contains(day.unit) ?? false);
     final learnedOn = isDone ? fold?.doneAt(node!.id, day.unit) : null;
@@ -247,8 +254,8 @@ class _UnitRow extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: theme.textTheme.headlineSmall),
-          if (day.seferHebrew != null)
-            Text(l10n.cycleDafHebrew(day.seferHebrew!, day.unit),
+          if (day.seferHebrew != null && !headingIsHebrew)
+            Text(hebrewDafLine(day.seferHebrew!, day.unit),
                 style: theme.textTheme.titleMedium),
           const SizedBox(height: 12),
           if (node == null)

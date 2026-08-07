@@ -186,7 +186,7 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 | **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the real on-disk database here, 35 events deep, has been carried through the whole migration chain and then adopted by the squashed schema, keeping every event ✅ |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36 (moto g stylus 2025). Measured on the device: the logging sheet's confirm button clears the navigation bar by 45px and a tap at its bottom edge registers, the Hebrew progress fraction paints `0 / 12,092  (0.0%)` in that order, the app bar fits `Chovos Hayom`, a backup exported from one profile imports into another, and a deep link opens the same screen whether the app was running or not ✅ |
 | **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, the report's figure-only tabs scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search. Also walked key by key: the app opens on the tree's first generation, three presses of *down* reach the backup banner's named dismiss, the message that replaces it leaves on its own within ten seconds, and the drawer's first row returns to the tree ✅ |
-| **CI** | analyze `--fatal-infos`, the full suite, stale-codegen, stale-l10n, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
+| **CI** | analyze `--fatal-infos`, the full suite, stale-codegen, untranslated-locale, release APK + R8 assertion | Green on `main` ✅ |
 
 Still needing a real device/eyeball: **file export/import** (the native save/open dialogs — the
 logic is wired via `file_picker` but the dialogs themselves want a human), the **generated launcher
@@ -240,8 +240,9 @@ flutter test                  # all green (CI publishes the count)
 CI runs all of the above on every push and pull request, plus a release APK build, and is **green on
 `main`** — which is worth stating, because for a long time it wasn't running at all: the workflow
 existed while the work sat uncommitted, so nothing it promised was actually being enforced. It fails
-if the generated Drift/Riverpod code is stale, if the generated localizations are stale, if any
-shipped locale is missing a string, or if R8 didn't actually run on the release build.
+if the generated Drift/Riverpod code is stale, if any shipped locale is missing a string, or if R8
+didn't actually run on the release build. There is deliberately no stale-l10n gate — see
+*Translating* for why that one was checking for a defect it had itself created.
 
 The Flutter version is **pinned** (`FLUTTER_VERSION` in the workflow) rather than tracking `stable`:
 two dependencies are held back precisely because of that version (see *Toolchain notes*), so
@@ -252,10 +253,31 @@ it deliberately, with those pins reviewed alongside.
 
 Strings live in `lib/l10n/app_en.arb` (the template) and `lib/l10n/app_he.arb`; `l10n.yaml` drives
 the codegen. Add a key to the template with a `@key` description, add its translation to every other
-locale, and run `flutter gen-l10n` — the output under `lib/l10n/generated/` is **committed**, the
-same way the Drift/Riverpod `.g.dart` files are, so a stale table fails CI instead of surfacing as a
-missing string on someone's screen. Adding a locale is `app_<code>.arb` plus a full set of keys;
+locale, and run `flutter gen-l10n`. Adding a locale is `app_<code>.arb` plus a full set of keys;
 `supportedLocales` follows the generated table automatically.
+
+The output under `lib/l10n/generated/` is **not committed**, and the `.g.dart` precedent does not
+transfer to it. `build_runner` is slow, needs its own dependency tree and describes a database
+schema, so committing its output buys real time — but `gen-l10n` runs as part of `flutter pub get`,
+takes about two seconds, and reads nothing but the two `.arb` files beside it, so there is no
+checkout in which the table can be missing or behind. It *was* committed, and the argument was
+circular: a committed table can go stale, so CI diffed it against a fresh generate to prove it
+hadn't — a gate whose only failure mode was created by the decision to commit. It cost 4.8 lines of
+generated churn per line of `.arb`, and a two-line translation fix arrived as a fourteen-line diff.
+
+What is worth enforcing is enforced, and none of it was the diff. A key missing from a shipped
+locale still fails CI. `test/l10n/arb_guard_test.dart` adds the two rules the untranslated-locale
+gate cannot see: **every key in the template is read by something in `lib/`** — five were not, each
+one written, described, translated and displayed nowhere — and **no key is its own translation**,
+which is a template entry and its Hebrew being the same bytes. That second one is subtler than "no
+Hebrew in the English file": `settingsLanguage` is `"Hebrew (עברית)"`, and the two siyum strings end
+in `חזק!` and `יישר כח!` because that is how the people who use this app end them — all three are
+English strings with different Hebrew translations. The defect is not the
+script. It was `cycleDafHebrew`, `"{sefer} · דף {unit}"` stored identically in both files — present
+in both, so the gate called it translated; identical in both, so it was one literal kept in two
+places, spelling `דף` next to the `unitLabelDaf` that already spells it. The Daf Yomi row now
+composes that line out of the Hebrew table itself (`hebrewDafLine`, in `naming.dart`), and shows it
+only when the heading above is not already saying the same three words.
 
 Two rules keep the domain out of it. `domain/` is pure Dart with no locale, so it holds only what is
 genuinely data — a unit's own name, or its number — and everything whose wording depends on the

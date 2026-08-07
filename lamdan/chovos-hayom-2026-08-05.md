@@ -2,7 +2,24 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-06 (last).** **Finding 8** (*"The documentation is a fossil of the process that
+> **Status, 2026-08-06 (last).** **Finding 10** (*"Committed generated localizations"*) is now
+> resolved — see the note below it. Its headline claim was tested rather than believed (the directory
+> was deleted and `pub get` rebuilt it byte-identical), the ratio it rests on survived exactly while
+> one of its flourishes expired, and the best evidence for it was already written inside the CI step
+> it indicts. The two things the sweep could not reach are both in the paragraph it files under
+> *While you're in there*: `dateTimeLabel` is listed as dead weight and is really a key unused
+> *because* a screen was hand-gluing the string — the one screen in the app where you choose a date,
+> and the only one that ignored the Hebrew calendar setting. And `cycleDafHebrew` is half wrong (the
+> Hebrew line is deliberate, as its own `@description` says) and half worse than stated, because the
+> comment that made it look harmless — *"the whole bundled catalog"* has no Hebrew names — stopped
+> being true for all 312 nodes. The generalizable defect, which the finding does not name, is a key
+> stored *identically* in both locales: certified as translated by the gate, maintained by nobody.
+> That is now a test. The plural paragraph is a disagreement, argued in the note. Findings 5 (nine
+> rows), 9 and 11 remain.
+>
+> ---
+>
+> **Status, 2026-08-06 (previously last).** **Finding 8** (*"The documentation is a fossil of the process that
 > produced it"*) is now resolved — see the note below it, including the two counts in it that had
 > rotted, the third that has been overtaken, and the reason its most valuable sentence is a
 > parenthetical in a table of documents to delete. That sentence is about the *code*: `ImportMode`
@@ -15,7 +32,7 @@
 >
 > ---
 >
-> **Status, 2026-08-06 (previously last).** **Finding 4** (*"Eleven schema versions in twenty-nine days, for a
+> **Status, 2026-08-06 (two back).** **Finding 4** (*"Eleven schema versions in twenty-nine days, for a
 > database that has never shipped"*) is now resolved — see the note below it, including the round
 > trip it was costed at that turned out not to be needed, the two numbers in it that had grown while
 > it waited, and the one thing the sweep could not have reached: the database it is about was not at
@@ -152,7 +169,7 @@ design writing in the repository. The problem is what happens next to them:
 | `progress_series.dart:20-23` — *"the same key `PaceEngine` and `ChazaraSchedule` use"* | …and then copy-pastes `_dayNumber` a fourth time rather than importing either. **✅ Resolved** — `lib/core/day.dart`, and a guard test that fails the build on a fifth copy. |
 | `stats.dart:79-82` — *"watching the tick here means every dependent provider re-derives when the day rolls over"* | `return DateTime.now;` — a static tear-off, which Dart canonicalizes. Nothing re-derives. Ever. **✅ Resolved** — see finding 1. |
 | `text_prompt.dart` exists because five dialogs each hand-rolled a controller and threw *used after being disposed* | `_LayerNameDialog` (`mefarshim_config_sheet.dart:400`) and `_RangeDialog` (`bulk_actions_sheet.dart:329`) hand-roll it again. |
-| `README.md:358` — *"a message is one whole ARB entry, never a sentence glued together"* | `dateTimeLabel` exists, is translated into Hebrew, and has **zero call sites**; `log_unit_sheet.dart:194` and `add_chazara_sheet.dart:173` each glue the string by hand. |
+| `README.md:358` — *"a message is one whole ARB entry, never a sentence glued together"* | `dateTimeLabel` exists, is translated into Hebrew, and has **zero call sites**; `log_unit_sheet.dart:194` and `add_chazara_sheet.dart:173` each glue the string by hand. **✅ Resolved** — one hand-glue by then, and it was a fourth copy of `DateDisplay.formatWithTime` that ignored the calendar setting. See finding 10. |
 | `README.md:373` — *"the lint is what keeps new ones from drifting back out of [the guard]"* | `unawaited_futures` fires on expression statements in **async** bodies. The dominant shape here is `onPressed: () => guarded(...)` — a sync arrow closure. Not flagged, any of them. |
 | `learning_event.dart:62-68` — `copyWith` deleted because *"nothing called it"* | `backup_service.dart:353` hand-lists all eleven fields to rescope an event. That *is* `copyWith`, minus the compiler's help. |
 | `sorting.dart:56-65` — ten lines condemning conditional watches | see row 2. **✅ Resolved** with it, and now guarded: `notify_guard_test.dart`. |
@@ -1061,7 +1078,89 @@ rejects anything that isn't JSON of the right shape.
 
 ---
 
-### 10. Committed generated localizations. `delete` from git.
+### 10. Committed generated localizations. `delete` from git. **✅ Resolved**
+
+> ### The headline was right and cheaply provable; the paragraph under *While you're in there* was carrying a live bug
+>
+> **The load-bearing claim was tested rather than believed.** *"`flutter gen-l10n` runs automatically
+> on `flutter pub get`"* is the whole argument, and it is the kind of sentence that is true of some
+> Flutter versions and not others. So `lib/l10n/generated` was deleted outright and `flutter pub get`
+> run against the empty directory: all three files came back, byte-identical to the committed ones.
+> The finding holds, on this toolchain, demonstrated.
+>
+> **Two numbers moved and one has flipped.** It is 12 commits touching the directory now, not 9 — and
+> the ratio the finding rests on survived the growth exactly: **+8,253 generated against +1,715 ARB,
+> 4.8×**, the same figure it quotes. But *"the generated table (8,015) outweighs all of `lib/features`
+> (7,961)"* has stopped being true while the finding waited: 8,064 against 8,172. The rhetorical
+> flourish expired; the argument under it did not need it.
+>
+> **The best evidence for the finding was already written in the file it indicts.** The CI step's own
+> comment reads *"`flutter pub get` runs gen-l10n already; this proves the committed output matches
+> the .arb it claims to come from"* — which concedes, in the course of justifying itself, that the
+> only thing it can catch is a mismatch that `pub get` would have prevented. `l10n.yaml`'s comment
+> argues the same circle from the other end. This is the document's own thesis again: the reasoning
+> was correct, was written down, and nothing made it fail.
+>
+> **The five dead keys were all five dead — and one of them was dead for the opposite reason.**
+> Confirmed against `lib/` *and* `test/`. Four (`addNodeHebrewName`, `addNodeNeedName`, `errorTitle`,
+> `mefarshimHebrewOptional`) are leftovers of de-duplications that reached the call sites and not the
+> string table; they are deleted. `dateTimeLabel` is the one the finding lists in the same breath and
+> should not have: it is unused *because a screen was building the string by hand instead*, which is
+> row 6 of *The claim*. Following it found something neither line predicts. `log_unit_sheet`'s private
+> `_dateTimeLabel` formatted `yyyy-MM-dd · HH:mm` itself — so the one screen in the app where you
+> *choose* a date was the only screen that ignored the Hebrew calendar setting, confirming a mark
+> with a Gregorian date that every other surface would then render as a Hebrew one. It is a fourth
+> copy of `DateDisplay.formatWithTime`, and a wrong one. Gone; the sheet reads the setting like
+> everything else.
+>
+> **On `cycleDafHebrew`, half the finding is wrong and the half that lands is worse than it says.**
+> *"An English reader gets a Hebrew line"* is not a defect — the key's own `@description` says
+> *"Kept Hebrew in every locale — it is the daf's own name"*, and for a Daf Yomi row that is a
+> feature, which the finding would have seen by reading two lines further. *"A Hebrew reader gets it
+> twice"* is right, and the reason is a fossil of exactly the kind this document is about:
+> `naming.dart`'s doc comment states that Hebrew names *"includes the whole bundled catalog today"*
+> as the set of nodes lacking one. All 312 carry a `nameHebrew`. The comment described the data at
+> the moment it was written, the data changed, and the duplicate line is what that costs.
+>
+> **The defect the finding did not name is the one worth a test.** `"{sefer} · דף {unit}"` was stored
+> *identically* in both `.arb` files. Present in both, so the untranslated-locale gate — the check
+> this document rightly calls the genuinely valuable one — certifies it as translated. Identical in
+> both, so it is not a translation at all but one Hebrew literal kept in two files that must never
+> diverge, spelling `דף` beside the `unitLabelDaf` in `app_he.arb` that already spells it, and
+> copying `nodeAndUnit`'s separator along with it. The line is now composed out of the Hebrew table
+> (`hebrewDafLine`), so every word in it has one definition and it is the one the Hebrew UI is built
+> from — and it renders only when the heading above is not already saying the same three words.
+>
+> **And the rule is enforced rather than stated.** `test/l10n/arb_guard_test.dart`: every key in the
+> template is read by something in `lib/`, and no key is its own translation. The second rule is the
+> interesting one, and **the obvious version of it is wrong** — "no Hebrew in `app_en.arb`" would
+> reject `settingsLanguage` (`"Hebrew (עברית)"`, which is what every language picker does) and the
+> two siyum strings that end English sentences in `חזק!` and `יישר כח!` because that is how the
+> people who use this app end them. Those are English strings with different Hebrew translations. The
+> defect is not the script; it is a template entry and its translation being the same bytes. Run
+> against the 540-key pair, that rule fires on exactly one key and no others. Both rules carry
+> negative controls, and the regexes are asserted to still match their own samples — the failure mode
+> of every source-scanning check ever written. `cycles_screen_test.dart` is new (the screen had none)
+> and its middle test was watched to fail on the pre-fix rendering before it was kept.
+>
+> **Where the finding oversells itself is the plural paragraph, and this one is a disagreement rather
+> than a correction.** All 35 plural messages (33 when it was written) really do use `=1{…}
+> other{…}`, and the conclusion drawn from that — that the ARB apparatus ships *"the same
+> expressiveness under heavier syntax"* — does not follow. Modern Hebrew takes the regular plural
+> after a numeral: `2 יחידות` is what `bulkConfirmUnits` should render for 2 and is what it renders,
+> and CLDR's `two` category is for the forms you write *without* a digit in front. The apparatus is
+> unexercised because both shipped locales agree, not because it is decorative — and because the
+> plural cases live per-locale in each `.arb`, a translator who does want a `two{}` can add one to
+> `app_he.arb` alone, with no Dart change and nothing to keep in sync. That is the lever
+> `'$verb $n unit(s)'` did not have. Left as it is, deliberately.
+>
+> Resolved by untracking `lib/l10n/generated/`, gitignoring it with the reasoning beside the entry,
+> dropping the diff step from CI while keeping the untranslated gate (now re-running gen-l10n
+> explicitly, so the report it reads is produced by a command in the workflow rather than a side
+> effect of `pub get`), rewriting the two comments that argued the opposite in `l10n.yaml` and
+> `.gitignore`, deleting five ARB keys from both locales, `DateDisplay.formatWithTime` in the log
+> sheet, `hebrewDafLine`/`nameIsHebrew` in `naming.dart`, and the two test files above. 592 tests
+> green, analyzer clean at `--fatal-infos`, `l10n_untranslated.json` still `{}`.
 
 8,015 lines of `lib/l10n/generated/**` are tracked, and CI has a step to check they aren't stale.
 

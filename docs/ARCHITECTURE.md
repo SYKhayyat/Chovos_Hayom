@@ -168,8 +168,12 @@ lib/
                       question at different zooms, and none of them is a surface
                       you work on
     dashboard/  unit_grid/  chazara/  journal/  cycles/  profiles/  search/  settings/
-  l10n/            app_en.arb + app_he.arb (source) and generated/ (committed
-                   output, diffed by CI the same way the .g.dart files are)
+  l10n/            app_en.arb + app_he.arb (source) and generated/ (gitignored —
+                   `flutter pub get` rebuilds it in ~2s from the two files beside
+                   it, so unlike the .g.dart files it has no stale state to diff.
+                   test/l10n/arb_guard_test.dart holds the .arb pair to the rules
+                   the generator has no opinion about: no dead key, no key that
+                   is its own translation)
   main.dart
 assets/
   catalog/          shas.json, tanach.json, rambam.json, ... + catalog_index.json

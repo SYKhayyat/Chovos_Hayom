@@ -1,3 +1,5 @@
+import 'dart:ui' show Locale;
+
 import '../../application/sorting.dart';
 import '../../core/daf_yomi.dart';
 import '../../domain/entities/catalog.dart';
@@ -58,16 +60,55 @@ const _popIsolate = '\u2069';
 /// database, the backup format and the search index — since the first version,
 /// and was never once *displayed*. Reading it here is what makes the Hebrew
 /// toggle a real translation of the tree rather than a right-to-left English
-/// one. Nodes without a Hebrew name (which includes the whole bundled catalog
-/// today) fall back to the name they have, so a partly-named catalog degrades to
-/// exactly what it showed before instead of to blanks.
-String nodeName(AppLocalizations l10n, CatalogNode node) {
+/// one. The bundled catalog carries one for all 312 of its nodes; anything
+/// without one — a sefer a user added under an English name — falls back to the
+/// name it has, so a partly-named catalog degrades to exactly what it showed
+/// before instead of to blanks.
+String nodeName(AppLocalizations l10n, CatalogNode node) =>
+    nameIsHebrew(l10n, node) ? node.nameHebrew! : node.name;
+
+/// Whether [nodeName] is currently answering in Hebrew script — the reader is in
+/// Hebrew *and* this node has a Hebrew name to give them.
+///
+/// Split out of [nodeName] rather than re-derived, because a second screen now
+/// needs the question rather than the answer: the Daf Yomi row prints the daf's
+/// Hebrew name under its heading, which is worth showing beside an English
+/// heading and is the same words twice beside a Hebrew one.
+///
+/// The comment above used to say the bundled catalog had no Hebrew names. It
+/// has carried one for all 312 nodes for some time, which is exactly why the
+/// duplicate line became visible.
+bool nameIsHebrew(AppLocalizations l10n, CatalogNode node) {
   final hebrew = node.nameHebrew;
-  if (l10n.localeName.startsWith('he') && hebrew != null && hebrew.isNotEmpty) {
-    return hebrew;
-  }
-  return node.name;
+  return l10n.localeName.startsWith('he') &&
+      hebrew != null &&
+      hebrew.isNotEmpty;
 }
+
+/// A Daf Yomi day named in Hebrew — `"שבת · דף 12"` — whatever locale the reader
+/// is in.
+///
+/// This is the one line in the app that is Hebrew by *definition* rather than by
+/// translation: it is the daf's own name, shown beside a heading in the reader's
+/// language. It used to be an ARB key, `cycleDafHebrew`, whose English value was
+/// `"{sefer} · דף {unit}"` and whose Hebrew value was the identical string. Three
+/// things were wrong with that. The untranslated-locale gate cannot see a key
+/// that is present in both files, so nothing noticed the "translation" was a
+/// copy. A translator editing one file and not the other would have made the
+/// same line render differently in the two locales, silently. And "דף" was
+/// spelled a second time, next to the `unitLabelDaf` in `app_he.arb` that
+/// already spells it — with `nodeAndUnit`'s separator copied along with it.
+///
+/// Composed out of the Hebrew table instead, every word in it has exactly one
+/// definition, and it is the one the Hebrew UI is already built from.
+String hebrewDafLine(String seferHebrew, int unit) {
+  final he = _hebrew ??= lookupAppLocalizations(const Locale('he'));
+  return he.nodeAndUnit(seferHebrew, he.unitHeading(he.unitLabelDaf, unit));
+}
+
+/// Cached: [lookupAppLocalizations] allocates, and this is read per row of a
+/// list. It holds no context and no state, so one instance is safe forever.
+AppLocalizations? _hebrew;
 
 /// Where [node] sits, named in the reader's language: `"Shas · Moed"`.
 ///
