@@ -7,6 +7,7 @@ import '../../core/calendar.dart';
 import '../../domain/usecases/goal_evaluator.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'guarded.dart';
+import 'naming.dart';
 
 /// One goal, said one way, and removed one way.
 ///
@@ -32,7 +33,10 @@ String goalStatusText(
   if (goal.achieved) return l10n.goalReached;
   return l10n.goalStatus(
     DateDisplay.format(goal.target.midnight, mode),
-    goal.requiredPerDay.toStringAsFixed(2),
+    // Through [requiredPerDayText], which the Calculator's By-date answer also
+    // uses: one quantity, one way of saying it, rounded the one direction that
+    // is honest about a requirement.
+    requiredPerDayText(goal.requiredPerDay),
     goal.onTrack ? l10n.goalOnTrack : l10n.goalBehind,
   );
 }

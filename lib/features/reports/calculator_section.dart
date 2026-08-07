@@ -270,8 +270,12 @@ class _CalculatorSectionState extends ConsumerState<CalculatorSection>
         final rate = Predictor.requiredPerDay(
             remaining: remaining, from: today, target: Day.of(_target));
         if (rate == double.infinity) return l10n.calculatorPickFutureDate;
+        // The same rendering the goal line uses — which matters here more than
+        // anywhere, because *Save as goal* is right underneath: the number this
+        // sentence shows and the number that goal then reports are the same
+        // arithmetic, and were two spellings of it.
         return l10n.calculatorRequiredRate(
-            rate.toStringAsFixed(2), DateDisplay.format(_target, mode));
+            requiredPerDayText(rate), DateDisplay.format(_target, mode));
     }
   }
 

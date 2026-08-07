@@ -203,6 +203,38 @@ void main() {
       expect(button.onPressed, isNull);
       expect(find.text('Saved as a goal'), findsOneWidget);
     });
+
+    testWidgets('and the rate it showed is the rate that goal then reports',
+        (tester) async {
+      // The two used to render the same quantity through two `toStringAsFixed`
+      // calls in two files, which is one number with two spellings sitting one
+      // button apart — press *Save as goal* and the answer could change under
+      // you. They go through `requiredPerDayText` now.
+      final prefs = InMemoryPreferences();
+      await tester.pumpWidget(app(
+          const ReportScreen(section: ReportSection.calculator),
+          memoryRepository(),
+          prefs: prefs,
+          now: DateTime(2026, 1, 1, 12)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('By date'));
+      await tester.pumpAndSettle();
+
+      final answer = tester
+          .widgetList<Text>(find.textContaining('per day to finish by'))
+          .first
+          .data!;
+      final rate = RegExp(r'Learn ([\d.]+) per day').firstMatch(answer)!.group(1);
+      expect(rate, isNotNull);
+
+      await tester.tap(find.text('Save as goal'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Goals'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('need $rate/day'), findsOneWidget);
+    });
   });
 
   group('Goals', () {
@@ -244,10 +276,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Shabbos'), findsOneWidget);
-      // 155 units left over 91 days is 1.70/day, and nothing else on the screen
-      // computes that number — `goalStatusProvider` does, and this row and the
-      // unit grid's banner now say it through the same function.
-      expect(find.textContaining('need 1.70/day'), findsOneWidget);
+      // 155 units left over 91 days is 1.7032…/day, and nothing else on the
+      // screen computes that number — `goalStatusProvider` does, and this row
+      // and the unit grid's banner now say it through the same function.
+      //
+      // **1.71, not 1.70.** This is a requirement, not a measurement: 1.70 a
+      // day for 91 days is 154.7 dapim, so the number that used to be shown was
+      // one you could follow exactly and still not finish. `requiredPerDayText`
+      // rounds up, in both of the two places this quantity is rendered.
+      expect(find.textContaining('need 1.71/day'), findsOneWidget);
     });
 
     testWidgets('removing a goal is undoable', (tester) async {

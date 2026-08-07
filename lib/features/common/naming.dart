@@ -278,6 +278,38 @@ String cycleDescriptionById(AppLocalizations l10n, String id, String fallback) =
       _ => fallback,
     };
 
+/// A **required** daily pace, as the app says it: two decimals, rounded *up*.
+///
+/// Two screens render this number — the goal line and the Calculator's *By
+/// date* answer — and both wrote `toStringAsFixed(2)` for themselves, so the
+/// decision about how it reads lived in two places for one quantity.
+///
+/// The decision itself was also wrong in both of them, identically. This is a
+/// *requirement*, not a measurement: 100 dapim over 30 days is 3.3333, and
+/// "3.33" is a number that does not get you there — thirty days of exactly what
+/// the app told you leaves you 0.1 short. Rounded up it says 3.34, which does.
+/// The error is small and the direction of it is the whole point: a required
+/// pace must never be understated, and a *measured* one (`avgPerDay` on the
+/// Overview) must not be rounded up at all, which is why that one is
+/// deliberately not this.
+///
+/// `double.infinity` — a target that is today or already past — is the
+/// Calculator's own "pick a future date" case and never reaches here; the goal
+/// line cannot produce one, because a goal in the past is `achieved` or has a
+/// positive `remaining` over zero days, which `GoalStatus` reports as behind
+/// rather than as a number. Guarded anyway, because a formatter that renders
+/// "Infinity" into a sentence is worse than one that renders nothing.
+String requiredPerDayText(double rate) {
+  if (!rate.isFinite) return '—';
+  // Ceiling at two decimals — but only when there is really something past the
+  // second place. `3.33` is 3.3300000000000000710… in binary, so `(r * 100)` is
+  // 333.00000000000006 and a bare `ceil` would report an exact 3.33 as 3.34.
+  // Six decimals is far past anything a daily pace means and far short of where
+  // the representation error lives.
+  final hundredths = double.parse((rate * 100).toStringAsFixed(6));
+  return (hundredths.ceilToDouble() / 100).toStringAsFixed(2);
+}
+
 /// Minutes as a readable duration: "45 min", "2h", "1h 20m".
 String formatMinutes(AppLocalizations l10n, int minutes) {
   if (minutes < 60) return l10n.durationMinutes(minutes);

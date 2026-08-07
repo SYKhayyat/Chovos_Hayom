@@ -2,7 +2,36 @@
 
 **2026-08-05** · whole repo, 236 tracked files, swept region by region · `master` @ `bf8e1d2`
 
-> **Status, 2026-08-06 (last).** The **controller-owning dialog** row of finding 5 — which is also
+> **Status, 2026-08-06 (last).** The **`requiredPerDay` rendering** row of finding 5 is now
+> resolved, and it is the row where the duplication turned out to be the *smaller* half of the
+> problem.
+>
+> **It was three sites and is two**, the third having gone with `goal_status.dart` when the goal
+> banner and the goals row stopped writing the same sentence twice. The two left — the goal line and
+> the Calculator's *By date* answer — compute the identical quantity through the identical
+> `Predictor.requiredPerDay`, and then each wrote `toStringAsFixed(2)` for itself. One number, two
+> spellings, sitting **one button apart**: *Save as goal* is directly under the Calculator's answer.
+>
+> **And both spellings were wrong, in the same direction.** This is a requirement, not a
+> measurement. 155 dapim over 91 days is 1.7032…, and rounding to nearest displays **1.70** — a pace
+> you can follow exactly, every day, for ninety-one days, and finish 0.3 of a daf short. The app was
+> telling the user a number that does not reach the date it names. `requiredPerDayText` rounds up,
+> in the one place the decision now lives.
+>
+> That is a behaviour change to a number on screen, so it is said out loud: every goal in the app
+> now reads one hundredth higher where the division is not exact. `avgPerDay` on the Overview is
+> deliberately untouched — a *measured* average rounded up would overstate what the user has done,
+> which is the same error pointing the other way.
+>
+> The rounding has one trap and it is tested: `3.33` is `3.3300000000000000710…` in binary, so a
+> bare `(rate * 100).ceil()` reports an exact 3.33 as 3.34. And the rule is enforced rather than
+> stated — a file that mentions `requiredPerDay` may not also call `toStringAsFixed`, plus a test
+> that reads the Calculator's answer off the screen, saves it, and asserts the goal reports the same
+> digits.
+>
+> ---
+>
+> **Status, 2026-08-06 (previously last).** The **controller-owning dialog** row of finding 5 — which is also
 > row 5 of *The claim* — is now resolved, and the interesting part is **why the rule was broken by
 > two dialogs that had a file written to stop them**.
 >
@@ -854,7 +883,7 @@ places that cannot see each other:
 | ~~`nameOf` (layer name with deleted fallback)~~ **✅ Resolved** | ~~3, and **they disagree**~~ — one `layerById`/`layerNameById` in `naming.dart`; the mefarshim stat rows were a fourth, and also wrong | ~~same fix applied twice out of three~~ — the raw UUID was real and is now a test |
 | ~~the catalog picker~~ **✅ Resolved** | ~~3~~ — **4**: the node editor's parent dropdown is one too, and it is the one that mattered. One `node_picker.dart`: `nodeChoices` decides which nodes and in what order, `showNodePicker` owns the clamp, `NodeDropdown` owns the indent | ~~—~~ the missing consequence: the fourth picker sorted by the **raw English** `name` and did not qualify, so a Hebrew reader picking a parent got a list ordered by strings not on their screen, with four rows reading "שבת". See the status note |
 | ~~controller-owning dialog~~ **✅ Resolved** | ~~the shared `text_prompt.dart` + 2 hand-rolls~~ — the prompt takes a *list* of fields and a validator now, so both hand-rolls are gone and there is nothing left to hand-roll | ~~the bug it was written to end~~ — and the reason it was hand-rolled anyway: the shared file took **one field** and had nowhere to put a rejection. Both copies wanted two fields, and one of them wanted to say no. See the status note |
-| `requiredPerDay` rendering | 3 (`calculator:252`, `goals_screen:69`, `unit_grid_screen:349`) | the Calculator's "By date" mode is a goal you can't save |
+| ~~`requiredPerDay` rendering~~ **✅ Resolved** | ~~3~~ — 2 by the time it was reached (the third went with `goal_status.dart`), both writing `toStringAsFixed(2)` for themselves. One `requiredPerDayText` | ~~the Calculator's "By date" mode is a goal you can't save~~ — fixed by finding 6. What the duplication was *hiding* is the real one: both rounded **down**. See the status note |
 | ~~the goal banner widget~~ **✅ Resolved** (carried by finding 6's work, and verified rather than assumed) | ~~2 byte-identical~~ — one `GoalBanner`, one `goalStatusText`, one `removeGoalWithUndo`, and `report_guard_test.dart` rule 2 refuses a second reader of `l10n.goalStatus` | ~~2 ARB keys for one sentence~~ — one now, and the *residue of that merge* is the row's real finding: the surviving key's metadata block was still called `@goalBanner`, so it described nothing and `goalStatus`'s three placeholders were re-inferred as `Object`. See the status note |
 | "the four customisation lists" | 3 (`settings_screen:289`, `:390`, `backup_service:311`) | shipped a bug: `.asData?.value ?? const []` silently exporting empty lists |
 | "is this a positive integer" | 3 layers each, for both interval settings | — |
