@@ -4,6 +4,27 @@ Track your Torah learning — perek by perek, daf by daf — with real progress,
 finish-date predictions. A ground-up **Flutter** rewrite of the original Android app, built for
 Android, Windows, and (later) macOS/Linux/iOS.
 
+It runs on a phone, on a desktop, and on a **Sonim XP5s** — a 240 × 324dp rugged keypad phone with
+no touchscreen at all — because a lot of people who learn seriously do not carry a smartphone.
+
+```bash
+flutter pub get                 # also runs gen-l10n
+dart run build_runner build     # generates the Drift and Riverpod code
+flutter test                    # 714 tests, about four minutes
+flutter run -d windows          # or your android device
+```
+
+Use the Flutter version pinned in `.github/workflows/ci.yml`, not `stable` — see
+[*Toolchain notes*](#toolchain-notes-why-some-versions-are-pinned) for why that matters here.
+If you are going to write code, read [`CONTRIBUTING.md`](CONTRIBUTING.md) first: it has the setup,
+a tour of the repo, a worked example of a change moving through the layers, and the standards every
+change is held to.
+
+**Contents** — [Why the rewrite](#why-the-rewrite) ·
+[Architecture](#architecture-short-version) · [What it does](#what-it-does) ·
+[Platform status](#platform-status) · [Developing](#developing) ·
+[Translating](#translating) · [Releasing](#releasing)
+
 ## Why the rewrite
 
 The original (Java/Android) stored a single aggregate count as the source of truth, which made
@@ -61,23 +82,26 @@ prediction-from-actual-pace for free.
   walked every event ever recorded to arrive at a number none of them can move — and the tick
   assertion above held only because that provider had been left out of the count. It is in the count
   now, and the walk happens when the log changes and at no other time.
-- **The schema has one version, and it is version 1.** It has had thirteen shapes; none of them
-  ever shipped. Every step in the twelve-step migration chain that used to sit under
+- **The schema has two versions, and thirteen shapes behind them.** None of the thirteen ever
+  shipped. Every step in the twelve-step migration chain that used to sit under
   [`database.dart`](lib/data/drift/database.dart) existed to carry a database on a machine the
   author was sitting at from one afternoon's schema to the next, and a chain that long starts
   eating itself: v3 added a column so that v8 could merge it away and drop it — so on a v2 database
   v3 ran *only* to give v8 something to read — and v9 had to be written above v8 in the file so
   that v8's table rebuild had a column to copy. It cost 230 lines of migration and 649 of test, and
   the price was still rising: v13 was a one-line value fix and arrived with three migration tests
-  of its own that a squash would have carried for free. So the chain is squashed and the history is
-  in git. What is left is a doorman: a database written by the last pre-squash build is *already*
-  the shape `createAll()` produces, so adopting one is nothing at all — `test/data/schema_test.dart`
-  pins that by comparing a fresh database against the schema read off the real device file the
-  deleted chain produced, which is what fails if a column ever drifts. Anything else it refuses,
-  and refusing leaves the file untouched, because drift stamps `user_version` only after the
-  migration callback returns. The next schema change is v2, it will be the first one in this
-  project's life that defends somebody else's data, and a bump without a step fails at the door
-  rather than silently doing nothing.
+  of its own that a squash would have carried for free. So the chain was squashed to v1 and the
+  history is in git. What is left is a doorman with one real step behind it. **v2** drops
+  `unit_index` from `layer_configs` — a third key column whose only value, in the schema, the
+  resolver, the backup format and six method signatures, was the sentinel meaning "not that". It is
+  the first migration in this project's life written for data somebody might mind losing, and it
+  carries the idempotency guard all twelve deleted steps needed: `alterTable` commits as it goes
+  while drift stamps `user_version` only at the end, so a run that dies in between must be
+  replayable rather than fatal. Everything else the doorman refuses, and refusing leaves the file
+  untouched — which is what makes "open it with the build that wrote it and export a backup" a real
+  recovery rather than a sentence. A bump without a step fails at the door rather than silently
+  doing nothing. `test/data/schema_test.dart` holds all of it, including a fresh database compared
+  against the schema read off the real device file the deleted chain produced.
 - **Derived does not mean re-rendered.** Everything being a fold over the log is only affordable if
   the derivation *stops* where the answer stopped changing. Riverpod re-notifies whenever
   `previous != next`, and Dart compares objects by identity unless told otherwise, so every derived
@@ -113,7 +137,7 @@ next month rather than for four seconds.
 **Mefarshim as layers.** Mark a daf per-meforish — Gemara, Rashi, Tosafos, or your own — and a unit
 counts as done only once its *required* mefarshim are learned. Each meforish is in exactly one of
 three states: *Off*, *Available* (checkable, does not gate completion) or *Required*. Configure it at
-any node — Shas, a seder, one mesechta, a single daf — and it inherits down until something nearer
+any node — all of Shas, one seder, one mesechta — and it inherits down until something nearer
 overrides it. The tree shows a thin per-meforish coverage line under each main bar.
 
 **Chazara.** Every review is a first-class pass with its own date, duration, mefarshim and haara. A
@@ -198,7 +222,7 @@ Both target platforms are built and run-verified, and CI enforces it on every pu
 
 | Platform | Build | Runtime |
 |---|---|---|
-| **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the real on-disk database here, 35 events deep, has been carried through the whole migration chain and then adopted by the squashed schema, keeping every event ✅ |
+| **Windows** | `flutter build windows` ✅ | Launches in **both locales**, loads the catalog, no crash-log entries ✅ — and the real on-disk database here, 35 events deep, has been carried through the whole migration chain and then adopted by the squashed schema, keeping every event ✅. The v1 → v2 step has been run against that file's exact schema, read off it, rather than against a re-typed copy — but not yet against the file itself on a launch |
 | **Android** | debug + `--release` (R8) ✅ | Runs on API 36 (moto g stylus 2025). Measured on the device: the logging sheet's confirm button clears the navigation bar by 45px and a tap at its bottom edge registers, the Hebrew progress fraction paints `0 / 12,092  (0.0%)` in that order, the app bar fits `Chovos Hayom`, a backup exported from one profile imports into another, and a deep link opens the same screen whether the app was running or not ✅ |
 | **Android, keypad** | `--release` ✅ | Runs on API 25 (Sonim XP5s / XP5800) — a **240 x 324dp screen with no touchscreen**, driven entirely by its D-pad. Measured on the device: focus is visible on every control, the report's figure-only tabs scroll on the D-pad, the bar reads `Chovos Hayom` and `Bereishis` rather than a scaled-down dash, the keypad's MENU key opens the unit menu, and the T9 keypad types into search. Also walked key by key: the app opens on the tree's first generation, three presses of *down* reach the backup banner's named dismiss, the message that replaces it leaves on its own within ten seconds, and the drawer's first row returns to the tree ✅ |
 | **CI** | analyze `--fatal-infos`, the full suite, per-layer coverage floors, stale-codegen, untranslated-locale, release APK + R8 assertion, **release Windows build + executable assertion** | Green on `main` ✅ |
@@ -248,9 +272,14 @@ build. The user-facing name is the window title in `windows/runner/main.cpp`.
 ```bash
 flutter pub get               # also runs gen-l10n (pubspec: generate: true)
 dart run build_runner build   # generates Drift code
-flutter analyze               # clean
-flutter test                  # all green (CI publishes the count)
+flutter analyze --fatal-infos # clean
+flutter test --coverage       # all green (CI publishes the count)
+dart run tool/check_coverage.dart
 ```
+
+[`CONTRIBUTING.md`](CONTRIBUTING.md) is the fuller version of this: a tour of the repo, where to
+start reading, what `test/support/` gives you, a worked example of a change moving through the
+layers, and the handful of things that will bite you on Windows.
 
 CI runs all of the above on every push and pull request, plus a release APK build **and a release
 Windows build**, and is **green on `main`** — which is worth stating, because for a long time it
@@ -365,8 +394,26 @@ keytool -genkey -v -keystore chovos-hayom-release.jks -keyalg RSA -keysize 2048 
 ```
 
 Keep that keystore somewhere you will still have it in five years — losing it means you can never
-publish an update to this app again. Without the file, release builds still work, but they are
-debug-signed and **not distributable**. Bump `version:` in `pubspec.yaml` before each release.
+publish an update to this app again. **It does not belong in this repository**, which is public:
+anyone holding it can sign an update as this app. `.gitignore` already refuses `*.jks`,
+`*.keystore` and `android/key.properties`; leave it that way. Without the file, release builds
+still work, but they are debug-signed and **not distributable**.
+
+Cutting a release:
+
+```bash
+# 1. bump `version:` in pubspec.yaml    (version-name+build-number, e.g. 1.0.2+3)
+flutter analyze --fatal-infos && flutter test --coverage
+dart run tool/check_coverage.dart
+git commit -am "release: v1.0.2"
+git push
+git tag v1.0.2 && git push origin v1.0.2
+gh release create v1.0.2 --title "Chovos Hayom 1.0.2" --notes "…"
+```
+
+The build number must go up on every Android release, or the store and the device both refuse the
+upgrade. CI builds the release APK and Windows executable on every push, so a green `main` is the
+evidence that the tag builds; the release itself carries no artifacts.
 
 ### Changing the app icon
 

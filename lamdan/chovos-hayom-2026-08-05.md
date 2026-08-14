@@ -7,8 +7,62 @@
 > status notes below run newest first and each says what the finding got right, what it got wrong,
 > and what the sweep could not have reached; three of them disagree with the finding and argue it
 > rather than quietly doing something else.
+>
+> **And the three loose ends the notes had left open are closed too — see the note directly below.**
 
-> **Status, 2026-08-07 (last).** ***The one gate that is missing*** is now two gates that exist.
+> **Status, 2026-08-14 (last).** The three paragraphs in this document that still read ***Not done,
+> and still true*** are now done, and a fourth had gone stale without being marked.
+>
+> **The per-unit layer scope is gone, which is what finding 3's *Related* note asked for.** The note
+> was right and it undersold itself: `unitIndex: -1` was not merely the only value the UI wrote, it
+> was the only value *anything* wrote, so the per-unit level was being carried by the schema, the
+> resolver, the backup format, the repository interface and six method signatures for a value that
+> was a constant. That is not an unfinished feature; it is five layers agreeing to carry a sentinel.
+> Deleted: `layer_configs` is keyed on (profile, node) at **schema v2**, `LayerConfigEntry` has one
+> scope, `InheritedLayerRoles.forUnit` and `LayerRoles.requiredForNode` are gone with it, and
+> `requiredFor(nodeId)` is memoized — which turned out to matter, because the fold and the chazara
+> schedule were asking it once per *unit* for an answer that was per *node*. Backup format v6; a v5
+> file's unit-scoped entries are dropped rather than folded up into their node, which would have
+> replaced a node's own answer with one unit's.
+>
+> **And the schema now has a real step in it.** This is the first migration in this project's life
+> written for data somebody might mind losing rather than to carry a schema from Tuesday to
+> Wednesday. It carries the idempotency guard the twelve deleted steps each needed — `alterTable`
+> commits as it goes while drift stamps `user_version` only at the end, so a run that dies in between
+> leaves a v2-shaped table in a v1-marked file, and without the column check the retry dies on `no
+> such column` and the install never opens again. Watched fail before being kept: with the row
+> deletion removed, two of the nine schema tests go red.
+>
+> **`kPreSquashSchemaVersion` is deleted, on its own terms.** Six lines whose doc comment said to
+> delete them once every install had opened a post-squash build. Nobody is using this app yet — that
+> is the fact that makes it free, and it is the same fact finding 4 rests on. A v13 file now meets
+> the doorman like any other shape this build has no path to, and the message it gets was rewritten,
+> because the recovery it used to name ("open it once with a v13 build") stopped existing the moment
+> the clause did. It now names the one that is still true: the build that wrote the file can still
+> open it, so export a backup there and restore it into a fresh install.
+>
+> **`catalog_clone_test.dart` no longer holds its own copy of the walk.** The finding's own phrasing
+> — "finding 5's shape appearing in a test rather than in `lib/`" — is exactly right, and the fix is
+> the one that shape always wants: `cloneOf(catalog, root)` is the part with the rules in it,
+> `CatalogEditor` keeps the `WidgetRef` and the transaction, and the test asserts against the
+> function the app calls. It also got the two cases the transcription never had: that only the root
+> is renamed, and that cloning a leaf keeps the *real* parent id rather than a minted one.
+>
+> **Stale, and now marked:** the *catalog picker × 3* note under finding 6 says `cycles_screen` and
+> `edit_cycle_screen` "still hold two more, with different clamps". They do not — both go through
+> `showNodePicker`/`nodeChoices`, and have since finding 5's picker row was worked. The note was
+> written before that and never revisited, which is the failure mode this document is about, in
+> miniature, inside this document.
+>
+> **What this document found and did not fix, and is not fixed here either:** `edit_cycle_screen.dart`
+> at 1.4% coverage. It has widget tests now — 11 of them, over what a cycle is allowed to be, that
+> the order is the cycle, that a category means every sefer under it, and that editing edits rather
+> than duplicating. That is the screen the coverage gate named on the day it started naming files,
+> and naming it is the only reason it got written.
+>
+> ---
+>
+> **Status, 2026-08-07 (previously last).** ***The one gate that is missing*** is now two gates that exist.
 >
 > **The coverage flag meant nothing and now means something.** `--coverage` ran on every push and
 > uploaded `lcov.info` as an artifact nothing read: no threshold, no badge, no diff. A number nobody
@@ -815,6 +869,10 @@ surface it.
 > by backups and the resolver, and still unreachable from the UI. It is cheaper now — one write path
 > instead of two — but it is not fixed.
 >
+> > **✅ Since resolved**, and the note understated it: nothing at all wrote a per-unit entry, not
+> > merely nothing in the UI. The level is deleted — schema v2, backup format v6, one scope on
+> > `LayerConfigEntry`, `forUnit` and `requiredForNode` gone. See the status note at the top.
+>
 > Resolved by `lib/domain/entities/layer.dart` (`LayerRole`, `defaultLayerRoles`),
 > `lib/domain/usecases/layer_roles.dart` (`LayerConfigEntry` + the one `LayerRoles` resolver) and
 > `inherited_layer_roles.dart` (the same engine, resolving a role map); `LayerRequirements`,
@@ -939,6 +997,11 @@ sheet's own doc-comment at `:20` promises the third.
 > **Not done, and still true:** the `kPreSquashSchemaVersion` clause is itself legacy — six lines
 > that exist so that upgrading costs an existing install nothing. It says in its own doc comment
 > that it should be deleted once every install has opened a post-squash build.
+>
+> > **✅ Since resolved.** Deleted, and the condition it named was met the cheap way rather than the
+> > slow one: nobody is using this app yet, so there is no install to be stranded. The doorman now
+> > holds one real step (v1 -> v2) and refuses everything else, and the refusal message names a
+> > recovery that still exists. See the status note at the top.
 
 > **Twelve now, and the count is the wrong thing to watch.** Finding 3 added v12 and deleted the v7
 > step and one line of v4 outright — they created the two tables v12 merges away, and any database
@@ -1580,6 +1643,11 @@ code, then the prose.
 > into the test file and asserts against the copy, which is why it could never have seen this. The
 > new end-to-end test drives the real editor, so the behaviour is covered — but the duplicate is
 > still sitting there, and it is finding 5's shape appearing in a test rather than in `lib/`.
+>
+> > **✅ Since resolved.** `cloneOf(catalog, root)` holds the rules, `CatalogEditor` keeps the
+> > `WidgetRef` and the transaction, and the test asserts against the shipped function. Two cases the
+> > transcription never had came with it: only the root is renamed, and a cloned leaf keeps the real
+> > parent id rather than a minted one.
 
 `BackupValidator` (`backup_service.dart:396-561`) justifies itself at `:398-403` with two claims:
 

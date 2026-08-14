@@ -96,9 +96,14 @@ CustomNode               -- user-defined sefarim/categories; same shape as Catal
                             overridden: an override row shadows the catalog by id.
 
 CustomLayer              -- user-defined mefarshim, profile-scoped
-LayerConfig              -- per (node, unitIndex) map of layer -> role
-                            (off | optional | required); absent means off.
-                            unitIndex -1 means "this node and below"
+LayerConfig              -- per-node map of layer -> role (off | optional |
+                            required); absent means off, and a pin applies to
+                            that node and everything below it.
+                            It was keyed on (node, unitIndex) until schema v2,
+                            so that a setting could be pinned on a single unit.
+                            Nothing ever wrote one: -1, the "this node" sentinel,
+                            was the only value the column ever held, in five
+                            layers at once. v2 drops it.
 ```
 
 Five tables, and that is the whole of it. **There is no `UnitState` table, and there never was one** —
