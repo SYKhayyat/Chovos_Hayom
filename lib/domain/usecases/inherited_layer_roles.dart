@@ -1,9 +1,8 @@
 import '../entities/layer.dart';
 
-/// A sparse, inherited map of layer id -> [LayerRole], resolved per node (and
-/// optionally per unit). This is the engine behind every layer question the app
-/// asks: what may be ticked here, and what has to be ticked for the unit to
-/// count.
+/// A sparse, inherited map of layer id -> [LayerRole], resolved per node. This
+/// is the engine behind every layer question the app asks: what may be ticked
+/// here, and what has to be ticked for a unit to count.
 ///
 /// It used to resolve a bare `Set<String>`, and was instantiated twice — once
 /// for the *required* set and once for the *offered* set, with the same default
@@ -14,24 +13,20 @@ import '../entities/layer.dart';
 ///
 /// Configuration is sparse: a map can be pinned at any node (usually high — a
 /// whole Shas or a mesechta) and applies to every descendant unless a nearer
-/// node, or the unit itself, overrides it. When nothing is configured anywhere
-/// the answer is [defaultRoles].
+/// node overrides it. When nothing is configured anywhere the answer is
+/// [defaultRoles].
 ///
 /// Node-level resolution is memoized, so a full rollup stays O(nodes), not
 /// O(nodes × depth).
 class InheritedLayerRoles {
   InheritedLayerRoles({
     this.nodeConfig = const {},
-    this.unitConfig = const {},
     this.parentOf = const {},
     this.defaultRoles = defaultLayerRoles,
   });
 
   /// nodeId -> the roles pinned at that node (empty means "revert to default").
   final Map<String, Map<String, LayerRole>> nodeConfig;
-
-  /// nodeId -> (unit index -> per-unit override).
-  final Map<String, Map<int, Map<String, LayerRole>>> unitConfig;
 
   /// nodeId -> parent id, for walking inheritance upward.
   final Map<String, String?> parentOf;
@@ -118,13 +113,5 @@ class InheritedLayerRoles {
       if (parent == null) return null;
       current = parent;
     }
-  }
-
-  /// The roles for a specific unit — a per-unit override if present, otherwise
-  /// the node-level (inherited) answer.
-  Map<String, LayerRole> forUnit(String nodeId, int unitIndex) {
-    final override = unitConfig[nodeId]?[unitIndex];
-    if (override != null) return override.isEmpty ? defaultRoles : override;
-    return forNode(nodeId);
   }
 }

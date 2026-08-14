@@ -129,20 +129,17 @@ void main() {
       (
         why: 'reads a unit\'s required set inside features/ — the other half',
         pattern: r'\.requiredFor\(',
-        sample: 'final required = roles.requiredFor(node.id, unit);',
+        sample: 'final required = roles.requiredFor(node.id);',
       ),
     ];
 
-    // `forUnit` is deliberately **not** banned, and not by oversight. On its
+    // `forNode` is deliberately **not** banned, and not by oversight. On its
     // own it is a role map with no done-state in it, so it cannot produce a
-    // checklist without the first ban above — and the name collides with
-    // `UnitHistoryFinder.forUnit`, which is a different question about the same
-    // two arguments. A pattern that catches both is a pattern that has to be
-    // argued with rather than obeyed.
+    // checklist without the first ban above.
     //
-    // `checkableForNode` is likewise allowed: the bulk sheet and the tree's
-    // coverage bars ask about a *node*, where there is no unit and no fold, and
-    // that genuinely is a different question.
+    // `checkableFor` is likewise allowed: the bulk sheet and the tree's
+    // coverage bars ask what a *node* offers, with no unit and no fold in the
+    // question, and that genuinely is a different one.
 
     test('the regexes actually match the shapes they ban', () {
       for (final ban in bans) {
@@ -198,7 +195,6 @@ void main() {
     test('every role survives the backup JSON round trip', () {
       final entry = LayerConfigEntry(
         nodeId: 'shas',
-        unitIndex: -1,
         roles: {
           for (final (i, role) in LayerRole.values.indexed) 'layer$i': role,
         },
@@ -207,7 +203,6 @@ void main() {
           jsonDecode(jsonEncode(entry.toJson())) as Map<String, dynamic>);
       expect(back.roles, entry.roles);
       expect(back.nodeId, entry.nodeId);
-      expect(back.unitIndex, entry.unitIndex);
     });
 
     test('an unknown role reads as optional rather than gating completion', () {
@@ -224,7 +219,10 @@ void main() {
 
     test('a legacy backup array reads back under the role it came from', () {
       // Pre-v5 backups have two arrays where membership was the whole meaning.
-      // Reading `requirements` as optional un-completes the user's tree.
+      // Reading `requirements` as optional un-completes the user's tree. The
+      // `unitIndex` they carry is read by nothing and harms nothing here; the
+      // entries that name a real unit are dropped a level up, in
+      // `BackupService.parse`.
       final req = LayerConfigEntry.fromJson(
           const {'nodeId': 'shas', 'unitIndex': -1, 'layers': ['main']},
           legacyRole: LayerRole.required);
@@ -243,9 +241,9 @@ void main() {
     final r = LayerRoles(nodeConfig: {
       'shas': roles(required: ['main', 'rashi'], optional: ['maharsha'])
     });
-    for (final id in r.requiredFor('shas', 0)) {
-      expect(r.forUnit('shas', 0).keys, contains(id));
+    for (final id in r.requiredFor('shas')) {
+      expect(r.forNode('shas').keys, contains(id));
     }
-    expect(r.forUnit('shas', 0).keys, {'main', 'rashi', 'maharsha'});
+    expect(r.forNode('shas').keys, {'main', 'rashi', 'maharsha'});
   });
 }

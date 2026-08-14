@@ -457,7 +457,7 @@ Future<void> logWithDetails(
   final l10n = AppLocalizations.of(context);
   final heading = nodeAndUnit(l10n, node, unit);
 
-  final layered = UnitMefarshim.isLayered(roles, node.id, unit);
+  final layered = UnitMefarshim.isLayered(roles, node.id);
   final mefarshim = UnitMefarshim.of(
     roles: roles,
     fold: fold,

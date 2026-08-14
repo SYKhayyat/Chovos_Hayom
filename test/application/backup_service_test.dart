@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:chovos_hayom/application/backup_service.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
@@ -92,7 +94,6 @@ void main() {
       'a',
       LayerConfigEntry(
           nodeId: 'shas',
-          unitIndex: -1,
           roles: roles(required: ['main', 'rashi'], optional: ['maharsha'])),
     );
 
@@ -118,5 +119,53 @@ void main() {
     expect(configs.single.required, {'main', 'rashi'});
     expect(configs.single.checkable, {'main', 'rashi', 'maharsha'});
     expect(result.settings['chazaraIntervals'], '2,4,8');
+  });
+
+  group('a layer setting pinned to one unit', () {
+    // The import half of schema v2. No backup this app has ever written holds
+    // one — the config sheet opens from a node and always wrote -1 — so this is
+    // about a hand-edited file, where the choice is between dropping the entry
+    // and promoting one unit's answer to cover its whole node. Dropping it
+    // changes less.
+    String fileWith(String layerConfigs) => jsonEncode({
+          'version': 5,
+          'events': const [],
+          'customNodes': const [],
+          'layerConfigs': jsonDecode(layerConfigs),
+        });
+
+    test('is dropped, and its node-level neighbour is not', () {
+      final data = BackupService.parse(fileWith('''
+        [
+          {"nodeId": "shas", "unitIndex": -1, "roles": {"main": "required"}},
+          {"nodeId": "shas", "unitIndex": 7, "roles": {"rashi": "required"}}
+        ]'''));
+
+      expect(data.layerConfigs.single.nodeId, 'shas');
+      expect(data.layerConfigs.single.roles, {'main': LayerRole.required});
+    });
+
+    test('does not take its node with it when it stands alone', () {
+      final data = BackupService.parse(fileWith(
+          '[{"nodeId": "shas", "unitIndex": 7, "roles": {"rashi": "required"}}]'));
+
+      expect(data.layerConfigs, isEmpty,
+          reason: 'the node keeps whatever it inherits, rather than being '
+              'pinned to what one of its units said');
+    });
+
+    test('the same in a pre-v5 file, where membership was the meaning', () {
+      final data = BackupService.parse(jsonEncode({
+        'version': 4,
+        'events': const [],
+        'customNodes': const [],
+        'requirements': [
+          {'nodeId': 'shas', 'unitIndex': -1, 'layers': ['main']},
+          {'nodeId': 'shas', 'unitIndex': 7, 'layers': ['rashi']},
+        ],
+      }));
+
+      expect(data.layerConfigs.single.roles, {'main': LayerRole.required});
+    });
   });
 }

@@ -119,7 +119,8 @@ abstract interface class ProgressRepository {
   Future<void> addCustomLayer(String profileId, Layer layer);
   Future<void> removeCustomLayer(String profileId, String layerId);
 
-  /// Reactive stream of the profile's layer settings (node + unit level).
+  /// Reactive stream of the profile's layer settings, one entry per configured
+  /// node.
   ///
   /// One stream, because one entry carries a node's whole answer. This was two
   /// streams over two tables, which meant every consumer had to watch both and
@@ -130,9 +131,9 @@ abstract interface class ProgressRepository {
   /// The profile's layer settings, once. See [getCustomNodes].
   Future<List<LayerConfigEntry>> getLayerConfigs(String profileId);
 
-  /// Pin a layer role map at a node (unitIndex -1) or a single unit.
+  /// Pin a layer role map at a node.
   Future<void> setLayerConfig(String profileId, LayerConfigEntry entry);
 
-  /// Remove a layer setting, reverting to inheritance/default.
-  Future<void> clearLayerConfig(String profileId, String nodeId, int unitIndex);
+  /// Remove a node's layer setting, reverting to inheritance/default.
+  Future<void> clearLayerConfig(String profileId, String nodeId);
 }

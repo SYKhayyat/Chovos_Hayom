@@ -69,7 +69,7 @@ class UnitMefarshim {
     required String nodeId,
     required int unitIndex,
   }) {
-    final rolesHere = roles.forUnit(nodeId, unitIndex);
+    final rolesHere = roles.forNode(nodeId);
     final done = fold?.completedLayers(nodeId, unitIndex) ?? const <String>{};
 
     final out = <UnitMeforish>[];
@@ -125,8 +125,8 @@ class UnitMefarshim {
   /// that happens to carry a stale learned layer is still a one-tap unit, and
   /// turning it into a checklist because of a meforish nobody can tick would be
   /// a worse answer than the one it replaces.
-  static bool isLayered(LayerRoles roles, String nodeId, int unitIndex) =>
-      roles.isLayered(nodeId, unitIndex);
+  static bool isLayered(LayerRoles roles, String nodeId) =>
+      roles.isLayered(nodeId);
 
   /// [mainLayerId] alone, for the unlayered case — the shape every caller ends
   /// up wanting when there is nothing to choose between.

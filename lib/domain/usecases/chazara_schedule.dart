@@ -66,8 +66,10 @@ class ChazaraSchedule {
     final today = Day.of(now);
     final out = <ChazaraItem>[];
     fold.touchedAtByNode.forEach((nodeId, byUnit) {
+      // One lookup per node rather than per unit: a required set is a fact
+      // about the node, so a mesechta's worth of units asks it once.
+      final req = layers?.requiredFor(nodeId) ?? const {mainLayerId};
       byUnit.forEach((unitIndex, last) {
-        final req = layers?.requiredFor(nodeId, unitIndex) ?? const {mainLayerId};
         final have = fold.completedLayers(nodeId, unitIndex);
         if (!req.every(have.contains)) return;
         final rc = fold.reviewCount(nodeId, unitIndex);

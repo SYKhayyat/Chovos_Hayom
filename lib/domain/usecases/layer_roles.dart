@@ -2,26 +2,32 @@ import '../entities/layer.dart';
 import 'fold_log.dart';
 import 'inherited_layer_roles.dart';
 
-/// A stored layer setting: the roles pinned at [nodeId], for a single
-/// [unitIndex] override or, when [unitIndex] is -1, the node-level default.
+/// A stored layer setting: the roles pinned at [nodeId].
 ///
 /// One entry carries the whole answer for that node — which mefarshim are
 /// checkable and which of those gate completion. It used to take two entries in
 /// two tables, and a node could end up with one of them and not the other (the
 /// meforish-delete cascade did exactly that whenever one set emptied out and the
 /// other didn't). There is one entry now, so there is nothing to half-write.
+///
+/// It also used to carry a `unitIndex`, so that a setting could be pinned on a
+/// single unit rather than a node. Nothing ever wrote one: the config sheet is
+/// the only writer and it is opened from a node, so `-1` — the node-level
+/// sentinel — was the only value the column ever held, in the schema, in the
+/// resolver, in the backup format and in every method that took a scope. A
+/// dimension that only ever has one value is not a feature that hasn't shipped;
+/// it is three layers agreeing to carry a constant. Pinning a meforish on one
+/// daf of a mesechta is a real thing to want, and if it is ever wanted it wants
+/// a UI, a story for what a chazara against it means, and a resolver test —
+/// none of which the dead column was ever going to supply.
 class LayerConfigEntry {
   const LayerConfigEntry({
     required this.nodeId,
-    required this.unitIndex,
     required this.roles,
   });
 
   final String nodeId;
-  final int unitIndex; // -1 == node level
   final Map<String, LayerRole> roles;
-
-  bool get isNodeLevel => unitIndex < 0;
 
   /// Every layer that may be ticked here — optional and required alike.
   Set<String> get checkable => roles.keys.toSet();
@@ -34,18 +40,22 @@ class LayerConfigEntry {
 
   Map<String, dynamic> toJson() => {
         'nodeId': nodeId,
-        'unitIndex': unitIndex,
         'roles': {for (final e in roles.entries) e.key: e.value.name},
       };
 
-  /// Reads both the current shape and the two legacy ones.
+  /// Reads the current shape and the two legacy ones.
   ///
   /// Backups written before the collapse carried a bare `layers` list in two
   /// separate arrays — `requirements` and `offered` — where membership was the
   /// whole meaning. [legacyRole] says which array this entry came out of, so the
   /// list can be read back as roles; [BackupData] then merges the two arrays by
-  /// (node, unit). Without this an old backup would silently import as
+  /// node. Without this an old backup would silently import as
   /// everything-optional and quietly un-complete the user's tree.
+  ///
+  /// A `unitIndex` in an older file is ignored here and the entry carrying it is
+  /// dropped upstream — see `BackupService.parse`, which is where a scope this
+  /// build has no room for has to be noticed rather than silently folded into
+  /// its node.
   factory LayerConfigEntry.fromJson(
     Map<String, dynamic> json, {
     LayerRole legacyRole = LayerRole.required,
@@ -63,7 +73,6 @@ class LayerConfigEntry {
     }
     return LayerConfigEntry(
       nodeId: json['nodeId'] as String,
-      unitIndex: (json['unitIndex'] as num?)?.toInt() ?? -1,
       roles: roles,
     );
   }
@@ -75,8 +84,7 @@ class LayerConfigEntry {
     if (!roles.containsKey(layerId)) return this;
     final remaining = {...roles}..remove(layerId);
     if (remaining.isEmpty) return null;
-    return LayerConfigEntry(
-        nodeId: nodeId, unitIndex: unitIndex, roles: remaining);
+    return LayerConfigEntry(nodeId: nodeId, roles: remaining);
   }
 }
 
@@ -94,75 +102,64 @@ class LayerConfigEntry {
 class LayerRoles {
   LayerRoles({
     Map<String, Map<String, LayerRole>> nodeConfig = const {},
-    Map<String, Map<int, Map<String, LayerRole>>> unitConfig = const {},
     Map<String, String?> parentOf = const {},
   }) : _set = InheritedLayerRoles(
           nodeConfig: nodeConfig,
-          unitConfig: unitConfig,
           parentOf: parentOf,
         );
 
   /// Build the resolver from stored entries — the shape both the repository and
   /// a backup hold them in.
   ///
-  /// The provider used to split entries into node/unit maps inline, and so did
-  /// anything else that needed a resolver for a *different* set of entries than
-  /// the live one (the restore preview, which has to answer "what will be marked
-  /// once these settings land"). Two copies of one transformation is how a
-  /// preview and an outcome come to disagree, so there is one.
+  /// The provider used to lay the entries out into the resolver's shape inline,
+  /// and so did anything else that needed a resolver for a *different* set of
+  /// entries than the live one (the restore preview, which has to answer "what
+  /// will be marked once these settings land"). Two copies of one transformation
+  /// is how a preview and an outcome come to disagree, so there is one.
   factory LayerRoles.fromEntries(
     Iterable<LayerConfigEntry> entries, {
     Map<String, String?> parentOf = const {},
-  }) {
-    final nodeConfig = <String, Map<String, LayerRole>>{};
-    final unitConfig = <String, Map<int, Map<String, LayerRole>>>{};
-    for (final e in entries) {
-      if (e.isNodeLevel) {
-        nodeConfig[e.nodeId] = e.roles;
-      } else {
-        (unitConfig[e.nodeId] ??= {})[e.unitIndex] = e.roles;
-      }
-    }
-    return LayerRoles(
-        nodeConfig: nodeConfig, unitConfig: unitConfig, parentOf: parentOf);
-  }
+  }) =>
+      LayerRoles(
+        nodeConfig: {for (final e in entries) e.nodeId: e.roles},
+        parentOf: parentOf,
+      );
 
   final InheritedLayerRoles _set;
+  final Map<String, Set<String>> _requiredCache = {};
 
-  /// The full role map that applies to [nodeId] (node level, inherited).
+  /// The full role map that applies to [nodeId], inherited from its ancestors.
   Map<String, LayerRole> forNode(String nodeId) => _set.forNode(nodeId);
 
-  /// The full role map for a specific unit — a per-unit override if present,
-  /// otherwise the node-level map.
-  Map<String, LayerRole> forUnit(String nodeId, int unitIndex) =>
-      _set.forUnit(nodeId, unitIndex);
+  /// Layers that gate completion at [nodeId] — and therefore on every unit of
+  /// it.
+  ///
+  /// Memoized because the callers are loops over a whole tree (the fold's
+  /// per-unit completion check, the chazara schedule, a bulk mark), and
+  /// [_required] builds a set each time it runs. `forNode` is memoized under it
+  /// for the same reason.
+  Set<String> requiredFor(String nodeId) =>
+      _requiredCache[nodeId] ??= _required(forNode(nodeId));
 
-  /// Layers that gate completion for this unit.
-  Set<String> requiredFor(String nodeId, int unitIndex) =>
-      _required(forUnit(nodeId, unitIndex));
-
-  /// Layers that gate completion at node level (inherited).
-  Set<String> requiredForNode(String nodeId) => _required(forNode(nodeId));
-
-  /// Every layer checkable anywhere under [nodeId] by default — what a node-wide
-  /// action (the bulk sheet, the per-meforish bars) should offer.
-  Set<String> checkableForNode(String nodeId) => forNode(nodeId).keys.toSet();
+  /// Every layer checkable under [nodeId] — what a node-wide action (the bulk
+  /// sheet, the per-meforish bars) should offer.
+  Set<String> checkableFor(String nodeId) => forNode(nodeId).keys.toSet();
 
   /// The nearest node ([nodeId] or an ancestor) with an explicit pin, or null
   /// when the answer is the default. See [InheritedLayerRoles].
   String? pinnedSource(String nodeId) => _set.pinnedSource(nodeId);
 
-  /// True when the unit should present a per-layer checklist rather than a plain
-  /// one-tap toggle — i.e. it offers more than just the text.
-  bool isLayered(String nodeId, int unitIndex) {
-    final checkable = forUnit(nodeId, unitIndex);
+  /// True when a unit of [nodeId] should present a per-layer checklist rather
+  /// than a plain one-tap toggle — i.e. it offers more than just the text.
+  bool isLayered(String nodeId) {
+    final checkable = forNode(nodeId);
     return checkable.length > 1 || !checkable.containsKey(mainLayerId);
   }
 
-  /// Fraction (0..1) of *required* layers already learned — drives the grid's
-  /// partial fill. Optional layers never inflate this.
+  /// Fraction (0..1) of *required* layers already learned on [unitIndex] —
+  /// drives the grid's partial fill. Optional layers never inflate this.
   double fraction(String nodeId, int unitIndex, LogFold fold) {
-    final req = requiredFor(nodeId, unitIndex);
+    final req = requiredFor(nodeId);
     if (req.isEmpty) return 0;
     final have = fold.completedLayers(nodeId, unitIndex);
     return req.where(have.contains).length / req.length;

@@ -107,7 +107,7 @@ class BulkMarker {
     final marks = <BulkMark>[];
     for (final (leaf, unit) in _targetUnits(nodeId, range)) {
       final have = fold.completedLayers(leaf.id, unit);
-      final toAdd = _finishLayersFor(leaf.id, unit, selection, have);
+      final toAdd = _finishLayersFor(leaf.id, selection, have);
       if (toAdd.isNotEmpty) {
         marks.add(BulkMark(
             nodeId: leaf.id,
@@ -166,12 +166,12 @@ class BulkMarker {
   /// The layers to *add* for one unit under [selection], excluding any already
   /// learned. Empty means "nothing to do — skip this unit".
   List<String> _finishLayersFor(
-      String leafId, int unit, LayerSelection selection, Set<String> have) {
+      String leafId, LayerSelection selection, Set<String> have) {
     final want = switch (selection) {
       SingleLayerSelection(:final layerId) => {layerId},
-      RequiredLayerSelection() => layers.requiredFor(leafId, unit),
+      RequiredLayerSelection() => layers.requiredFor(leafId),
       // "Finish all possible" isn't well defined; treat as the required set.
-      AllLayersSelection() => layers.requiredFor(leafId, unit),
+      AllLayersSelection() => layers.requiredFor(leafId),
     };
     return [
       for (final l in want)

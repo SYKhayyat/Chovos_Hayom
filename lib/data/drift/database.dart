@@ -106,31 +106,34 @@ class CustomLayers extends Table {
   Set<Column> get primaryKey => {profileId, id};
 }
 
-/// What each layer *is* at a node (unitIndex = -1) or on a single unit — the
-/// user's mefarshim answer for that scope. Sparse and inherited (see
-/// `LayerRoles`); absence anywhere means "just the text, required".
+/// What each layer *is* at a node — the user's mefarshim answer for it. Sparse
+/// and inherited (see `LayerRoles`); absence anywhere means "just the text,
+/// required".
 ///
-/// One row carries the whole answer for a scope. It replaced a pair of
+/// One row carries the whole answer for a node. It replaced a pair of
 /// membership tables — *required* and *offered* — that stored one tri-state as
 /// two sets, and so admitted a fourth state (required-but-not-offered) that
 /// meant nothing, plus a whole class of half-written config where a node was
 /// pinned in one table and inherited in the other. Backup files written before
 /// that still carry the two arrays and are read back into roles; the tables
 /// themselves are gone, along with the migration that merged them.
+///
+/// It carried a third key column, `unit_index`, for pinning a setting on a
+/// single unit rather than a node. `-1` — the node-level sentinel — was the only
+/// value ever written to it, because the config sheet is the only writer and it
+/// opens from a node. See `LayerConfigEntry` for why that is a dead dimension
+/// rather than an unfinished feature, and v2 in [AppDatabase.migration] for what
+/// happened to it.
 @DataClassName('LayerConfigRow')
 class LayerConfigs extends Table {
   TextColumn get profileId => text()();
   TextColumn get nodeId => text()();
 
-  /// -1 = the node-level default (applies to all its units); >= 0 = a per-unit
-  /// override for that unit index.
-  IntColumn get unitIndex => integer().withDefault(const Constant(-1))();
-
   /// JSON object of layer id -> role name ("optional" | "required").
   TextColumn get rolesJson => text()();
 
   @override
-  Set<Column> get primaryKey => {profileId, nodeId, unitIndex};
+  Set<Column> get primaryKey => {profileId, nodeId};
 }
 
 /// User-defined sefarim/categories. Same shape as a catalog node, but editable
@@ -186,25 +189,21 @@ class CustomNodes extends Table {
 /// squash would have carried for free.
 ///
 /// So the chain is gone. `onCreate` builds the current shape directly and the
-/// history is in git, where a history belongs. This becomes 2 the first time
-/// the schema changes *after* v1 ships, and that step will be the first one in
-/// this project's life that defends somebody else's data.
-const kSchemaVersion = 1;
-
-/// The last shape written before the squash — the one database version other
-/// than [kSchemaVersion] this build will open.
+/// history is in git, where a history belongs.
 ///
-/// v13 was the head of the deleted chain, so its physical schema is exactly
-/// what `createAll()` now produces: the same five tables, the same columns, the
-/// same `learning_events_batch` index. Adopting one is therefore *nothing* —
-/// the clause in [AppDatabase.migration] returns, drift stamps `user_version`
-/// to 1, and the file carries on. It is the reason upgrading to this build
-/// costs an existing install no round trip through a backup file.
+/// **Two**, then, and the second step is a real one: v2 drops `unit_index` from
+/// `layer_configs`. It is the first migration in this project's life written for
+/// a database somebody might mind losing rather than to carry a schema from
+/// Tuesday to Wednesday, which is the distinction the squash was about — and the
+/// point at which the squash stops being free is exactly the point at which
+/// steps start being worth writing.
 ///
-/// Delete it once every install has opened a post-squash build. It exists so
-/// that the squash is free for a database that is already at head, not so the
-/// chain can start growing again from the other end.
-const kPreSquashSchemaVersion = 13;
+/// The clause that adopted a pre-squash (v13) database is **gone** with it. It
+/// existed so the squash cost an existing install no round trip through a backup
+/// file, and its own doc comment said to delete it once every install had opened
+/// a post-squash build. A v13 file now meets [SchemaMismatchException] like any
+/// other shape this build has no path to, and the message says what to do.
+const kSchemaVersion = 2;
 
 /// The database on disk is a shape this build has no path to.
 ///
@@ -233,9 +232,9 @@ class SchemaMismatchException implements Exception {
   String toString() => onDisk > expected
       ? 'This database was written by a build from before the schema squash '
           '(schema v$onDisk); this build creates v$expected and no longer '
-          'carries the migrations between them. Open it once with a build at '
-          'schema v$kPreSquashSchemaVersion (the last one before the squash) '
-          'and then this one, or restore a backup into a fresh install.'
+          'carries the migrations between them. Export a backup from the build '
+          'that wrote it — it can still open this file, which is untouched — '
+          'and restore that backup into a fresh install.'
       : 'schemaVersion was raised to v$expected without a migration step for a '
           'v$onDisk database. Add one to AppDatabase.migration — a bump on its '
           'own changes nothing but the number.';
@@ -257,29 +256,55 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => kSchemaVersion;
 
-  /// There is no migration chain any more — see [kSchemaVersion] for why the
-  /// twelve steps that used to be here are in git rather than in this file.
+  /// One step and a doorman — see [kSchemaVersion] for why the twelve steps that
+  /// used to be here are in git rather than in this file.
   ///
-  /// What is left is a doorman. `onUpgrade` runs whenever the version on disk
-  /// differs from this build's, in *either* direction (drift's `hadUpgrade` is
-  /// `versionBefore != versionNow`), and there are exactly two ways to get
-  /// here:
+  /// `onUpgrade` runs whenever the version on disk differs from this build's, in
+  /// *either* direction (drift's `hadUpgrade` is `versionBefore != versionNow`),
+  /// and there are exactly two ways to get here:
   ///
-  /// - **A database at [kPreSquashSchemaVersion].** Same tables, same columns,
-  ///   same index — v13 is the shape `createAll` now produces. Nothing to do;
-  ///   returning lets drift stamp `user_version` to 1.
-  /// - **Anything else.** Either an older pre-squash database, whose shape this
-  ///   build cannot produce and must not guess at, or a [schemaVersion] raised
-  ///   without a step to go with it. Both throw, and the second one is the
-  ///   reason this method still exists rather than being left at drift's
-  ///   default: the next schema change in this project's life has to fail
-  ///   loudly here instead of silently doing nothing on an existing install.
+  /// - **A database at v1**, the shape the squash produced. [_dropUnitIndex]
+  ///   rebuilds `layer_configs` without its dead third key column.
+  /// - **Anything else.** Either a pre-squash database, whose shape this build
+  ///   cannot produce and must not guess at, or a [schemaVersion] raised without
+  ///   a step to go with it. Both throw, and the second one is the reason the
+  ///   `else` exists rather than a silent return: a bump on its own used to
+  ///   change nothing on an existing install and derail into `no such column`
+  ///   several screens later.
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
-          if (from == kPreSquashSchemaVersion && to == kSchemaVersion) return;
+          if (from == 1 && to == 2) return _dropUnitIndex(m);
           throw SchemaMismatchException(from, to);
         },
       );
+
+  /// v1 -> v2: `layer_configs` loses `unit_index`, and its primary key with it.
+  ///
+  /// Rows with a real unit scope are **deleted rather than folded into their
+  /// node**. No such row can have been written by the app — the config sheet
+  /// opens from a node and always wrote -1 — so the only way to hold one is a
+  /// hand-edited backup, and for that file, promoting a single unit's setting to
+  /// cover a whole mesechta would be a louder change than dropping it. They are
+  /// also what makes the delete necessary rather than tidy: two rows for one
+  /// (profile, node) do not fit the new primary key, so copying both is not an
+  /// option the table leaves open.
+  ///
+  /// The column check is what makes a replay safe. `alterTable` rebuilds and
+  /// commits as it goes, so a run that dies between the rebuild and drift
+  /// stamping `user_version` leaves a v2-shaped table in a file still marked v1;
+  /// without this, the retry would fail on `no such column: unit_index` and the
+  /// install would be stuck at the door for good. That failure mode cost this
+  /// project a guard on every one of the twelve deleted steps; it is cheaper to
+  /// keep the lesson than to relearn it.
+  Future<void> _dropUnitIndex(Migrator m) async {
+    final columns =
+        await customSelect("SELECT name FROM pragma_table_info('layer_configs')")
+            .get();
+    if (!columns.any((r) => r.read<String>('name') == 'unit_index')) return;
+
+    await customStatement('DELETE FROM layer_configs WHERE unit_index >= 0');
+    await m.alterTable(TableMigration(layerConfigs));
+  }
 }

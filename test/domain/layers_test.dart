@@ -124,7 +124,7 @@ void main() {
         nodeConfig: {'shas': roles(required: ['main', 'rashi'])},
         parentOf: {'shas': null, 'bavli': 'shas', 'shabbos': 'bavli'},
       );
-      expect(r.requiredForNode('shabbos'), {'main', 'rashi'});
+      expect(r.requiredFor('shabbos'), {'main', 'rashi'});
     });
 
     test('a nearer node overrides an ancestor', () {
@@ -135,25 +135,26 @@ void main() {
         },
         parentOf: {'shas': null, 'shabbos': 'shas'},
       );
-      expect(r.requiredForNode('shabbos'), {'main'});
+      expect(r.requiredFor('shabbos'), {'main'});
     });
 
-    test('a per-unit override beats the node config', () {
-      final r = LayerRoles(
-        nodeConfig: {'a': roles(required: ['main'])},
-        unitConfig: {
-          'a': {5: roles(required: ['main', 'tosafos'])}
-        },
-      );
-      expect(r.requiredFor('a', 2), {'main'});
-      expect(r.requiredFor('a', 5), {'main', 'tosafos'});
+    test('one pin answers for every unit of the node', () {
+      // The per-unit scope this used to assert over is gone — nothing ever
+      // wrote one. What is left is the property the callers depend on: the
+      // required set is a fact about the node, which is why the fold and the
+      // chazara schedule ask it once per node rather than once per unit.
+      final r = LayerRoles(nodeConfig: {'a': roles(required: ['main'])});
+
+      expect(r.requiredFor('a'), {'main'});
+      expect(identical(r.requiredFor('a'), r.requiredFor('a')), isTrue,
+          reason: 'and it is memoized, so the loops above pay for it once');
     });
 
     test('unconfigured nodes default to text-only', () {
       final r = LayerRoles();
-      expect(r.requiredForNode('anything'), {'main'});
-      expect(r.checkableForNode('anything'), {'main'});
-      expect(r.isLayered('anything', 0), isFalse);
+      expect(r.requiredFor('anything'), {'main'});
+      expect(r.checkableFor('anything'), {'main'});
+      expect(r.isLayered('anything'), isFalse);
     });
   });
 
@@ -167,10 +168,10 @@ void main() {
             'a': roles(required: ['main'], optional: ['rashi'])
           });
 
-      expect(r.requiredFor('a', 2), {'main'});
-      expect(r.forUnit('a', 2).keys, {'main', 'rashi'});
+      expect(r.requiredFor('a'), {'main'});
+      expect(r.forNode('a').keys, {'main', 'rashi'});
       // An optional meforish still makes the unit layered (shows a checklist).
-      expect(r.isLayered('a', 2), isTrue);
+      expect(r.isLayered('a'), isTrue);
 
       // Learning only the text completes the unit — the optional rashi does not
       // gate it...
@@ -189,13 +190,13 @@ void main() {
           nodeConfig: {
             'a': roles(required: ['main', 'tosafos'])
           });
-      expect(r.forUnit('a', 2).keys.toSet().containsAll(r.requiredFor('a', 2)),
+      expect(r.forNode('a').keys.toSet().containsAll(r.requiredFor('a')),
           isTrue);
-      expect(r.forUnit('a', 2).keys, {'main', 'tosafos'});
+      expect(r.forNode('a').keys, {'main', 'tosafos'});
     });
 
     test('text-only unit is not layered', () {
-      expect(LayerRoles().isLayered('a', 2), isFalse);
+      expect(LayerRoles().isLayered('a'), isFalse);
     });
 
     test('an all-optional node completes on nothing', () {
@@ -206,7 +207,7 @@ void main() {
             'a': roles(optional: ['rashi', 'tosafos'])
           });
       final none = FoldLog.fold(<LearningEvent>[]);
-      expect(r.requiredFor('a', 2), isEmpty);
+      expect(r.requiredFor('a'), isEmpty);
       expect(r.fraction('a', 2, none), 0.0);
     });
   });

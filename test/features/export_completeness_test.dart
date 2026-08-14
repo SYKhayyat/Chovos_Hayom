@@ -49,7 +49,6 @@ void main() {
       profile,
       LayerConfigEntry(
           nodeId: 'shas',
-          unitIndex: -1,
           roles: roles(required: [mainLayerId, 'maharsha'])),
     );
 

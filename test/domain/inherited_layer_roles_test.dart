@@ -13,22 +13,17 @@ const _parents = <String, String?>{
 
 InheritedLayerRoles setWith({
   Map<String, Map<String, LayerRole>> nodeConfig = const {},
-  Map<String, Map<int, Map<String, LayerRole>>> unitConfig = const {},
   Map<String, String?> parentOf = _parents,
 }) =>
-    InheritedLayerRoles(
-      nodeConfig: nodeConfig,
-      unitConfig: unitConfig,
-      parentOf: parentOf,
-    );
+    InheritedLayerRoles(nodeConfig: nodeConfig, parentOf: parentOf);
 
 void main() {
   test('a config pinned high applies all the way down', () {
     // The point of the whole engine: "require Rashi across Shas" is one setting.
     final s = setWith(nodeConfig: {'shas': roles(required: ['main', 'rashi'])});
     expect(s.forNode('shas.moed.shabbos'), roles(required: ['main', 'rashi']));
-    expect(
-        s.forUnit('shas.moed.shabbos', 12), roles(required: ['main', 'rashi']));
+    expect(s.forNode('shas.moed'), roles(required: ['main', 'rashi']),
+        reason: 'every node on the way down, not only the leaf');
   });
 
   test('a nearer node overrides an ancestor', () {
@@ -39,16 +34,17 @@ void main() {
     expect(s.forNode('shas.moed.shabbos'), roles(required: ['main']));
   });
 
-  test('a unit override beats its node', () {
-    final s = setWith(
-      nodeConfig: {'shas': roles(required: ['main', 'rashi'])},
-      unitConfig: {
-        'shas.moed.shabbos': {12: roles(required: ['main'])}
-      },
-    );
-    expect(s.forUnit('shas.moed.shabbos', 12), roles(required: ['main']));
-    expect(
-        s.forUnit('shas.moed.shabbos', 13), roles(required: ['main', 'rashi']));
+  test('a pin is the answer for every unit of its node', () {
+    // There is no scope below a node any more: this used to be "a unit override
+    // beats its node", over a `unitConfig` map nothing ever put a key in. What
+    // is left is the property the app actually relies on — one pin, one answer,
+    // for the whole node.
+    final s = setWith(nodeConfig: {
+      'shas': roles(required: ['main', 'rashi']),
+      'shas.moed.shabbos': roles(required: ['main']),
+    });
+    expect(s.forNode('shas.moed.shabbos'), roles(required: ['main']));
+    expect(s.forNode('shas.moed'), roles(required: ['main', 'rashi']));
   });
 
   test('the role travels with the id, not just membership', () {

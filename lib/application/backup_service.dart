@@ -106,9 +106,9 @@ class BackupData {
   final List<CatalogNode> customNodes;
   final List<Layer> customLayers;
 
-  /// The profile's mefarshim settings — one entry per configured scope, each
-  /// carrying every layer's role. Read from `layerConfigs` in a v5 backup, and
-  /// reassembled from the old `requirements` + `offered` arrays in anything
+  /// The profile's mefarshim settings — one entry per configured node, each
+  /// carrying every layer's role. Read from `layerConfigs` in a v5 or v6 backup,
+  /// and reassembled from the old `requirements` + `offered` arrays in anything
   /// older (see [BackupService.parse]).
   final List<LayerConfigEntry> layerConfigs;
   final Map<String, dynamic> settings;
@@ -129,10 +129,11 @@ class BackupService {
 
   /// v2 added customLayers, requirements, and settings. v3 added offered
   /// (checkable) layer configs. v4 added goals. v5 merged requirements+offered
-  /// into one `layerConfigs` array carrying a role per layer. Older backups
-  /// still import (missing fields default to empty; see [parse] for how v1–v4
+  /// into one `layerConfigs` array carrying a role per layer. v6 dropped
+  /// `unitIndex` from those entries — a scope nothing ever wrote. Older backups
+  /// still import (missing fields default to empty; see [parse] for how v1–v5
   /// layer settings are read back).
-  static const currentVersion = 5;
+  static const currentVersion = 6;
 
   /// Build a portable JSON string for [profileId].
   ///
@@ -199,28 +200,34 @@ class BackupService {
 
   /// Reads the layer settings out of a backup of any version.
   ///
-  /// A v5 backup has one `layerConfigs` array and this is a straight parse.
-  /// Anything older has two arrays — `requirements` and `offered` — where
-  /// membership *was* the meaning, and the same (node, unit) scope routinely
-  /// appears in both, because the config sheet always wrote both. So they are
-  /// merged the way the app used to reconcile them at read time: everything
-  /// offered is checkable, everything required gates completion, and required
-  /// wins where they overlap.
+  /// A v6 backup has one `layerConfigs` array and this is a straight parse.
+  /// v5 is the same array with a `unitIndex` on each entry; anything older has
+  /// two arrays — `requirements` and `offered` — where membership *was* the
+  /// meaning, and the same scope routinely appears in both, because the config
+  /// sheet always wrote both. So they are merged the way the app used to
+  /// reconcile them at read time: everything offered is checkable, everything
+  /// required gates completion, and required wins where they overlap.
   ///
   /// Getting this wrong is not a cosmetic import bug — reading an old backup's
   /// `requirements` as merely optional would quietly un-complete every layered
   /// unit in the tree, and reading `offered` as required would make units the
   /// user had finished go incomplete. Hence the explicit role per array.
+  ///
+  /// Entries pinned to a single unit are dropped by [_nodeScopedOnly] wherever
+  /// they appear. Every backup this app has ever written holds `-1` there, so
+  /// this only fires on a hand-edited file — and folding one unit's setting up
+  /// to cover its whole node would change more than it dropped. This is the
+  /// import half of the same argument v2 of the schema makes.
   static List<LayerConfigEntry> _parseLayerConfigs(Map<String, dynamic> map) {
     if (map.containsKey('layerConfigs')) {
-      return _parseList(
-          map['layerConfigs'], 'layerConfigs', LayerConfigEntry.fromJson);
+      return _parseList(_nodeScopedOnly(map['layerConfigs']), 'layerConfigs',
+          LayerConfigEntry.fromJson);
     }
-    final merged = <(String, int), Map<String, LayerRole>>{};
+    final merged = <String, Map<String, LayerRole>>{};
     void take(String field, LayerRole role) {
-      for (final e in _parseList(map[field], field,
+      for (final e in _parseList(_nodeScopedOnly(map[field]), field,
           (j) => LayerConfigEntry.fromJson(j, legacyRole: role))) {
-        (merged[(e.nodeId, e.unitIndex)] ??= {}).addAll(e.roles);
+        (merged[e.nodeId] ??= {}).addAll(e.roles);
       }
     }
 
@@ -230,8 +237,18 @@ class BackupService {
     take('requirements', LayerRole.required);
     return [
       for (final e in merged.entries)
-        LayerConfigEntry(
-            nodeId: e.key.$1, unitIndex: e.key.$2, roles: e.value),
+        LayerConfigEntry(nodeId: e.key, roles: e.value),
+    ];
+  }
+
+  /// [raw] without the entries carrying a unit scope. Anything that is not a
+  /// list passes through untouched, so [_parseList] still reports the shape
+  /// error rather than this quietly returning nothing.
+  static Object? _nodeScopedOnly(Object? raw) {
+    if (raw is! List) return raw;
+    return [
+      for (final e in raw)
+        if (e is! Map || ((e['unitIndex'] as num?)?.toInt() ?? -1) < 0) e,
     ];
   }
 
@@ -356,8 +373,8 @@ class BackupService {
       for (final id in teardown.layerIds) {
         await _repo.removeCustomLayer(targetProfileId, id);
       }
-      for (final (nodeId, unitIndex) in teardown.layerConfigs) {
-        await _repo.clearLayerConfig(targetProfileId, nodeId, unitIndex);
+      for (final nodeId in teardown.layerConfigs) {
+        await _repo.clearLayerConfig(targetProfileId, nodeId);
       }
     });
 
@@ -389,9 +406,7 @@ class BackupService {
 
     final keepNodes = {for (final n in data.customNodes) n.id};
     final keepLayers = {for (final l in data.customLayers) l.id};
-    final keepConfigs = {
-      for (final c in data.layerConfigs) (c.nodeId, c.unitIndex)
-    };
+    final keepConfigs = {for (final c in data.layerConfigs) c.nodeId};
 
     return _Teardown(
       nodeIds: [
@@ -404,8 +419,7 @@ class BackupService {
       ],
       layerConfigs: [
         for (final c in configs)
-          if (!keepConfigs.contains((c.nodeId, c.unitIndex)))
-            (c.nodeId, c.unitIndex),
+          if (!keepConfigs.contains(c.nodeId)) c.nodeId,
       ],
     );
   }
@@ -436,7 +450,9 @@ class _Teardown {
 
   final List<String> nodeIds;
   final List<String> layerIds;
-  final List<(String, int)> layerConfigs;
+
+  /// Node ids whose layer setting goes.
+  final List<String> layerConfigs;
 
   int get count => nodeIds.length + layerIds.length + layerConfigs.length;
 }

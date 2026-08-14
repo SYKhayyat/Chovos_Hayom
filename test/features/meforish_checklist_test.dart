@@ -43,7 +43,6 @@ void main() {
       'default',
       const LayerConfigEntry(
         nodeId: node,
-        unitIndex: -1,
         roles: {mainLayerId: LayerRole.required, 'rashi': LayerRole.required},
       ),
     );

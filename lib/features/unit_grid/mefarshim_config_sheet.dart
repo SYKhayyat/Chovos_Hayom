@@ -179,7 +179,6 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
         profileId,
         LayerConfigEntry(
           nodeId: widget.node.id,
-          unitIndex: -1,
           roles: current.isEmpty ? defaultLayerRoles : current,
         ),
       ),
@@ -195,7 +194,7 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
     final reset = await guard.run(
-      () => repo.clearLayerConfig(profileId, widget.node.id, -1),
+      () => repo.clearLayerConfig(profileId, widget.node.id),
       what: l10n.whatResettingMefarshim(nodeName(l10n, widget.node)),
     );
     if (reset) navigator.pop();
@@ -276,7 +275,7 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
           if (remaining == null) {
             // Nothing would be left, so clear the setting entirely and let the
             // node fall back to inheritance rather than pinning an empty map.
-            await repo.clearLayerConfig(profileId, e.nodeId, e.unitIndex);
+            await repo.clearLayerConfig(profileId, e.nodeId);
           } else {
             await repo.setLayerConfig(profileId, remaining);
           }

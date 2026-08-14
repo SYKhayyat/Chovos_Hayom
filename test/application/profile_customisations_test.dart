@@ -36,7 +36,6 @@ void main() {
   const meforish = Layer(id: 'my-meforish', name: 'My Meforish');
   const config = LayerConfigEntry(
     nodeId: 'custom.mine',
-    unitIndex: -1,
     roles: {mainLayerId: LayerRole.required, 'my-meforish': LayerRole.optional},
   );
 

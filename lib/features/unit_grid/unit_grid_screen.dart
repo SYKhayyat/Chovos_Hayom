@@ -135,6 +135,10 @@ class _UnitGrid extends ConsumerWidget {
     final roles = ref.watch(layerRolesProvider);
     final done = fold.doneUnits(node.id, roles);
     final l10n = AppLocalizations.of(context);
+    // A unit shows the per-layer checklist when more than the text is checkable
+    // on it — which is a fact about the node, so it is asked once here rather
+    // than once per cell in the builder below.
+    final layered = roles.isLayered(node.id);
     return GridView.builder(
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -147,10 +151,8 @@ class _UnitGrid extends ConsumerWidget {
       itemBuilder: (context, i) {
         final unit = node.unitOffset + i;
         final isDone = done.contains(unit);
-        // A unit shows the per-layer checklist when more than the text is
-        // checkable on it; its fill fraction tracks only the *required* layers, so
-        // optional mefarshim never inflate progress.
-        final layered = roles.isLayered(node.id, unit);
+        // The fill fraction tracks only the *required* layers, so optional
+        // mefarshim never inflate progress.
         final fraction = isDone
             ? 1.0
             : (layered ? roles.fraction(node.id, unit, fold) : 0.0);

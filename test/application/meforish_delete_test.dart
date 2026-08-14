@@ -28,7 +28,7 @@ Future<void> deleteMeforish(
       if (!e.roles.containsKey(layerId)) continue;
       final remaining = e.without(layerId);
       if (remaining == null) {
-        await repo.clearLayerConfig(profileId, e.nodeId, e.unitIndex);
+        await repo.clearLayerConfig(profileId, e.nodeId);
       } else {
         await repo.setLayerConfig(profileId, remaining);
       }
@@ -50,7 +50,6 @@ void main() {
         'p',
         LayerConfigEntry(
             nodeId: 'shas',
-            unitIndex: -1,
             roles: roles(required: ['main', 'mine'])));
 
     await deleteMeforish(repo, 'p', 'mine');
@@ -68,7 +67,7 @@ void main() {
     await repo.setLayerConfig(
         'p',
         LayerConfigEntry(
-            nodeId: 'shas', unitIndex: -1, roles: roles(required: ['mine'])));
+            nodeId: 'shas', roles: roles(required: ['mine'])));
 
     await deleteMeforish(repo, 'p', 'mine');
 
@@ -80,7 +79,6 @@ void main() {
         'p',
         LayerConfigEntry(
             nodeId: 'shas',
-            unitIndex: -1,
             roles: roles(required: ['main'], optional: ['rashi', 'mine'])));
 
     await deleteMeforish(repo, 'p', 'mine');
@@ -100,7 +98,6 @@ void main() {
         'p',
         LayerConfigEntry(
             nodeId: 'shas',
-            unitIndex: -1,
             roles: roles(required: ['mine'], optional: ['main'])));
 
     await deleteMeforish(repo, 'p', 'mine');
@@ -110,19 +107,22 @@ void main() {
     expect(configs.single.required, isEmpty);
   });
 
-  test('per-unit overrides are cleaned up too, not just node-level ones',
-      () async {
+  test('a setting pinned deep in the tree is cleaned up too', () async {
+    // Every stored setting is rewritten, wherever it was pinned. This used to
+    // be phrased as "per-unit overrides too, not just node-level ones", back
+    // when an entry could name a single unit; nothing ever wrote one, and the
+    // scope is gone. What the case is really about — a pin that is not at the
+    // root of the tree — is a deep node.
     await repo.setLayerConfig(
         'p',
         LayerConfigEntry(
             nodeId: 'shas.moed.shabbos',
-            unitIndex: 7,
             roles: roles(required: ['main', 'mine'])));
 
     await deleteMeforish(repo, 'p', 'mine');
 
     final configs = await repo.getLayerConfigs('p');
-    expect(configs.single.unitIndex, 7);
+    expect(configs.single.nodeId, 'shas.moed.shabbos');
     expect(configs.single.required, {'main'});
   });
 
@@ -130,12 +130,11 @@ void main() {
     await repo.setLayerConfig(
         'p',
         LayerConfigEntry(
-            nodeId: 'nach', unitIndex: -1, roles: roles(required: ['main'])));
+            nodeId: 'nach', roles: roles(required: ['main'])));
     await repo.setLayerConfig(
         'p',
         LayerConfigEntry(
             nodeId: 'shas',
-            unitIndex: -1,
             roles: roles(required: ['main', 'mine'])));
 
     await deleteMeforish(repo, 'p', 'mine');

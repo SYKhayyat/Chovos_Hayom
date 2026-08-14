@@ -79,9 +79,9 @@ class LogFold {
     final byUnit = completedByNode[nodeId];
     if (byUnit == null) return const {};
     final out = <int>{};
+    final req = layers?.requiredFor(nodeId) ?? const {mainLayerId};
     byUnit.forEach((unit, completed) {
       if (completed.isEmpty) return;
-      final req = layers?.requiredFor(nodeId, unit) ?? const {mainLayerId};
       if (_subset(req, completed)) out.add(unit);
     });
     return out;

@@ -331,7 +331,7 @@ class SettingsScreen extends ConsumerWidget {
             await repo.removeCustomLayer(profileId, l.id);
           }
           for (final c in made.configs) {
-            await repo.clearLayerConfig(profileId, c.nodeId, c.unitIndex);
+            await repo.clearLayerConfig(profileId, c.nodeId);
           }
         });
       },
@@ -703,14 +703,13 @@ class SettingsScreen extends ConsumerWidget {
       ...catalogParents,
       for (final n in backup.customNodes) n.id: n.parentId,
     };
-    final byKey = {
+    final byNode = {
       if (!mode.replacesCustomisation)
-        for (final e in await repo.getLayerConfigs(profileId))
-          (e.nodeId, e.unitIndex): e,
-      for (final e in backup.layerConfigs) (e.nodeId, e.unitIndex): e,
+        for (final e in await repo.getLayerConfigs(profileId)) e.nodeId: e,
+      for (final e in backup.layerConfigs) e.nodeId: e,
     };
     final restoredRoles =
-        LayerRoles.fromEntries(byKey.values, parentOf: parentOf);
+        LayerRoles.fromEntries(byNode.values, parentOf: parentOf);
 
     // A one-shot preview of two *different* logs — what is on disk and what is
     // in the file the user just picked — run once, off any rebuild path.

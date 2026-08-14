@@ -56,7 +56,7 @@ class _BulkActionsSheet extends ConsumerWidget {
     final roles = ref.watch(layerRolesProvider);
 
     // The layers worth offering as a per-meforish bulk action at this node.
-    final nodeCheckable = roles.checkableForNode(node.id);
+    final nodeCheckable = roles.checkableFor(node.id);
     final perLayer = [
       for (final l in allLayers)
         if (nodeCheckable.contains(l.id)) l,

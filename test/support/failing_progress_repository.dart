@@ -142,6 +142,6 @@ class FailingProgressRepository implements ProgressRepository {
       _inner.setLayerConfig(profileId, entry);
 
   @override
-  Future<void> clearLayerConfig(String profileId, String nodeId, int unitIndex) =>
-      _inner.clearLayerConfig(profileId, nodeId, unitIndex);
+  Future<void> clearLayerConfig(String profileId, String nodeId) =>
+      _inner.clearLayerConfig(profileId, nodeId);
 }

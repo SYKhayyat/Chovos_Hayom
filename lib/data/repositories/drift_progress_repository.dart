@@ -286,7 +286,6 @@ class DriftProgressRepository implements ProgressRepository {
 
   LayerConfigEntry _toLayerConfig(LayerConfigRow r) => LayerConfigEntry(
         nodeId: r.nodeId,
-        unitIndex: r.unitIndex,
         roles: _decodeRoles(r.rolesJson),
       );
 
@@ -296,7 +295,6 @@ class DriftProgressRepository implements ProgressRepository {
           LayerConfigsCompanion.insert(
             profileId: profileId,
             nodeId: entry.nodeId,
-            unitIndex: Value(entry.unitIndex),
             rolesJson: jsonEncode(
                 {for (final e in entry.roles.entries) e.key: e.value.name}),
           ),
@@ -304,13 +302,10 @@ class DriftProgressRepository implements ProgressRepository {
   }
 
   @override
-  Future<void> clearLayerConfig(
-      String profileId, String nodeId, int unitIndex) async {
+  Future<void> clearLayerConfig(String profileId, String nodeId) async {
     await (_db.delete(_db.layerConfigs)
-          ..where((t) =>
-              t.profileId.equals(profileId) &
-              t.nodeId.equals(nodeId) &
-              t.unitIndex.equals(unitIndex)))
+          ..where(
+              (t) => t.profileId.equals(profileId) & t.nodeId.equals(nodeId)))
         .go();
   }
 

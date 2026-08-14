@@ -239,7 +239,7 @@ class _ProgressBar extends ConsumerWidget {
   List<Widget> _meforishBars(BuildContext context, WidgetRef ref) {
     if (node.total == 0) return const [];
     final l10n = AppLocalizations.of(context);
-    final checkable = ref.watch(layerRolesProvider).checkableForNode(node.id);
+    final checkable = ref.watch(layerRolesProvider).checkableFor(node.id);
     final layers = ref.watch(allLayersProvider);
     final hidden = ref.watch(settingsProvider.select((s) => s.hiddenMeforishBars));
 

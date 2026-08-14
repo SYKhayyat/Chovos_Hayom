@@ -2071,18 +2071,6 @@ class $LayerConfigsTable extends LayerConfigs
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _unitIndexMeta = const VerificationMeta(
-    'unitIndex',
-  );
-  @override
-  late final GeneratedColumn<int> unitIndex = GeneratedColumn<int>(
-    'unit_index',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(-1),
-  );
   static const VerificationMeta _rolesJsonMeta = const VerificationMeta(
     'rolesJson',
   );
@@ -2095,12 +2083,7 @@ class $LayerConfigsTable extends LayerConfigs
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [
-    profileId,
-    nodeId,
-    unitIndex,
-    rolesJson,
-  ];
+  List<GeneratedColumn> get $columns => [profileId, nodeId, rolesJson];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2129,12 +2112,6 @@ class $LayerConfigsTable extends LayerConfigs
     } else if (isInserting) {
       context.missing(_nodeIdMeta);
     }
-    if (data.containsKey('unit_index')) {
-      context.handle(
-        _unitIndexMeta,
-        unitIndex.isAcceptableOrUnknown(data['unit_index']!, _unitIndexMeta),
-      );
-    }
     if (data.containsKey('roles_json')) {
       context.handle(
         _rolesJsonMeta,
@@ -2147,7 +2124,7 @@ class $LayerConfigsTable extends LayerConfigs
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {profileId, nodeId, unitIndex};
+  Set<GeneratedColumn> get $primaryKey => {profileId, nodeId};
   @override
   LayerConfigRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -2159,10 +2136,6 @@ class $LayerConfigsTable extends LayerConfigs
       nodeId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}node_id'],
-      )!,
-      unitIndex: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}unit_index'],
       )!,
       rolesJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -2181,16 +2154,11 @@ class LayerConfigRow extends DataClass implements Insertable<LayerConfigRow> {
   final String profileId;
   final String nodeId;
 
-  /// -1 = the node-level default (applies to all its units); >= 0 = a per-unit
-  /// override for that unit index.
-  final int unitIndex;
-
   /// JSON object of layer id -> role name ("optional" | "required").
   final String rolesJson;
   const LayerConfigRow({
     required this.profileId,
     required this.nodeId,
-    required this.unitIndex,
     required this.rolesJson,
   });
   @override
@@ -2198,7 +2166,6 @@ class LayerConfigRow extends DataClass implements Insertable<LayerConfigRow> {
     final map = <String, Expression>{};
     map['profile_id'] = Variable<String>(profileId);
     map['node_id'] = Variable<String>(nodeId);
-    map['unit_index'] = Variable<int>(unitIndex);
     map['roles_json'] = Variable<String>(rolesJson);
     return map;
   }
@@ -2207,7 +2174,6 @@ class LayerConfigRow extends DataClass implements Insertable<LayerConfigRow> {
     return LayerConfigsCompanion(
       profileId: Value(profileId),
       nodeId: Value(nodeId),
-      unitIndex: Value(unitIndex),
       rolesJson: Value(rolesJson),
     );
   }
@@ -2220,7 +2186,6 @@ class LayerConfigRow extends DataClass implements Insertable<LayerConfigRow> {
     return LayerConfigRow(
       profileId: serializer.fromJson<String>(json['profileId']),
       nodeId: serializer.fromJson<String>(json['nodeId']),
-      unitIndex: serializer.fromJson<int>(json['unitIndex']),
       rolesJson: serializer.fromJson<String>(json['rolesJson']),
     );
   }
@@ -2230,7 +2195,6 @@ class LayerConfigRow extends DataClass implements Insertable<LayerConfigRow> {
     return <String, dynamic>{
       'profileId': serializer.toJson<String>(profileId),
       'nodeId': serializer.toJson<String>(nodeId),
-      'unitIndex': serializer.toJson<int>(unitIndex),
       'rolesJson': serializer.toJson<String>(rolesJson),
     };
   }
@@ -2238,19 +2202,16 @@ class LayerConfigRow extends DataClass implements Insertable<LayerConfigRow> {
   LayerConfigRow copyWith({
     String? profileId,
     String? nodeId,
-    int? unitIndex,
     String? rolesJson,
   }) => LayerConfigRow(
     profileId: profileId ?? this.profileId,
     nodeId: nodeId ?? this.nodeId,
-    unitIndex: unitIndex ?? this.unitIndex,
     rolesJson: rolesJson ?? this.rolesJson,
   );
   LayerConfigRow copyWithCompanion(LayerConfigsCompanion data) {
     return LayerConfigRow(
       profileId: data.profileId.present ? data.profileId.value : this.profileId,
       nodeId: data.nodeId.present ? data.nodeId.value : this.nodeId,
-      unitIndex: data.unitIndex.present ? data.unitIndex.value : this.unitIndex,
       rolesJson: data.rolesJson.present ? data.rolesJson.value : this.rolesJson,
     );
   }
@@ -2260,41 +2221,36 @@ class LayerConfigRow extends DataClass implements Insertable<LayerConfigRow> {
     return (StringBuffer('LayerConfigRow(')
           ..write('profileId: $profileId, ')
           ..write('nodeId: $nodeId, ')
-          ..write('unitIndex: $unitIndex, ')
           ..write('rolesJson: $rolesJson')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(profileId, nodeId, unitIndex, rolesJson);
+  int get hashCode => Object.hash(profileId, nodeId, rolesJson);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is LayerConfigRow &&
           other.profileId == this.profileId &&
           other.nodeId == this.nodeId &&
-          other.unitIndex == this.unitIndex &&
           other.rolesJson == this.rolesJson);
 }
 
 class LayerConfigsCompanion extends UpdateCompanion<LayerConfigRow> {
   final Value<String> profileId;
   final Value<String> nodeId;
-  final Value<int> unitIndex;
   final Value<String> rolesJson;
   final Value<int> rowid;
   const LayerConfigsCompanion({
     this.profileId = const Value.absent(),
     this.nodeId = const Value.absent(),
-    this.unitIndex = const Value.absent(),
     this.rolesJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LayerConfigsCompanion.insert({
     required String profileId,
     required String nodeId,
-    this.unitIndex = const Value.absent(),
     required String rolesJson,
     this.rowid = const Value.absent(),
   }) : profileId = Value(profileId),
@@ -2303,14 +2259,12 @@ class LayerConfigsCompanion extends UpdateCompanion<LayerConfigRow> {
   static Insertable<LayerConfigRow> custom({
     Expression<String>? profileId,
     Expression<String>? nodeId,
-    Expression<int>? unitIndex,
     Expression<String>? rolesJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (profileId != null) 'profile_id': profileId,
       if (nodeId != null) 'node_id': nodeId,
-      if (unitIndex != null) 'unit_index': unitIndex,
       if (rolesJson != null) 'roles_json': rolesJson,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2319,14 +2273,12 @@ class LayerConfigsCompanion extends UpdateCompanion<LayerConfigRow> {
   LayerConfigsCompanion copyWith({
     Value<String>? profileId,
     Value<String>? nodeId,
-    Value<int>? unitIndex,
     Value<String>? rolesJson,
     Value<int>? rowid,
   }) {
     return LayerConfigsCompanion(
       profileId: profileId ?? this.profileId,
       nodeId: nodeId ?? this.nodeId,
-      unitIndex: unitIndex ?? this.unitIndex,
       rolesJson: rolesJson ?? this.rolesJson,
       rowid: rowid ?? this.rowid,
     );
@@ -2340,9 +2292,6 @@ class LayerConfigsCompanion extends UpdateCompanion<LayerConfigRow> {
     }
     if (nodeId.present) {
       map['node_id'] = Variable<String>(nodeId.value);
-    }
-    if (unitIndex.present) {
-      map['unit_index'] = Variable<int>(unitIndex.value);
     }
     if (rolesJson.present) {
       map['roles_json'] = Variable<String>(rolesJson.value);
@@ -2358,7 +2307,6 @@ class LayerConfigsCompanion extends UpdateCompanion<LayerConfigRow> {
     return (StringBuffer('LayerConfigsCompanion(')
           ..write('profileId: $profileId, ')
           ..write('nodeId: $nodeId, ')
-          ..write('unitIndex: $unitIndex, ')
           ..write('rolesJson: $rolesJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3426,7 +3374,6 @@ typedef $$LayerConfigsTableCreateCompanionBuilder =
     LayerConfigsCompanion Function({
       required String profileId,
       required String nodeId,
-      Value<int> unitIndex,
       required String rolesJson,
       Value<int> rowid,
     });
@@ -3434,7 +3381,6 @@ typedef $$LayerConfigsTableUpdateCompanionBuilder =
     LayerConfigsCompanion Function({
       Value<String> profileId,
       Value<String> nodeId,
-      Value<int> unitIndex,
       Value<String> rolesJson,
       Value<int> rowid,
     });
@@ -3455,11 +3401,6 @@ class $$LayerConfigsTableFilterComposer
 
   ColumnFilters<String> get nodeId => $composableBuilder(
     column: $table.nodeId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get unitIndex => $composableBuilder(
-    column: $table.unitIndex,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3488,11 +3429,6 @@ class $$LayerConfigsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get unitIndex => $composableBuilder(
-    column: $table.unitIndex,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get rolesJson => $composableBuilder(
     column: $table.rolesJson,
     builder: (column) => ColumnOrderings(column),
@@ -3513,9 +3449,6 @@ class $$LayerConfigsTableAnnotationComposer
 
   GeneratedColumn<String> get nodeId =>
       $composableBuilder(column: $table.nodeId, builder: (column) => column);
-
-  GeneratedColumn<int> get unitIndex =>
-      $composableBuilder(column: $table.unitIndex, builder: (column) => column);
 
   GeneratedColumn<String> get rolesJson =>
       $composableBuilder(column: $table.rolesJson, builder: (column) => column);
@@ -3554,13 +3487,11 @@ class $$LayerConfigsTableTableManager
               ({
                 Value<String> profileId = const Value.absent(),
                 Value<String> nodeId = const Value.absent(),
-                Value<int> unitIndex = const Value.absent(),
                 Value<String> rolesJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LayerConfigsCompanion(
                 profileId: profileId,
                 nodeId: nodeId,
-                unitIndex: unitIndex,
                 rolesJson: rolesJson,
                 rowid: rowid,
               ),
@@ -3568,13 +3499,11 @@ class $$LayerConfigsTableTableManager
               ({
                 required String profileId,
                 required String nodeId,
-                Value<int> unitIndex = const Value.absent(),
                 required String rolesJson,
                 Value<int> rowid = const Value.absent(),
               }) => LayerConfigsCompanion.insert(
                 profileId: profileId,
                 nodeId: nodeId,
-                unitIndex: unitIndex,
                 rolesJson: rolesJson,
                 rowid: rowid,
               ),

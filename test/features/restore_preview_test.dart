@@ -45,7 +45,7 @@ void main() {
     await source.setLayerConfig(
       'p1',
       LayerConfigEntry(
-          nodeId: nodeId, unitIndex: -1, roles: roles(required: [mainLayerId])),
+          nodeId: nodeId, roles: roles(required: [mainLayerId])),
     );
     return BackupService(source).export('p1');
   }
@@ -60,7 +60,6 @@ void main() {
         'p1',
         LayerConfigEntry(
             nodeId: nodeId,
-            unitIndex: -1,
             roles: roles(required: [mainLayerId, 'rashi'])));
     final currentRoles = LayerRoles.fromEntries(
         await repo.getLayerConfigs('p1'));
@@ -96,7 +95,6 @@ void main() {
         'p1',
         LayerConfigEntry(
             nodeId: 'other',
-            unitIndex: -1,
             roles: roles(required: [mainLayerId, 'rashi'])));
     final currentRoles = LayerRoles.fromEntries(
         await repo.getLayerConfigs('p1'));
@@ -137,7 +135,6 @@ void main() {
       'p1',
       LayerConfigEntry(
           nodeId: nodeId,
-          unitIndex: -1,
           roles: roles(required: [mainLayerId, 'rashi'])),
     );
     final json = await BackupService(source).export('p1');

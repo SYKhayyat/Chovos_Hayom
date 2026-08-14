@@ -30,7 +30,7 @@ void main() {
       );
 
   LayerRoles rolesOf(Map<String, LayerRole> roles) => LayerRoles.fromEntries([
-        LayerConfigEntry(nodeId: node, unitIndex: -1, roles: roles),
+        LayerConfigEntry(nodeId: node, roles: roles),
       ]);
 
   UnitMefarshim ask(
