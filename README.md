@@ -16,9 +16,15 @@ flutter run -d windows          # or your android device
 
 Use the Flutter version pinned in `.github/workflows/ci.yml`, not `stable` — see
 [*Toolchain notes*](#toolchain-notes-why-some-versions-are-pinned) for why that matters here.
-If you are going to write code, read [`CONTRIBUTING.md`](CONTRIBUTING.md) first: it has the setup,
-a tour of the repo, a worked example of a change moving through the layers, and the standards every
-change is held to.
+
+**New here?** [`docs/ONBOARDING.md`](docs/ONBOARDING.md) is the ordered path: get it running, the
+one decision everything follows from, the five invariants with guards behind them, and what your
+first change is held to. Then read [`CONTRIBUTING.md`](CONTRIBUTING.md), which has the repo tour, a
+worked example of a change moving through the layers, and the full standards.
+
+**Something misbehaving?** [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) is symptom-first —
+stale codegen, the pinned toolchain, the Windows `sqlite3.dll` lock, and the SnackBar timer that
+makes a test file look like it is hanging somewhere it is not.
 
 **Contents** — [Why the rewrite](#why-the-rewrite) ·
 [Architecture](#architecture-short-version) · [What it does](#what-it-does) ·
