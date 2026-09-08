@@ -71,13 +71,18 @@ void main() {
     );
   });
 
-  test('and domain/ imports neither data/ nor Flutter', () {
+  test('and domain/ imports neither data/ nor Flutter nor kosher_dart', () {
     // The stronger half of the same rule, and the one the whole derive engine
     // rests on: `domain/` is plain Dart, so every fold, roll-up and predictor in
     // it can be tested without a widget binding — which is why those suites run
-    // in milliseconds.
+    // in milliseconds. kosher_dart is on the list because the recurrence engine
+    // (`domain/usecases/recurrence.dart`) reads Hebrew dates through the
+    // `DayInfo` seam and must never import the library that fills it: a Hebrew
+    // rule lives in `core/planner_dates.dart`, and any other home would make
+    // the whole of `domain/` pay for the calendar again.
     final violations = <String>[];
-    final flutter = RegExp(r"""import\s+'package:(flutter|flutter_riverpod|drift)/""");
+    final flutter = RegExp(
+        r"""import\s+'package:(flutter|flutter_riverpod|drift|kosher_dart)/""");
 
     for (final path in dartSourcesUnder('lib/domain')) {
       for (final line
@@ -90,6 +95,6 @@ void main() {
 
     expect(violations, isEmpty,
         reason: 'domain/ is pure Dart: no Flutter, no Riverpod, no Drift, no '
-            'data/.\n\n${violations.join('\n')}');
+            'kosher_dart, no data/.\n\n${violations.join('\n')}');
   });
 }
