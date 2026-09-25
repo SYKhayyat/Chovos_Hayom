@@ -34,6 +34,8 @@
 /// Grouping happens on [ordinal] (an `int` key, with real `==`/`hashCode`, so
 /// a `Map<Day, …>` is as cheap as a `Map<int, …>`), and [midnight] is called
 /// once per *distinct day*, only where a `DateTime` has to leave for display.
+DateTime datePickerFirstDate(DateTime now) => Day.of(now).midnight;
+
 class Day implements Comparable<Day> {
   /// Wraps a raw whole-day [ordinal]. Prefer [Day.of]; this is for arithmetic
   /// results and for tests that want to name a specific ordinal.

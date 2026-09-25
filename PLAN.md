@@ -7,7 +7,7 @@ Done (closed): #1, #2, #3, #4, #6?, #9, #10, #16, #17, #19, #21, #22. (#6 epic t
 - [x] #18 bulk finish/clear unchunked single txn → chunk/stream (ANR/OOM). (High)
 - [x] #13 requiredPerDay off-by-one vs finishDate. (Medium)
 - [x] #14 partial un-mark diverges details vs fold. (Medium)
-- [ ] #15 date pickers forbid today. (Medium)
+- [x] #15 date pickers forbid today. (Medium)
 
 ## Phase 2 — Polish Mediums/Lows
 - [ ] #20 journal tiebreak, #5 coverage (edit_cycle_screen 1.4% first).

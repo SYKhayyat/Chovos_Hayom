@@ -121,7 +121,7 @@ class _UnitGrid extends ConsumerWidget {
     final picked = await showDatePicker(
       context: context,
       initialDate: (Day.of(now) + 180).midnight,
-      firstDate: now,
+      firstDate: datePickerFirstDate(now),
       lastDate: DateTime(2100),
     );
     if (picked == null) return;

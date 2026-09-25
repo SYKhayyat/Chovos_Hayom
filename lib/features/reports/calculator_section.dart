@@ -213,7 +213,8 @@ class _CalculatorSectionState extends ConsumerState<CalculatorSection>
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: _target,
-                    firstDate: now,
+                     firstDate: datePickerFirstDate(now),
+
                     lastDate: DateTime(2100),
                   );
                   if (picked != null) setState(() => _target = picked);

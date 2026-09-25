@@ -98,6 +98,11 @@ void main() {
   });
 
   group('the DateTime boundary', () {
+    test('date pickers start at midnight so today remains selectable', () {
+      final now = DateTime(2026, 8, 5, 14, 30);
+      expect(datePickerFirstDate(now), DateTime(2026, 8, 5));
+    });
+
     test('midnight round-trips back to the same Day', () {
       for (final probe in [
         DateTime(2026, 8, 5, 13, 37),

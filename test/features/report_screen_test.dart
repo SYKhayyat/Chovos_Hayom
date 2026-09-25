@@ -276,15 +276,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Shabbos'), findsOneWidget);
-      // 155 units left over 91 days is 1.7032…/day, and nothing else on the
-      // screen computes that number — `goalStatusProvider` does, and this row
-      // and the unit grid's banner now say it through the same function.
+      // 155 units left over 92 inclusive days is 1.6847…/day, and nothing else
+      // on the screen computes that number — `goalStatusProvider` does, and this
+      // row and the unit grid's banner now say it through the same function.
       //
-      // **1.71, not 1.70.** This is a requirement, not a measurement: 1.70 a
-      // day for 91 days is 154.7 dapim, so the number that used to be shown was
-      // one you could follow exactly and still not finish. `requiredPerDayText`
-      // rounds up, in both of the two places this quantity is rendered.
-      expect(find.textContaining('need 1.71/day'), findsOneWidget);
+      // **1.69, not 1.68.** This is a requirement, not a measurement: 1.68 a
+      // day for 92 days is 154.56 dapim, so the number that used to be shown
+      // was one you could follow exactly and still not finish.
+      // `requiredPerDayText` rounds up, in both of the two places this quantity
+      // is rendered.
+      expect(find.textContaining('need 1.69/day'), findsOneWidget);
     });
 
     testWidgets('removing a goal is undoable', (tester) async {
