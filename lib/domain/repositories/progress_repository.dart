@@ -52,8 +52,8 @@ abstract interface class ProgressRepository {
   /// place — they are only ever appended (see [updateEvent] for the one exception).
   Future<void> addEvent(LearningEvent event);
 
-  /// Append many events in one transaction — the backing store for bulk actions
-  /// (finish-all / clear-all). No-op on an empty list.
+  /// Append many events in bounded transactions — the backing store for bulk
+  /// actions (finish-all / clear-all). No-op on an empty list.
   Future<void> addEvents(List<LearningEvent> events);
 
   /// Remove many of [profileId]'s events by id in one transaction — used to undo

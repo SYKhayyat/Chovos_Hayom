@@ -3,12 +3,26 @@ import 'package:chovos_hayom/application/logging_service.dart';
 import 'package:chovos_hayom/domain/entities/catalog.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
+import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
 import 'package:chovos_hayom/domain/usecases/layer_roles.dart';
 import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
+import 'package:chovos_hayom/data/repositories/drift_progress_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/memory_database.dart';
+
+class _CountingRepository extends DriftProgressRepository {
+  _CountingRepository(super.database);
+
+  final batchSizes = <int>[];
+
+  @override
+  Future<void> addEvents(List<LearningEvent> events) async {
+    batchSizes.add(events.length);
+    await super.addEvents(events);
+  }
+}
 
 /// cat ─┬─ a (units 2,3,4)
 ///      └─ b (units 1,2)
@@ -190,6 +204,36 @@ void main() {
     final fold = await currentFold();
     expect(fold.doneUnits('a'), isEmpty, reason: 'the undone batch');
     expect(fold.doneUnits('b'), {1, 2}, reason: 'the other batch is untouched');
+  });
+
+  test('bulk writes are split into bounded transactions but keep one batch id',
+      () async {
+    final database = memoryDatabase();
+    final counting = _CountingRepository(database);
+    var ids = 0;
+    final service = LoggingService(
+      repository: counting,
+      profileId: 'p',
+      now: () => DateTime(2026, 1, 1, 8),
+      idGen: () => 'chunk-${ids++}',
+      maxBatchSize: 2,
+    );
+    final bulk = BulkMarker(
+      catalog: catalog,
+      fold: FoldLog.fold(const []),
+      layers: LayerRoles(),
+      logger: service,
+    );
+
+    final result = await bulk.finish(
+      nodeId: 'cat',
+      selection: const RequiredLayerSelection(),
+    );
+
+    expect(counting.batchSizes, [2, 2, 1]);
+    expect(result.unitsAffected, 5);
+    expect((await counting.getEvents('p')).map((e) => e.batchId).toSet(),
+        {result.batchId});
   });
 
   test('a single mark carries no batch id, so it never joins the undo list',

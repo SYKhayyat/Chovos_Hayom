@@ -15,14 +15,22 @@ class LoggingService {
     required this.profileId,
     DateTime Function()? now,
     String Function()? idGen,
+    this.maxBatchSize = defaultMaxBatchSize,
   })  : _repo = repository,
         _now = now ?? DateTime.now,
-        _idGen = idGen ?? const Uuid().v4;
+        _idGen = idGen ?? const Uuid().v4 {
+    if (maxBatchSize <= 0) {
+      throw ArgumentError.value(maxBatchSize, 'maxBatchSize');
+    }
+  }
+
+  static const defaultMaxBatchSize = 500;
 
   final ProgressRepository _repo;
   final String profileId;
   final DateTime Function() _now;
   final String Function() _idGen;
+  final int maxBatchSize;
 
   Future<LearningEvent> log({
     required String nodeId,
@@ -73,31 +81,36 @@ class LoggingService {
           action: EventAction.undone,
           layers: layers);
 
-  /// Append many marks in one transaction, all sharing a single timestamp and a
-  /// single `batchId` — the backing operation for bulk finish/clear. The shared
-  /// id is what makes the action undoable later from the log alone, without the
-  /// caller having to hold on to a list of event ids (see [BatchHistory]).
-  /// Id/timestamp generation stays here so event creation has a single owner.
+  /// Append many marks in bounded transactions, all sharing a single timestamp
+  /// and a single `batchId` — the backing operation for bulk finish/clear. The
+  /// shared id is what makes the action undoable later from the log alone.
   Future<List<LearningEvent>> logBatch(List<BulkMark> marks,
       {DateTime? occurredAt}) async {
     if (marks.isEmpty) return const [];
     final now = _now();
     final batchId = _idGen();
-    final events = [
-      for (final m in marks)
-        LearningEvent(
-          id: _idGen(),
-          profileId: profileId,
-          nodeId: m.nodeId,
-          unitIndex: m.unitIndex,
-          action: m.action,
-          occurredAt: occurredAt ?? now,
-          loggedAt: now,
-          layers: m.layers,
-          batchId: batchId,
-        ),
-    ];
-    await _repo.addEvents(events);
+    final events = <LearningEvent>[];
+    for (var start = 0; start < marks.length; start += maxBatchSize) {
+      final end = start + maxBatchSize < marks.length
+          ? start + maxBatchSize
+          : marks.length;
+      final chunk = <LearningEvent>[
+        for (final m in marks.sublist(start, end))
+          LearningEvent(
+            id: _idGen(),
+            profileId: profileId,
+            nodeId: m.nodeId,
+            unitIndex: m.unitIndex,
+            action: m.action,
+            occurredAt: occurredAt ?? now,
+            loggedAt: now,
+            layers: m.layers,
+            batchId: batchId,
+          ),
+      ];
+      await _repo.addEvents(chunk);
+      events.addAll(chunk);
+    }
     return events;
   }
 

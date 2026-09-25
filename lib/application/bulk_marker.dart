@@ -82,7 +82,7 @@ class BulkResult {
 ///
 /// Pure orchestration: it reads the current [fold] and the two resolvers to plan
 /// the minimal set of marks, then commits them through [LoggingService.logBatch]
-/// in one transaction.
+/// in bounded transactions.
 class BulkMarker {
   BulkMarker({
     required this.catalog,

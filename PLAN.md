@@ -4,7 +4,7 @@ Worker loop: top unchecked item only, fix + widget/unit test, commit, check off,
 Done (closed): #1, #2, #3, #4, #6?, #9, #10, #16, #17, #19, #21, #22. (#6 epic tracker stays open as index.)
 
 ## Phase 1 — Release blockers (the 1 High + correctness Mediums)
-- [ ] #18 bulk finish/clear unchunked single txn → chunk/stream (ANR/OOM). (High)
+- [x] #18 bulk finish/clear unchunked single txn → chunk/stream (ANR/OOM). (High)
 - [ ] #13 requiredPerDay off-by-one vs finishDate. (Medium)
 - [ ] #14 partial un-mark diverges details vs fold. (Medium)
 - [ ] #15 date pickers forbid today. (Medium)
