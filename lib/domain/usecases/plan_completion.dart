@@ -32,6 +32,35 @@ class PlanCompletion {
     return true;
   }
 
+  static bool hasProgress(
+    LearningPlan plan,
+    Catalog catalog,
+    LogFold fold,
+    Day day, {
+    LayerRoles? layers,
+  }) {
+    for (final assignment in plan.assignments) {
+      final targetId = assignment.targetNodeId;
+      if (targetId == null) continue;
+      final target = catalog.byId(targetId);
+      if (target == null) continue;
+      for (final leaf in catalog.leavesUnder(target.id)) {
+        final required = layers?.requiredFor(leaf.id) ?? {mainLayerId};
+        for (var unit = leaf.unitOffset;
+            unit < leaf.unitOffset + leaf.unitCount;
+            unit++) {
+          final doneAt = fold.doneAt(leaf.id, unit);
+          if (doneAt != null &&
+              Day.of(doneAt) < day &&
+              required.every(fold.completedLayers(leaf.id, unit).contains)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   static bool completeBefore(
     LearningPlan plan,
     Catalog catalog,

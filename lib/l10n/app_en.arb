@@ -1049,6 +1049,11 @@
   "@plannerTodayLogUnit": {
     "placeholders": { "unit": { "type": "int" } }
   },
+  "plannerCalendarTitle": "Planner calendar",
+  "plannerCalendarMonth": "Month",
+  "plannerCalendarWeek": "Week",
+  "plannerCalendarPrevious": "Previous month",
+  "plannerCalendarNext": "Next month",
 
   "@_CRASH_LOG": {},
   "crashLogTitle": "Crash log",

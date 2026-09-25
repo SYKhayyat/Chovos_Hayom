@@ -559,6 +559,11 @@
   "plannerTodayScheduled": "מתוכנן להיום",
   "plannerTodayComplete": "הושלם",
   "plannerTodayLogUnit": "סימון {unit}",
+  "plannerCalendarTitle": "לוח התכנון",
+  "plannerCalendarMonth": "חודש",
+  "plannerCalendarWeek": "שבוע",
+  "plannerCalendarPrevious": "החודש הקודם",
+  "plannerCalendarNext": "החודש הבא",
 
   "crashLogTitle": "יומן קריסות",
   "crashLogCopy": "העתקה ללוח",
