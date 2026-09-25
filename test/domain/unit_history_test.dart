@@ -10,6 +10,7 @@ LearningEvent ev(
   String node = 'a',
   int? durationMin,
   String? note,
+  List<String> layers = const ['main'],
 }) {
   final t = DateTime(2026, 1, 1).add(Duration(seconds: seq));
   return LearningEvent(
@@ -22,6 +23,7 @@ LearningEvent ev(
     loggedAt: t,
     durationMin: durationMin,
     note: note,
+    layers: layers,
   );
 }
 
@@ -62,6 +64,27 @@ void main() {
         ev(EventAction.done, seq: 0),
         ev(EventAction.reviewed, seq: 1),
         ev(EventAction.undone, seq: 2),
+      ], 'a', 2);
+      expect(h.isDone, isFalse);
+      expect(h.reviewCount, 0);
+    });
+
+    test('a partial un-mark keeps the done event and its reviews', () {
+      final h = UnitHistoryFinder.forUnit([
+        ev(EventAction.done, seq: 0, layers: ['main', 'rashi']),
+        ev(EventAction.reviewed, seq: 1),
+        ev(EventAction.undone, seq: 2, layers: ['rashi']),
+      ], 'a', 2);
+      expect(h.isDone, isTrue);
+      expect(h.reviewCount, 1);
+    });
+
+    test('a later full un-mark still clears the unit and its reviews', () {
+      final h = UnitHistoryFinder.forUnit([
+        ev(EventAction.done, seq: 0, layers: ['main', 'rashi']),
+        ev(EventAction.reviewed, seq: 1),
+        ev(EventAction.undone, seq: 2, layers: ['rashi']),
+        ev(EventAction.undone, seq: 3, layers: ['main']),
       ], 'a', 2);
       expect(h.isDone, isFalse);
       expect(h.reviewCount, 0);

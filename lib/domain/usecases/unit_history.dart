@@ -46,17 +46,21 @@ class UnitHistoryFinder {
       });
 
     LearningEvent? done;
+    final completedLayers = <String>{};
     final reviews = <LearningEvent>[];
     for (final e in own) {
       switch (e.action) {
         case EventAction.done:
+          completedLayers.addAll(e.layers);
           // A later `done` supersedes an earlier one's annotations.
           done = e;
           break;
         case EventAction.undone:
-          // Un-marking clears the unit and any reviews accrued against it.
-          done = null;
-          reviews.clear();
+          completedLayers.removeAll(e.layers);
+          if (completedLayers.isEmpty) {
+            done = null;
+            reviews.clear();
+          }
           break;
         case EventAction.reviewed:
           if (done != null) reviews.add(e);
