@@ -606,6 +606,11 @@ class _AppDrawer extends ConsumerWidget {
               title: Text(l10n.navLearningCycles),
               onTap: () => _go(context, Routes.cycles),
             ),
+            ListTile(
+              leading: const Icon(Icons.today_outlined),
+              title: Text(l10n.plannerTodayTitle),
+              onTap: () => _go(context, Routes.plannerToday),
+            ),
             Consumer(builder: (context, ref, _) {
               // The count, not the list. The drawer sits in the tree whether it
               // is open or not, and `chazaraDueProvider` re-derives on every

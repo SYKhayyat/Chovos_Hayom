@@ -1040,6 +1040,16 @@
     "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
   },
 
+  "@_PLANNER_TODAY": {},
+  "plannerTodayTitle": "Today's goals",
+  "plannerTodayEmpty": "Nothing is scheduled for today.",
+  "plannerTodayScheduled": "Scheduled for today",
+  "plannerTodayComplete": "Finished",
+  "plannerTodayLogUnit": "Log {unit}",
+  "@plannerTodayLogUnit": {
+    "placeholders": { "unit": { "type": "int" } }
+  },
+
   "@_CRASH_LOG": {},
   "crashLogTitle": "Crash log",
   "crashLogCopy": "Copy to clipboard",

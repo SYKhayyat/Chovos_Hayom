@@ -60,6 +60,9 @@ class PrefKeys {
   /// cycles, and any sefer-name mappings (JSON).
   static const cycles = 'cycles';
 
+  /// The profile's learning plans and chains (JSON).
+  static const plans = 'plans';
+
   /// Set once the one-time move of the old device-wide settings into the active
   /// profile has run. See `SettingsNotifier`.
   static const settingsScopedMigrated = 'settingsScopedMigrated';
@@ -105,6 +108,7 @@ class PrefKeys {
     chazaraIntervals,
     hiddenMeforishBars,
     cycles,
+    plans,
     backupReminderEnabled,
     backupIntervalDays,
   ];

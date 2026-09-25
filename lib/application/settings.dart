@@ -314,6 +314,10 @@ class SettingsNotifier extends Notifier<SettingsState> {
                 .read(appPreferencesProvider)
                 .getString(PrefKeys.scoped(_profileId, PrefKeys.cycles)) ??
             '',
+        PrefKeys.plans: ref
+                .read(appPreferencesProvider)
+                .getString(PrefKeys.scoped(_profileId, PrefKeys.plans)) ??
+            '',
       };
 
   /// Apply a serialised preferences map (from an imported backup) to the active

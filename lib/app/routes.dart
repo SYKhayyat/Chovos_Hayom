@@ -10,6 +10,7 @@ import '../features/history/bulk_history_screen.dart';
 import '../features/journal/notes_journal_screen.dart';
 import '../features/node/node_screen.dart';
 import '../features/profiles/profiles_screen.dart';
+import '../features/planner/today_screen.dart';
 import '../features/reports/report_screen.dart';
 import '../features/settings/crash_log_screen.dart';
 import '../features/settings/settings_screen.dart';
@@ -35,6 +36,7 @@ import '../features/unit_grid/unit_grid_screen.dart';
 ///   is un-restorable because of what was passed to it.
 abstract final class Routes {
   static const dashboard = '/';
+  static const plannerToday = '/planner/today';
 
   /// The five report routes. They are one screen — [ReportScreen], opened on a
   /// different tab — and they stay five *names* because a name is what a deep
@@ -89,6 +91,7 @@ abstract final class AppRouter {
     final uri = Uri.parse(name ?? Routes.dashboard);
     return switch (_segments(uri)) {
       [] => const DashboardScreen(),
+      ['planner', 'today'] => const PlannerTodayScreen(),
       ['stats'] => const ReportScreen(),
       ['calculator'] => const ReportScreen(section: ReportSection.calculator),
       ['goals'] => const ReportScreen(section: ReportSection.goals),

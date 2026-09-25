@@ -1,9 +1,10 @@
 import 'package:chovos_hayom/core/day.dart';
-import 'package:chovos_hayom/domain/entities/learning_event.dart';
+import 'package:chovos_hayom/domain/entities/layer.dart';
 import 'package:chovos_hayom/domain/usecases/fold_log.dart';
 import 'package:chovos_hayom/domain/usecases/learning_plan.dart';
 import 'package:chovos_hayom/domain/usecases/plan_completion.dart';
 import 'package:chovos_hayom/domain/usecases/recurrence.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_catalog.dart';
 
