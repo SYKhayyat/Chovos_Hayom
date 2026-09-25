@@ -160,6 +160,29 @@ void main() {
     await settle(tester);
   }
 
+  group('the form controls', () {
+    testWidgets('the start date opens a picker and repeat can be turned off',
+        (tester) async {
+      final h = harness();
+      await pump(tester, h.widget);
+      await fillIn(tester, name: 'One-time cycle');
+      await addSefarim(h.repo);
+      await addSefer(tester, 'Shabbos — Shas · Moed');
+
+      await tester.tap(find.text('Started on'));
+      await settle(tester);
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await settle(tester);
+
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.tap(find.text('Create cycle'));
+      await settle(tester);
+
+      expect(saved(h.prefs).single.repeats, isFalse);
+    });
+  });
+
   group('creating one', () {
     testWidgets('a named cycle with a sefer in it is saved and persists',
         (tester) async {
