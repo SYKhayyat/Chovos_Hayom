@@ -133,6 +133,45 @@ void main() {
     });
   });
 
+  const dailyPlan = LearningPlan(
+    id: 'daily',
+    name: 'Daily',
+    assignments: [PlanAssignment(id: 'gemara', rule: DailyRule())],
+  );
+
+  group('rescheduling', () {
+    test('an isolated override moves one occurrence and survives JSON', () {
+      final moved = PlannerSchedule.move(
+        dailyPlan,
+        assignmentId: 'gemara',
+        from: const Day(1),
+        to: const Day(2),
+      );
+
+      expect(PlannerSchedule.assignmentsOn(moved, reader(const Day(1)))
+          .map((a) => a.id), isNot(contains('gemara')));
+      expect(PlannerSchedule.assignmentsOn(moved, reader(const Day(2)))
+          .map((a) => a.id), contains('gemara'));
+      expect(LearningPlan.fromJson(moved.toJson()), moved);
+    });
+
+    test('shiftAfter moves every occurrence in the window', () {
+      final shifted = PlannerSchedule.shiftAfter(
+        dailyPlan,
+        from: const Day(1),
+        through: const Day(3),
+        days: 2,
+        info: reader,
+      );
+
+      expect(shifted.overrides, hasLength(3));
+      expect(PlannerSchedule.assignmentsOn(shifted, reader(const Day(1)))
+          .map((a) => a.id), isNot(contains('gemara')));
+      expect(PlannerSchedule.assignmentsOn(shifted, reader(const Day(4)))
+          .map((a) => a.id), contains('gemara'));
+    });
+  });
+
   group('PlannerSchedule.assignmentsOn', () {
     test('returns the matching assignments in plan order', () {
       final p = plan();

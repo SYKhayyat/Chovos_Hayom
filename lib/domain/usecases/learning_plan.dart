@@ -65,24 +65,55 @@ class PlanAssignment {
   int get hashCode => Object.hash(id, rule, targetNodeId, unitsPerFiring, label);
 }
 
-/// A learning plan: a named set of assignments sharing a default display
-/// calendar.
-///
-/// The epic's principle: the schedule is a plan; the log is reality. This is
-/// the plan half. A plan fires on a day when any assignment's rule matches;
-/// overlapping assignments all fire — "Mishna Yomi daily + Chumash on
-/// Wednesdays" is one plan with two assignments, both due on a Wednesday.
+class PlanOverride {
+  const PlanOverride({
+    required this.assignmentId,
+    required this.from,
+    required this.to,
+  });
+
+  final String assignmentId;
+  final Day from;
+  final Day to;
+
+  Map<String, dynamic> toJson() => {
+        'assignmentId': assignmentId,
+        'from': from.toString(),
+        'to': to.toString(),
+      };
+
+  factory PlanOverride.fromJson(Map<String, dynamic> json) => PlanOverride(
+        assignmentId: json['assignmentId'] as String,
+        from: Day.of(DateTime.parse(json['from'] as String)),
+        to: Day.of(DateTime.parse(json['to'] as String)),
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      other is PlanOverride &&
+      other.assignmentId == assignmentId &&
+      other.from == from &&
+      other.to == to;
+
+  @override
+  int get hashCode => Object.hash(assignmentId, from, to);
+}
+
+/// The plan half. A plan fires on a day when any assignment's rule matches;
+/// overlapping assignments all fire.
 class LearningPlan {
   const LearningPlan({
     required this.id,
     required this.name,
     this.assignments = const [],
+    this.overrides = const [],
     this.displayCalendar = RuleCalendar.gregorian,
   });
 
   final String id;
   final String name;
   final List<PlanAssignment> assignments;
+  final List<PlanOverride> overrides;
 
   /// The calendar a plan's days are shown in by default. A rule may still
   /// declare its own (see [RecurrenceRule.calendar]).
@@ -96,6 +127,7 @@ class LearningPlan {
         'name': name,
         'displayCalendar': displayCalendar.name,
         'assignments': [for (final a in assignments) a.toJson()],
+        'overrides': [for (final o in overrides) o.toJson()],
       };
 
   factory LearningPlan.fromJson(Map<String, dynamic> json) => LearningPlan(
@@ -110,6 +142,11 @@ class LearningPlan {
             PlanAssignment.fromJson(
                 (a as Map<dynamic, dynamic>).cast<String, dynamic>()),
         ],
+        overrides: [
+          for (final o in (json['overrides'] as List<dynamic>? ?? const []))
+            PlanOverride.fromJson(
+                (o as Map<dynamic, dynamic>).cast<String, dynamic>()),
+        ],
       );
 
   @override
@@ -118,13 +155,27 @@ class LearningPlan {
       other.id == id &&
       other.name == name &&
       other.displayCalendar == displayCalendar &&
-      _sameAssignments(assignments, other.assignments);
+      _sameAssignments(assignments, other.assignments) &&
+      _sameOverrides(overrides, other.overrides);
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, displayCalendar, Object.hashAll(assignments));
+  int get hashCode => Object.hash(
+        id,
+        name,
+        displayCalendar,
+        Object.hashAll(assignments),
+        Object.hashAll(overrides),
+      );
 
   static bool _sameAssignments(List<PlanAssignment> a, List<PlanAssignment> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  static bool _sameOverrides(List<PlanOverride> a, List<PlanOverride> b) {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
       if (a[i] != b[i]) return false;
@@ -143,8 +194,67 @@ class PlannerSchedule {
   const PlannerSchedule._();
 
   /// The assignments of [plan] that fire on [info], in plan order.
-  static List<PlanAssignment> assignmentsOn(LearningPlan plan, DayInfo info) =>
-      [for (final a in plan.assignments) if (a.rule.matches(info)) a];
+  static List<PlanAssignment> assignmentsOn(LearningPlan plan, DayInfo info) {
+    final movedFrom = {
+      for (final o in plan.overrides)
+        if (o.from == info.day) o.assignmentId,
+    };
+    final active = <PlanAssignment>[
+      for (final a in plan.assignments)
+        if (a.rule.matches(info) && !movedFrom.contains(a.id)) a,
+    ];
+    final present = {for (final a in active) a.id};
+    return [
+      ...active,
+      for (final a in plan.assignments)
+        if (plan.overrides.any((o) =>
+            o.assignmentId == a.id && o.to == info.day) &&
+            !present.contains(a.id))
+          a,
+    ];
+  }
+
+  /// Move one occurrence without changing the plan's rule.
+  static LearningPlan move(
+    LearningPlan plan, {
+    required String assignmentId,
+    required Day from,
+    required Day to,
+  }) =>
+      LearningPlan(
+        id: plan.id,
+        name: plan.name,
+        assignments: plan.assignments,
+        displayCalendar: plan.displayCalendar,
+        overrides: [
+          ...plan.overrides.where((o) =>
+              o.assignmentId != assignmentId || o.from != from),
+          PlanOverride(assignmentId: assignmentId, from: from, to: to),
+        ],
+      );
+
+  /// Move every occurrence from [from] through [through] by [days].
+  static LearningPlan shiftAfter(
+    LearningPlan plan, {
+    required Day from,
+    required Day through,
+    required int days,
+    required DayInfo Function(Day) info,
+  }) {
+    if (days == 0) return plan;
+    var next = plan;
+    for (final day in daysOn(plan, info, from, through)) {
+      for (final assignment in assignmentsOn(plan, info(day))) {
+        next = move(
+          next,
+          assignmentId: assignment.id,
+          from: day,
+          to: day + days,
+        );
+      }
+    }
+    return next;
+  }
 
   /// Every day in `from..to` inclusive on which any assignment of [plan]
   /// fires, ascending. A day with two firing assignments appears once.
