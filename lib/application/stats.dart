@@ -8,6 +8,7 @@ import '../domain/usecases/chazara_schedule.dart';
 import '../domain/usecases/predictor.dart';
 import '../domain/usecases/progress_series.dart';
 import '../domain/usecases/siyum.dart';
+import '../domain/usecases/siyum_schedule.dart';
 import 'providers.dart';
 import 'settings.dart';
 
@@ -224,4 +225,17 @@ final siyumimProvider = Provider<List<Siyum>>((ref) {
   final fold = ref.watch(foldProvider).asData?.value;
   if (forest == null || fold == null) return const [];
   return SiyumFinder.completed(forest, fold);
+});
+
+/// Siyumim still to come, each on the day it is projected to land, soonest
+/// first. The forward twin of [siyumimProvider], reading the same forest so the
+/// two can never disagree about what is finished — see [SiyumSchedule].
+final scheduledSiyumimProvider = Provider<List<ScheduledSiyum>>((ref) {
+  final forest = ref.watch(progressForestProvider).asData?.value;
+  if (forest == null) return const [];
+  return SiyumSchedule.projected(
+    forest: forest,
+    perDay: ref.watch(paceProvider),
+    today: Day.of(ref.watch(clockProvider)()),
+  );
 });

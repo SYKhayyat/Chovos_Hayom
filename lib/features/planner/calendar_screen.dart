@@ -15,6 +15,7 @@ import '../../domain/usecases/learning_plan.dart';
 import '../../domain/usecases/plan_chain.dart';
 import '../../domain/usecases/plan_completion.dart';
 import '../../domain/usecases/planner_calendar.dart';
+import '../../domain/usecases/siyum_schedule.dart';
 import '../../l10n/generated/app_localizations.dart';
 
 enum PlannerCalendarRange { month, week }
@@ -63,6 +64,15 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
             isActive: (plan, day) => _isActive(config, plan, day, catalog, fold, layers),
           );
     final byDay = {for (final day in days) day.day: day};
+    // A siyum gets a recurring/one-off slot in the calendar so the user knows
+    // it is coming. The slot is a *projection* off the same rolled-up log the
+    // confirmed siyumim come from (see `SiyumSchedule`), so this is a marker,
+    // never a stored event — mark the day, don't write to the log.
+    final scheduled = ref.watch(scheduledSiyumimProvider);
+    final siyumByDay = <Day, List<ScheduledSiyum>>{};
+    for (final siyum in scheduled) {
+      siyumByDay.putIfAbsent(siyum.day, () => []).add(siyum);
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -99,8 +109,8 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
           ),
           Expanded(
             child: _range == PlannerCalendarRange.month
-                ? _MonthGrid(byDay: byDay, start: start)
-                : _WeekList(byDay: byDay, start: start),
+                ? _MonthGrid(byDay: byDay, start: start, siyumByDay: siyumByDay, l10n: l10n)
+                : _WeekList(byDay: byDay, start: start, siyumByDay: siyumByDay, l10n: l10n),
           ),
         ],
       ),
@@ -128,10 +138,17 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
 }
 
 class _MonthGrid extends StatelessWidget {
-  const _MonthGrid({required this.byDay, required this.start});
+  const _MonthGrid({
+    required this.byDay,
+    required this.start,
+    required this.siyumByDay,
+    required this.l10n,
+  });
 
   final Map<Day, PlannedDay> byDay;
   final Day start;
+  final Map<Day, List<ScheduledSiyum>> siyumByDay;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -146,6 +163,7 @@ class _MonthGrid extends StatelessWidget {
       itemBuilder: (context, index) {
         final day = cells[index];
         final planned = byDay[day];
+        final siyumim = siyumByDay[day];
         final color = switch (planned?.status) {
           PlannedDayStatus.done => Colors.green,
           PlannedDayStatus.partlyDone => Colors.orange,
@@ -154,14 +172,30 @@ class _MonthGrid extends StatelessWidget {
           null => Colors.transparent,
         };
         return Semantics(
-          label: '${day.midnight.day}',
+          label: siyumim == null
+              ? '${day.midnight.day}'
+              : '${day.midnight.day} · ${l10n.plannerCalendarSiyum}',
           child: Container(
             margin: const EdgeInsets.all(1),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey),
               color: color.withValues(alpha: planned == null ? 0 : 0.18),
             ),
-            child: Center(child: Text('${day.midnight.day}')),
+            child: Stack(
+              children: [
+                Center(child: Text('${day.midnight.day}')),
+                if (siyumim != null)
+                  Positioned(
+                    top: 1,
+                    right: 1,
+                    child: Icon(
+                      Icons.star,
+                      size: 10,
+                      color: Colors.amber.shade700,
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },
@@ -170,10 +204,17 @@ class _MonthGrid extends StatelessWidget {
 }
 
 class _WeekList extends StatelessWidget {
-  const _WeekList({required this.byDay, required this.start});
+  const _WeekList({
+    required this.byDay,
+    required this.start,
+    required this.siyumByDay,
+    required this.l10n,
+  });
 
   final Map<Day, PlannedDay> byDay;
   final Day start;
+  final Map<Day, List<ScheduledSiyum>> siyumByDay;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) => ListView.builder(
@@ -181,13 +222,25 @@ class _WeekList extends StatelessWidget {
         itemBuilder: (context, index) {
           final day = start + index;
           final planned = byDay[day];
+          final siyumim = siyumByDay[day];
           return ListTile(
             leading: Icon(Icons.circle, size: 12, color: _color(planned?.status)),
             title: Text(day.toString()),
-            subtitle: planned == null ? null : Text('${planned.plans.length}'),
+            subtitle: _subtitle(planned, siyumim),
+            trailing: siyumim == null
+                ? null
+                : Icon(Icons.star, color: Colors.amber.shade700),
           );
         },
       );
+
+  Widget? _subtitle(PlannedDay? planned, List<ScheduledSiyum>? siyumim) {
+    if (siyumim == null) {
+      return planned == null ? null : Text('${planned.plans.length}');
+    }
+    final names = [for (final s in siyumim) s.node.name].join(', ');
+    return Text('${l10n.plannerCalendarSiyum}: $names');
+  }
 
   Color _color(PlannedDayStatus? status) => switch (status) {
         PlannedDayStatus.done => Colors.green,

@@ -1054,6 +1054,7 @@
   "plannerCalendarWeek": "Week",
   "plannerCalendarPrevious": "Previous month",
   "plannerCalendarNext": "Next month",
+  "plannerCalendarSiyum": "Siyum",
 
   "@_CRASH_LOG": {},
   "crashLogTitle": "Crash log",
