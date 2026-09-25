@@ -1,7 +1,7 @@
 # PLAN — Chovos_Hayom (closest to release; work top to bottom)
 
 Worker loop: top unchecked item only, fix + widget/unit test, commit, check off, stop.
-Done (closed): #1, #2, #3, #4, #6?, #9, #10, #16, #17, #19, #21, #22. (#6 epic tracker stays open as index.)
+Done (closed): #1, #2, #3, #4, #5, #6?, #7, #8, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20, #21, #22. (#6 epic tracker stays open as index.)
 
 ## Phase 1 — Release blockers (the 1 High + correctness Mediums)
 - [x] #18 bulk finish/clear unchunked single txn → chunk/stream (ANR/OOM). (High)
@@ -13,7 +13,7 @@ Done (closed): #1, #2, #3, #4, #6?, #9, #10, #16, #17, #19, #21, #22. (#6 epic t
 - [x] #20 journal tiebreak.
 - [x] #5 coverage (edit_cycle_screen 1.4% first).
 
-## Phase 3 — Planner roadmap (in dependency order, after release)
+## Phase 3 — Planner roadmap (in dependency order, after release) — COMPLETE
 - [x] #7 Phase 2 today-goals screen.
 - [x] #8 Phase 3 calendar.
 - [x] #11 Phase 5 rescheduling.
