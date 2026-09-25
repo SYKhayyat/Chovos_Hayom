@@ -44,7 +44,13 @@ final _journalEntriesProvider = Provider<List<_JournalEntry>>((ref) {
     for (final e in events)
       if (e.note != null && e.note!.trim().isNotEmpty)
         _JournalEntry(e, catalog?.byId(e.nodeId)),
-  ]..sort((a, b) => b.event.occurredAt.compareTo(a.event.occurredAt));
+  ]..sort((a, b) {
+      final occurred = b.event.occurredAt.compareTo(a.event.occurredAt);
+      if (occurred != 0) return occurred;
+      final logged = b.event.loggedAt.compareTo(a.event.loggedAt);
+      if (logged != 0) return logged;
+      return b.event.id.compareTo(a.event.id);
+    });
 });
 
 /// The **Notes Journal**: every haara you've written, newest first, each showing
