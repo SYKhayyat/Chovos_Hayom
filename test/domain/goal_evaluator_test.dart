@@ -9,7 +9,7 @@ void main() {
   test('behind when current pace is below required', () {
     final s = GoalEvaluator.evaluate(
         remaining: 100, from: from, target: target, currentPace: 5);
-    expect(s.requiredPerDay, closeTo(10, 0.001));
+    expect(s.requiredPerDay, closeTo(100 / 11, 0.001));
     expect(s.onTrack, isFalse);
     // 100 at 5/day = 20 learning days, today inclusive -> Jan 1 + 19 = Jan 20.
     expect(s.projectedFinish, Day.of(DateTime(2026, 1, 20)));

@@ -56,7 +56,7 @@ void main() {
         from: Day.of(DateTime(2026, 1, 10)),
         target: Day.of(DateTime(2026, 4, 11)),
       );
-      expect(requiredPerDayText(rate), '1.71');
+      expect(requiredPerDayText(rate), '1.69');
     });
   });
 

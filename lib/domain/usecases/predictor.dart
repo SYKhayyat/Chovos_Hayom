@@ -68,7 +68,7 @@ class Predictor {
   }
 
   /// Units/day required to finish [remaining] by [target] (recommendation).
-  /// Returns 0 if already done; `double.infinity` if the target is today/past.
+  /// Returns 0 if already done; `double.infinity` if the target is in the past.
   static double requiredPerDay({
     required int remaining,
     required Day from,
@@ -76,8 +76,8 @@ class Predictor {
   }) {
     if (remaining <= 0) return 0;
     final days = target.difference(from);
-    if (days <= 0) return double.infinity;
-    return remaining / days;
+    if (days < 0) return double.infinity;
+    return remaining / (days + 1);
   }
 
   /// Weekday/Shabbos-aware finish date: [weekdayAmount] on Sun–Fri,

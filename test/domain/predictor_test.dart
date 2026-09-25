@@ -31,21 +31,31 @@ void main() {
   });
 
   group('Predictor (backward / recommendation)', () {
-    test('requiredPerDay divides remaining by days available', () {
+    test('requiredPerDay divides remaining by inclusive days available', () {
       expect(
         Predictor.requiredPerDay(
             remaining: 10,
             from: Day.of(DateTime(2026, 1, 1)),
             target: Day.of(DateTime(2026, 1, 11))),
-        closeTo(1.0, 0.001),
+        closeTo(10 / 11, 0.001),
       );
     });
 
-    test('requiredPerDay is infinity when target is today or past', () {
+    test('a target today requires all remaining units today', () {
       expect(
         Predictor.requiredPerDay(
             remaining: 10,
             from: Day.of(DateTime(2026, 1, 11)),
+            target: Day.of(DateTime(2026, 1, 11))),
+        10,
+      );
+    });
+
+    test('requiredPerDay is infinity when target is in the past', () {
+      expect(
+        Predictor.requiredPerDay(
+            remaining: 10,
+            from: Day.of(DateTime(2026, 1, 12)),
             target: Day.of(DateTime(2026, 1, 11))),
         double.infinity,
       );
