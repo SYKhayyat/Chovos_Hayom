@@ -1,6 +1,7 @@
 import 'package:chovos_hayom/core/day.dart';
 
 import 'recurrence.dart';
+import '../../core/equality.dart';
 
 /// One thing a plan schedules: a recurrence rule, and what it schedules when
 /// it fires.
@@ -108,6 +109,9 @@ class LearningPlan {
     this.assignments = const [],
     this.overrides = const [],
     this.displayCalendar = RuleCalendar.gregorian,
+    this.unitsPerDay = 1,
+    this.weekdayAmounts = const {},
+    this.dateAmounts = const {},
   });
 
   final String id;
@@ -116,8 +120,35 @@ class LearningPlan {
   final List<PlanOverride> overrides;
 
   /// The calendar a plan's days are shown in by default. A rule may still
-  /// declare its own (see [RecurrenceRule.calendar]).
+  /// declare its own (see [RecurrenceRule].calendar).
   final RuleCalendar displayCalendar;
+
+  /// The plan's base daily target: how many units a plain firing day asks for.
+  ///
+  /// Distinct from [PlanAssignment.unitsPerFiring], which is what *one
+  /// assignment* calls for. This is the plan-wide figure the calendar and the
+  /// projection read, so a plan can state "ten a day" once and have every day
+  /// answer that unless an override says otherwise.
+  final int unitsPerDay;
+
+  /// `DateTime.monday` (1) .. `DateTime.sunday` (7) -> amount, for **arbitrary
+  /// subsets**: Tuesday alone, Tuesday *and* Thursday, Shabbos, any combination.
+  /// Not just the weekday/Shabbos split, because a user who wants "lighter on
+  /// Tuesdays" is the common case and a two-way flag cannot say it.
+  ///
+  /// A value of `0` is legal and means "nothing on this weekday".
+  final Map<int, int> weekdayAmounts;
+
+  /// A specific [Day] -> amount, for one-off differences: a holiday, a sick day,
+  /// the second day of Rosh Hashanah, a doubled day.
+  ///
+  /// **This is also how a day off is expressed** — an amount of `0` for that
+  /// date. There is deliberately no separate day-off flag: a flag and an amount
+  /// would be two ways to say the same thing, and the two could disagree, leaving
+  /// a day that is both "off" and "asking for units" with no way to tell which
+  /// one won.
+  final Map<Day, int> dateAmounts;
+
 
   bool get hasHebrewRules =>
       assignments.any((a) => a.rule.calendar == RuleCalendar.hebrew);
@@ -128,26 +159,79 @@ class LearningPlan {
         'displayCalendar': displayCalendar.name,
         'assignments': [for (final a in assignments) a.toJson()],
         'overrides': [for (final o in overrides) o.toJson()],
+        'unitsPerDay': unitsPerDay,
+        if (weekdayAmounts.isNotEmpty)
+          'weekdayAmounts': {
+            for (final e in weekdayAmounts.entries) '${e.key}': e.value,
+          },
+        if (dateAmounts.isNotEmpty)
+          'dateAmounts': {
+            // Keyed by ISO `YYYY-MM-DD`, the same shape `PlanOverride` uses and
+            // the only string form of a day that survives a round trip.
+            for (final e in dateAmounts.entries) e.key.toString(): e.value,
+          },
       };
 
-  factory LearningPlan.fromJson(Map<String, dynamic> json) => LearningPlan(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        displayCalendar: RuleCalendar.values.firstWhere(
-          (c) => c.name == json['displayCalendar'],
-          orElse: () => RuleCalendar.gregorian,
-        ),
-        assignments: [
-          for (final a in (json['assignments'] as List<dynamic>? ?? const []))
-            PlanAssignment.fromJson(
-                (a as Map<dynamic, dynamic>).cast<String, dynamic>()),
-        ],
-        overrides: [
-          for (final o in (json['overrides'] as List<dynamic>? ?? const []))
-            PlanOverride.fromJson(
-                (o as Map<dynamic, dynamic>).cast<String, dynamic>()),
-        ],
-      );
+  factory LearningPlan.fromJson(Map<String, dynamic> json) {
+    final unitsPerDay = (json['unitsPerDay'] as num?)?.toInt() ?? 1;
+    if (unitsPerDay < 0) {
+      throw const FormatException('unitsPerDay must not be negative');
+    }
+    return LearningPlan(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      displayCalendar: RuleCalendar.values.firstWhere(
+        (c) => c.name == json['displayCalendar'],
+        orElse: () => RuleCalendar.gregorian,
+      ),
+      assignments: [
+        for (final a in (json['assignments'] as List<dynamic>? ?? const []))
+          PlanAssignment.fromJson(
+              (a as Map<dynamic, dynamic>).cast<String, dynamic>()),
+      ],
+      overrides: [
+        for (final o in (json['overrides'] as List<dynamic>? ?? const []))
+          PlanOverride.fromJson(
+              (o as Map<dynamic, dynamic>).cast<String, dynamic>()),
+      ],
+      unitsPerDay: unitsPerDay,
+      weekdayAmounts: _weekdayAmountsFrom(json['weekdayAmounts']),
+      dateAmounts: _dateAmountsFrom(json['dateAmounts']),
+    );
+  }
+
+  /// Weekday keys are validated rather than coerced. A stored `0` or `8` would
+  /// otherwise be a silently-unreachable override — a setting the user believes
+  /// is in force and that never fires, which is the failure mode this whole
+  /// feature is most able to produce.
+  static Map<int, int> _weekdayAmountsFrom(Object? raw) {
+    if (raw == null) return const {};
+    final out = <int, int>{};
+    for (final entry in (raw as Map<dynamic, dynamic>).entries) {
+      final weekday = int.parse(entry.key as String);
+      if (weekday < DateTime.monday || weekday > DateTime.sunday) {
+        throw FormatException('weekday must be 1..7, got $weekday');
+      }
+      out[weekday] = _amount(entry.value, 'weekday amount');
+    }
+    return out;
+  }
+
+  static Map<Day, int> _dateAmountsFrom(Object? raw) {
+    if (raw == null) return const {};
+    final out = <Day, int>{};
+    for (final entry in (raw as Map<dynamic, dynamic>).entries) {
+      out[Day.of(DateTime.parse(entry.key as String))] =
+          _amount(entry.value, 'date amount');
+    }
+    return out;
+  }
+
+  static int _amount(Object? raw, String what) {
+    final value = (raw as num).toInt();
+    if (value < 0) throw FormatException('$what must not be negative');
+    return value;
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -155,6 +239,9 @@ class LearningPlan {
       other.id == id &&
       other.name == name &&
       other.displayCalendar == displayCalendar &&
+      other.unitsPerDay == unitsPerDay &&
+      mapEquals(other.weekdayAmounts, weekdayAmounts) &&
+      mapEquals(other.dateAmounts, dateAmounts) &&
       _sameAssignments(assignments, other.assignments) &&
       _sameOverrides(overrides, other.overrides);
 
@@ -163,6 +250,13 @@ class LearningPlan {
         id,
         name,
         displayCalendar,
+        unitsPerDay,
+        Object.hashAllUnordered(
+          weekdayAmounts.entries.map((e) => Object.hash(e.key, e.value)),
+        ),
+        Object.hashAllUnordered(
+          dateAmounts.entries.map((e) => Object.hash(e.key, e.value)),
+        ),
         Object.hashAll(assignments),
         Object.hashAll(overrides),
       );

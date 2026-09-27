@@ -29,7 +29,7 @@ flag); decide per plan whether a shortfall rolls forward or slides the schedule;
 flow on to the next sefer (Yoma → Sukkah → Chagigah → Moed); browse the calendar
 day by day, week by week, month by month; and set any of it up in English or
 Hebrew dates. Land in order.
-- [ ] #24 per-day amounts + weekday/date overrides (day-off = amount 0). (High)
+- [x] #24 per-day amounts + weekday/date overrides (day-off = amount 0). (High)
 - [ ] #25 spillover modes: ignore / catch-up / slide, per plan. (High)
 - [ ] #26 item sequence, where-you-are-holding, siyum projection. (High)
 - [ ] #27 plan editing UI (amounts, overrides, spillover, flow, sequence). (Medium)

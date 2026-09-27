@@ -1,9 +1,14 @@
+import 'dart:convert';
+
 import 'package:chovos_hayom/application/backup_service.dart';
+import 'package:chovos_hayom/application/plans.dart';
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/settings.dart';
 import 'package:chovos_hayom/application/sorting.dart';
 import 'package:chovos_hayom/core/calendar.dart';
+import 'package:chovos_hayom/core/day.dart';
 import 'package:chovos_hayom/core/preferences.dart';
+import 'package:chovos_hayom/domain/usecases/learning_plan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -187,6 +192,39 @@ void main() {
 
     await switchTo('default');
     expect(settings().chazaraIntervals, isNot([5, 10]));
+  });
+
+  // The key-coverage guard above proves `PrefKeys.plans` *rides in* a backup.
+  // It cannot see inside the stored string, so a plan field that failed to
+  // serialise — a new amount map, say — would pass that guard and vanish on
+  // export -> clear -> import. This is the test that sees inside it.
+  test('a plan’s per-day amounts survive export, clear and import', () async {
+    // `final`, not `const`: a const map key must have primitive equality, and
+    // Day's is an `int` behind a class.
+    final plan = LearningPlan(
+      id: 'yoma',
+      name: 'Daf Yomi',
+      unitsPerDay: 7,
+      weekdayAmounts: {DateTime.friday: 5, DateTime.saturday: 10},
+      dateAmounts: {const Day(4): 0},
+    );
+    final plans = container.read(plansConfigProvider.notifier);
+    await plans.save(plan);
+
+    final backup = notifier().toBackup();
+    final raw = backup[PrefKeys.plans]!;
+    expect(raw, contains('unitsPerDay'), reason: 'the base amount must be stored');
+    expect(raw, contains('weekdayAmounts'));
+    expect(raw, contains('dateAmounts'));
+
+    await notifier().clearAll();
+    expect(prefs.getString(PrefKeys.scoped('default', PrefKeys.plans)), isNull);
+
+    await notifier().applyBackup(backup, ImportMode.merge);
+    final stored = prefs.getString(PrefKeys.scoped('default', PrefKeys.plans))!;
+    final restored =
+        PlansConfig.fromJson((jsonDecode(stored) as Map).cast<String, dynamic>());
+    expect(restored.plans, [plan]);
   });
 
   group('the backup covers every per-profile key', () {
