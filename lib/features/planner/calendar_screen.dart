@@ -28,14 +28,42 @@ class PlannerCalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
-  late DateTime _month;
+  /// The day the view is anchored on. Month range shows the month containing it;
+  /// week range shows the week containing it. One anchor rather than a month,
+  /// because a "week" is not a month and deriving it from one was why this view
+  /// used to open on the 1st and show days 1-7 no matter what today was.
+  late Day _anchor;
   PlannerCalendarRange _range = PlannerCalendarRange.month;
 
   @override
   void initState() {
     super.initState();
-    final now = ref.read(clockProvider)();
-    _month = DateTime(now.year, now.month);
+    _anchor = Day.of(ref.read(clockProvider)());
+  }
+
+  /// Move the anchor a whole step in the current range: a month in month range,
+  /// a week in week range. Tapping "next" seven times in the week view moves one
+  /// week, not seven.
+  void _step(int delta) {
+    setState(() {
+      _anchor = _range == PlannerCalendarRange.month
+          ? _addMonths(_anchor, delta)
+          : _anchor + (delta * 7);
+    });
+  }
+
+  /// [anchor] shifted by [delta] months, clamping the day to the target month's
+  /// length so 31 Jan + 1 month lands on 28/29 Feb rather than spilling into March.
+  static Day _addMonths(Day anchor, int delta) {
+    final d = anchor.midnight;
+    final firstOfTarget = DateTime(d.year, d.month + delta, 1);
+    // Day 0 of the following month is the last day of the target month.
+    final lastDay = DateTime(firstOfTarget.year, firstOfTarget.month + 1, 0).day;
+    return Day.of(DateTime(
+      firstOfTarget.year,
+      firstOfTarget.month,
+      d.day <= lastDay ? d.day : lastDay,
+    ));
   }
 
   @override
@@ -47,10 +75,15 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
     final config = ref.watch(plansConfigProvider);
     final layers = ref.watch(layerRolesProvider);
     final now = ref.read(clockProvider)();
-    final first = Day.of(_month);
-    final start = _range == PlannerCalendarRange.month
-        ? first - (first.weekday - 1)
-        : first;
+    final anchor = _anchor;
+    final anchorDate = anchor.midnight;
+    // Month range is anchored on the 1st (so it cannot drift as days are
+    // stepped); week range on the anchor itself, then both align to the Monday
+    // of the containing week.
+    final first = _range == PlannerCalendarRange.month
+        ? Day.of(DateTime(anchorDate.year, anchorDate.month, 1))
+        : anchor;
+    final start = first - (first.weekday - 1);
     final days = catalog == null || fold == null
         ? <PlannedDay>[]
         : PlannerCalendar.between(
@@ -81,12 +114,12 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
           IconButton(
             tooltip: l10n.plannerCalendarPrevious,
             icon: const Icon(Icons.chevron_left),
-            onPressed: () => setState(() => _month = DateTime(_month.year, _month.month - 1)),
+            onPressed: () => _step(-1),
           ),
           IconButton(
             tooltip: l10n.plannerCalendarNext,
             icon: const Icon(Icons.chevron_right),
-            onPressed: () => setState(() => _month = DateTime(_month.year, _month.month + 1)),
+            onPressed: () => _step(1),
           ),
         ],
       ),
@@ -103,7 +136,10 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
           Padding(
             padding: const EdgeInsets.all(12),
             child: Text(
-              DateDisplay.format(_month, mode),
+              DateDisplay.format(
+                DateTime(anchorDate.year, anchorDate.month, 1),
+                mode,
+              ),
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
