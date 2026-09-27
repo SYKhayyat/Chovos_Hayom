@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:chovos_hayom/application/plans.dart';
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/stats.dart';
+import 'package:chovos_hayom/core/calendar.dart';
 import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/domain/usecases/learning_plan.dart';
 import 'package:chovos_hayom/domain/usecases/recurrence.dart';
@@ -234,6 +235,77 @@ void main() {
       await tester.tap(find.byTooltip('Next month'));
       await tester.pumpAndSettle();
       expect(find.text('2026-02-01'), findsOneWidget);
+    });
+  });
+
+  // #30: the week rows used `day.toString()`, which `Day` documents as
+  // "diagnostics and test failure output only" - so a Hebrew user got a Hebrew
+  // month heading directly above an ISO date column. Note Gregorian mode *is*
+  // ISO too (see `DateDisplay.format`), so only Hebrew mode can tell the two
+  // apart; the Gregorian half is pinned so the fix cannot quietly change it.
+  group('the week list renders dates through DateDisplay', () {
+    Future<void> pumpWeek(
+      WidgetTester tester, {
+      required DateTime now,
+      required String calendarMode,
+    }) async {
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = const Size(800, 1400);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appPreferencesProvider.overrideWithValue(
+              InMemoryPreferences({PrefKeys.calendarMode: calendarMode}),
+            ),
+            catalogRepositoryProvider
+                .overrideWithValue(FakeCatalogRepository()),
+            progressRepositoryProvider
+                .overrideWithValue(memoryRepository()),
+            clockProvider.overrideWithValue(() => now),
+          ],
+          child: localizedApp(home: const PlannerCalendarScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Week'));
+      await tester.pumpAndSettle();
+    }
+
+    List<String> weekRowTitles(WidgetTester tester) => [
+          for (final tile in tester.widgetList<ListTile>(find.byType(ListTile)))
+            (tile.title! as Text).data!,
+        ];
+
+    testWidgets('Hebrew mode shows Hebrew dates, not ISO', (tester) async {
+      await pumpWeek(tester,
+          now: DateTime(2026, 1, 5), calendarMode: 'hebrew');
+      final titles = weekRowTitles(tester);
+      expect(titles, hasLength(7));
+      // 5 Jan 2026 is a Monday, so the week is 5-11 Jan.
+      for (var i = 0; i < 7; i++) {
+        expect(
+          titles[i],
+          DateDisplay.format(DateTime(2026, 1, 5 + i), CalendarMode.hebrew),
+          reason: 'row $i must go through the display layer',
+        );
+      }
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is Text &&
+              RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(w.data ?? ''),
+        ),
+        findsNothing,
+        reason: 'no raw ISO date may reach the user',
+      );
+    });
+
+    testWidgets('Gregorian mode is unchanged, since DateDisplay is ISO there',
+        (tester) async {
+      await pumpWeek(tester,
+          now: DateTime(2026, 1, 5), calendarMode: 'gregorian');
+      expect(weekRowTitles(tester).first, '2026-01-05');
     });
   });
 }

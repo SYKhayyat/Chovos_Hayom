@@ -146,7 +146,7 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
           Expanded(
             child: _range == PlannerCalendarRange.month
                 ? _MonthGrid(byDay: byDay, start: start, siyumByDay: siyumByDay, l10n: l10n)
-                : _WeekList(byDay: byDay, start: start, siyumByDay: siyumByDay, l10n: l10n),
+                : _WeekList(byDay: byDay, start: start, siyumByDay: siyumByDay, l10n: l10n, mode: mode),
           ),
         ],
       ),
@@ -245,12 +245,14 @@ class _WeekList extends StatelessWidget {
     required this.start,
     required this.siyumByDay,
     required this.l10n,
+    required this.mode,
   });
 
   final Map<Day, PlannedDay> byDay;
   final Day start;
   final Map<Day, List<ScheduledSiyum>> siyumByDay;
   final AppLocalizations l10n;
+  final CalendarMode mode;
 
   @override
   Widget build(BuildContext context) => ListView.builder(
@@ -261,7 +263,11 @@ class _WeekList extends StatelessWidget {
           final siyumim = siyumByDay[day];
           return ListTile(
             leading: Icon(Icons.circle, size: 12, color: _color(planned?.status)),
-            title: Text(day.toString()),
+            // Through `DateDisplay`, not `day.toString()`. `Day`'s own doc says its
+            // ISO form is "diagnostics and test failure output only", and this
+            // screen's heading right above already localises — so the raw string
+            // put an ISO column under a Hebrew month and ignored the setting.
+            title: Text(DateDisplay.format(day.midnight, mode)),
             subtitle: _subtitle(planned, siyumim),
             trailing: siyumim == null
                 ? null
