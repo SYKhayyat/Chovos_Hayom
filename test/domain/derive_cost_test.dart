@@ -73,6 +73,42 @@ LearningEvent done(String node, int unit, {List<String> layers = const ['main']}
       layers: layers,
     );
 
+/// The fastest of [rounds] timings of [body], in milliseconds.
+///
+/// A wall-clock budget measures two things at once: how long the work takes, and
+/// how much CPU the machine gave it. `flutter test` runs test files
+/// concurrently, so a budget that is comfortably green in isolation can be
+/// measured against a contended CPU and fail for no reason but scheduling. That
+/// is not hypothetical — a 500 ms budget on ~50 ms of real work here failed the
+/// full suite at ~552 ms while passing in isolation, and did so identically on an
+/// untouched tree, so it was latent flakiness rather than any regression.
+///
+/// Contention can only ever *add* time, never take it away, so the **minimum**
+/// over several runs is the contention-free measurement. This keeps exactly the
+/// discrimination these budgets exist for: the regressions they guard (a
+/// per-event local `DateTime`, a per-query log scan) slow down *every* run, so
+/// they still fail the same check by the same wide margin. What it removes is the
+/// false failure, not the guard. A genuinely slow machine still fails — its
+/// minimum is slow too.
+///
+/// The budgets themselves are deliberately left where they are. The gap between
+/// correct work (~50 ms) and the regression guarded here (~2,200 ms, the local-
+/// `DateTime` regression the sibling test measures) is ~44×, and the whole fix
+/// is spent making sure contention cannot eat into it. Raising a budget would
+/// buy margin against a loaded CI box by shrinking the very window that catches
+/// the bug — the one change that would make this test lie.
+int fastestMs(void Function() body, {int rounds = 5}) {
+  var best = 1 << 62;
+  for (var i = 0; i < rounds; i++) {
+    final sw = Stopwatch()..start();
+    body();
+    sw.stop();
+    final ms = sw.elapsedMilliseconds;
+    if (ms < best) best = ms;
+  }
+  return best;
+}
+
 void main() {
   late _CountingLeaf huge;
   late Catalog catalog;
@@ -151,10 +187,14 @@ void main() {
       ProgressSeries.cumulative(fold);
       LogActivity.of(events);
 
-      final sw = Stopwatch()..start();
-      final series = ProgressSeries.cumulative(fold);
-      final activity = LogActivity.of(events);
-      sw.stop();
+      late List<SeriesPoint> series;
+      late LogActivity activity;
+      // Timed as the fastest of a few runs, so a contended CPU cannot spend the
+      // budget; the per-event regression this guards is still ~15× the budget.
+      final ms = fastestMs(() {
+        series = ProgressSeries.cumulative(fold);
+        activity = LogActivity.of(events);
+      });
 
       expect(series, hasLength(200), reason: 'one point per distinct day');
       expect(activity.dailyCounts, hasLength(200));
@@ -162,8 +202,8 @@ void main() {
       // version *they* replaced keyed on a local DateTime per event, which
       // alone is ~2,200 ms for 20,000 of them — so this threshold has room for
       // a slow machine and none for that bug.
-      expect(sw.elapsedMilliseconds, lessThan(800),
-          reason: 'the series helpers took ${sw.elapsedMilliseconds} ms — a '
+      expect(ms, lessThan(800),
+          reason: 'the series helpers took $ms ms — a '
               'per-event local DateTime construction is back');
     });
 
@@ -181,33 +221,64 @@ void main() {
       activity.streakEndingAt(today);
       activity.minutesSince(today);
 
-      final sw = Stopwatch()..start();
-      for (var i = 0; i < 1000; i++) {
-        activity.averagePerDay(today);
-        activity.streakEndingAt(today);
-        activity.minutesSince(today);
-      }
-      sw.stop();
+      // Timed as the fastest of a few runs, so a contended CPU cannot spend the
+      // budget: this is the test that went intermittently red under `flutter
+      // test`'s concurrency, and it fails for the right reason instead. A
+      // thousand full log scans is twenty million event visits — seconds, and
+      // nowhere near 500 ms — so the guard is undiminished.
+      final ms = fastestMs(() {
+        for (var i = 0; i < 1000; i++) {
+          activity.averagePerDay(today);
+          activity.streakEndingAt(today);
+          activity.minutesSince(today);
+        }
+      });
 
-      expect(sw.elapsedMilliseconds, lessThan(500),
+      expect(ms, lessThan(500),
           reason: '1,000 rounds of pace+streak+minutes took '
-              '${sw.elapsedMilliseconds} ms — one of them is scanning the log '
+              '$ms ms — one of them is scanning the log '
               'again. This is the shape the goal screen had: N goals, N scans.');
     });
-
     // §P3: every write re-reads and re-folds the whole log. That is a deliberate
     // trade and cheap today; this pins the size at which it would stop being
     // cheap, so the fold cannot quietly become the next unmeasured hotspot.
     test('folding a very large log stays bounded', () {
       final events = syntheticLog(100000);
 
-      final sw = Stopwatch()..start();
-      final fold = FoldLog.fold(events);
-      sw.stop();
+      // Two rounds, not three: folding 100k events is the heaviest thing in this
+      // file, and min-of-two already discards a contention spike while keeping
+      // the budget meaningful against a genuinely slow fold.
+      late LogFold fold;
+      final ms = fastestMs(() {
+        fold = FoldLog.fold(events);
+      }, rounds: 2);
 
       expect(fold.doneUnits('huge'), hasLength(5000));
-      expect(sw.elapsedMilliseconds, lessThan(3000),
-          reason: 'folding 100k events took ${sw.elapsedMilliseconds} ms');
+      expect(ms, lessThan(3000), reason: 'folding 100k events took $ms ms');
+    });
+  });
+
+  group('fastestMs', () {
+    test('reports the fastest round, discarding a slow one', () {
+      // The guard for the guard. The whole reason these budgets stopped going
+      // red under `flutter test`'s concurrency is that the helper takes the
+      // *minimum*; if it ever reports the maximum again — or the mean — the
+      // contention sensitivity comes straight back and the flake returns. So
+      // burn a whole round and assert the number ignores it.
+      var round = 0;
+      final ms = fastestMs(() {
+        round++;
+        if (round == 1) {
+          final spin = Stopwatch()..start();
+          while (spin.elapsedMilliseconds < 60) {
+            // occupy the CPU the way a contended scheduler would
+          }
+        }
+      }, rounds: 3);
+
+      expect(round, 3, reason: 'it must actually run every round');
+      expect(ms, lessThan(60),
+          reason: 'the 60 ms round should have been discarded, got $ms ms');
     });
   });
 
