@@ -26,12 +26,17 @@ Done (closed): #1, #2, #3, #4, #5, #6?, #7, #8, #9, #10, #11, #12, #13, #14, #15
 Amounts, overrides and spillover. Requested as: set an amount per day; make any
 weekday or any single date different (a day off is just an amount of 0, not a
 flag); decide per plan whether a shortfall rolls forward or slides the schedule;
-flow on to the next sefer (Yoma → Sukkah → Chagigah → Moed). Land in order.
+flow on to the next sefer (Yoma → Sukkah → Chagigah → Moed); browse the calendar
+day by day, week by week, month by month; and set any of it up in English or
+Hebrew dates. Land in order.
 - [ ] #24 per-day amounts + weekday/date overrides (day-off = amount 0). (High)
 - [ ] #25 spillover modes: ignore / catch-up / slide, per plan. (High)
 - [ ] #26 item sequence, where-you-are-holding, siyum projection. (High)
 - [ ] #27 plan editing UI (amounts, overrides, spillover, flow, sequence). (Medium)
+- [ ] #31 calendar day/week/month ranges, browsable by continuous scroll. (Medium)
+- [ ] #32 enter dates in English or Hebrew (parsing + shared date input). (Medium)
 - [ ] #28 show/edit each day's amount in the calendar; check a day off from it. (Medium)
+  (needs #31 for a day view and #32 to name the date being set)
 
 ## Routing rule for new issues
 Any AI opening an issue here MUST insert it above: data-loss/correctness → Phase 1, polish → Phase 2, new planner scope → Phase 4. Never let roadmap outrank a High. See AI_ISSUE_ROUTING.md.
