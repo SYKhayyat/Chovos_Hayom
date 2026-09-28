@@ -8,6 +8,8 @@ import '../../application/settings.dart';
 import '../../application/stats.dart';
 import '../../core/calendar.dart';
 import '../../core/day.dart';
+import '../../core/parse.dart';
+import '../../core/planner_dates.dart';
 import '../../domain/entities/catalog.dart';
 import '../../domain/usecases/fold_log.dart';
 import '../../domain/usecases/layer_roles.dart';
@@ -15,8 +17,11 @@ import '../../domain/usecases/learning_plan.dart';
 import '../../domain/usecases/plan_chain.dart';
 import '../../domain/usecases/plan_completion.dart';
 import '../../domain/usecases/planner_calendar.dart';
+import '../../domain/usecases/day_amount.dart';
 import '../../domain/usecases/siyum_schedule.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../common/guarded.dart';
+import '../common/text_prompt.dart';
 
 enum PlannerCalendarRange { month, week }
 
@@ -145,10 +150,154 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
           ),
           Expanded(
             child: _range == PlannerCalendarRange.month
-                ? _MonthGrid(byDay: byDay, start: start, siyumByDay: siyumByDay, l10n: l10n)
-                : _WeekList(byDay: byDay, start: start, siyumByDay: siyumByDay, l10n: l10n, mode: mode),
+                ? _MonthGrid(
+                    byDay: byDay,
+                    start: start,
+                    siyumByDay: siyumByDay,
+                    l10n: l10n,
+                    dueOn: (day) => _dueOn(config, day),
+                    onDay: (day) => _openDay(context, ref, day, config),
+                  )
+                : _WeekList(
+                    byDay: byDay,
+                    start: start,
+                    siyumByDay: siyumByDay,
+                    l10n: l10n,
+                    mode: mode,
+                    dueOn: (day) => _dueOn(config, day),
+                    onDay: (day) => _openDay(context, ref, day, config),
+                  ),
           ),
         ],
+      ),
+    );
+  }
+
+
+  /// Units due on [day], summed over every plan that fires on it.
+  ///
+  /// The **total**, not one plan's amount, because a day can have several plans
+  /// firing and the cell has room for one number. "How much is due today" is
+  /// the question a calendar answers; the per-plan breakdown is one tap away.
+  static int _dueOn(PlansConfig config, Day day) {
+    var total = 0;
+    for (final plan in config.plans) {
+      if (PlannerSchedule.assignmentsOn(plan, dayInfoFor(day)).isNotEmpty) {
+        total += DayAmount.of(plan, dayInfoFor(day));
+      }
+    }
+    return total;
+  }
+
+  /// Opens a day: what each plan asks for it, and a way to change that.
+  ///
+  /// Setting an amount writes a **date override on the plan** and never touches
+  /// the event log, so "I am taking Thursday off" is a change to the schedule
+  /// rather than a claim about what was learned.
+  Future<void> _openDay(
+    BuildContext context,
+    WidgetRef ref,
+    Day day,
+    PlansConfig config,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final mode = ref.read(settingsProvider).calendar;
+    final firing = [
+      for (final plan in config.plans)
+        if (PlannerSchedule.assignmentsOn(plan, dayInfoFor(day)).isNotEmpty)
+          plan,
+    ];
+
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            ListTile(
+              title: Text(DateDisplay.format(day.midnight, mode),
+                style: Theme.of(sheetContext).textTheme.titleMedium),
+            ),
+            if (firing.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(l10n.plansDaySheetNothing),
+              ),
+            for (final plan in firing)
+              ListTile(
+                title: Text(plan.name),
+                subtitle: Text(
+                  // `0` is a day off and says so; it must not read as an
+                  // absent amount, which would be the one thing this design
+                  // exists to prevent.
+                  DayAmount.of(plan, dayInfoFor(day)) == 0
+                      ? '0 · ${l10n.plansDayOff}'
+                      : '${DayAmount.of(plan, dayInfoFor(day))}'
+                          ' · ${l10n.plansUnitsPerDay}',
+                ),
+                trailing: const Icon(Icons.edit),
+                onTap: () async {
+                  final navigator = Navigator.of(sheetContext);
+                  // Guarded before the await: the sheet may be gone by the time
+                  // the prompt returns, and `sheetContext` is not safe then.
+                  if (!navigator.mounted) return;
+                  final amount = await promptForText(
+                    sheetContext,
+                    title: l10n.plansDaySheetSetFor(plan.name),
+                    body: l10n.plansDateAmountHelp,
+                    label: l10n.plansUnitsPerDay,
+                    initialValue: '${DayAmount.of(plan, dayInfoFor(day))}',
+                    keyboardType: TextInputType.number,
+                    confirmLabel: l10n.plansSave,
+                    cancelLabel: l10n.plansCancel,
+                    validate: (v) => nonNegativeInt(v) == null
+                        ? l10n.plansAmountInvalid
+                        : null,
+                  );
+                  if (amount == null || !navigator.mounted) return;
+                  final next = nonNegativeInt(amount)!;
+                  final dates = {...plan.dateAmounts, day: next};
+                  // The sheet's context, not a context read after the await:
+                  // `ref` and `plan` are all this needs.
+                  await guarded(
+                    navigator.context,
+                    ref,
+                    () => ref
+                        .read(plansConfigProvider.notifier)
+                        .save(plan.copyWithDateAmounts(dates)),
+                    what: l10n.plansSaved,
+                  );
+                  navigator.pop();
+                },
+              ),
+            if (firing.any((p) => p.dateAmounts.containsKey(day)))
+              TextButton.icon(
+                icon: const Icon(Icons.undo),
+                label: Text(l10n.plansDaySheetClear),
+                onPressed: () async {
+                  final navigator = Navigator.of(sheetContext);
+                  // Clear every plan's override for this date, so the day goes
+                  // back to asking whatever its weekday and base amount say.
+                  // Inside the write guard like every other write, and guarded
+                  // before the await: the sheet may be gone by then.
+                  if (!navigator.mounted) return;
+                  await guarded(
+                    navigator.context,
+                    ref,
+                    () async {
+                      final controller = ref.read(plansConfigProvider.notifier);
+                      for (final plan in firing) {
+                        final dates = {...plan.dateAmounts}..remove(day);
+                        await controller.save(plan.copyWithDateAmounts(dates));
+                      }
+                    },
+                    what: l10n.plansSaved,
+                  );
+                  navigator.pop();
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -179,12 +328,16 @@ class _MonthGrid extends StatelessWidget {
     required this.start,
     required this.siyumByDay,
     required this.l10n,
+    required this.dueOn,
+    required this.onDay,
   });
 
   final Map<Day, PlannedDay> byDay;
   final Day start;
   final Map<Day, List<ScheduledSiyum>> siyumByDay;
   final AppLocalizations l10n;
+  final int Function(Day day) dueOn;
+  final void Function(Day day) onDay;
 
   @override
   Widget build(BuildContext context) {
@@ -208,6 +361,7 @@ class _MonthGrid extends StatelessWidget {
           null => Colors.transparent,
         };
         return Semantics(
+          key: ValueKey('day-${day.ordinal}'),
           label: siyumim == null
               ? '${day.midnight.day}'
               : '${day.midnight.day} · ${l10n.plannerCalendarSiyum}',
@@ -217,9 +371,23 @@ class _MonthGrid extends StatelessWidget {
               border: Border.all(color: Colors.grey),
               color: color.withValues(alpha: planned == null ? 0 : 0.18),
             ),
-            child: Stack(
+            child: InkWell(
+              onTap: () => onDay(day),
+              child: Stack(
               children: [
-                Center(child: Text('${day.midnight.day}')),
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('${day.midnight.day}'),
+                      // The total due, not one plan's amount: a day can have
+                      // several plans firing and the cell holds one number.
+                      if (dueOn(day) > 0)
+                        Text('${dueOn(day)}',
+                            style: Theme.of(context).textTheme.labelSmall),
+                    ],
+                  ),
+                ),
                 if (siyumim != null)
                   Positioned(
                     top: 1,
@@ -231,6 +399,7 @@ class _MonthGrid extends StatelessWidget {
                     ),
                   ),
               ],
+              ),
             ),
           ),
         );
@@ -246,6 +415,8 @@ class _WeekList extends StatelessWidget {
     required this.siyumByDay,
     required this.l10n,
     required this.mode,
+    required this.dueOn,
+    required this.onDay,
   });
 
   final Map<Day, PlannedDay> byDay;
@@ -253,6 +424,8 @@ class _WeekList extends StatelessWidget {
   final Map<Day, List<ScheduledSiyum>> siyumByDay;
   final AppLocalizations l10n;
   final CalendarMode mode;
+  final int Function(Day day) dueOn;
+  final void Function(Day day) onDay;
 
   @override
   Widget build(BuildContext context) => ListView.builder(
@@ -262,13 +435,14 @@ class _WeekList extends StatelessWidget {
           final planned = byDay[day];
           final siyumim = siyumByDay[day];
           return ListTile(
+            onTap: () => onDay(day),
             leading: Icon(Icons.circle, size: 12, color: _color(planned?.status)),
             // Through `DateDisplay`, not `day.toString()`. `Day`'s own doc says its
             // ISO form is "diagnostics and test failure output only", and this
             // screen's heading right above already localises — so the raw string
             // put an ISO column under a Hebrew month and ignored the setting.
             title: Text(DateDisplay.format(day.midnight, mode)),
-            subtitle: _subtitle(planned, siyumim),
+            subtitle: _subtitle(day, planned, siyumim),
             trailing: siyumim == null
                 ? null
                 : Icon(Icons.star, color: Colors.amber.shade700),
@@ -276,12 +450,17 @@ class _WeekList extends StatelessWidget {
         },
       );
 
-  Widget? _subtitle(PlannedDay? planned, List<ScheduledSiyum>? siyumim) {
-    if (siyumim == null) {
-      return planned == null ? null : Text('${planned.plans.length}');
-    }
-    final names = [for (final s in siyumim) s.node.name].join(', ');
-    return Text('${l10n.plannerCalendarSiyum}: $names');
+  Widget? _subtitle(Day day, PlannedDay? planned, List<ScheduledSiyum>? siyumim) {
+    // The units due come first: that is what the row is for.
+    final due = dueOn(day);
+    final parts = <String>[
+      if (due > 0) l10n.plansUnitsDue(due),
+      if (siyumim != null)
+        '${l10n.plannerCalendarSiyum}: '
+            '${[for (final s in siyumim) s.node.name].join(', ')}',
+    ];
+    if (parts.isNotEmpty) return Text(parts.join(' · '));
+    return planned == null ? null : Text('${planned.plans.length}');
   }
 
   Color _color(PlannedDayStatus? status) => switch (status) {

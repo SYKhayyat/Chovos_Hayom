@@ -1119,6 +1119,16 @@
   "plansSequence": "Sefarim, in order",
   "plansSequenceEmpty": "No seferim yet. Add the first one.",
   "plansSequenceAdd": "Add a sefer",
+  "plansUnitsDue": "{count} units due",
+  "@plansUnitsDue": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "plansDaySheetNothing": "Nothing is scheduled on this day.",
+  "plansDaySheetClear": "Clear this date's overrides",
+  "plansDaySheetSetFor": "Amount for {plan} on this day",
+  "@plansDaySheetSetFor": {
+    "placeholders": { "plan": { "type": "String" } }
+  },
   "plansSequenceTotal": "{count} units in total",
   "@plansSequenceTotal": {
     "placeholders": { "count": { "type": "int" } }

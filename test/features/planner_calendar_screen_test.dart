@@ -4,6 +4,7 @@ import 'package:chovos_hayom/application/plans.dart';
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/stats.dart';
 import 'package:chovos_hayom/core/calendar.dart';
+import 'package:chovos_hayom/core/day.dart';
 import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/domain/usecases/learning_plan.dart';
 import 'package:chovos_hayom/domain/usecases/recurrence.dart';
@@ -306,6 +307,174 @@ void main() {
       await pumpWeek(tester,
           now: DateTime(2026, 1, 5), calendarMode: 'gregorian');
       expect(weekRowTitles(tester).first, '2026-01-05');
+    });
+  });
+
+  // #28: the calendar is where a schedule is actually *used*, so the amount
+  // belongs here. Two facts must never be blurred: "0 units" is a deliberate day
+  // off, and "nothing scheduled" is a different thing entirely.
+  group('the calendar shows what each day asks for', () {
+    Future<void> pumpWith(WidgetTester tester, String plansJson) async {
+      final prefs = InMemoryPreferences({
+        PrefKeys.scoped('default', PrefKeys.plans): plansJson,
+      });
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = const Size(900, 1400);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appPreferencesProvider.overrideWithValue(prefs),
+            catalogRepositoryProvider
+                .overrideWithValue(FakeCatalogRepository()),
+            progressRepositoryProvider
+                .overrideWithValue(memoryRepository()),
+            clockProvider.overrideWithValue(() => DateTime(2026, 1, 1)),
+          ],
+          child: localizedApp(home: const PlannerCalendarScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    /// A daily plan asking six units, targeting the fake catalog's Shabbos.
+    String sixADayJson({int unitsPerDay = 6, Map<String, int>? dates}) =>
+        jsonEncode(PlansConfig(plans: [
+          LearningPlan(
+            id: 'p',
+            name: 'Yoma',
+            unitsPerDay: unitsPerDay,
+            dateAmounts: {
+              for (final e in (dates ?? const <String, int>{}).entries)
+                Day.of(DateTime.parse(e.key)): e.value,
+            },
+            assignments: [
+              const PlanAssignment(
+                id: 'a',
+                rule: DailyRule(),
+                targetNodeId: 'shas.moed.shabbos',
+              ),
+            ],
+          ),
+        ]).toJson());
+
+    testWidgets('a month cell states the units due that day',
+        (tester) async {
+      await pumpWith(tester, sixADayJson());
+      // The cell states the total for its day, so the number is on the calendar
+      // and not only in the editor.
+      expect(
+        find.descendant(
+          of: find.byKey(
+              ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')),
+          matching: find.text('6'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('tapping a day opens what each plan asks of it', (tester) async {
+      await pumpWith(tester, sixADayJson());
+      await tester.tap(find.byKey(ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')));
+      await tester.pumpAndSettle();
+      expect(find.text('Yoma'), findsOneWidget, reason: 'the plan, by name');
+      expect(find.textContaining('6'), findsWidgets);
+    });
+
+    testWidgets('a day off reads as a day off, not as an empty day',
+        (tester) async {
+      await pumpWith(
+        tester,
+        sixADayJson(dates: {'2026-01-05': 0}),
+      );
+      await tester.tap(find.byKey(ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')));
+      await tester.pumpAndSettle();
+      // The distinction the whole design turns on: 0 is a fact, and saying so is
+      // the UI's job because nothing else will.
+      expect(find.textContaining('day off'), findsOneWidget);
+    });
+
+    testWidgets('setting a day to 0 from the calendar writes a date override',
+        (tester) async {
+      final prefs = InMemoryPreferences({
+        PrefKeys.scoped('default', PrefKeys.plans): sixADayJson(),
+      });
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = const Size(900, 1400);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appPreferencesProvider.overrideWithValue(prefs),
+            catalogRepositoryProvider
+                .overrideWithValue(FakeCatalogRepository()),
+            progressRepositoryProvider
+                .overrideWithValue(memoryRepository()),
+            clockProvider.overrideWithValue(() => DateTime(2026, 1, 1)),
+          ],
+          child: localizedApp(home: const PlannerCalendarScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.edit));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, '0');
+      // One confirmation, not two: accepting the prompt writes the override and
+      // closes the sheet. There is no separate save step to press.
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      // Edits the *plan*, never the log: a date override on 5 Jan at 0.
+      final stored = PlansConfig.fromJson(
+          (jsonDecode(prefs.getString(
+                      PrefKeys.scoped('default', PrefKeys.plans)) ??
+                  '{}') as Map)
+              .cast<String, dynamic>());
+      expect(stored.plans.single.dateAmounts,
+          {Day.of(DateTime(2026, 1, 5)): 0});
+    });
+
+    testWidgets('a bad amount is refused and the plan is left alone',
+        (tester) async {
+      final prefs = InMemoryPreferences({
+        PrefKeys.scoped('default', PrefKeys.plans): sixADayJson(),
+      });
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = const Size(900, 1400);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appPreferencesProvider.overrideWithValue(prefs),
+            catalogRepositoryProvider
+                .overrideWithValue(FakeCatalogRepository()),
+            progressRepositoryProvider
+                .overrideWithValue(memoryRepository()),
+            clockProvider.overrideWithValue(() => DateTime(2026, 1, 1)),
+          ],
+          child: localizedApp(home: const PlannerCalendarScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.edit));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, '-1');
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Enter a whole number, zero or more.'), findsOneWidget);
+      final stored = PlansConfig.fromJson(
+          (jsonDecode(prefs.getString(
+                      PrefKeys.scoped('default', PrefKeys.plans)) ??
+                  '{}') as Map)
+              .cast<String, dynamic>());
+      expect(stored.plans.single.dateAmounts, isEmpty,
+          reason: 'a refused amount must not be half-saved');
     });
   });
 }

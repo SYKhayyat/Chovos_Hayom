@@ -628,6 +628,10 @@
   "plansSequence": "ספרים, לפי הסדר",
   "plansSequenceEmpty": "אין עדיין ספרים. הוסיפו את הראשון.",
   "plansSequenceAdd": "הוספת ספר",
+  "plansUnitsDue": "{count} יחידות",
+  "plansDaySheetNothing": "אין דבר מתוכנן ביום הזה.",
+  "plansDaySheetClear": "ניקוי חריגים לתאריך הזה",
+  "plansDaySheetSetFor": "כמות עבור {plan} ביום הזה",
   "plansSequenceTotal": "{count} יחידות בסך הכול",
 
   "crashLogTitle": "יומן קריסות",

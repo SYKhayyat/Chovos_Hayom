@@ -381,6 +381,25 @@ class LearningPlan {
     return true;
   }
 
+  /// A copy with the date amounts replaced, everything else carried across.
+  ///
+  /// The calendar edits one collection on a plan it did not construct, and
+  /// rebuilding a plan from a handful of visible fields is how the rest of it
+  /// gets dropped — the override maps, the item sequence, the rule.
+  LearningPlan copyWithDateAmounts(Map<Day, int> amounts) => LearningPlan(
+        id: id,
+        name: name,
+        assignments: assignments,
+        overrides: overrides,
+        displayCalendar: displayCalendar,
+        unitsPerDay: unitsPerDay,
+        weekdayAmounts: weekdayAmounts,
+        dateAmounts: amounts,
+        spillover: spillover,
+        items: items,
+        flowsToNextItem: flowsToNextItem,
+      );
+
   static bool _sameItems(List<PlanItem> a, List<PlanItem> b) {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {

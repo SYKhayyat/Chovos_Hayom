@@ -40,7 +40,7 @@ Hebrew dates. Land in order.
 - [ ] #36 item-sequence half of #35 has no widget coverage. (Medium)
 - [ ] #31 calendar day/week/month ranges, browsable by continuous scroll. (Medium)
 - [ ] #32 enter dates in English or Hebrew (parsing + shared date input). (Medium)
-- [ ] #28 show/edit each day's amount in the calendar; check a day off from it. (Medium)
+- [x] #28 show/edit each day's amount in the calendar; check a day off from it. (Medium)
   (needs #31 for a day view and #32 to name the date being set)
 
 ## Routing rule for new issues
