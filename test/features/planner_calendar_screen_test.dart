@@ -176,7 +176,11 @@ void main() {
 
     testWidgets('next moves one week, not one month', (tester) async {
       await pumpAt(tester, DateTime(2026, 1, 10));
-      await tester.tap(find.byTooltip('Next month'));
+      // "Next week", not "Next month": the arrow's label follows the range it
+      // is in, so it cannot contradict what the button does. A tooltip that
+      // says month on a week view is a lie a screen reader would read out.
+      expect(find.byTooltip('Next month'), findsNothing);
+      await tester.tap(find.byTooltip('Next week'));
       await tester.pumpAndSettle();
       expect(rows(tester).first, '2026-01-12');
       expect(rows(tester).last, '2026-01-18');
@@ -184,7 +188,7 @@ void main() {
 
     testWidgets('previous moves one week back', (tester) async {
       await pumpAt(tester, DateTime(2026, 1, 10));
-      await tester.tap(find.byTooltip('Previous month'));
+      await tester.tap(find.byTooltip('Previous week'));
       await tester.pumpAndSettle();
       expect(rows(tester).first, '2025-12-29');
       expect(rows(tester).last, '2026-01-04');
@@ -307,6 +311,265 @@ void main() {
       await pumpWeek(tester,
           now: DateTime(2026, 1, 5), calendarMode: 'gregorian');
       expect(weekRowTitles(tester).first, '2026-01-05');
+    });
+  });
+
+  // #31: the calendar had day and week *stepping* but no day range at all, and
+  // no way to browse by anything but the two arrow buttons — which is a poor fit
+  // for a D-pad phone and useless for "get me to roughly next month".
+  group('day, week and month, browsable by scroll', () {
+    /// A plan asking six units a day, so a day page has something to name.
+    String dailyPlanJson() => jsonEncode(const PlansConfig(plans: [
+          LearningPlan(
+            id: 'p',
+            name: 'Yoma',
+            unitsPerDay: 6,
+            assignments: [
+              PlanAssignment(
+                id: 'a',
+                rule: DailyRule(),
+                targetNodeId: 'shas.moed.shabbos',
+              ),
+            ],
+          ),
+        ]).toJson());
+
+    Future<void> pumpAt(
+      WidgetTester tester, {
+      required DateTime now,
+      String? plansJson,
+      Size size = const Size(800, 1400),
+    }) async {
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = size;
+      addTearDown(tester.view.reset);
+      final prefs = InMemoryPreferences(plansJson == null
+          ? null
+          : {PrefKeys.scoped('default', PrefKeys.plans): plansJson});
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appPreferencesProvider.overrideWithValue(prefs),
+            catalogRepositoryProvider
+                .overrideWithValue(FakeCatalogRepository()),
+            progressRepositoryProvider
+                .overrideWithValue(memoryRepository()),
+            clockProvider.overrideWithValue(() => now),
+          ],
+          child: localizedApp(home: const PlannerCalendarScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    /// The heading above the pages: what the current range is called, and when.
+    ///
+    /// By key rather than by content, because this is the one thing every
+    /// paging assertion is about and a bare `Text` among several identical ones
+    /// is not something a finder can point at.
+    String heading(WidgetTester tester) => (tester
+            .widget<Text>(find.descendant(
+                of: find.byKey(const ValueKey('calendar-heading')),
+                matching: find.byType(Text))))
+        .data!;
+
+    testWidgets('all three ranges are offered', (tester) async {
+      await pumpAt(tester, now: DateTime(2026, 1, 10));
+      expect(find.text('Day'), findsOneWidget);
+      expect(find.text('Week'), findsOneWidget);
+      expect(find.text('Month'), findsOneWidget);
+    });
+
+    testWidgets('the day view names each plan firing that day', (tester) async {
+      await pumpAt(tester, now: DateTime(2026, 1, 10), plansJson: dailyPlanJson());
+      await tester.tap(find.text('Day'));
+      await tester.pumpAndSettle();
+
+      // The day page says which plan, not just how much: forty-two month cells
+      // have room for a number, one day page has the whole screen.
+      expect(find.text('Yoma'), findsOneWidget);
+      expect(find.textContaining('6'), findsWidgets);
+      // And the weekday, since a date alone is half the answer.
+      expect(find.text('Saturday'), findsOneWidget);
+    });
+
+    testWidgets('a day with nothing on it says so rather than showing nothing',
+        (tester) async {
+      await pumpAt(tester, now: DateTime(2026, 1, 10));
+      await tester.tap(find.text('Day'));
+      await tester.pumpAndSettle();
+      // An empty screen is not an answer: "nothing is scheduled" is a fact and
+      // this is the only place that can say it.
+      expect(find.text('Nothing is scheduled on this day.'), findsOneWidget);
+    });
+
+    testWidgets('a day range steps one day at a time', (tester) async {
+      await pumpAt(tester, now: DateTime(2026, 1, 10));
+      await tester.tap(find.text('Day'));
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-01-10');
+
+      await tester.tap(find.byTooltip('Next day'));
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-01-11');
+
+      await tester.tap(find.byTooltip('Previous day'));
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-01-10');
+    });
+
+    testWidgets('the arrows are named for the range they are in', (tester) async {
+      await pumpAt(tester, now: DateTime(2026, 1, 10));
+      expect(find.byTooltip('Next month'), findsOneWidget);
+      expect(find.byTooltip('Next week'), findsNothing);
+
+      await tester.tap(find.text('Week'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Next week'), findsOneWidget);
+      expect(find.byTooltip('Next month'), findsNothing);
+
+      await tester.tap(find.text('Day'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Next day'), findsOneWidget);
+      expect(find.byTooltip('Next week'), findsNothing);
+    });
+
+    testWidgets('the heading names the span actually shown', (tester) async {
+      // 10 Jan 2026 is a Saturday, so its week is Mon 5 - Sun 11 Jan. A heading
+      // of "2026-01-01" over that week is a heading about the wrong month, and
+      // it is what every range used to print.
+      await pumpAt(tester, now: DateTime(2026, 1, 10));
+      expect(heading(tester), '2026-01-01', reason: 'January, by its own name');
+
+      await tester.tap(find.text('Week'));
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-01-05 – 2026-01-11');
+
+      await tester.tap(find.text('Day'));
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-01-10');
+    });
+
+    testWidgets('a month page is named by its month, not by its first cell',
+        (tester) async {
+      // 1 Jan 2026 is a Thursday, so the grid opens on Mon 29 Dec 2025 to fill
+      // six rows. Printing that would put December over January.
+      await pumpAt(tester, now: DateTime(2026, 1, 10));
+      expect(heading(tester), '2026-01-01');
+      // And the first cell really is the padding day, so the two are different
+      // things rather than one being a bug.
+      expect(
+        find.byKey(ValueKey('day-${Day.of(DateTime(2025, 12, 29)).ordinal}')),
+        findsOneWidget,
+      );
+    });
+
+    /// A left swipe on the pager: what a thumb or a D-pad user does to page.
+    Future<void> swipeForward(WidgetTester tester) async {
+      await tester.fling(
+        find.byType(PageView),
+        const Offset(-400, 0),
+        1000,
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> swipeBack(WidgetTester tester) async {
+      await tester.fling(
+        find.byType(PageView),
+        const Offset(400, 0),
+        1000,
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a swipe pages forward by one unit, and back again',
+        (tester) async {
+      await pumpAt(tester, now: DateTime(2026, 1, 10));
+      // Month, because a month is the unit a swipe is really for.
+      expect(heading(tester), '2026-01-01');
+
+      await swipeForward(tester);
+      expect(heading(tester), '2026-02-01', reason: 'one month on');
+
+      await swipeForward(tester);
+      expect(heading(tester), '2026-03-01');
+
+      await swipeBack(tester);
+      expect(heading(tester), '2026-02-01', reason: 'and back again');
+    });
+
+    testWidgets('a swipe pages in the range it is in', (tester) async {
+      await pumpAt(tester, now: DateTime(2026, 1, 10));
+      await tester.tap(find.text('Day'));
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-01-10');
+
+      await swipeForward(tester);
+      expect(heading(tester), '2026-01-11', reason: 'a day swipe is a day');
+
+      await tester.tap(find.text('Week'));
+      await tester.pumpAndSettle();
+      // The anchor is still the day the swipes left it on, and the week range
+      // shows the week containing it — the same anchor, a different window.
+      expect(heading(tester), '2026-01-05 – 2026-01-11');
+    });
+
+    testWidgets('a page shows its own days, not the anchor page behind it',
+        (tester) async {
+      // The failure this guards: a pager that computes one window and draws it
+      // three times, so the page a swipe arrives at is a copy of the one behind
+      // it. Asserted on the rows of the page that is actually showing.
+      await pumpAt(tester,
+          now: DateTime(2026, 1, 10), plansJson: dailyPlanJson());
+      await tester.tap(find.text('Week'));
+      await tester.pumpAndSettle();
+      expect(find.text('2026-01-05'), findsOneWidget, reason: 'this week');
+      expect(find.text('2026-01-10'), findsOneWidget, reason: 'and today in it');
+      expect(find.text('2026-01-11'), findsOneWidget, reason: 'its Sunday');
+
+      await swipeForward(tester);
+      // A different week, ending on its own Sunday: the one after 5-11 Jan is
+      // 12-18, not 12-19, and a window that had re-used the old one would still
+      // be showing the 5th.
+      expect(find.text('2026-01-12'), findsOneWidget);
+      expect(find.text('2026-01-18'), findsOneWidget);
+      expect(find.text('2026-01-05'), findsNothing);
+    });
+
+    testWidgets('paging never materialises more than three windows',
+        (tester) async {
+      // The cost promise: on-demand generation means a swipe moves a window, it
+      // does not build a calendar. Counted in *day cells*, which is what is
+      // actually built, and bounded by three pages' worth — 42 each.
+      int dayCells() => find
+          .byWidgetPredicate((w) =>
+              w.key is ValueKey && '${(w.key! as ValueKey).value}'.startsWith('day-'))
+          .evaluate()
+          .length;
+
+      await pumpAt(tester, now: DateTime(2026, 1, 10));
+      for (var i = 0; i < 6; i++) {
+        await swipeForward(tester);
+        expect(dayCells(), lessThanOrEqualTo(3 * 42),
+            reason: 'after $i swipes only three pages may exist');
+      }
+      // Six month-swipes from January is July, and the cost did not grow: this
+      // is what a pager over every day of a year would have cost instead.
+      expect(heading(tester), '2026-07-01');
+      expect(dayCells(), lessThanOrEqualTo(3 * 42));
+    });
+
+    testWidgets('the whole calendar lays out on a 240dp screen', (tester) async {
+      for (final range in ['Day', 'Week', 'Month']) {
+        await pumpAt(tester,
+            now: DateTime(2026, 1, 10),
+            plansJson: dailyPlanJson(),
+            size: const Size(240, 324));
+        await tester.tap(find.text(range));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: range);
+      }
     });
   });
 

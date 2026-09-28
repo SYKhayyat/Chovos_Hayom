@@ -103,6 +103,195 @@ void main() {
     });
   });
 
+  group('calendar windows', () {
+    // The three ranges are one derivation with three arguments, so these are
+    // mostly about the properties that make paging and the arrows agree:
+    // stepping out and back, and a step landing on the unit rather than on
+    // whatever day of it the anchor happened to be.
+    test('a day range is the anchor day itself', () {
+      final anchor = d(2026, 1, 10); // a Saturday
+      expect(calendarWindow(anchor, PlannerCalendarRange.day), [anchor]);
+    });
+
+    test('a week starts on the Monday on or before its anchor', () {
+      // 10 Jan 2026 is a Saturday, so its week is Mon 5 - Sun 11 Jan.
+      expect(calendarWindow(d(2026, 1, 10), PlannerCalendarRange.week), [
+        d(2026, 1, 5),
+        d(2026, 1, 6),
+        d(2026, 1, 7),
+        d(2026, 1, 8),
+        d(2026, 1, 9),
+        d(2026, 1, 10),
+        d(2026, 1, 11),
+      ]);
+    });
+
+    test('a month is six whole weeks from the Monday on or before the 1st', () {
+      final window = calendarWindow(d(2026, 1, 10), PlannerCalendarRange.month);
+      expect(window, hasLength(42));
+      // 1 Jan 2026 is a Thursday, so the grid opens on Mon 29 Dec 2025 and
+      // runs six whole weeks to Sun 8 Feb.
+      expect(window.first, d(2025, 12, 29));
+      expect(window.last, d(2026, 2, 8));
+      // Six rows of seven, all consecutive — which is what makes a month's
+      // page the same height as February's.
+      for (var i = 1; i < window.length; i++) {
+        expect(window[i], window[i - 1] + 1);
+        expect(window[i].weekday, i % 7 + DateTime.monday);
+      }
+    });
+
+    test('a month page holds every day of its month, plus its neighbours',
+        () {
+      // A 42-cell grid is six weeks, so a short month is padded with the tail
+      // of the month before and the head of the one after. That is what a month
+      // grid *is* — and it is why a month page overlaps its neighbour's on
+      // spill days, which the day and week ranges never do.
+      final window =
+          calendarWindow(d(2026, 2, 10), PlannerCalendarRange.month).toSet();
+      for (var day = 1; day <= 28; day++) {
+        expect(window, contains(d(2026, 2, day)));
+      }
+      expect(window, contains(d(2026, 1, 26)), reason: 'padded at the front');
+      expect(window.length, 42);
+    });
+
+    test('a range is named by its own first day, not by the page it opens on',
+        () {
+      // The distinction that keeps a heading honest. 1 Jan 2026 is a Thursday,
+      // so January's page opens on Mon 29 Dec 2025 to fill six rows — and
+      // printing that as the heading would put December's date over January.
+      final anchor = d(2026, 1, 10);
+      expect(PlannerCalendarRange.month.startFrom(anchor), d(2025, 12, 29),
+          reason: 'the page opens on the padding day');
+      expect(PlannerCalendarRange.month.namedDay(anchor), d(2026, 1, 1),
+          reason: 'but the month is named by the 1st');
+
+      // A week has no padding, so there is nothing to be confused about and the
+      // two agree — which is what makes the day and month forms the exceptions.
+      expect(PlannerCalendarRange.week.startFrom(anchor),
+          PlannerCalendarRange.week.namedDay(anchor));
+      expect(PlannerCalendarRange.day.startFrom(anchor),
+          PlannerCalendarRange.day.namedDay(anchor));
+
+      // A named day is always inside its own page, never outside it.
+      for (final range in PlannerCalendarRange.values) {
+        for (final day in [d(2026, 1, 1), d(2026, 2, 28), d(2026, 3, 31)]) {
+          expect(calendarWindow(day, range),
+              contains(range.namedDay(day)),
+              reason: '$range must name a day it is showing');
+        }
+      }
+    });
+
+    test('every range steps by its own unit', () {
+      final anchor = d(2026, 1, 10);
+      expect(PlannerCalendarRange.day.step(anchor, 1), d(2026, 1, 11));
+      expect(PlannerCalendarRange.week.step(anchor, 1), d(2026, 1, 12),
+          reason: 'a week from Sat 10 Jan is Mon 12 Jan, not Sat 17 Jan');
+      expect(PlannerCalendarRange.month.step(anchor, 1), d(2026, 2, 1));
+    });
+
+    test('stepping out and back returns the same page, for every range', () {
+      // The property paging relies on: it moves the anchor and rebuilds rather
+      // than accumulating an offset, so a page reached by a swipe and a page
+      // reached by an arrow have to be the same page.
+      //
+      // Stated about the **window**, not the anchor, and the difference is the
+      // point: a step normalises onto the unit's first day, so 15 Jan stepped
+      // forward and back is 1 Jan — the same page, reached from a different
+      // anchor. Asserting the anchor came back exactly would be asserting that
+      // the step preserves a day-of-month it has no use for.
+      for (final range in PlannerCalendarRange.values) {
+        for (final anchor in [
+          d(2026, 1, 1),
+          d(2026, 1, 15),
+          d(2026, 1, 31),
+          d(2026, 2, 28),
+          d(2024, 2, 29), // a leap day
+          d(2026, 12, 31),
+        ]) {
+          final here = calendarWindow(anchor, range);
+          for (final delta in [-7, -1, 1, 3, 12]) {
+            expect(
+              calendarWindow(range.step(range.step(anchor, delta), -delta), range),
+              here,
+              reason: '$range round trip from $anchor',
+            );
+          }
+        }
+      }
+    });
+
+    test('a month step from the 31st does not spill into the next month', () {
+      // 31 Jan + 1 month is 1 Feb. Overflowing to 3 March is the bug this
+      // shape exists to prevent: the day of the month is carried, and March
+      // has no 31st to land on.
+      expect(PlannerCalendarRange.month.step(d(2026, 1, 31), 1), d(2026, 2, 1));
+      expect(PlannerCalendarRange.month.step(d(2026, 3, 31), 1), d(2026, 4, 1));
+      expect(PlannerCalendarRange.month.step(d(2026, 1, 31), -1), d(2025, 12, 1));
+    });
+
+    test('stepping a month keeps the day of the month', () {
+      // The month range's step starts from the 1st, so a 31st lands on the 1st
+      // rather than being clamped day by day; this is the property that makes
+      // twelve consecutive month steps equal one year.
+      final anchor = d(2026, 1, 15);
+      var moved = anchor;
+      for (var i = 0; i < 12; i++) {
+        moved = PlannerCalendarRange.month.step(moved, 1);
+      }
+      expect(moved, d(2027, 1, 1));
+    });
+
+    test('a page holds exactly its own days, whatever the anchor', () {
+      for (final range in PlannerCalendarRange.values) {
+        for (final anchor in [d(2026, 2, 1), d(2026, 2, 27), d(2026, 2, 28)]) {
+          expect(calendarWindow(anchor, range), hasLength(range.dayCount),
+              reason: '$range at $anchor');
+        }
+      }
+    });
+
+    test('a stepped day or week page shares no day with the one it came from',
+        () {
+      // Day and week pages are exact, so stepping one never repeats a day. The
+      // month range is excluded on purpose and the reason is above: a 42-cell
+      // grid pads with its neighbours' days, so consecutive month pages
+      // deliberately share the spill.
+      final anchor = d(2026, 1, 10);
+      for (final range in [
+        PlannerCalendarRange.day,
+        PlannerCalendarRange.week,
+      ]) {
+        final here = calendarWindow(anchor, range).toSet();
+        final next = calendarWindow(range.step(anchor, 1), range).toSet();
+        final back = calendarWindow(range.step(anchor, -1), range).toSet();
+        expect(here.intersection(next), isEmpty, reason: '$range forwards');
+        expect(here.intersection(back), isEmpty, reason: '$range backwards');
+      }
+    });
+
+    test("consecutive month pages cover the calendar without a gap", () {
+      // The other half of the spill: January's own days and February's own days
+      // are disjoint and adjacent, so paging forward loses nothing even though
+      // the two pages overlap on padding.
+      final january = calendarWindow(d(2026, 1, 10), PlannerCalendarRange.month)
+          .where((day) => day.midnight.month == 1)
+          .toSet();
+      final february =
+          calendarWindow(PlannerCalendarRange.month.step(d(2026, 1, 10), 1),
+              PlannerCalendarRange.month)
+              .where((day) => day.midnight.month == 2)
+              .toSet();
+      expect(january.length, 31);
+      expect(february.length, 28);
+      expect(january.intersection(february), isEmpty);
+      expect(january.reduce((a, b) => a > b ? a : b) + 1,
+          february.reduce((a, b) => a < b ? a : b));
+    });
+  });
+
   group('engine with the real reader', () {
     test('every 1st of Tishrei lands on the actual Rosh Hashanah dates', () {
       const plan = LearningPlan(

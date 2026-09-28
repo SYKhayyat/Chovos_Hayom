@@ -1,6 +1,7 @@
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/stats.dart';
 import 'package:chovos_hayom/core/breakpoints.dart';
+import 'package:chovos_hayom/core/planner_dates.dart';
 import 'package:chovos_hayom/core/focus.dart';
 import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
@@ -8,6 +9,7 @@ import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/features/dashboard/dashboard_screen.dart';
 import 'package:chovos_hayom/features/reports/overview_section.dart';
 import 'package:chovos_hayom/features/reports/report_screen.dart';
+import 'package:chovos_hayom/features/planner/calendar_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -373,6 +375,151 @@ void main() {
       await pumpBanner(tester, kPhone);
       expect(find.textContaining('It lives only on this device'),
           findsOneWidget);
+    });
+  });
+
+  // #31: the planner calendar was the one screen in the app that had never been
+  // on this list, and it is the screen a D-pad user browses most — a calendar
+  // you can only reach by tapping a chevron is a calendar you cannot reach at
+  // all on this phone.
+  group('the planner calendar', () {
+    Widget calendar() => ProviderScope(
+          overrides: [
+            catalogRepositoryProvider
+                .overrideWithValue(FakeCatalogRepository()),
+            progressRepositoryProvider
+                .overrideWithValue(memoryRepository()),
+            appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+            clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+          ],
+          child: localizedApp(home: const PlannerCalendarScreen()),
+        );
+
+    /// What the calendar is showing, as the heading states it.
+    ///
+    /// The heading is the screen's answer to "which range, and when", so it is
+    /// what a key press on this device has to be able to change — found by its
+    /// key, because a bare `Text` is not a thing a finder can point at.
+    String heading(WidgetTester tester) => (tester
+            .widget<Text>(find.descendant(
+                of: find.byKey(const ValueKey('calendar-heading')),
+                matching: find.byType(Text))))
+        .data!;
+
+    testWidgets('lays out in all three ranges without overflowing',
+        (tester) async {
+      sized(tester, kSonim);
+      await tester.pumpWidget(calendar());
+      await tester.pumpAndSettle();
+
+      // A month cell is a seventh of 240dp — 28 logical pixels — and the day
+      // number over the amount is about 31 of them. Every cell with something
+      // due on it overflowed by a few pixels and drew a yellow stripe across the
+      // month, which is this screen on this device being unusable rather than
+      // merely untidy.
+      for (final range in ['Month', 'Week', 'Day']) {
+        await tester.tap(find.text(range));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: range);
+      }
+    });
+
+    testWidgets('the arrows are reachable by key and press with the centre key',
+        (tester) async {
+      sized(tester, kSonim);
+      await tester.pumpWidget(calendar());
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-01-01');
+
+      /// Which app-bar arrow is focused, read as an *ancestor* of the focused
+      /// node — what holds focus inside a Material button is its own `Focus`,
+      /// not the `IconButton`, so asking whether the focused widget *is* the
+      /// button answers no on a screen where focus works perfectly well.
+      String? focusedArrow() {
+        final focus = FocusManager.instance.primaryFocus;
+        if (focus?.context == null) return null;
+        for (final tip in ['Next month', 'Previous month']) {
+          if (find
+              .ancestor(
+                of: find.byWidget(focus!.context!.widget),
+                matching: find.byTooltip(tip),
+              )
+              .evaluate()
+              .isNotEmpty) {
+            return tip;
+          }
+        }
+        return null;
+      }
+
+      // Down reaches the first arrow, and *left/right* moves between the two —
+      // which is the axis a D-pad actually has, and the reason the two chevrons
+      // are one focus stop apart rather than two. Down alone would skip the
+      // second and drop into the grid.
+      //
+      // The arrows are the only way between periods, and the calendar was not
+      // in this suite at all before, so nothing had ever claimed a D-pad user
+      // could reach them.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(focusedArrow(), 'Previous month', reason: 'the first stop');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(focusedArrow(), 'Next month', reason: 'and across to the other');
+
+      // The centre key presses it: a control this phone can focus but not
+      // activate is the same as an invisible one.
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-02-01');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pumpAndSettle();
+      expect(focusedArrow(), 'Previous month');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-01-01',
+          reason: 'and back, so the arrows are not a one-way ratchet');
+    });
+
+    testWidgets('the range can be changed by key at this size', (tester) async {
+      sized(tester, kSonim);
+      await tester.pumpWidget(calendar());
+      await tester.pumpAndSettle();
+
+      // Down off the arrows and into the range selector, which is the other
+      // thing this screen has to be operable without a finger.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      final focus = FocusManager.instance.primaryFocus!;
+      final inSelector = find
+          .ancestor(
+            of: find.byWidget(focus.context!.widget),
+            matching:
+                find.byType(SegmentedButton<PlannerCalendarRange>),
+          )
+          .evaluate()
+          .isNotEmpty;
+      expect(inSelector, isTrue,
+          reason: 'the range selector must be reachable on a 240dp screen');
+    });
+
+    testWidgets('a day range is a whole day of tapping, not a whole month',
+        (tester) async {
+      sized(tester, kSonim);
+      await tester.pumpWidget(calendar());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Day'));
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-01-10');
+
+      await tester.tap(find.byTooltip('Next day'));
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-01-11');
     });
   });
 

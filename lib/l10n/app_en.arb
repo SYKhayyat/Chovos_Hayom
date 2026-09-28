@@ -1050,10 +1050,15 @@
     "placeholders": { "unit": { "type": "int" } }
   },
   "plannerCalendarTitle": "Planner calendar",
+  "plannerCalendarDay": "Day",
   "plannerCalendarMonth": "Month",
   "plannerCalendarWeek": "Week",
   "plannerCalendarPrevious": "Previous month",
   "plannerCalendarNext": "Next month",
+  "plannerCalendarPreviousWeek": "Previous week",
+  "plannerCalendarNextWeek": "Next week",
+  "plannerCalendarPreviousDay": "Previous day",
+  "plannerCalendarNextDay": "Next day",
   "plannerCalendarSiyum": "Siyum",
 
   "@_PLAN_EDITING": {},

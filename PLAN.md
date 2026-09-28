@@ -38,10 +38,10 @@ Hebrew dates. Land in order.
 - [x] #35 plan editing 2/2: weekday + date overrides, item sequence — SHIPPED, sequence tests outstanding.
 - [x] #37 no test timeout: one hanging test wedged the whole run. (High)
 - [x] #36 item-sequence half of #35 has no widget coverage. (Medium)
-- [ ] #31 calendar day/week/month ranges, browsable by continuous scroll. (Medium)
+- [x] #31 calendar day/week/month ranges, browsable by continuous scroll. (Medium)
 - [ ] #32 enter dates in English or Hebrew (parsing + shared date input). (Medium)
 - [x] #28 show/edit each day's amount in the calendar; check a day off from it. (Medium)
-  (needs #31 for a day view and #32 to name the date being set)
+  (#31 gave it a day view; #32 is still needed to name the date being set)
 
 ## Routing rule for new issues
 Any AI opening an issue here MUST insert it above: data-loss/correctness → Phase 1, polish → Phase 2, new planner scope → Phase 4. Never let roadmap outrank a High. See AI_ISSUE_ROUTING.md.
