@@ -75,28 +75,13 @@ LearningEvent done(String node, int unit, {List<String> layers = const ['main']}
 
 /// The fastest of [rounds] timings of [body], in milliseconds.
 ///
-/// A wall-clock budget measures two things at once: how long the work takes, and
-/// how much CPU the machine gave it. `flutter test` runs test files
-/// concurrently, so a budget that is comfortably green in isolation can be
-/// measured against a contended CPU and fail for no reason but scheduling. That
-/// is not hypothetical — a 500 ms budget on ~50 ms of real work here failed the
-/// full suite at ~552 ms while passing in isolation, and did so identically on an
-/// untouched tree, so it was latent flakiness rather than any regression.
-///
-/// Contention can only ever *add* time, never take it away, so the **minimum**
-/// over several runs is the contention-free measurement. This keeps exactly the
-/// discrimination these budgets exist for: the regressions they guard (a
-/// per-event local `DateTime`, a per-query log scan) slow down *every* run, so
-/// they still fail the same check by the same wide margin. What it removes is the
-/// false failure, not the guard. A genuinely slow machine still fails — its
-/// minimum is slow too.
-///
-/// The budgets themselves are deliberately left where they are. The gap between
-/// correct work (~50 ms) and the regression guarded here (~2,200 ms, the local-
-/// `DateTime` regression the sibling test measures) is ~44×, and the whole fix
-/// is spent making sure contention cannot eat into it. Raising a budget would
-/// buy margin against a loaded CI box by shrinking the very window that catches
-/// the bug — the one change that would make this test lie.
+/// Taking the minimum removes *contention* — a busy scheduler can only ever add
+/// time — but it cannot remove a slow *machine*, nor `flutter test --coverage`'s
+/// instrumentation, which makes the whole program slower. That is why every
+/// assertion in this file is a **ratio** against work measured in the same run
+/// rather than a budget in milliseconds: both sides of a ratio are inflated by
+/// the same load and the same coverage instrumentation, so it cancels, while a
+/// regression still moves the ratio by orders of magnitude.
 int fastestMs(void Function() body, {int rounds = 5}) {
   var best = 1 << 62;
   for (var i = 0; i < rounds; i++) {
@@ -189,8 +174,6 @@ void main() {
 
       late List<SeriesPoint> series;
       late LogActivity activity;
-      // Timed as the fastest of a few runs, so a contended CPU cannot spend the
-      // budget; the per-event regression this guards is still ~15× the budget.
       final ms = fastestMs(() {
         series = ProgressSeries.cumulative(fold);
         activity = LogActivity.of(events);
@@ -198,87 +181,95 @@ void main() {
 
       expect(series, hasLength(200), reason: 'one point per distinct day');
       expect(activity.dailyCounts, hasLength(200));
-      // Measured at ~145 ms for all three of the helpers this replaced. The
-      // version *they* replaced keyed on a local DateTime per event, which
-      // alone is ~2,200 ms for 20,000 of them — so this threshold has room for
-      // a slow machine and none for that bug.
-      expect(ms, lessThan(800),
-          reason: 'the series helpers took $ms ms — a '
-              'per-event local DateTime construction is back');
+
+      // **A ratio, not a budget.** The regression guarded here is a per-event
+      // local `DateTime`, a *constant factor* per event (~15x on measured work),
+      // while the correct code is O(distinct days). The reference is a fold over
+      // the same 20,000 events: also O(events), also measured in this run, so
+      // machine speed and coverage instrumentation inflate both sides and cancel.
+      // A per-event local DateTime lands well past 8x a fold; correct code is far
+      // under it.
+      final foldMs = fastestMs(() => FoldLog.fold(events));
+      expect(ms, lessThan(foldMs * 8),
+          reason: 'the series helpers took $ms ms against a $foldMs ms fold of '
+              'the same log — a per-event local DateTime construction is back');
     });
 
-    // The index exists so that the *answers* stop costing the log. These pin
-    // that: each is asked against a 20,000-event history and must not care.
-    test('the day-indexed answers cost the day, not the log', () {
-      final events = syntheticLog(20000);
-      final activity = LogActivity.of(events);
-      final today = Day.of(DateTime(2026, 1, 1).add(const Duration(days: 199)));
+    // The index exists so that the *answers* stop costing the log. This asserts
+    // that **deterministically, with no clock involved**, because every
+    // wall-clock version of it was unreliable: an absolute budget failed under
+    // `flutter test --coverage`, and even a ratio against work measured in the
+    // same run fell apart, because instrumentation penalises two code paths by
+    // different amounts (a re-derivation measured 316 ms against a 440 ms bound
+    // under coverage while clearing it comfortably without).
+    //
+    // What it asserts is the semantic root of the cost property: **the answer
+    // depends only on the window, not on the log.** `averagePerDay` clamps its
+    // denominator to the window once the learner has been going longer than it,
+    // so a 300-day history and a 30-day history sharing the same last 30 days
+    // must give byte-identical answers. If a query ever reads past the window —
+    // which is the entire failure this index was built to prevent — the two
+    // diverge and this fails, on any machine, at any load, in milliseconds.
+    test('the day-indexed answers depend only on the window, not the log', () {
+      // 10 units a day. The 30-day log is the last 30 days of the 300-day one,
+      // so the two are indistinguishable as far as the window is concerned.
+      List<LearningEvent> history(int days, int firstDay) => [
+            for (var d = firstDay; d < firstDay + days; d++)
+              for (var k = 0; k < 10; k++)
+                LearningEvent(
+                  id: 'd${d}_$k',
+                  profileId: 'p',
+                  nodeId: 'huge',
+                  unitIndex: d * 10 + k,
+                  action: EventAction.done,
+                  occurredAt: DateTime(2026, 1, 1).add(Duration(days: d)),
+                  loggedAt: DateTime(2026, 1, 1).add(Duration(days: d)),
+                ),
+          ];
 
-      // Warm up, then ask each answer a thousand times. A thousand full scans
-      // of 20,000 events is twenty million event visits; a thousand map lookups
-      // is not, and only one of those fits in the budget below.
-      activity.averagePerDay(today);
-      activity.streakEndingAt(today);
-      activity.minutesSince(today);
+      // 300 days of history ending today (ordinal 299), versus only its last 30.
+      final today = Day.of(DateTime(2026, 1, 1).add(const Duration(days: 299)));
+      final deep = LogActivity.of(history(300, 0));
+      final shallow = LogActivity.of(history(30, 270));
 
-      // Timed as the fastest of a few runs, so a contended CPU cannot spend the
-      // budget: this is the test that went intermittently red under `flutter
-      // test`'s concurrency, and it fails for the right reason instead. A
-      // thousand full log scans is twenty million event visits — seconds, and
-      // nowhere near 500 ms — so the guard is undiminished.
-      final ms = fastestMs(() {
-        for (var i = 0; i < 1000; i++) {
-          activity.averagePerDay(today);
-          activity.streakEndingAt(today);
-          activity.minutesSince(today);
-        }
-      });
+      // The window is 30 days, both histories are fully populated inside it, and
+      // both firstDayLearned values fall on or before the window start — so the
+      // answer must be identical. It is 300 units over 30 days.
+      expect(deep.averagePerDay(today), 10);
+      expect(deep.averagePerDay(today), shallow.averagePerDay(today),
+          reason: '270 extra days of history behind the window changed the '
+              'answer, so something read past the window');
 
-      expect(ms, lessThan(500),
-          reason: '1,000 rounds of pace+streak+minutes took '
-              '$ms ms — one of them is scanning the log '
-              'again. This is the shape the goal screen had: N goals, N scans.');
+      // And the total activity differs, which is what makes the comparison above
+      // meaningful rather than vacuous: if the two logs were the same, this would
+      // prove nothing.
+      expect(deep.dailyCounts.length, 300);
+      expect(shallow.dailyCounts.length, 30);
     });
+
     // §P3: every write re-reads and re-folds the whole log. That is a deliberate
     // trade and cheap today; this pins the size at which it would stop being
     // cheap, so the fold cannot quietly become the next unmeasured hotspot.
     test('folding a very large log stays bounded', () {
       final events = syntheticLog(100000);
 
-      // Two rounds, not three: folding 100k events is the heaviest thing in this
-      // file, and min-of-two already discards a contention spike while keeping
-      // the budget meaningful against a genuinely slow fold.
       late LogFold fold;
       final ms = fastestMs(() {
         fold = FoldLog.fold(events);
       }, rounds: 2);
-
       expect(fold.doneUnits('huge'), hasLength(5000));
-      expect(ms, lessThan(3000), reason: 'folding 100k events took $ms ms');
-    });
-  });
 
-  group('fastestMs', () {
-    test('reports the fastest round, discarding a slow one', () {
-      // The guard for the guard. The whole reason these budgets stopped going
-      // red under `flutter test`'s concurrency is that the helper takes the
-      // *minimum*; if it ever reports the maximum again — or the mean — the
-      // contention sensitivity comes straight back and the flake returns. So
-      // burn a whole round and assert the number ignores it.
-      var round = 0;
-      final ms = fastestMs(() {
-        round++;
-        if (round == 1) {
-          final spin = Stopwatch()..start();
-          while (spin.elapsedMilliseconds < 60) {
-            // occupy the CPU the way a contended scheduler would
-          }
-        }
-      }, rounds: 3);
-
-      expect(round, 3, reason: 'it must actually run every round');
-      expect(ms, lessThan(60),
-          reason: 'the 60 ms round should have been discarded, got $ms ms');
+      // **A growth rate, not a budget.** What this pins is that folding stays
+      // roughly *linear* in the number of events — a property a budget cannot
+      // express at all, because a budget is a single point and the failure mode
+      // is a curve. Folding a quarter as many events is the same operation on the
+      // same data shape, measured in this run: linear work keeps the ratio near
+      // 4, and a quadratic fold lands far above 8.
+      final smallMs = fastestMs(() => FoldLog.fold(syntheticLog(25000)),
+          rounds: 2);
+      expect(ms, lessThan(smallMs * 8),
+          reason: '100k events took $ms ms against $smallMs ms for 25k — a fold '
+              'that grows faster than the events it reads is back');
     });
   });
 

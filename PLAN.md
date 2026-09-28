@@ -4,7 +4,7 @@ Worker loop: top unchecked item only, fix + widget/unit test, commit, check off,
 Done (closed): #1, #2, #3, #4, #5, #6?, #7, #8, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20, #21, #22, #23, #29, #30. (#6 epic tracker stays open as index.)
 
 ## Phase 1 — Release blockers (the 1 High + correctness Mediums)
-- [ ] #33 derive_cost wall-clock guard still flaky: healthy and regression costs too close to separate by timing. (Medium)
+- [x] #33 derive_cost wall-clock guard still flaky: healthy and regression costs too close to separate by timing. (Medium)
 - [x] #29 planner week view anchored to the 1st of the month, not the current week. (Medium)
 - [x] #30 planner week list shows a raw ISO date, bypassing DateDisplay/Hebrew labels. (Medium)
 - [x] #23 flaky wall-clock budget in derive_cost_test fails under suite load → CI red for no reason. (Medium)
