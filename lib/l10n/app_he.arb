@@ -627,6 +627,24 @@
   "plansDayOff": "יום חופש",
   "plansDateOverrides": "כמויות אחרות בתאריכים מסוימים",
   "plansDateOverridesEmpty": "כל תאריך מבקש את אותה כמות.",
+  "dateEntryField": "תאריך",
+  "dateEntryHelp": "אפשר להקליד 2026-01-04‏, 4 Jan 2026‏, ‏4 Tevet 5786 או ט״ו טבת תשפ״ו — בלוח השנה שבו אתם חושבים.",
+  "dateEntryPick": "בחירת תאריך",
+  "dateEntryUnreadable": "זה אינו תאריך שאפשר לקרוא.",
+  "dateEntryMeans": "זה {date}.",
+  "dateEntryAmbiguous": "זה יכול להיות יותר מתאריך אחד: {dates}. כתבו עם שם החודש, או עם השנה לפני.",
+  "@dateEntryMeans": {
+    "description": "התאריך שהשדה הבין, מחזר לקריאה כדי שאפשר יהיה להבחין בין שגיאת הקלדה לבין תאריך אמיתי. התאריך מודפס בלוח השנה של הקורא, שאינו בהכרח זה שהוקלד.",
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "@dateEntryAmbiguous": {
+    "description": "שדה תאריך בעל שני קריאות תקינות, ושתיהן מוצגות. לעולם אינו נפתר בשקט: חריג תאריך ביום הלא נכון הוא תכנון ששקט דורש כלום.",
+    "placeholders": {
+      "dates": { "type": "String" }
+    }
+  },
   "plansDateAdd": "הוספת תאריך",
   "plansDateAmount": "כמות לאותו תאריך",
   "plansDateAmountHelp": "הגדירו 0 כדי לנוח ביום הזה.",

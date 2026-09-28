@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/plans.dart';
 import '../../application/settings.dart';
 import '../../core/calendar.dart';
+import '../../core/date_parse.dart';
 import '../../core/parse.dart';
 import '../../domain/usecases/learning_plan.dart';
 import '../../domain/usecases/recurrence.dart';
@@ -425,24 +426,15 @@ class _PlanFormState extends ConsumerState<_PlanForm> {
 
   /// The Hebrew months in year order, with the app's own names.
   ///
+  /// Off `hebrewMonthNames` — the one table (#32 put there for the date parser,
+  /// which needs the same names in Hebrew script as well as in transliteration).
   /// [HebrewMonth] is a set of integer constants, not an enum, so there is no
-  /// `values` to iterate and no `name` to show. Listing them here keeps the
-  /// numbering in one place rather than scattering `HebrewMonth.tishrei`-style
-  /// literals through the UI.
-  static const _hebrewMonths = <({int value, String label})>[
-    (value: HebrewMonth.nissan, label: 'Nissan'),
-    (value: HebrewMonth.iyar, label: 'Iyar'),
-    (value: HebrewMonth.sivan, label: 'Sivan'),
-    (value: HebrewMonth.tammuz, label: 'Tammuz'),
-    (value: HebrewMonth.av, label: 'Av'),
-    (value: HebrewMonth.elul, label: 'Elul'),
-    (value: HebrewMonth.tishrei, label: 'Tishrei'),
-    (value: HebrewMonth.cheshvan, label: 'Cheshvan'),
-    (value: HebrewMonth.kislev, label: 'Kislev'),
-    (value: HebrewMonth.teves, label: 'Teves'),
-    (value: HebrewMonth.shevat, label: 'Shevat'),
-    (value: HebrewMonth.adar, label: 'Adar'),
-    (value: HebrewMonth.adarIi, label: 'Adar II'),
+  /// `values` to iterate and no `name` to show, and this list used to be the
+  /// second copy of the same thirteen names. A month name added to the parser
+  /// and not to this list is a month a reader can type and not pick.
+  static final _hebrewMonths = <({int value, String label})>[
+    for (final m in hebrewMonthNames)
+      (value: m.month, label: m.transliterated.first),
   ];
 }
 

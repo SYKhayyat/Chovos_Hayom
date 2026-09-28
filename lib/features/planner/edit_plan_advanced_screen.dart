@@ -13,6 +13,7 @@ import '../../domain/entities/catalog.dart';
 import '../../domain/usecases/learning_plan.dart';
 import '../../domain/usecases/plan_position.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../common/date_field.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
 import '../common/text_prompt.dart';
@@ -155,22 +156,34 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
   }
 
   Future<void> _addDate() async {
-    final now = ref.read(clockProvider)();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
+    final l10n = AppLocalizations.of(context);
+    final today = Day.of(ref.read(clockProvider)());
+    // The shared date control rather than `showDatePicker`, which is a
+    // Gregorian grid: a reader who thinks in Hebrew dates could set an override
+    // for one only by navigating that grid, and could not type `ד׳ טבת תשפ״ו`
+    // or `4 Tevat 5786` at all. It offers the grid *and* the field, so choosing
+    // a date by eye still works.
+    //
+    // The year a yearless date takes comes from the clock's day, so `Jan 4` in
+    // a plan opened in 2027 is 4 January 2027 and not 4 January of whatever year
+    // the device thinks it is.
+    final picked = await promptForDate(
+      context,
+      initial: today,
+      reference: today,
+      mode: ref.read(settingsProvider).calendar,
+      title: l10n.plansDateAmount,
+      confirmLabel: l10n.plansSave,
+      cancelLabel: l10n.plansCancel,
     );
     if (picked == null || !mounted) return;
-    final l10n = AppLocalizations.of(context);
     final amount = await _askAmount(
       title: l10n.plansDateAmount,
       help: l10n.plansDateAmountHelp,
-      initial: _dates[Day.of(picked)] ?? widget.plan.unitsPerDay,
+      initial: _dates[picked] ?? widget.plan.unitsPerDay,
     );
     if (amount == null) return;
-    setState(() => _dates[Day.of(picked)] = amount);
+    setState(() => _dates[picked] = amount);
   }
 
   /// One prompt for an amount, so there is a single place that can refuse one.

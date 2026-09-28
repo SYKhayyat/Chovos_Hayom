@@ -95,6 +95,17 @@ void main() {
   Future<void> tapAddSefer(WidgetTester tester) =>
       scrollAndTap(tester, find.widgetWithText(TextButton, 'Add a sefer'));
 
+  /// Types [date] into the date dialog's field and confirms it.
+  ///
+  /// The field is the way a date is *named* (#32); the calendar grid beside it
+  /// is the way one is found, and it is exercised in `date_field_test.dart`.
+  Future<void> enterDate(WidgetTester tester, String date) async {
+    await scrollAndTap(tester, find.text('Add a date'));
+    await tester.enterText(find.byType(TextField).last, date);
+    await tester.pumpAndSettle();
+    await scrollAndTap(tester, find.widgetWithText(FilledButton, 'Save'));
+  }
+
   /// Picks a weekday in the picker sheet, then types an amount and saves.
   Future<void> addWeekday(
     WidgetTester tester,
@@ -199,10 +210,8 @@ void main() {
         (tester) async {
       await put(seed());
       await pump(tester);
-      await scrollAndTap(tester, find.text('Add a date'));
-      // The picker opens on the clock's day; take it as-is.
-      await tester.tap(find.text('OK'));
-      await tester.pumpAndSettle();
+      // Seeded with the clock's day, which is 2026-01-10.
+      await enterDate(tester, '2026-01-10');
       await tester.enterText(find.byType(TextField).last, '0');
       await scrollAndTap(tester, find.widgetWithText(FilledButton, 'Save'));
 
@@ -225,9 +234,7 @@ void main() {
     testWidgets('an added date is stored under its own day', (tester) async {
       await put(seed());
       await pump(tester);
-      await scrollAndTap(tester, find.text('Add a date'));
-      await tester.tap(find.text('OK'));
-      await tester.pumpAndSettle();
+      await enterDate(tester, '2026-01-10');
       await tester.enterText(find.byType(TextField).last, '4');
       await scrollAndTap(tester, find.widgetWithText(FilledButton, 'Save'));
       await scrollAndTap(tester, find.text('Save'));
@@ -237,14 +244,110 @@ void main() {
       expect(config().plans.single.dateAmounts, {Day.of(DateTime(2026, 1, 10)): 4});
     });
 
+    // #32: a date can be *named* in either calendar, and this is the field it
+    // is named in — the same parser the unit tests pin, reached through the
+    // planner's own date override.
+    group('a date can be typed in either calendar', () {
+      testWidgets('in English, as a day and a month name', (tester) async {
+        await put(seed());
+        await pump(tester);
+        await enterDate(tester, '4 Jan 2026');
+        await tester.enterText(find.byType(TextField).last, '4');
+        await scrollAndTap(tester, find.widgetWithText(FilledButton, 'Save'));
+        await scrollAndTap(tester, find.text('Save'));
+
+        expect(config().plans.single.dateAmounts,
+            {Day.of(DateTime(2026, 1, 4)): 4});
+      });
+
+      testWidgets('in transliterated Hebrew', (tester) async {
+        // 4 Tevet 5786 is 24 December 2025 — the same day the parser unit test
+        // pins, reached through the app this time.
+        await put(seed());
+        await pump(tester);
+        await enterDate(tester, '4 Tevat 5786');
+        await tester.enterText(find.byType(TextField).last, '4');
+        await scrollAndTap(tester, find.widgetWithText(FilledButton, 'Save'));
+        await scrollAndTap(tester, find.text('Save'));
+
+        expect(config().plans.single.dateAmounts,
+            {Day.of(DateTime(2025, 12, 24)): 4});
+      });
+
+      testWidgets('in Hebrew script', (tester) async {
+        await put(seed());
+        await pump(tester);
+        await enterDate(tester, 'ד׳ טבת תשפ״ו');
+        await tester.enterText(find.byType(TextField).last, '4');
+        await scrollAndTap(tester, find.widgetWithText(FilledButton, 'Save'));
+        await scrollAndTap(tester, find.text('Save'));
+
+        expect(config().plans.single.dateAmounts,
+            {Day.of(DateTime(2025, 12, 24)): 4});
+      });
+
+      testWidgets('and a day with no year takes the year on the screen',
+          (tester) async {
+        // The reference is the clock, not the wall clock, and the echoed date
+        // below is what makes the filled-in year visible rather than implied.
+        await put(seed());
+        await pump(tester);
+        await scrollAndTap(tester, find.text('Add a date'));
+        await tester.enterText(find.byType(TextField).last, 'Jan 4');
+        await tester.pumpAndSettle();
+        expect(find.text('That is 2026-01-04.'), findsOneWidget);
+        await scrollAndTap(tester, find.widgetWithText(FilledButton, 'Save'));
+        await tester.enterText(find.byType(TextField).last, '4');
+        await scrollAndTap(tester, find.widgetWithText(FilledButton, 'Save'));
+        await scrollAndTap(tester, find.text('Save'));
+
+        expect(config().plans.single.dateAmounts,
+            {Day.of(DateTime(2026, 1, 4)): 4});
+      });
+
+      testWidgets('and nonsense is refused, with the dialog still open',
+          (tester) async {
+        await put(seed());
+        await pump(tester);
+        await scrollAndTap(tester, find.text('Add a date'));
+        await tester.enterText(find.byType(TextField).last, 'the day after tomorrow');
+        await tester.pumpAndSettle();
+        await scrollAndTap(tester, find.widgetWithText(FilledButton, 'Save'));
+
+        expect(find.text('That is not a date this can read.'), findsOneWidget);
+        // Still open, and nothing stored: a refusal that closes has thrown away
+        // what the reader typed, which on a keypad phone is a dozen presses.
+        expect(find.byType(TextField), findsWidgets);
+        expect(config().plans.single.dateAmounts, isEmpty);
+      });
+
+      testWidgets('and an ambiguous date is reported, not guessed',
+          (tester) async {
+        await put(seed());
+        await pump(tester);
+        await scrollAndTap(tester, find.text('Add a date'));
+        await tester.enterText(find.byType(TextField).last, '4/1/2026');
+        await tester.pumpAndSettle();
+        await scrollAndTap(tester, find.widgetWithText(FilledButton, 'Save'));
+
+        // April 1st or January 4th, both named, and neither chosen. An override
+        // on the wrong day is a plan quietly asking for nothing.
+        expect(
+          find.textContaining('2026-01-04'),
+          findsWidgets,
+          reason: 'both readings are offered',
+        );
+        expect(find.textContaining('2026-04-01'), findsWidgets);
+        expect(config().plans.single.dateAmounts, isEmpty);
+      });
+    });
+
     testWidgets('a date can be removed', (tester) async {
       await put(seed(
         unitsPerDay: 10,
       ));
       await pump(tester);
-      await scrollAndTap(tester, find.text('Add a date'));
-      await tester.tap(find.text('OK'));
-      await tester.pumpAndSettle();
+      await enterDate(tester, '2026-01-10');
       await tester.enterText(find.byType(TextField).last, '4');
       await scrollAndTap(tester, find.widgetWithText(FilledButton, 'Save'));
       await scrollAndTap(

@@ -1118,6 +1118,24 @@
   "plansDayOff": "day off",
   "plansDateOverrides": "Different amounts on certain dates",
   "plansDateOverridesEmpty": "Every date asks the same amount.",
+  "dateEntryField": "Date",
+  "dateEntryHelp": "Type it as 2026-01-04, 4 Jan 2026, 4 Tevet 5786 or ט״ו טבת תשפ״ו — whichever calendar you think in.",
+  "dateEntryPick": "Pick a date",
+  "dateEntryUnreadable": "That is not a date this can read.",
+  "dateEntryMeans": "That is {date}.",
+  "dateEntryAmbiguous": "That could be more than one date: {dates}. Write it with the month named, or with the year first.",
+  "@dateEntryMeans": {
+    "description": "The date the field was understood as, echoed back so a reader can tell a typo from a real date. The date is written in the reader's own calendar, which may not be the one they typed in.",
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "@dateEntryAmbiguous": {
+    "description": "A date field that has two valid readings, listing both. Never resolved silently: a date override on the wrong day is a plan quietly asking for nothing.",
+    "placeholders": {
+      "dates": { "type": "String" }
+    }
+  },
   "plansDateAdd": "Add a date",
   "plansDateAmount": "Amount for that date",
   "plansDateAmountHelp": "Set it to 0 to take the day off.",
