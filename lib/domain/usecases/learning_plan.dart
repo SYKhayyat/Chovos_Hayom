@@ -102,6 +102,33 @@ class PlanOverride {
 
 /// The plan half. A plan fires on a day when any assignment's rule matches;
 /// overlapping assignments all fire.
+/// What a plan does about a day it did not finish.
+///
+/// The two active modes look like opposite policies and are really the same
+/// question — *where does the shortfall go?* — answered in units or in days.
+enum SpilloverMode {
+  /// The schedule is a plan. A day that was not finished is simply not finished;
+  /// nothing downstream moves. This is the default, and the only mode that needs
+  /// no arithmetic at all.
+  ignore,
+
+  /// The uncompleted units roll into the next day, so the daily target grows
+  /// until the backlog clears. The finish date stays where the plan said it would
+  /// be; the cost is a day where you owe more than you planned.
+  ///
+  /// Right for a short plan — Chulljuna is two days long, and skipping one
+  /// without also making it up means never finishing it.
+  catchUp,
+
+  /// The daily amount never grows, and the whole schedule slides later by the
+  /// shortfall instead. The cost is a later finish date rather than a heavier
+  /// day.
+  ///
+  /// Right for a fast plan — nobody wants a 14-daf Daf Yomi day because they
+  /// missed a Thursday, and sliding the finish is the cheaper trade.
+  slide,
+}
+
 class LearningPlan {
   const LearningPlan({
     required this.id,
@@ -112,6 +139,7 @@ class LearningPlan {
     this.unitsPerDay = 1,
     this.weekdayAmounts = const {},
     this.dateAmounts = const {},
+    this.spillover = SpilloverMode.ignore,
   });
 
   final String id;
@@ -149,6 +177,9 @@ class LearningPlan {
   /// one won.
   final Map<Day, int> dateAmounts;
 
+  /// What this plan does about a day it does not finish. See [SpilloverMode].
+  final SpilloverMode spillover;
+
 
   bool get hasHebrewRules =>
       assignments.any((a) => a.rule.calendar == RuleCalendar.hebrew);
@@ -160,6 +191,7 @@ class LearningPlan {
         'assignments': [for (final a in assignments) a.toJson()],
         'overrides': [for (final o in overrides) o.toJson()],
         'unitsPerDay': unitsPerDay,
+        'spillover': spillover.name,
         if (weekdayAmounts.isNotEmpty)
           'weekdayAmounts': {
             for (final e in weekdayAmounts.entries) '${e.key}': e.value,
@@ -195,6 +227,14 @@ class LearningPlan {
               (o as Map<dynamic, dynamic>).cast<String, dynamic>()),
       ],
       unitsPerDay: unitsPerDay,
+      // An unknown name falls back to `ignore` rather than throwing: a plan
+      // written by a newer build, or a hand-edited file, should still schedule.
+      // Nothing about the plan's *dates* changes, only how a missed day is read,
+      // and the one that changes nothing is the safe answer.
+      spillover: SpilloverMode.values.firstWhere(
+        (m) => m.name == json['spillover'],
+        orElse: () => SpilloverMode.ignore,
+      ),
       weekdayAmounts: _weekdayAmountsFrom(json['weekdayAmounts']),
       dateAmounts: _dateAmountsFrom(json['dateAmounts']),
     );
@@ -240,6 +280,7 @@ class LearningPlan {
       other.name == name &&
       other.displayCalendar == displayCalendar &&
       other.unitsPerDay == unitsPerDay &&
+      other.spillover == spillover &&
       mapEquals(other.weekdayAmounts, weekdayAmounts) &&
       mapEquals(other.dateAmounts, dateAmounts) &&
       _sameAssignments(assignments, other.assignments) &&
@@ -251,6 +292,7 @@ class LearningPlan {
         name,
         displayCalendar,
         unitsPerDay,
+        spillover,
         Object.hashAllUnordered(
           weekdayAmounts.entries.map((e) => Object.hash(e.key, e.value)),
         ),
