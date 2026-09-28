@@ -37,7 +37,7 @@ Hebrew dates. Land in order.
 - [x] #34 plan editing 1/2: plans list screen, create/edit, recurrence rule editor. (High)
 - [x] #35 plan editing 2/2: weekday + date overrides, item sequence — SHIPPED, sequence tests outstanding.
 - [x] #37 no test timeout: one hanging test wedged the whole run. (High)
-- [ ] #36 item-sequence half of #35 has no widget coverage. (Medium)
+- [x] #36 item-sequence half of #35 has no widget coverage. (Medium)
 - [ ] #31 calendar day/week/month ranges, browsable by continuous scroll. (Medium)
 - [ ] #32 enter dates in English or Hebrew (parsing + shared date input). (Medium)
 - [x] #28 show/edit each day's amount in the calendar; check a day off from it. (Medium)

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../application/plans.dart';
 import '../../application/providers.dart';
@@ -8,6 +9,7 @@ import '../../application/settings.dart';
 import '../../core/calendar.dart';
 import '../../core/day.dart';
 import '../../core/parse.dart';
+import '../../domain/entities/catalog.dart';
 import '../../domain/usecases/learning_plan.dart';
 import '../../domain/usecases/plan_position.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -210,10 +212,18 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
     return nonNegativeInt(typed);
   }
 
-  Future<void> _addItem() async {
+  /// Adds a sefer to the sequence. [catalog] is passed in rather than read here.
+  ///
+  /// It used to open with `ref.read(mergedCatalogProvider).asData?.value` and
+  /// `if (catalog == null) return;`, and on a cold start that is a button which
+  /// does nothing at all: the catalog has not finished loading, the read is
+  /// never re-taken, and no error is shown. The user taps *Add a sefer* and the
+  /// screen does not move, which reads as a broken app rather than a slow one.
+  ///
+  /// [build] watches the catalog and the button is disabled until it arrives, so
+  /// the one state where there is nothing to offer is a state the user can see.
+  Future<void> _addItem(Catalog catalog) async {
     final l10n = AppLocalizations.of(context);
-    final catalog = ref.read(mergedCatalogProvider).asData?.value;
-    if (catalog == null) return;
     final chosen = await showNodePicker(
       context,
       title: l10n.plansSequenceAdd,
@@ -226,9 +236,22 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
       // Chagigah, then Moed" means Moed is a single step, and a plan's totals
       // already roll a category up to every unit under it — expanding it here
       // would make the sequence unreadable and the count wrong to read.
+      //
+      // A minted id, and not `'item-${_items.length}-$nodeId'`, which is what
+      // this read before. A length is a *position*, not an identity, and the
+      // same sefer added again once the list has shrunk back to that length
+      // re-mints the id of the copy already sitting there: add Moed twice, take
+      // the first out, add Moed again, and both items are `item-1-shas.moed`.
+      //
+      // The collision is silent and it is the sequence that pays, twice over.
+      // The rows are keyed by this id, so two items sharing one are two tiles
+      // Flutter collapses into one — the list stops being reorderable — and
+      // [PlanPosition] reports `itemId`, so the position can no longer say
+      // which sefer you are on. Same answer the cycle editor, the node editor
+      // and the meforish sheet all already give.
       _items = [
         ..._items,
-        PlanItem(id: 'item-${_items.length}-${chosen.id}', nodeId: chosen.id),
+        PlanItem(id: const Uuid().v4(), nodeId: chosen.id),
       ];
     });
   }
@@ -237,6 +260,17 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final mode = ref.watch(settingsProvider.select((s) => s.calendar));
+    // **Watched**, not read. The sequence section asks the catalog three
+    // questions — what a sefer is called, what is under it, how many units the
+    // whole thing is — and every one of them was answered by a `ref.read` that
+    // took "not loaded yet" as the final answer. So a plan opened on a cold
+    // start showed raw node ids in place of names, "0 units in total" under a
+    // real sequence, and an *Add a sefer* button that opened nothing.
+    //
+    // One watch, here, and the three are answered from it. The screen next door
+    // (`EditCycleScreen`) and the calendar both already did this, which is what
+    // makes the miss here a rule broken rather than a rule never stated.
+    final catalog = ref.watch(mergedCatalogProvider).asData?.value;
 
     return Scaffold(
       appBar: AppBar(
@@ -331,16 +365,20 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
             ReorderableListView(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
+              // onReorderItem, not onReorder: it already accounts for the removed
+              // item, so no index fix-up is needed. Same reason as the cycle
+              // editor's, which this pairs with.
               onReorderItem: (from, to) => setState(
                   () => _items.insert(to, _items.removeAt(from))),
               children: [
-                for (var i = 0; i < _items.length; i++) _itemTile(l10n, i),
+                for (var i = 0; i < _items.length; i++)
+                  _itemTile(l10n, i, catalog),
               ],
             ),
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                l10n.plansSequenceTotal(_totalUnits()),
+                l10n.plansSequenceTotal(_totalUnits(catalog)),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -350,7 +388,9 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
             child: TextButton.icon(
               icon: const Icon(Icons.add),
               label: Text(l10n.plansSequenceAdd),
-              onPressed: _addItem,
+              // Disabled rather than silently inert: a button that does nothing
+              // on tap is the defect this replaced.
+              onPressed: catalog == null ? null : () => _addItem(catalog),
             ),
           ),
           SwitchListTile(
@@ -366,17 +406,30 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
     );
   }
 
-  int _totalUnits() {
-    final catalog = ref.read(mergedCatalogProvider).asData?.value;
+  int _totalUnits(Catalog? catalog) {
     if (catalog == null) return 0;
     return PlanProgress.totalUnits(_applyTo(), catalog);
   }
 
-  Widget _itemTile(AppLocalizations l10n, int i) {
+  /// One row of the sequence, keyed by the item's own id.
+  ///
+  /// The key is the id, not the index and not the row's text, and both of the
+  /// alternatives are the reason this section had no widget coverage at all.
+  /// `find.text('Shabbos')` is ambiguous the moment the same sefer is in the
+  /// list twice — which is a legitimate thing for a sequence to be — and "the
+  /// tile at index N" is a claim about scroll position, which a finder cannot
+  /// rely on in a `ListView` that builds lazily. Untestable is how a screen
+  /// whose *Add a sefer* button opened nothing kept shipping.
+  ///
+  /// The id rather than `'${item.id}#$i'`, the shape `EditCycleScreen` uses:
+  /// the index there cannot collide, because a cycle's segments are the node
+  /// itself, whereas here the id has to be an identity for its own sake and
+  /// carrying the index only hid that.
+  Widget _itemTile(AppLocalizations l10n, int i, Catalog? catalog) {
     final item = _items[i];
-    final node = ref.read(catalogNodeProvider(item.nodeId));
+    final node = catalog?.byId(item.nodeId);
     return ListTile(
-      key: ValueKey('${item.id}#$i'),
+      key: ValueKey('item-${item.id}'),
       contentPadding: EdgeInsets.zero,
       leading: ReorderableDragStartListener(
           index: i, child: const Icon(Icons.drag_handle)),
