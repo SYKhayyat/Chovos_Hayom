@@ -319,3 +319,19 @@ String formatMinutes(AppLocalizations l10n, int minutes) {
       ? l10n.durationHours(hours)
       : l10n.durationHoursMinutes(hours, rest);
 }
+
+/// The localized name of a weekday, where the weekday is `DateTime.monday` (1)
+/// through `DateTime.sunday` (7) — the same numbering the planner's rules and
+/// `Day.weekday` use, so nothing has to be converted to use it.
+String weekdayName(AppLocalizations l10n, int weekday) => switch (weekday) {
+      DateTime.monday => l10n.plansWeekdayMonday,
+      DateTime.tuesday => l10n.plansWeekdayTuesday,
+      DateTime.wednesday => l10n.plansWeekdayWednesday,
+      DateTime.thursday => l10n.plansWeekdayThursday,
+      DateTime.friday => l10n.plansWeekdayFriday,
+      DateTime.saturday => l10n.plansWeekdaySaturday,
+      DateTime.sunday => l10n.plansWeekdaySunday,
+      // Unreachable for a stored key, which the domain validates to 1..7. Named
+      // rather than blank so a hand-edited file shows something.
+      _ => '?',
+    };

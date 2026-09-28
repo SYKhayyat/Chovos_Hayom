@@ -11,6 +11,7 @@ import '../features/journal/notes_journal_screen.dart';
 import '../features/node/node_screen.dart';
 import '../features/profiles/profiles_screen.dart';
 import '../features/planner/calendar_screen.dart';
+import '../features/planner/edit_plan_advanced_screen.dart';
 import '../features/planner/edit_plan_screen.dart';
 import '../features/planner/plans_screen.dart';
 import '../features/planner/today_screen.dart';
@@ -88,6 +89,9 @@ abstract final class Routes {
   /// The plan editor. `planId` empty means "new plan" — one named route rather
   /// than a separate create screen, so a plan's editor is one screen whether it
   /// already exists or not, and the back button behaves identically.
+  static String editPlanAdvanced(String planId) =>
+      '/planner/plans/edit/${_seg(planId)}/advanced';
+
   static String editPlan(String planId) =>
       planId.isEmpty ? '/planner/plans/new' : '/planner/plans/edit/${_seg(planId)}';
 
@@ -106,6 +110,8 @@ abstract final class AppRouter {
       ['planner', 'calendar'] => const PlannerCalendarScreen(),
       ['planner', 'plans'] => const PlansScreen(),
       ['planner', 'plans', 'new'] => const EditPlanScreen(),
+      ['planner', 'plans', 'edit', 'advanced', final id] =>
+        EditPlanAdvancedScreen(planId: id),
       ['planner', 'plans', 'edit', final id] => EditPlanScreen(planId: id),
       ['stats'] => const ReportScreen(),
       ['calculator'] => const ReportScreen(section: ReportSection.calculator),

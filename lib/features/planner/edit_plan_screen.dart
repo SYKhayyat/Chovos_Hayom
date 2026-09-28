@@ -7,6 +7,7 @@ import '../../core/calendar.dart';
 import '../../core/parse.dart';
 import '../../domain/usecases/learning_plan.dart';
 import '../../domain/usecases/recurrence.dart';
+import '../../app/routes.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/confirm.dart';
 import '../common/guarded.dart';
@@ -268,6 +269,17 @@ class _PlanFormState extends ConsumerState<_PlanForm> {
               ],
             ),
           ),
+          if (!_isNew)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.tune),
+              title: Text(l10n.plansAdvanced),
+              subtitle: Text(l10n.plansAdvancedTitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).pushNamed(
+                Routes.editPlanAdvanced(widget.existing!.id),
+              ),
+            ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             value: _flows,
