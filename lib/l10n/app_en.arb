@@ -1121,6 +1121,7 @@
   "dateEntryField": "Date",
   "dateEntryHelp": "Type it as 2026-01-04, 4 Jan 2026, 4 Tevet 5786 or ט״ו טבת תשפ״ו — whichever calendar you think in.",
   "dateEntryPick": "Pick a date",
+  "dateEntryOutOfRange": "That date is outside the range this screen can show.",
   "dateEntryUnreadable": "That is not a date this can read.",
   "dateEntryMeans": "That is {date}.",
   "dateEntryAmbiguous": "That could be more than one date: {dates}. Write it with the month named, or with the year first.",

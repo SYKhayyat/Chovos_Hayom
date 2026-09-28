@@ -326,6 +326,36 @@ void main() {
       }
     });
 
+    test('a year the calendar cannot represent is refused, not thrown',
+        () {
+      // Found by probing the ends rather than by reasoning about them:
+      // `JewishDate.initDate` documents an `ArgumentError` for a year below 1,
+      // and for `1 Tishrei 1` it throws a **StateError** from a lookup inside the
+      // month-of-year calculation. A date field that throws on what somebody
+      // typed takes the screen down with it, so every failure is caught and the
+      // answer is "not a date".
+      for (final text in [
+        '1 Tishrei 1',
+        '1 Tishrei 0',
+        '1 Tishrei 99999',
+        '30 Tishrei 1',
+        '1 Tishrei 100000000',
+      ]) {
+        expect(parseDateText(text).isValid, isFalse, reason: '"$text"');
+      }
+    });
+
+    test('a Gregorian year is not a Hebrew one, even next to a Hebrew month',
+        () {
+      // `4 Av 2026` is a Hebrew month and a Gregorian year in the same string.
+      // Read as Hebrew it would be the 4th of Av in Hebrew year 2026 — five
+      // centuries off. The day check catches it: that date does not exist in
+      // that year, so it is refused rather than resolved to something absurd.
+      for (final text in ['4 Av 2026', '1 Nissan 2026', '15 Sivan 2026']) {
+        expect(parseDateText(text).isValid, isFalse, reason: '"$text"');
+      }
+    });
+
     test('a year this far back is a real date, and is read as one', () {
       // Recorded because it looked like a bug while writing the test above:
       // `תשל"ו` is 5736, which is the 20th century, and a Hebrew year is *not*

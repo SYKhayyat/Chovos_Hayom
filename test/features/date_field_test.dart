@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:chovos_hayom/core/calendar.dart';
 import 'package:chovos_hayom/core/day.dart';
 import 'package:chovos_hayom/features/common/date_field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/localized_app.dart';
@@ -14,7 +17,28 @@ import '../support/localized_app.dart';
 /// that the calendar grid still works — because replacing a picker with a text
 /// field would be a straight trade for every reader who wants to look at a year
 /// and tap it.
+/// **Roboto, for the same reason as `keypad_test.dart`.** This control exists
+/// because a 240x324 keypad phone has to be able to set a date, and the tests
+/// for it include one at that size — laid out in Ahem, which draws every glyph
+/// as the same wide box. The `Cancel` and `Save` row overflowed by 13 pixels
+/// there and fits on the device, which is a defect report about the font.
+Future<void> _loadDeviceFont() async {
+  const roboto =
+      '/home/shaul/flutter-3.44.4/engine/src/flutter/txt/third_party/fonts/Roboto-Regular.ttf';
+  final file = File(roboto);
+  if (!file.existsSync()) {
+    // ignore: avoid_print
+    print('no Roboto at $roboto; this file will lay out in the test font');
+    return;
+  }
+  final loader = FontLoader('Roboto')
+    ..addFont(Future.value(ByteData.sublistView(file.readAsBytesSync())));
+  await loader.load();
+}
+
 void main() {
+  setUpAll(_loadDeviceFont);
+
   const gregorian = CalendarMode.gregorian;
 
   /// The day the dialog was closed with, or null if it is still open.
@@ -183,6 +207,63 @@ void main() {
     // is Hebrew by month and Latin by keyboard.
     await type(tester, '4 Tevet 5786');
     expect(tester.widget<TextField>(field()).textDirection, TextDirection.ltr);
+  });
+
+  testWidgets('a date outside the screen\u2019s range is refused, like the grid',
+      (tester) async {
+    // The half that is easy to forget: the calendar will not *offer* a day
+    // before 2000, and a field that accepted one anyway would let a plan hold a
+    // date its own calendar cannot reach. Typing is not a way around the bounds.
+    await pump(tester);
+    await type(tester, '1 Jan 1850');
+    await confirm(tester);
+
+    expect(
+      find.text('That date is outside the range this screen can show.'),
+      findsOneWidget,
+    );
+    expect(returned, isNull);
+    expect(field(), findsOneWidget, reason: 'still open, still holding the text');
+  });
+
+  testWidgets('and the year either side of the range', (tester) async {
+    // Both ends, because a bound checked at one end is not a bound. 2400 is a
+    // perfectly readable date and perfectly unreachable.
+    // Cancelled between the two, deliberately: a *refused* entry leaves its
+    // screen on the navigator, and re-pumping over it is how a test ends up
+    // asserting against the previous test's route.
+    await pump(tester);
+    await type(tester, '1 Jan 2400');
+    await confirm(tester);
+    expect(returned, isNull);
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+
+    await pump(tester);
+    await type(tester, '1 Jan 2000');
+    await confirm(tester);
+    expect(returned, Day.of(DateTime(2000, 1, 1)),
+        reason: 'the first day in range is fine, so the bound is inclusive');
+  });
+
+  testWidgets('the whole dialog fits a 240x324 screen', (tester) async {
+    // Found by *rendering* it there, not by asserting anything: a title, a
+    // field, a line naming the formats, the echo and two buttons is more than
+    // 324 logical pixels of content, and the two lines of prose wrap to four at
+    // 240dp wide. Every other test in this file runs at 800x600, and the
+    // 240dp test of the screen that opens this dialog never opened it.
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(240, 324);
+    addTearDown(tester.view.reset);
+    await pump(tester);
+    expect(tester.takeException(), isNull);
+
+    // And with an error and an echo on screen, which is more content still.
+    await type(tester, '4/1/2026');
+    await confirm(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('2026-01-04'), findsWidgets,
+        reason: 'the ambiguity message is on screen and still fits');
   });
 
   testWidgets('cancelling chooses nothing', (tester) async {

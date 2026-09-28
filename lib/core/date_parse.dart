@@ -36,7 +36,6 @@ import 'package:kosher_dart/kosher_dart.dart';
 import '../domain/usecases/recurrence.dart';
 import 'calendar.dart';
 import 'day.dart';
-import 'equality.dart';
 import 'parse.dart';
 
 /// What a date field could be.
@@ -76,12 +75,14 @@ class DateParseExact extends DateParse {
   @override
   Day? get dayOrNull => day;
 
-  @override
-  bool operator ==(Object other) => other is DateParseExact && other.day == day;
-
-  @override
-  int get hashCode => day.hashCode;
-
+  // `==` and `hashCode` are deliberately absent, and their absence is the point.
+  // Every other value type in this app carries them because a Riverpod provider
+  // compares its old and new value on every rebuild, and a type without them
+  // notifies everything downstream for nothing. Nothing here does that: a
+  // `DateParse` is returned by a function, held for one statement, and read for
+  // its `dayOrNull` or matched with `isA`. They were written anyway "because the
+  // app's value types have them", which is the reasoning `notify_guard_test`
+  // exists to catch, applied to a type the guard does not cover.
   @override
   String toString() => 'DateParseExact($day)';
 }
@@ -91,24 +92,11 @@ class DateParseAmbiguous extends DateParse {
   final List<Day> days;
 
   @override
-  bool operator ==(Object other) =>
-      other is DateParseAmbiguous && listEquals(other.days, days);
-
-  @override
-  int get hashCode => Object.hashAll(days);
-
-  @override
   String toString() => 'DateParseAmbiguous($days)';
 }
 
 class DateParseInvalid extends DateParse {
   const DateParseInvalid();
-
-  @override
-  bool operator ==(Object other) => other is DateParseInvalid;
-
-  @override
-  int get hashCode => 0;
 
   @override
   String toString() => 'DateParseInvalid()';
@@ -499,24 +487,28 @@ DateParse _parseHebrew(String text, Day? reference) {
     return const DateParseInvalid();
   }
 
+
   // **`ה׳` is two different things and the text does not say which.** It is the
   // fifth of a month, and it is the five thousand a long-form year starts with.
   // The day reading is the default, and it is the one the app's own formatter
   // produces: `ה׳ שבט תשפ"ד` is the fifth of Shevat, because a short-form year
-  // has no thousands token of its own. The year reading needs three numbers
-  // where one of them is `ה׳`, so it is only taken when there is a day and a
-  // year left over once the thousands is accounted for.
-  final hasThousands = numbers.any((t) => _longYearThousands.contains(t.trim()));
-  final isLongFormYear = hasThousands && numbers.length == 3;
-  final fieldCount = numbers.length - (isLongFormYear ? 1 : 0);
-  if (fieldCount < 1 || fieldCount > 2) return const DateParseInvalid();
-  final dayToken = numbers.firstWhere(
-    (t) => !isLongFormYear || !_longYearThousands.contains(t.trim()),
-    orElse: () => numbers.first,
-  );
-  final yearToken = numbers.length == (isLongFormYear ? 3 : 2)
-      ? numbers.lastWhere((t) => t != dayToken || numbers.length == 1)
-      : null;
+  // has no thousands token of its own. The year reading needs three number
+  // tokens, one of them the thousands, so that a day and a year are left over.
+  //
+  // Taken apart by **position**, not by looking for a token that is not the
+  // day. Searching by value looks equivalent and is not: `1 Tishrei 1` has a day
+  // and a year that are the *same string*, so a search for "the other one" finds
+  // nothing and `lastWhere` throws — a date field crashing on a date somebody
+  // typed. The fields are positional in every spelling, so position it is.
+  final isLongFormYear = numbers.length == 3 &&
+      numbers.any((t) => _longYearThousands.contains(t.trim()));
+  final fields = isLongFormYear
+      ? [for (final t in numbers)
+          if (!_longYearThousands.contains(t.trim())) t]
+      : numbers;
+  if (fields.isEmpty || fields.length > 2) return const DateParseInvalid();
+  final dayToken = fields.first;
+  final yearToken = fields.length == 2 ? fields[1] : null;
   final day = _asNumber(dayToken)!;
   if (day < 1 || day > 30) return const DateParseInvalid();
 
@@ -567,7 +559,19 @@ bool _isHebrewLeapYear(int year) =>
 
 List<Day> _hebrew(int year, int month, int day) {
   if (day < 1 || day > 30 || year < 1) return const [];
-  // `JewishDate.initDate` throws on a day below 1, and on a year below 1.
+  // **Every** failure is a refusal, not a crash, and the exception type is not
+  // known in advance.
+  //
+  // `JewishDate.initDate` documents an `ArgumentError` for a day below 1 or a
+  // year below 0, and that is what it throws for `0 Tishrei 1`. But `1 Tishrei
+  // 1` throws a **`StateError`** from a lookup inside the month-of-year
+  // calculation, and a date field that throws on what somebody typed takes the
+  // screen down with it. Catching `ArgumentError` alone — which is what this did
+  // first — catches the case the docstring mentions and not the one a user is
+  // most likely to reach.
+  //
+  // So the contract is the whole of it: a parser over hostile text returns an
+  // answer for every input, and "unparseable" is one of the answers.
   late final JewishDate date;
   try {
     date = JewishDate.initDate(
@@ -575,21 +579,21 @@ List<Day> _hebrew(int year, int month, int day) {
       jewishMonth: month,
       jewishDayOfMonth: day,
     );
-  } on ArgumentError {
+  } catch (_) {
     return const [];
   }
   // The library **clamps** a 30th in a 29-day month down to the 29th rather
   // than refusing, so asking the date it built is how a nonexistent day is
-  // caught. Kislev and Cheshvan change length with the year, and Adar II exists
-  // only in a leap year, so this is not a formality.
+  // caught — and it is also how a year the calendar cannot represent is caught,
+  // since a clamped or out-of-range year comes back as something else entirely.
   if (date.getJewishDayOfMonth() != day) return const [];
-  return [
-    Day.of(DateTime(
-      date.getGregorianYear(),
-      date.getGregorianMonth(),
-      date.getGregorianDayOfMonth(),
-    )),
-  ];
+  final gregorianYear = date.getGregorianYear();
+  if (gregorianYear < 1 || gregorianYear > 9999) return const [];
+  return [Day.of(DateTime(
+    gregorianYear,
+    date.getGregorianMonth(),
+    date.getGregorianDayOfMonth(),
+  ))];
 }
 
 /// Which Hebrew month [token] names, and whether it named a bare *Adar*.

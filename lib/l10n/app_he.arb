@@ -630,6 +630,7 @@
   "dateEntryField": "תאריך",
   "dateEntryHelp": "אפשר להקליד 2026-01-04‏, 4 Jan 2026‏, ‏4 Tevet 5786 או ט״ו טבת תשפ״ו — בלוח השנה שבו אתם חושבים.",
   "dateEntryPick": "בחירת תאריך",
+  "dateEntryOutOfRange": "התאריך הזה מחוץ לטווח שמסך הזה יכול להציג.",
   "dateEntryUnreadable": "זה אינו תאריך שאפשר לקרוא.",
   "dateEntryMeans": "זה {date}.",
   "dateEntryAmbiguous": "זה יכול להיות יותר מתאריך אחד: {dates}. כתבו עם שם החודש, או עם השנה לפני.",

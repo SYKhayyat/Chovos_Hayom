@@ -1,11 +1,13 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/plans.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../application/stats.dart';
+import '../../core/breakpoints.dart';
 import '../../core/calendar.dart';
 import '../../core/day.dart';
 import '../../core/parse.dart';
@@ -131,6 +133,29 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
       body: Column(
         children: [
           SegmentedButton<PlannerCalendarRange>(
+            // **Tighter on a 240dp screen, and the selected icon goes.**
+            //
+            // Three segments with three labels, each padded 12dp either side,
+            // is 232dp of chrome on a screen 208dp wide — so the longest label
+            // wrapped mid-word and the control showed "Mo / nth". It was only
+            // visible in *month* range, because the selected segment also
+            // carries a checkmark, and Month is the longest of the three words;
+            // so the default view of the default screen had a clipped label on
+            // the device the app is built for, and no assertion caught it
+            // because a wrapped `Text` is not an overflow.
+            //
+            // `showSelectedIcon: false` and half the padding together buy back
+            // the 24dp it needs. Both are compact-only, so an ordinary phone is
+            // untouched — and `pinned_text_field_test`-style geometry is not
+            // what holds this: `keypad_test.dart` measures the rendered label.
+            showSelectedIcon: !isCompact(context),
+            style: isCompact(context)
+                ? const ButtonStyle(
+                    padding: WidgetStatePropertyAll(
+                      EdgeInsets.symmetric(horizontal: 6),
+                    ),
+                  )
+                : null,
             segments: [
               ButtonSegment(
                   value: PlannerCalendarRange.day,
@@ -159,7 +184,23 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
             ),
           ),
           Expanded(
-            child: PageView.builder(
+            // **Left and right page, for a device with no swipe.**
+            //
+            // A `PageView` answers a drag and nothing else, and the phone this
+            // app is built for has a D-pad and no touchscreen — so paging, the
+            // thing #31 was filed for, was reachable by finger only. The arrows
+            // in the bar still work, which is what the keypad test covers, but a
+            // reader who has focus *on the calendar* had no way to move through
+            // it except going back up to the bar.
+            //
+            // This is a `Focus` **above** the pages on purpose. Key events
+            // travel from the focused node outward, so a descendant that wants
+            // the key gets it first: the range selector's segments use left and
+            // right to move between themselves, and this must not steal that.
+            // Anything the page ignored falls through to here and pages.
+            child: Focus(
+              onKeyEvent: _onKey,
+              child: PageView.builder(
               controller: _pages,
               onPageChanged: _onPage,
               // Three pages, and not one per day of a browsable span. Each page
@@ -182,10 +223,32 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
                 mode: mode,
               ),
             ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  /// Left and right page, by one step, when nothing on the page wanted the key.
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+    final step = switch (event.logicalKey) {
+      LogicalKeyboardKey.arrowRight => 1,
+      LogicalKeyboardKey.arrowLeft => -1,
+      _ => null,
+    };
+    if (step == null) return KeyEventResult.ignored;
+    _step(step);
+    // Focus is moved onto the pager itself, because the day cell that had it is
+    // gone: paging replaces the page, and a cell for 15 January does not exist
+    // on the page for February. Without this the first press pages and every
+    // press after it is delivered to nothing — which is worse than not paging
+    // at all, because it looks like a key that worked once and then broke.
+    node.requestFocus();
+    return KeyEventResult.handled;
   }
 
   /// One page: its own days, its own plan data, in whichever range is showing.
@@ -503,28 +566,47 @@ class _MonthGrid extends StatelessWidget {
               child: Stack(
               children: [
                 Center(
-                  // Scaled down to fit rather than allowed to overflow.
+                  // **Smaller type, not a smaller everything.**
                   //
                   // A cell is a seventh of the screen, and on the 240dp keypad
                   // phone this app is built for that is 28 logical pixels — a
-                  // day number and an amount need about 31 of them stacked, so
-                  // every cell with something due on it overflowed by a few
-                  // pixels and the calendar drew a yellow stripe across the
-                  // month. `BoxFit.scaleDown` is the whole fix and it is
-                  // unconditional: a cell that fits at any width is one fewer
-                  // size to branch on, and it shrinks only as far as it has to.
+                  // day number and an amount stacked need about 36 of them, so
+                  // every cell with something due on it overflowed and drew a
+                  // yellow stripe across the month.
+                  //
+                  // `FittedBox(scaleDown)` fixes the overflow, and it was the
+                  // whole fix until it was measured: it scales the *day number*
+                  // along with the amount, landing every cell at 0.78, so the
+                  // number that has to be readable comes out near 11sp and the
+                  // amount near 8.6. Trading a legibility problem for a smaller
+                  // legibility problem is not a fix.
+                  //
+                  // So on a compact screen the type is chosen small enough to
+                  // fit, which is the difference between *smaller* and
+                  // *distorted*, and the `FittedBox` stays as the backstop that
+                  // makes an overflow impossible on any screen — including one
+                  // narrower than the one this was measured on. On an ordinary
+                  // phone the scale is 1.0 and nothing is smaller than it was.
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('${day.midnight.day}'),
+                        Text('${day.midnight.day}',
+                            style: isCompact(context)
+                                ? Theme.of(context).textTheme.labelMedium
+                                : null),
                         // The total due, not one plan's amount: a day can have
                         // several plans firing and the cell holds one number.
                         if (dueOn(day) > 0)
-                          Text('${dueOn(day)}',
-                              style: Theme.of(context).textTheme.labelSmall),
+                          Text(
+                            '${dueOn(day)}',
+                            style: isCompact(context)
+                                ? Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(fontSize: 9)
+                                : Theme.of(context).textTheme.labelSmall,
+                          ),
                       ],
                     ),
                   ),

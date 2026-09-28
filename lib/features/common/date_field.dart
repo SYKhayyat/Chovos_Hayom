@@ -27,14 +27,30 @@ import '../../l10n/generated/app_localizations.dart';
 /// that silently keeps its old value has swallowed a typo, and a field that
 /// silently reinterprets one has invented a date.
 ///
+/// **A screen and not a dialog**, which was the second attempt.
+///
+/// It began as an `AlertDialog`, and the widget tests for it passed at 800x600
+/// and the 240dp test of the screen that opens it never opened it. Rendering it
+/// at 320x432 — the Sonim's real pixel count — showed a dialog whose title was
+/// cut off above the top of the screen and whose help text was cut off mid-line:
+/// a title, a field, a line naming the formats accepted, the echo of what it
+/// read, and two buttons is more content than 324 logical pixels of screen. It
+/// did not overflow once it was made scrollable; it overflowed *off the top*,
+/// which is the same defect wearing a quieter hat.
+///
+/// So it is a full-screen route, which is Material's own answer to the same
+/// question and needs no `isCompact` branch: everything fits, nothing is clipped,
+/// and the app bar is already smaller on this device. It also takes the file out
+/// of `text_prompt_guard_test`'s net — a `Scaffold` rather than an `AlertDialog`
+/// is not the shape that guard exists to refuse, so the escape hatch this needed
+/// is gone rather than justified.
+///
 /// The controller is created in this file's [State] and disposed in that same
-/// [State] — it dies with the widgets that use it, which is the whole of what
-/// `text_prompt.dart` exists to guarantee. It is here rather than in the shared
-/// prompt because the prompt takes fields, and this dialog's other half is a
-/// calendar grid whose *result* also ends the dialog: the prompt returns a map
-/// of strings, and there is no second kind of answer for it to return.
-class DateEntryDialog extends StatefulWidget {
-  const DateEntryDialog({
+/// [State], so it dies with the widgets that use it — the whole of what
+/// `text_prompt.dart` exists to guarantee, and the reason this file is allowed
+/// to own one at all.
+class DateEntryScreen extends StatefulWidget {
+  const DateEntryScreen({
     super.key,
     required this.initial,
     required this.reference,
@@ -74,28 +90,22 @@ class DateEntryDialog extends StatefulWidget {
   final DateTime lastDate;
 
   @override
-  State<DateEntryDialog> createState() => _DateEntryDialogState();
+  State<DateEntryScreen> createState() => _DateEntryScreenState();
 }
 
-// text-prompt: ok — the shared prompt takes *fields* and returns a map of
-// strings, and this dialog's other half is a calendar grid whose result also
-// ends the dialog. The prompt cannot host that without being taught to return a
-// second kind of answer, and until it can, a second copy of this control is
-// what a caller would otherwise write. The controller itself is marked on its
-// own line, because that is where the guard reads the marker from.
-class _DateEntryDialogState extends State<DateEntryDialog> {
+class _DateEntryScreenState extends State<DateEntryScreen> {
   late final TextEditingController _field;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    // The escape hatch is on this line rather than the note above it because the
-    // guard's marker excuses *the line it is on*: a note in a comment would be
-    // stripped as a comment and the construction beside it would still be
-    // counted, which is the same reason `codeLines` takes the marker as a
-    // required argument — so a guard cannot forget to have one.
-    _field = TextEditingController( // text-prompt: ok — see above
+    // Owned here, in a `State`, and disposed in that same `State` — the one
+    // thing `text_prompt.dart` exists to guarantee, and the reason this file is
+    // outside its net. It is outside that net because this is a `Scaffold` and
+    // not an `AlertDialog`: the guard refuses the *shape* of a dialog that owns
+    // its own text state, and this is no longer that shape.
+    _field = TextEditingController(
       text: DateDisplay.format(widget.initial.midnight, widget.mode),
     );
   }
@@ -117,7 +127,7 @@ class _DateEntryDialogState extends State<DateEntryDialog> {
   /// The message a refusal should carry, or null when there is nothing to refuse.
   String? _problem() {
     final parsed = _parsed;
-    return switch (parsed) {
+    final refused = switch (parsed) {
       DateParseInvalid() => AppLocalizations.of(context).dateEntryUnreadable,
       DateParseAmbiguous(:final days) =>
         // Both readings, by name. Not a nudge to try again: the field is
@@ -127,16 +137,35 @@ class _DateEntryDialogState extends State<DateEntryDialog> {
             .dateEntryAmbiguous([for (final d in days) _echoed(d)].join('  ·  ')),
       DateParseExact() => null,
     };
+    if (refused != null) return refused;
+    // **Out of range is refused too**, and this is the half that is easy to
+    // forget: the grid will not offer a day before [firstDate], and a field that
+    // accepted one anyway would let a plan hold a date its own calendar cannot
+    // reach. Typing is not a way around the bounds — it is a different way of
+    // respecting them.
+    final day = parsed.dayOrNull!;
+    final at = day.midnight;
+    if (at.isBefore(widget.firstDate) || at.isAfter(widget.lastDate)) {
+      return AppLocalizations.of(context).dateEntryOutOfRange;
+    }
+    return null;
   }
 
+  /// Accept the day, or say why not.
+  ///
+  /// **[_problem] is the only thing that decides**, and it is asked *first* and
+  /// unconditionally. It used to be consulted only when the text had failed to
+  /// parse, with the out-of-range check living inside it — so the range was
+  /// checked in a place nothing called for a date that had parsed, and a typed
+  /// `1 Jan 1850` sailed straight through the bounds the grid would not cross.
+  /// One question, asked once, is the whole fix.
   void _submit() {
-    final parsed = _parsed;
-    final day = parsed.dayOrNull;
-    if (day == null) {
-      setState(() => _error = _problem());
+    final problem = _problem();
+    if (problem != null) {
+      setState(() => _error = problem);
       return;
     }
-    Navigator.pop(context, day);
+    Navigator.pop(context, _parsed.dayOrNull!);
   }
 
   Future<void> _pick() async {
@@ -164,63 +193,81 @@ class _DateEntryDialogState extends State<DateEntryDialog> {
     final parsed = _parsed;
     final echoed = parsed.dayOrNull;
 
-    return AlertDialog(
-      title: Text(widget.title),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [
+          TextButton(
+            onPressed: _submit,
+            child: Text(widget.confirmLabel),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
           children: [
             TextField(
               controller: _field,
               autofocus: true,
-              // Both scripts, so a Hebrew date is not reflowed by an LTR
-              // keyboard's assumptions and an ISO date is not reversed.
-              textDirection: _isHebrew(_field.text)
-                  ? TextDirection.rtl
-                  : TextDirection.ltr,
-              decoration: InputDecoration(
-                labelText: l10n.dateEntryField,
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.event),
-                  tooltip: l10n.dateEntryPick,
-                  onPressed: _pick,
-                ),
+            // Both scripts, so a Hebrew date is not reflowed by an LTR
+            // keyboard's assumptions and an ISO date is not reversed.
+            textDirection: _isHebrew(_field.text)
+                ? TextDirection.rtl
+                : TextDirection.ltr,
+            decoration: InputDecoration(
+              labelText: l10n.dateEntryField,
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.event),
+                tooltip: l10n.dateEntryPick,
+                onPressed: _pick,
               ),
-              // Re-echoing needs a rebuild on every keystroke, which is the one
-              // thing a prompt with a `validate` callback cannot do: it is only
-              // asked at submit time.
-              onChanged: (_) => setState(() => _error = null),
-              onSubmitted: (_) => _submit(),
             ),
+            // Re-echoing needs a rebuild on every keystroke, which is the one
+            // thing a prompt with a `validate` callback cannot do: it is only
+            // asked at submit time.
+            onChanged: (_) => setState(() => _error = null),
+            onSubmitted: (_) => _submit(),
+          ),
+          const SizedBox(height: 8),
+          Text(widget.help, style: Theme.of(context).textTheme.bodySmall),
+          if (echoed != null) ...[
             const SizedBox(height: 8),
-            Text(widget.help, style: Theme.of(context).textTheme.bodySmall),
-            if (echoed != null) ...[
-              const SizedBox(height: 8),
-              // What it understood, not what was typed. The difference matters
-              // most for a date with no year in it, where the year came from
-              // the reference and the reader has to be told which.
-              Text(
-                l10n.dateEntryMeans(_echoed(echoed)),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              Text(_error!,
-                  style:
-                      TextStyle(color: Theme.of(context).colorScheme.error)),
-            ],
+            // What it understood, not what was typed. The difference matters
+            // most for a date with no year in it, where the year came from
+            // the reference and the reader has to be told which.
+            Text(
+              l10n.dateEntryMeans(_echoed(echoed)),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Text(_error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ],
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(widget.cancelLabel),
+      // A list of children and a pinned row of buttons, so the buttons are
+      // always reachable and the prose scrolls under them. A dialog would have
+      // had to choose which of the two to clip.
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(widget.cancelLabel),
+              ),
+              const SizedBox(width: 8),
+              FilledButton(onPressed: _submit, child: Text(widget.confirmLabel)),
+            ],
+          ),
         ),
-        FilledButton(onPressed: _submit, child: Text(widget.confirmLabel)),
-      ],
+      ),
     );
   }
 }
@@ -251,20 +298,24 @@ Future<Day?> promptForDate(
   DateTime? firstDate,
   DateTime? lastDate,
 }) =>
-    showDialog<Day>(
-      context: context,
-      builder: (dialogContext) {
-        final l10n = AppLocalizations.of(dialogContext);
-        return DateEntryDialog(
-          initial: initial,
-          reference: reference,
-          mode: mode,
-          title: title,
-          help: help ?? l10n.dateEntryHelp,
-          confirmLabel: confirmLabel,
-          cancelLabel: cancelLabel,
-          firstDate: firstDate ?? DateTime(2000),
-          lastDate: lastDate ?? DateTime(2100),
-        );
-      },
+    // A route on the **root** navigator, so the entry is always the whole
+    // screen and never a dialog stacked inside a dialog — which is the case
+    // that made it a dialog in the first place.
+    Navigator.of(context, rootNavigator: true).push<Day>(
+      MaterialPageRoute(
+        builder: (routeContext) {
+          final l10n = AppLocalizations.of(routeContext);
+          return DateEntryScreen(
+            initial: initial,
+            reference: reference,
+            mode: mode,
+            title: title,
+            help: help ?? l10n.dateEntryHelp,
+            confirmLabel: confirmLabel,
+            cancelLabel: cancelLabel,
+            firstDate: firstDate ?? DateTime(2000),
+            lastDate: lastDate ?? DateTime(2100),
+          );
+        },
+      ),
     );

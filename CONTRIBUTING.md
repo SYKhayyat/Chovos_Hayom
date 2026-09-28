@@ -106,6 +106,22 @@ to record *who you learned it with*.
 | `recording_crash_log.dart`, `counting_log.dart` | what was recorded, and how many passes something made over the log |
 | `source_scan.dart` | `dartSourcesUnder()` and `codeLines(…, escapeHatch:)` — the shared reader every guard test uses |
 
+**Two things about looking at the app rather than asserting about it.** Everything
+above is a claim about numbers, and a number cannot tell you whether a 9sp amount is
+readable on a 240dp screen — only an eye can, and an eye needs a real typeface.
+
+- `test/features/screens.golden.dart` renders the screens to PNG at the Sonim's real
+  logical size and pixel ratio. It is deliberately **not named `*_test.dart`**, so the
+  suite never collects it; run it by hand with
+  `flutter test test/features/screens.golden.dart --update-goldens` and then look at
+  `test/features/goldens/`.
+- `keypad_test.dart` and `date_field_test.dart` load **Roboto**, where the rest of the
+  suite lays out in Ahem. Ahem draws every glyph as the same wide box, which is ideal
+  for a layout question and wrong for a file whose job is to model one specific device:
+  a range label that wrapped under Ahem did not wrap in Roboto, and a `Cancel`/`Save`
+  row that overflowed under Ahem fits. A test that models a device should measure it
+  in that device's type.
+
 Three habits this codebase holds to:
 
 - **Watch the test fail.** A correctness fix ships with a test that fails before it and passes

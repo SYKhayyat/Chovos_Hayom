@@ -28,9 +28,17 @@ MaterialApp localizedApp({
   Locale locale = const Locale('en'),
   RouteFactory? onGenerateRoute,
   RouteFactory? onUnknownRoute,
+
+  /// The debug banner, on by default because nothing else shows it.
+  ///
+  /// Turned off only for the screenshot harness, where it is a red ribbon across
+  /// the top right corner of every image and reads as a defect in the app
+  /// rather than a fact about how tests are run.
+  bool showBanner = true,
 }) =>
     MaterialApp(
       home: home,
+      debugShowCheckedModeBanner: showBanner,
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

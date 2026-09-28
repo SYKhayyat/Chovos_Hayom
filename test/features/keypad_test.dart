@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/stats.dart';
 import 'package:chovos_hayom/core/breakpoints.dart';
@@ -21,6 +23,36 @@ import '../support/localized_app.dart';
 
 /// The app has to work on a phone with no touchscreen.
 ///
+/// **These tests lay out in Roboto, not in the test font.** Everything else in
+/// this suite renders in Ahem, which draws every glyph as the same filled box
+/// and is deliberately wider than any real typeface. For most tests that is
+/// ideal — layout questions are answered without depending on a font — but this
+/// file exists to model *one specific device*, and a 240dp screen with
+/// 232dp of segmented-button chrome is exactly a question where Ahem's metrics
+/// and Roboto's give different answers. It did: the range selector's `Month`
+/// label wrapped under Ahem and did not wrap in Roboto, and the test written to
+/// catch the wrap was therefore reporting a defect that the device does not
+/// have — while, on the other hand, a genuine defect at the same boundary would
+/// have been invisible in a suite that never used the device's own type.
+///
+/// So this file loads Roboto, the family Material uses on Android, where the
+/// target device runs. Everything else stays on Ahem.
+Future<void> _loadDeviceFont() async {
+  const roboto =
+      '/home/shaul/flutter-3.44.4/engine/src/flutter/txt/third_party/fonts/Roboto-Regular.ttf';
+  final file = File(roboto);
+  if (!file.existsSync()) {
+    // ignore: avoid_print
+    print('no Roboto at $roboto; these tests will lay out in the test font');
+    return;
+  }
+  final loader = FontLoader('Roboto')
+    ..addFont(Future.value(ByteData.sublistView(file.readAsBytesSync())));
+  await loader.load();
+}
+
+/// The app has to work on a phone with no touchscreen.
+///
 /// Measured on a Sonim XP5s — Android 7.1.2, a 320x432 screen at 213dpi, which
 /// is 240 x 324 logical pixels, a D-pad and a numeric keypad. Everything here
 /// is a defect that device showed and a guarantee that the fix for it does not
@@ -33,6 +65,8 @@ const Size kSonim = Size(240, 324);
 const Size kPhone = Size(407, 900);
 
 void main() {
+  setUpAll(_loadDeviceFont);
+
   Widget dashboard({bool ring = false}) => ProviderScope(
         overrides: [
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
@@ -481,6 +515,127 @@ void main() {
       await tester.pumpAndSettle();
       expect(heading(tester), '2026-01-01',
           reason: 'and back, so the arrows are not a one-way ratchet');
+    });
+
+    testWidgets('every range label fits on one line', (tester) async {
+      // A wrapped label is not an overflow, so `takeException()` was green while
+      // the control read "Mo / nth" in the default range. Measured rather than
+      // asserted by eye: `Day`, `Week` and `Month` are all single-line words, so
+      // if one of them is taller than the others it has wrapped.
+      sized(tester, kSonim);
+      for (final range in ['Month', 'Week', 'Day']) {
+        await tester.pumpWidget(calendar());
+        await tester.pumpAndSettle();
+        if (range != 'Month') {
+          await tester.tap(find.text(range));
+          await tester.pumpAndSettle();
+        }
+        final heights = {
+          for (final label in ['Day', 'Week', 'Month'])
+            label: tester.getSize(find.text(label)).height,
+        };
+        final shortest = heights.values.reduce((a, b) => a < b ? a : b);
+        for (final entry in heights.entries) {
+          expect(entry.value, lessThanOrEqualTo(shortest + 0.5),
+              reason: '"${entry.key}" wrapped in $range range '
+                  '(heights: $heights)');
+        }
+      }
+    });
+
+    testWidgets('a month cell fits this width by using smaller type',
+        (tester) async {
+      // The 240dp cell is 28 logical pixels and a day number over an amount
+      // needs about 36 of them stacked, so the cell had to give something up.
+      // `FittedBox(scaleDown)` fixed the overflow by scaling the *day number*
+      // along with the amount, and at 0.78 the number that has to be readable
+      // came out near 11sp — a legibility problem traded for a smaller one,
+      // which is not a fix.
+      //
+      // So the type is chosen small enough to fit and the scale is only the
+      // backstop. Asserted as a number because "it does not overflow" is the
+      // assertion that let the first version through.
+      sized(tester, kSonim);
+      await tester.pumpWidget(calendar());
+      await tester.pumpAndSettle();
+
+      final scales = <double>[];
+      for (final found in find.byType(FittedBox).evaluate()) {
+        final box = found.widget as FittedBox;
+        if (box.fit != BoxFit.scaleDown || box.child == null) continue;
+        final outer = tester.renderObject<RenderBox>(find.byWidget(box));
+        final inner = tester.renderObject<RenderBox>(find.byWidget(box.child!));
+        if (inner.size.width > 0) scales.add(outer.size.width / inner.size.width);
+      }
+      expect(scales, isNotEmpty, reason: 'the month grid is on screen');
+      for (final scale in scales) {
+        expect(scale, greaterThan(0.9),
+            reason: 'the type should fit; the scale is a backstop, not the fix');
+      }
+    });
+
+    testWidgets('and an ordinary phone is not shrunk at all', (tester) async {
+      // The other half of the pair: a fix for this device that quietly made
+      // every other one worse would pass the test above.
+      sized(tester, kPhone);
+      await tester.pumpWidget(calendar());
+      await tester.pumpAndSettle();
+
+      for (final found in find.byType(FittedBox).evaluate()) {
+        final box = found.widget as FittedBox;
+        if (box.fit != BoxFit.scaleDown || box.child == null) continue;
+        final outer = tester.renderObject<RenderBox>(find.byWidget(box));
+        final inner = tester.renderObject<RenderBox>(find.byWidget(box.child!));
+        if (inner.size.width == 0) continue;
+        expect(outer.size.width / inner.size.width, 1.0);
+      }
+    });
+
+    testWidgets('and left and right page it, once focus is on the calendar',
+        (tester) async {
+      // The half of #31 that a swipe was covering on its own. A `PageView`
+      // answers a drag and nothing else, and this device has a D-pad and no
+      // touchscreen — so paging was reachable by finger only, and a reader who
+      // had focus on the calendar had to go back up to the bar to move at all.
+      //
+      // Focus is put *in* the page first, because that is the honest shape of it:
+      // a D-pad user has pressed "down" to get off the app bar, and from there
+      // left and right are the paging gesture.
+      sized(tester, kSonim);
+      await tester.pumpWidget(calendar());
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown); // the arrows
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown); // the selector
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown); // into the page
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-02-01', reason: 'paged forward a month');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pumpAndSettle();
+      expect(heading(tester), '2026-01-01', reason: 'and back');
+    });
+
+    testWidgets('but the range selector keeps its own left and right',
+        (tester) async {
+      // The reason the pager listens *above* its pages and not on them: the
+      // SegmentedButton moves between its own segments with left and right, and
+      // a page handler that took the key first would make the range unreachable
+      // on exactly the device that needs it.
+      sized(tester, kSonim);
+      await tester.pumpWidget(calendar());
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      // The heading still names January: a segment changed, the month did not.
+      expect(heading(tester), '2026-01-01');
+      expect(find.text('Week'), findsOneWidget);
     });
 
     testWidgets('the range can be changed by key at this size', (tester) async {
