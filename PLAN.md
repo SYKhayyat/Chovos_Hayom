@@ -33,7 +33,9 @@ Hebrew dates. Land in order.
 - [x] #24 per-day amounts + weekday/date overrides (day-off = amount 0). (High)
 - [x] #25 spillover modes: ignore / catch-up / slide, per plan. (High)
 - [x] #26 item sequence, where-you-are-holding, siyum projection. (High)
-- [ ] #27 plan editing UI (amounts, overrides, spillover, flow, sequence). (Medium)
+- [x] #27 plan editing UI — split into #34 + #35.
+- [ ] #34 plan editing 1/2: plans list screen, create/edit, recurrence rule editor. (High)
+- [ ] #35 plan editing 2/2: weekday + date overrides, item sequence. (High)
 - [ ] #31 calendar day/week/month ranges, browsable by continuous scroll. (Medium)
 - [ ] #32 enter dates in English or Hebrew (parsing + shared date input). (Medium)
 - [ ] #28 show/edit each day's amount in the calendar; check a day off from it. (Medium)
