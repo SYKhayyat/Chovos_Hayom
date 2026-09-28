@@ -35,7 +35,8 @@ Hebrew dates. Land in order.
 - [x] #26 item sequence, where-you-are-holding, siyum projection. (High)
 - [x] #27 plan editing UI — split into #34 + #35.
 - [x] #34 plan editing 1/2: plans list screen, create/edit, recurrence rule editor. (High)
-- [ ] #35 plan editing 2/2: weekday + date overrides, item sequence. (High)
+- [x] #35 plan editing 2/2: weekday + date overrides, item sequence — SHIPPED, sequence tests outstanding.
+- [ ] #36 item-sequence half of #35 has no widget coverage. (Medium)
 - [ ] #31 calendar day/week/month ranges, browsable by continuous scroll. (Medium)
 - [ ] #32 enter dates in English or Hebrew (parsing + shared date input). (Medium)
 - [ ] #28 show/edit each day's amount in the calendar; check a day off from it. (Medium)
