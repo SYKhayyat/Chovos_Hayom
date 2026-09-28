@@ -115,12 +115,14 @@ readable on a 240dp screen — only an eye can, and an eye needs a real typeface
   suite never collects it; run it by hand with
   `flutter test test/features/screens.golden.dart --update-goldens` and then look at
   `test/features/goldens/`.
-- `keypad_test.dart` and `date_field_test.dart` load **Roboto**, where the rest of the
-  suite lays out in Ahem. Ahem draws every glyph as the same wide box, which is ideal
-  for a layout question and wrong for a file whose job is to model one specific device:
-  a range label that wrapped under Ahem did not wrap in Roboto, and a `Cancel`/`Save`
-  row that overflowed under Ahem fits. A test that models a device should measure it
-  in that device's type.
+- **Layout claims that depend on type are made there and not in the suite.** The test
+  binding renders in Ahem, which draws every glyph as the same wide box; that is ideal
+  for a layout question and useless for "is this readable". Loading Roboto into
+  `keypad_test.dart` was tried and is worse than the disease: the engine's copy of it
+  lives under `<flutter>/engine/src/…`, which a *release* SDK does not ship, so the
+  font silently failed to load on CI and two tests went red there within one push. So
+  the suite stays font-agnostic, the goldens carry the typographic judgement, and a
+  test that would have to measure a glyph says so rather than measuring one.
 
 Three habits this codebase holds to:
 

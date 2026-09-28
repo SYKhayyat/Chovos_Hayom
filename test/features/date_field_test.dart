@@ -1,10 +1,7 @@
-import 'dart:io';
-
 import 'package:chovos_hayom/core/calendar.dart';
 import 'package:chovos_hayom/core/day.dart';
 import 'package:chovos_hayom/features/common/date_field.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/localized_app.dart';
@@ -17,28 +14,7 @@ import '../support/localized_app.dart';
 /// that the calendar grid still works — because replacing a picker with a text
 /// field would be a straight trade for every reader who wants to look at a year
 /// and tap it.
-/// **Roboto, for the same reason as `keypad_test.dart`.** This control exists
-/// because a 240x324 keypad phone has to be able to set a date, and the tests
-/// for it include one at that size — laid out in Ahem, which draws every glyph
-/// as the same wide box. The `Cancel` and `Save` row overflowed by 13 pixels
-/// there and fits on the device, which is a defect report about the font.
-Future<void> _loadDeviceFont() async {
-  const roboto =
-      '/home/shaul/flutter-3.44.4/engine/src/flutter/txt/third_party/fonts/Roboto-Regular.ttf';
-  final file = File(roboto);
-  if (!file.existsSync()) {
-    // ignore: avoid_print
-    print('no Roboto at $roboto; this file will lay out in the test font');
-    return;
-  }
-  final loader = FontLoader('Roboto')
-    ..addFont(Future.value(ByteData.sublistView(file.readAsBytesSync())));
-  await loader.load();
-}
-
 void main() {
-  setUpAll(_loadDeviceFont);
-
   const gregorian = CalendarMode.gregorian;
 
   /// The day the dialog was closed with, or null if it is still open.
@@ -246,24 +222,41 @@ void main() {
         reason: 'the first day in range is fine, so the bound is inclusive');
   });
 
-  testWidgets('the whole dialog fits a 240x324 screen', (tester) async {
-    // Found by *rendering* it there, not by asserting anything: a title, a
-    // field, a line naming the formats, the echo and two buttons is more than
-    // 324 logical pixels of content, and the two lines of prose wrap to four at
-    // 240dp wide. Every other test in this file runs at 800x600, and the
-    // 240dp test of the screen that opens this dialog never opened it.
-    tester.view.devicePixelRatio = 1.0;
-    tester.view.physicalSize = const Size(240, 324);
-    addTearDown(tester.view.reset);
+  testWidgets('is a full-screen route, not a dialog', (tester) async {
+    // It was an `AlertDialog`, and every test for it ran at 800x600 while the
+    // 240dp test of the screen that opens it never opened it. Rendered at the
+    // device's real 320x432 pixels the title was cut off *above* the top of the
+    // screen and the help text cut off mid-line — and making it scrollable did
+    // not fix that, it made the same defect quieter.
+    //
+    // So this asserts the **decision**, at whatever size: a route with its own
+    // scaffold, a title in an app bar where a short screen cannot clip it, prose
+    // in a list that scrolls under buttons that are pinned.
+    //
+    // What it deliberately does not assert is that the content *fits* 324
+    // logical pixels, because that is a statement about a font and this suite
+    // renders in the test font: the button row overflows by 13 pixels there and
+    // fits on the device. Asserting it here produced a test that was red in CI
+    // and wrong about the product. The screenshot in `screens.golden.dart`,
+    // rendered in Roboto, is the check for that, and a person holding the phone
+    // is the only one that settles it.
     await pump(tester);
-    expect(tester.takeException(), isNull);
 
-    // And with an error and an echo on screen, which is more content still.
-    await type(tester, '4/1/2026');
-    await confirm(tester);
-    expect(tester.takeException(), isNull);
-    expect(find.textContaining('2026-01-04'), findsWidgets,
-        reason: 'the ambiguity message is on screen and still fits');
+    expect(find.byType(AlertDialog), findsNothing,
+        reason: 'a dialog is the shape that was clipped');
+    expect(find.byType(AppBar), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('When'),
+      ),
+      findsOneWidget,
+      reason: 'the title lives in the app bar, which a short screen cannot clip',
+    );
+    expect(find.byType(ListView), findsOneWidget,
+        reason: 'the prose scrolls under the buttons rather than being cut off');
+    expect(find.widgetWithText(FilledButton, 'Save'), findsOneWidget);
+    expect(find.widgetWithText(TextButton, 'Cancel'), findsOneWidget);
   });
 
   testWidgets('cancelling chooses nothing', (tester) async {

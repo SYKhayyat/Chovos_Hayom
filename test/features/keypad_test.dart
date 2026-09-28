@@ -1,17 +1,15 @@
-import 'dart:io';
-
 import 'package:chovos_hayom/application/providers.dart';
 import 'package:chovos_hayom/application/stats.dart';
 import 'package:chovos_hayom/core/breakpoints.dart';
-import 'package:chovos_hayom/core/planner_dates.dart';
 import 'package:chovos_hayom/core/focus.dart';
+import 'package:chovos_hayom/core/planner_dates.dart';
 import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/features/dashboard/dashboard_screen.dart';
+import 'package:chovos_hayom/features/planner/calendar_screen.dart';
 import 'package:chovos_hayom/features/reports/overview_section.dart';
 import 'package:chovos_hayom/features/reports/report_screen.dart';
-import 'package:chovos_hayom/features/planner/calendar_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,36 +21,30 @@ import '../support/localized_app.dart';
 
 /// The app has to work on a phone with no touchscreen.
 ///
-/// **These tests lay out in Roboto, not in the test font.** Everything else in
-/// this suite renders in Ahem, which draws every glyph as the same filled box
-/// and is deliberately wider than any real typeface. For most tests that is
-/// ideal — layout questions are answered without depending on a font — but this
-/// file exists to model *one specific device*, and a 240dp screen with
-/// 232dp of segmented-button chrome is exactly a question where Ahem's metrics
-/// and Roboto's give different answers. It did: the range selector's `Month`
-/// label wrapped under Ahem and did not wrap in Roboto, and the test written to
-/// catch the wrap was therefore reporting a defect that the device does not
-/// have — while, on the other hand, a genuine defect at the same boundary would
-/// have been invisible in a suite that never used the device's own type.
+/// **These tests measure the device in the device's own type — which is not
+/// possible here, and the reason is worth stating rather than working around.**
+/// The binding's default font is Ahem, which draws every glyph as the same wide
+/// box. That is ideal for a layout question and wrong for this file, whose whole
+/// job is to model one specific device: a 240dp screen carrying 232dp of
+/// segmented-button chrome is a question where Ahem's metrics and Roboto's give
+/// different answers, and they did. The `Month` label wraps under Ahem and does
+/// not wrap in Roboto; a `Cancel`/`Save` row overflows by 13 pixels under Ahem
+/// and fits on the device.
 ///
-/// So this file loads Roboto, the family Material uses on Android, where the
-/// target device runs. Everything else stays on Ahem.
-Future<void> _loadDeviceFont() async {
-  const roboto =
-      '/home/shaul/flutter-3.44.4/engine/src/flutter/txt/third_party/fonts/Roboto-Regular.ttf';
-  final file = File(roboto);
-  if (!file.existsSync()) {
-    // ignore: avoid_print
-    print('no Roboto at $roboto; these tests will lay out in the test font');
-    return;
-  }
-  final loader = FontLoader('Roboto')
-    ..addFont(Future.value(ByteData.sublistView(file.readAsBytesSync())));
-  await loader.load();
-}
+/// Loading Roboto was tried, and it is worse than the disease: the engine's copy
+/// of it lives at `<flutter>/engine/src/flutter/…`, which a **release** SDK does
+/// not ship, so the font silently failed to load on CI and two tests went red
+/// there within one push — a suite that is green on one machine and red on
+/// another, for a reason that has nothing to do with the app.
+///
+/// So the suite stays font-agnostic, which is the property every other test in
+/// this repository has, and the font question moves somewhere it belongs:
+/// `screens.golden.dart` renders these screens in Roboto for a human to look at,
+/// and the two layout facts that depend on type are asserted here as the *change*
+/// that was made rather than as a measurement. What is left unasserted — whether
+/// a 9sp amount is legible on real glass at 213dpi — is not assertable at all
+/// and needs the device in a hand.
 
-/// The app has to work on a phone with no touchscreen.
-///
 /// Measured on a Sonim XP5s — Android 7.1.2, a 320x432 screen at 213dpi, which
 /// is 240 x 324 logical pixels, a D-pad and a numeric keypad. Everything here
 /// is a defect that device showed and a guarantee that the fix for it does not
@@ -65,8 +57,6 @@ const Size kSonim = Size(240, 324);
 const Size kPhone = Size(407, 900);
 
 void main() {
-  setUpAll(_loadDeviceFont);
-
   Widget dashboard({bool ring = false}) => ProviderScope(
         overrides: [
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
@@ -517,30 +507,56 @@ void main() {
           reason: 'and back, so the arrows are not a one-way ratchet');
     });
 
-    testWidgets('every range label fits on one line', (tester) async {
-      // A wrapped label is not an overflow, so `takeException()` was green while
-      // the control read "Mo / nth" in the default range. Measured rather than
-      // asserted by eye: `Day`, `Week` and `Month` are all single-line words, so
-      // if one of them is taller than the others it has wrapped.
+    testWidgets('the range selector is given less room, on purpose',
+        (tester) async {
+      // Three segments with three labels, each padded 12dp either side, is
+      // 232dp of chrome on a screen 208dp wide, so the longest label wrapped
+      // mid-word and the control read "Mo / nth" — in *month* range only,
+      // because the selected segment also carries a checkmark and Month is the
+      // longest of the three words. So the default view of the default screen
+      // had a clipped label on this device.
+      //
+      // Asserted as the two things that were changed rather than as the label's
+      // rendered height, because **a height is a statement about a font**: under
+      // the test font this same control wraps and reads as broken while fitting
+      // perfectly in the device's own type. A test that reported the font as a
+      // defect of the product was worse than no test, and it was red in CI
+      // within one push. The visual check is `screens.golden.dart`, rendered in
+      // Roboto, and this guards the change that made it pass.
       sized(tester, kSonim);
-      for (final range in ['Month', 'Week', 'Day']) {
-        await tester.pumpWidget(calendar());
-        await tester.pumpAndSettle();
-        if (range != 'Month') {
-          await tester.tap(find.text(range));
-          await tester.pumpAndSettle();
-        }
-        final heights = {
-          for (final label in ['Day', 'Week', 'Month'])
-            label: tester.getSize(find.text(label)).height,
-        };
-        final shortest = heights.values.reduce((a, b) => a < b ? a : b);
-        for (final entry in heights.entries) {
-          expect(entry.value, lessThanOrEqualTo(shortest + 0.5),
-              reason: '"${entry.key}" wrapped in $range range '
-                  '(heights: $heights)');
-        }
-      }
+      await tester.pumpWidget(calendar());
+      await tester.pumpAndSettle();
+
+      final button = tester.widget<SegmentedButton<PlannerCalendarRange>>(
+        find.byType(SegmentedButton<PlannerCalendarRange>),
+      );
+      expect(button.showSelectedIcon, isFalse,
+          reason: 'the checkmark is 24dp the longest label does not have');
+      // The padding is asserted as *present and compact-only* rather than by
+      // reading the number back: `SegmentedButton` merges the style it is given
+      // with its own, and resolving the merged padding reports Material's
+      // default 12 whatever was passed in. Asserting the value would therefore
+      // be asserting the framework, not this screen.
+      expect(button.style, isNotNull,
+          reason: 'a compact screen gets its own padding');
+      expect(button.style!.padding, isNotNull);
+    });
+
+    testWidgets('an ordinary phone keeps its checkmark and its padding',
+        (tester) async {
+      // The other half of the pair, and the one a fix for this device is most
+      // likely to forget: a change that quietly made every other screen worse
+      // would pass the test above.
+      sized(tester, kPhone);
+      await tester.pumpWidget(calendar());
+      await tester.pumpAndSettle();
+
+      final button = tester.widget<SegmentedButton<PlannerCalendarRange>>(
+        find.byType(SegmentedButton<PlannerCalendarRange>),
+      );
+      expect(button.showSelectedIcon, isTrue);
+      expect(button.style?.padding, isNull,
+          reason: 'no compact styling off a compact screen');
     });
 
     testWidgets('a month cell fits this width by using smaller type',
