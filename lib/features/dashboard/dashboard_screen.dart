@@ -607,6 +607,11 @@ class _AppDrawer extends ConsumerWidget {
               onTap: () => _go(context, Routes.cycles),
             ),
             ListTile(
+              leading: const Icon(Icons.checklist),
+              title: Text(l10n.navLearningPlans),
+              onTap: () => _go(context, Routes.plannerPlans),
+            ),
+            ListTile(
               leading: const Icon(Icons.today_outlined),
               title: Text(l10n.plannerTodayTitle),
               onTap: () => _go(context, Routes.plannerToday),

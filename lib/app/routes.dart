@@ -11,6 +11,8 @@ import '../features/journal/notes_journal_screen.dart';
 import '../features/node/node_screen.dart';
 import '../features/profiles/profiles_screen.dart';
 import '../features/planner/calendar_screen.dart';
+import '../features/planner/edit_plan_screen.dart';
+import '../features/planner/plans_screen.dart';
 import '../features/planner/today_screen.dart';
 import '../features/reports/report_screen.dart';
 import '../features/settings/crash_log_screen.dart';
@@ -39,6 +41,7 @@ abstract final class Routes {
   static const dashboard = '/';
   static const plannerToday = '/planner/today';
   static const plannerCalendar = '/planner/calendar';
+  static const plannerPlans = '/planner/plans';
 
   /// The five report routes. They are one screen — [ReportScreen], opened on a
   /// different tab — and they stay five *names* because a name is what a deep
@@ -82,6 +85,12 @@ abstract final class Routes {
   /// is a trap set for whoever changes them.
   static String editCycle(String cycleId) => '/cycles/edit/${_seg(cycleId)}';
 
+  /// The plan editor. `planId` empty means "new plan" — one named route rather
+  /// than a separate create screen, so a plan's editor is one screen whether it
+  /// already exists or not, and the back button behaves identically.
+  static String editPlan(String planId) =>
+      planId.isEmpty ? '/planner/plans/new' : '/planner/plans/edit/${_seg(planId)}';
+
   static String _seg(String value) => Uri.encodeComponent(value);
 }
 
@@ -95,6 +104,9 @@ abstract final class AppRouter {
       [] => const DashboardScreen(),
       ['planner', 'today'] => const PlannerTodayScreen(),
       ['planner', 'calendar'] => const PlannerCalendarScreen(),
+      ['planner', 'plans'] => const PlansScreen(),
+      ['planner', 'plans', 'new'] => const EditPlanScreen(),
+      ['planner', 'plans', 'edit', final id] => EditPlanScreen(planId: id),
       ['stats'] => const ReportScreen(),
       ['calculator'] => const ReportScreen(section: ReportSection.calculator),
       ['goals'] => const ReportScreen(section: ReportSection.goals),
