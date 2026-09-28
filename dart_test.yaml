@@ -1,0 +1,22 @@
+# Default timeout for every test in the package.
+#
+# **`package:test`'s default is to wait forever, and that is a trap for a suite
+# run in CI.** A test that awaits something which never completes never finishes,
+# its stream sink is never closed, and the run dies with "Bad state: Cannot close
+# sink while adding stream" — after which *every* test that had not yet run is
+# reported as failing. One real failure becomes an unreadable wall of red whose
+# actual culprit is nowhere in it. That is what `.github/workflows/ci.yml` runs:
+# `flutter test --coverage`, with no `--timeout` of its own to fall back on.
+#
+# **Five minutes, and not tighter.** The heaviest single test in this suite — the
+# fold-growth guard in `test/domain/derive_cost_test.dart` — runs in tens of
+# seconds in a plain run, and is several times slower under `--coverage`
+# instrumentation, on a loaded machine, or both. A default in the tens of
+# seconds would convert a wedge into a *different* kind of red: tests that fail
+# for being slow rather than wrong. Five minutes is long enough that nothing
+# currently passing trips it, and short enough that a genuine hang is reported
+# rather than waited on — the stall that prompted this was over nine minutes.
+#
+# Raise it with the reason, here, rather than quietly in a CI invocation, which
+# is where a timeout becomes invisible.
+timeout: 5m
