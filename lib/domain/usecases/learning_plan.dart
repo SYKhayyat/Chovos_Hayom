@@ -102,6 +102,54 @@ class PlanOverride {
 
 /// The plan half. A plan fires on a day when any assignment's rule matches;
 /// overlapping assignments all fire.
+/// One entry in a plan's ordered sequence of seferim — "Yoma, then Sukkah, then
+/// Chagigah, then Moed".
+///
+/// **A sequence, not a set of [PlanAssignment]s.** An assignment says *when*
+/// something fires and may overlap freely; an item says *what comes next*, and
+/// the order is the whole point. Keeping them separate is what lets a plan say
+/// "ten a day, daily" (the assignment) and "work through these four in this
+/// order" (the items) without either overloading the other.
+class PlanItem {
+  const PlanItem({
+    required this.id,
+    required this.nodeId,
+    this.label,
+  });
+
+  final String id;
+
+  /// The catalog node this item works through. Stored by id so the sequence
+  /// survives the node being renamed.
+  final String nodeId;
+
+  /// An optional display name for the step, when the catalog's is not what the
+  /// user wants to read.
+  final String? label;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'nodeId': nodeId,
+        if (label != null) 'label': label,
+      };
+
+  factory PlanItem.fromJson(Map<String, dynamic> json) => PlanItem(
+        id: json['id'] as String,
+        nodeId: json['nodeId'] as String,
+        label: json['label'] as String?,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      other is PlanItem &&
+      other.id == id &&
+      other.nodeId == nodeId &&
+      other.label == label;
+
+  @override
+  int get hashCode => Object.hash(id, nodeId, label);
+}
+
 /// What a plan does about a day it did not finish.
 ///
 /// The two active modes look like opposite policies and are really the same
@@ -140,6 +188,8 @@ class LearningPlan {
     this.weekdayAmounts = const {},
     this.dateAmounts = const {},
     this.spillover = SpilloverMode.ignore,
+    this.items = const [],
+    this.flowsToNextItem = false,
   });
 
   final String id;
@@ -180,6 +230,17 @@ class LearningPlan {
   /// What this plan does about a day it does not finish. See [SpilloverMode].
   final SpilloverMode spillover;
 
+  /// The seferim this plan works through, in order. Empty means the plan has no
+  /// sequence and the position is just "the assignment's target".
+  final List<PlanItem> items;
+
+  /// Whether finishing one item starts the next, or the plan stops there.
+  ///
+  /// Off by default: a plan that lists four seferim and is told to stop at the
+  /// first is expressing a real intention (learn Yoma, then decide), and
+  /// defaulting to flowing on would quietly discard it.
+  final bool flowsToNextItem;
+
 
   bool get hasHebrewRules =>
       assignments.any((a) => a.rule.calendar == RuleCalendar.hebrew);
@@ -192,6 +253,8 @@ class LearningPlan {
         'overrides': [for (final o in overrides) o.toJson()],
         'unitsPerDay': unitsPerDay,
         'spillover': spillover.name,
+        if (items.isNotEmpty) 'items': [for (final i in items) i.toJson()],
+        'flowsToNextItem': flowsToNextItem,
         if (weekdayAmounts.isNotEmpty)
           'weekdayAmounts': {
             for (final e in weekdayAmounts.entries) '${e.key}': e.value,
@@ -235,6 +298,11 @@ class LearningPlan {
         (m) => m.name == json['spillover'],
         orElse: () => SpilloverMode.ignore,
       ),
+      items: [
+        for (final i in (json['items'] as List<dynamic>? ?? const []))
+          PlanItem.fromJson((i as Map<dynamic, dynamic>).cast<String, dynamic>()),
+      ],
+      flowsToNextItem: json['flowsToNextItem'] == true,
       weekdayAmounts: _weekdayAmountsFrom(json['weekdayAmounts']),
       dateAmounts: _dateAmountsFrom(json['dateAmounts']),
     );
@@ -281,6 +349,8 @@ class LearningPlan {
       other.displayCalendar == displayCalendar &&
       other.unitsPerDay == unitsPerDay &&
       other.spillover == spillover &&
+      other.flowsToNextItem == flowsToNextItem &&
+      _sameItems(items, other.items) &&
       mapEquals(other.weekdayAmounts, weekdayAmounts) &&
       mapEquals(other.dateAmounts, dateAmounts) &&
       _sameAssignments(assignments, other.assignments) &&
@@ -304,6 +374,14 @@ class LearningPlan {
       );
 
   static bool _sameAssignments(List<PlanAssignment> a, List<PlanAssignment> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  static bool _sameItems(List<PlanItem> a, List<PlanItem> b) {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
       if (a[i] != b[i]) return false;

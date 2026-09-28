@@ -5,13 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/day.dart';
 import '../core/planner_dates.dart';
 import '../core/preferences.dart';
-import '../domain/entities/catalog.dart';
 import '../domain/entities/catalog_node.dart';
-import '../domain/usecases/fold_log.dart';
-import '../domain/usecases/layer_roles.dart';
 import '../domain/usecases/learning_plan.dart';
 import '../domain/usecases/plan_chain.dart';
 import '../domain/usecases/plan_completion.dart';
+import '../domain/usecases/plan_position.dart';
 import 'providers.dart';
 import 'stats.dart';
 
@@ -141,7 +139,8 @@ final todayAssignmentsProvider = Provider<List<TodayAssignment>>((ref) {
           if (assignment.targetNodeId != null && catalog.byId(assignment.targetNodeId!) != null)
             () {
               final node = catalog.byId(assignment.targetNodeId!)!;
-              final next = _nextUnit(node, catalog, fold, layers);
+              final next = PlanProgress.nextUnitUnder(
+                  node, catalog, fold, layers: layers);
               return TodayAssignment(
                 plan: plan,
                 assignment: assignment,
@@ -152,21 +151,3 @@ final todayAssignmentsProvider = Provider<List<TodayAssignment>>((ref) {
             }(),
   ];
 });
-
-(CatalogNode, int)? _nextUnit(
-  CatalogNode node,
-  Catalog catalog,
-  LogFold fold,
-  LayerRoles layers,
-) {
-  for (final leaf in catalog.leavesUnder(node.id)) {
-    final required = layers.requiredFor(leaf.id);
-    for (var unit = leaf.unitOffset;
-        unit < leaf.unitOffset + leaf.unitCount;
-        unit++) {
-      final completed = fold.completedLayers(leaf.id, unit);
-      if (!required.every(completed.contains)) return (leaf, unit);
-    }
-  }
-  return null;
-}

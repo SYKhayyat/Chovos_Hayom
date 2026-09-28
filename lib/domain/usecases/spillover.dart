@@ -142,4 +142,44 @@ class PlanSchedule {
     }
     return out;
   }
+
+  /// The day the last of [remaining] units is projected to be learned, walking
+  /// forward from [from], or null if it does not land inside `from..to`.
+  ///
+  /// This is the siyum date, and it is **derived every time it is asked and never
+  /// stored**. The requester was explicit that it depends on exactly one thing —
+  /// when everything has been finished — and a cached date would be a second
+  /// answer to that question that could disagree with the log it came from. Change
+  /// the pace, add a day off, move a date override, and the answer changes; there
+  /// is nothing to invalidate because there is nothing held.
+  ///
+  /// Going forward nothing has been missed yet, so [walk]'s balance starts empty
+  /// and the day's amount is its base. [owedAtStart] carries a shortfall already
+  /// outstanding from the past, which is how #25's spillover reaches this
+  /// projection instead of being a parallel calculation.
+  static Day? projectedFinishDay(
+    LearningPlan plan, {
+    required int remaining,
+    required DayInfo Function(Day) info,
+    required Day from,
+    required Day to,
+    int owedAtStart = 0,
+  }) {
+    if (remaining <= 0) return from;
+    var covered = 0;
+    for (final day in walk(
+      plan,
+      info: info,
+      from: from,
+      to: to,
+      owedAtStart: owedAtStart,
+      doneOn: _none,
+    )) {
+      covered += day.amount;
+      if (covered >= remaining) return day.day;
+    }
+    return null;
+  }
 }
+
+int _none(Day day) => 0;

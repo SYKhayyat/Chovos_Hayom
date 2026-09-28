@@ -32,7 +32,7 @@ day by day, week by week, month by month; and set any of it up in English or
 Hebrew dates. Land in order.
 - [x] #24 per-day amounts + weekday/date overrides (day-off = amount 0). (High)
 - [x] #25 spillover modes: ignore / catch-up / slide, per plan. (High)
-- [ ] #26 item sequence, where-you-are-holding, siyum projection. (High)
+- [x] #26 item sequence, where-you-are-holding, siyum projection. (High)
 - [ ] #27 plan editing UI (amounts, overrides, spillover, flow, sequence). (Medium)
 - [ ] #31 calendar day/week/month ranges, browsable by continuous scroll. (Medium)
 - [ ] #32 enter dates in English or Hebrew (parsing + shared date input). (Medium)
