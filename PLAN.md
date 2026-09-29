@@ -44,7 +44,12 @@ Hebrew dates. Land in order.
   (#31 gave it a day view; #32 lets the date being set be typed, in either
   calendar, from the plan editor's date overrides)
 
-## Phase 5 — The plan as a real entity, and the day ledger (High)
+## Phase 6 — The plan as a real entity, and the day ledger (High)
+
+(Phase **6**, not 5: the planner roadmap's epic items carry their own
+sub-numbering, and `- [x] #11 Phase 5 rescheduling` up in Phase 3 already owns
+the name "Phase 5". Two different schemes now claimed it, and a reader scanning
+for the new work found the old, checked, finished one.)
 
 Designed in full before any of it is built. The calendar **UI does not change**;
 what changes is what a plan is, and the rest are consequences. Nobody is using
