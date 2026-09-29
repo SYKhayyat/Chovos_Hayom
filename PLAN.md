@@ -44,5 +44,47 @@ Hebrew dates. Land in order.
   (#31 gave it a day view; #32 lets the date being set be typed, in either
   calendar, from the plan editor's date overrides)
 
+## Phase 5 — The plan as a real entity, and the day ledger (High)
+
+Designed in full before any of it is built. The calendar **UI does not change**;
+what changes is what a plan is, and the rest are consequences. Nobody is using
+the app yet, so there is **no migration work** on any of this — the migration
+instinct that governs the rest of this file is pure cost here.
+
+Start at the top: the rest are inexpressible without it.
+
+- [ ] #41 the plan as a real entity: sefer chain, per-sefer unit range, start
+  date (default today), wrap (two levels) and exactly one pacing mode. (High)
+- [ ] #42 the day ledger: per-unit checkboxes in the day sheet, one shared state.
+  Ticking from the calendar writes the log; ticking from the unit grid shows on
+  the plan but **never erases it** — the plan is what was asked, the log is what
+  happened, and the gap between them is the point. (High)
+- [ ] #43 `+` and `−` on a day: add units, remove a unit, or skip the plan that
+  day. Planning commands; write no log; reflow nothing. Past days behave like any
+  other day. (High)
+- [ ] #44 recompute: pick a plan and a day, then either keep the same amounts or
+  spread the shortfall over the next *x* days (*x* = a number, all, or up to the
+  plan's end). Two modes only — a plan is editable, so a different finish date
+  needs no third. Invoked from the day sheet **and** the plan screen. (High)
+- [ ] #45 chazara is one rule — learned means chazara, the count is the passes.
+  Delete the scheduler and the Chazara screen; **wipe** the stored review dates.
+  Marking a unit done from the calendar is what makes it chazara. (High)
+- [ ] #46 progress bar and box: a completion line and a chazara line (units
+  reviewed at least once), sometimes more than one chazara line; `due` comes out;
+  the bar gets a colour; when a hairline will not fit the line changes colour
+  instead; the box carries a corner number of times finished. (Medium)
+- [ ] #47 a screen per plan: how far it has got and how much per day you are
+  actually doing. An open-ended plan reports a bare count, never a fraction.
+  Also the home of recompute. (Medium)
+- [ ] #48 the day sheet's layout is a setting in Settings, with three layouts;
+  default is grouped by plan, the only one readable when several plans fire. (Low)
+
+Also open, from the same session and not planner scope:
+
+- [ ] #49 device harness: 26 of 30 journeys still fail on wrong selectors; the
+  D-pad path has never run at all. (High — the Sonim has no touchscreen)
+- [ ] #39 Linux target aborts on first frame on NixOS: `eglInitialize` fails
+  0x3010. Build is green; runtime is not. (Medium)
+
 ## Routing rule for new issues
 Any AI opening an issue here MUST insert it above: data-loss/correctness → Phase 1, polish → Phase 2, new planner scope → Phase 4. Never let roadmap outrank a High. See AI_ISSUE_ROUTING.md.
