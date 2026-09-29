@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'action.dart';
+import 'navigation.dart';
 import 'device_profile.dart';
 
 /// One thing a person was trying to do, start to finish.
@@ -112,6 +113,25 @@ class HarnessRunner {
     List<Journey> journeys = const [],
   }) async {
     for (final journey in journeys) {
+      // **Between journeys, not between steps, and not at all was the bug.**
+      // The first run on real hardware passed journey 1 and failed all 34 after
+      // it on their first step, because journey 1 left the drawer open and
+      // nothing put it back. One journey's leftovers reaching the next is a
+      // harness defect, not a property of the app: a person starts each task
+      // from a screen they chose.
+      //
+      // The reset is best-effort on purpose. If it cannot get home — the app is
+      // mid-dialog, or a previous journey genuinely wedged it — the next journey
+      // should still run and report its own failure, rather than the whole run
+      // dying on someone else's leftovers.
+      try {
+        final reset = HarnessContext(tester, device, input);
+        for (final act in backToHome()) {
+          await act.run(reset);
+        }
+      } catch (e) {
+        say('  (could not get home before ${journey.id}: $e)');
+      }
       results.add(await _runOne(tester, device, input, journey));
     }
   }

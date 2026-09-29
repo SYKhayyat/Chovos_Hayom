@@ -158,6 +158,142 @@ class TapAny extends Act {
 
 /// Taps something identified by its tooltip — an icon-only control, which is
 /// most of the app's navigation.
+/// Opens the navigation drawer — or does nothing, if it is already open.
+///
+/// **Written this way because the first device run proved the other way wrong.**
+/// A separate "tap the menu button" step is only correct when every journey
+/// starts from a known state, and the first run on a Moto G Stylus showed that
+/// it is not: `learning/tree-opens` passed, and then all 34 journeys after it
+/// failed on their very first step with "nothing on screen to tap". The drawer
+/// was still open, its scrim was covering the app bar, so the menu button
+/// existed in the tree and was not hit-testable.
+///
+/// A person in that position does not tap the menu button — they carry on. So
+/// this checks whether the button can actually be pressed, and only presses it
+/// when it can. It is also why journeys no longer need a perfect reset between
+/// them, though they get one anyway: see [GoHome].
+class OpenDrawer extends Act {
+  const OpenDrawer({this.note});
+
+  final String? note;
+
+  @override
+  String get intent => 'open the navigation drawer'
+      '${note == null ? '' : ' — $note'}';
+
+  @override
+  Future<void> run(HarnessContext c) async {
+    final tester = c.tester;
+    final button = _reach(c, find.byTooltip('Open navigation menu'));
+
+    if (button.evaluate().isEmpty) {
+      // No button here at all: whatever screen this is, it is not one with a
+      // drawer, and saying that beats a tap on nothing.
+      throw StateError(
+        'there is no navigation drawer here, and no menu button to open one '
+        'with.\nOn screen: ${_visibleText(c).take(40).join(' | ')}',
+      );
+    }
+
+    if (_canPress(c, button)) {
+      await tester.tap(button, warnIfMissed: false);
+      await const Settle('after opening the drawer').run(c);
+    }
+    // Otherwise the drawer is already open, which is the state this step wanted
+    // to reach. Saying nothing is right: there was nothing to do.
+  }
+}
+
+/// Whether [finder] is something a person could press right now.
+///
+/// **Hit-testing, not "is it in the tree".** An open drawer covers the app bar
+/// with a scrim, so the menu button is present, is a real widget, and cannot be
+/// tapped. `find.byTooltip(...).hitTestable()` is the difference between those
+/// two facts, and the whole bug was the difference.
+bool _canPress(HarnessContext c, Finder finder) =>
+    c.input == HarnessInput.pointer
+        ? finder.hitTestable().evaluate().isNotEmpty
+        : _hasFocus(c, finder);
+
+/// Puts the app back where a person would start from.
+///
+/// **This deliberately never sends a system back.** The first version did — it
+/// pressed the platform back gesture up to three times — and the second run on a
+/// Moto G Stylus died 3 minutes in with both the test and its teardown reported
+/// as "did not complete", and nothing at all on the device. `logcat` showed no
+/// crash: the app had simply gone away. On Android, back on the *root* route
+/// finishes the activity, so the reset that ran before the very first journey —
+/// when the app was sitting on the dashboard, which is the root — closed the app
+/// and took the VM service with it.
+///
+/// So this does only the two things a person does with their thumb, neither of
+/// which can leave the app:
+/// - taps the scrim, which is how a drawer or a sheet is dismissed;
+/// - presses the back button *in the app bar*, but only while one is on screen.
+///   The presence of that button is the app's own statement that there is
+///   somewhere to go back to, which is exactly the thing `handlePopRoute` has no
+///   way to ask about before it kills the process.
+class GoHome extends Act {
+  const GoHome();
+
+  @override
+  String get intent => 'get back to the learning tree, closing anything open';
+
+  @override
+  Future<void> run(HarnessContext c) async {
+    final tester = c.tester;
+
+    // A scrim is how an open drawer and an open sheet both present themselves.
+    // Tapping a *page* route's barrier is a no-op, so this cannot dismiss a
+    // screen that was not dismissable to begin with.
+    for (var i = 0; i < 3; i++) {
+      if (find.byType(ModalBarrier).evaluate().isEmpty) break;
+      final before = _screenSignature(tester);
+      await tester.tap(find.byType(ModalBarrier).last, warnIfMissed: false);
+      await _settle(tester);
+      if (_screenSignature(tester) == before) break;
+    }
+
+    // The app bar's back button, while there is one. Five is generous: a
+    // journey that opened a sefer, a node editor and a sheet needs three.
+    for (var i = 0; i < 5; i++) {
+      final back = find.byType(BackButton);
+      if (back.evaluate().isEmpty) break;
+      await tester.tap(back.first, warnIfMissed: false);
+      await _settle(tester);
+    }
+
+    // And home through the drawer, like a person, which is the navigation under
+    // test as well as the reset.
+    await const OpenDrawer().run(c);
+    await const TapAny(['Learning tree'], note: 'the first drawer entry').run(c);
+  }
+
+  /// Pumps, and does not let a frame that will not settle end the run.
+  ///
+  /// A `pumpAndSettle` that times out is a real problem, but during a *reset* it
+  /// means the app is busy, not broken, and the next journey's own steps are a
+  /// better place to say so.
+  static Future<void> _settle(WidgetTester tester) async {
+    try {
+      await tester.pumpAndSettle();
+    } catch (_) {
+      await tester.pump();
+    }
+  }
+
+  /// A cheap fingerprint of what is on screen, for "did that do anything".
+  static String _screenSignature(WidgetTester tester) {
+    final texts = tester
+        .widgetList<Text>(find.byType(Text))
+        .map((t) => t.data)
+        .whereType<String>()
+        .toList()
+      ..sort();
+    return texts.take(12).join('|');
+  }
+}
+
 class TapTooltip extends Act {
   const TapTooltip(this.tooltip, {this.note});
 

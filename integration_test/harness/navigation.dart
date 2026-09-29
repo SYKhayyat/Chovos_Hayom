@@ -1,5 +1,3 @@
-import 'package:flutter/services.dart';
-
 import 'action.dart';
 
 /// Getting around the app the way a person does.
@@ -26,13 +24,13 @@ class Nav {
   /// not available from a screen that was *pushed onto* the dashboard by a deep
   /// link, and because the drawer entry is the affordance the app offers.
   static List<Act> home() => [
-        const TapTooltip(openMenu),
+        const OpenDrawer(),
         const TapAny(['Learning tree']),
       ];
 
   /// Opens the drawer and goes to one of its destinations.
   static List<Act> to(String label) => [
-        const TapTooltip(openMenu),
+        const OpenDrawer(),
         TapAny([label]),
       ];
 
@@ -83,10 +81,12 @@ List<Act> startAtHome() => Nav.home();
 ///
 /// Used between journeys rather than between steps, because "make sure the app
 /// is in a known place" is a harness concern and not something a person does
-/// mid-task. It is also what makes one journey's leftovers visible to the next
-/// one, which is half of why isolation is discussed where it is.
-List<Act> backToHome() => [
-      const Press(LogicalKeyboardKey.escape),
-      const Press(LogicalKeyboardKey.escape),
-      ...Nav.home(),
-    ];
+/// mid-task.
+///
+/// **This used to press Escape twice, and that was the bug that failed 34 of 35
+/// journeys on the first device run.** Escape is a desktop idiom: Android's
+/// drawer does not listen for it, so the drawer stayed open, its scrim covered
+/// the app bar, and the next journey could not press the menu button that sits
+/// under it. The system back gesture is what a person actually uses on both of
+/// these phones, and [GoHome] is that.
+List<Act> backToHome() => [const GoHome()];
