@@ -151,6 +151,31 @@ Three habits this codebase holds to:
   rather than on the notifier that wrote it — the notifier passes just as well when nothing reached
   disk.
 
+## Building on Linux
+
+`android/` and `windows/` are the obvious ones. The Linux target needs clang, cmake,
+ninja, pkg-config and the GTK3 development headers, and none of them are on a
+machine that has not installed them, so the whole environment is pinned in
+`flake.nix` rather than described in a list of `apt-get` lines that go stale:
+
+```bash
+nix develop --command flutter build linux --debug
+nix develop --command flutter test -d linux
+nix develop --command tool/run_device_harness.sh
+```
+
+`nix develop` is what CI uses too, so there is one answer to "how do I build
+this" rather than two that drift. The pinned nixpkgs is load-bearing rather than
+decorative — on the channel this was written against, glib's `glib-2.0.pc`
+requires a `sysprof-capture-4` that the same channel does not ship, and every
+pkg-config call in a configure step fails on it.
+
+Two things in `linux/` are deliberate departures from the Flutter template, both
+with the reasoning at the point of change: `CMakeLists.txt` names GTK's private
+`epoxy` and `fontconfig` dependencies explicitly, and the flake's shellHook
+exports `LDFLAGS` from `NIX_LDFLAGS` and points `EGL_VENDOR_LIBRARY_FILENAMES`
+at Mesa.
+
 Coverage has a floor per layer, checked by `tool/check_coverage.dart` after `flutter test
 --coverage`: `domain/` 90%, `application/` and `core/` 85%, `data/` 70%, `features/` 65%, 75%
 overall on hand-written code. Each floor sits a few points under where the suite is today, so

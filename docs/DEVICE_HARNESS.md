@@ -112,20 +112,29 @@ it, so the header reports the device's setting rather than the harness's.
 
 ## Linux
 
-The harness itself is platform-agnostic — it is `integration_test`, and it runs
-on a desktop the same as on a phone. The repository currently has `android/`
-and `windows/` and no `linux/` target, so a Linux run needs the target and a
-toolchain first:
+The harness is platform-agnostic — it is `integration_test` — and there is a
+`linux/` target, so a desktop is a first-class device for this harness. The
+toolchain is not on a machine by default, so it is pinned in `flake.nix` and
+CI builds with it on every push:
 
 ```bash
-flutter create --platforms=linux .
-# plus clang, ninja-build, and GTK3 development packages
-tool/run_device_harness.sh          # with the desktop as the only device
+nix develop --command tool/run_device_harness.sh
+nix develop --command flutter build linux --debug
 ```
 
-That is a deliberate gap rather than an oversight: adding a platform target is a
-product decision, and the harness is written so that the day there is one, no
-journey needs to change.
+**And a Linux run needs a display that can create an EGL context.** This is
+worth stating because it fails in a way that looks like a build problem: the app
+compiles, links, installs, and then aborts on the first frame with
+
+```
+No provider of eglGetPlatformDisplayEXT found.  Requires one of:
+    EGL_EXT_platform_base
+```
+
+That is the machine, not the app. A headless server, a VM with no passed-through
+GPU, and an `ssh` session with no X forwarding all build cleanly and die there.
+`DISPLAY` being set is not sufficient — the compositor has to expose EGL. When a
+run dies that way, check the environment before reading anything in the app.
 
 ## When a run fails
 

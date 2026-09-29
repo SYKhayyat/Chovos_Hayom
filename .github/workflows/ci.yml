@@ -173,3 +173,55 @@ jobs:
             ls -R build/windows/x64/runner || true
             exit 1
           fi
+
+  build-linux:
+    # The app ships on Linux, and like Windows that build used to happen only on
+    # the author's own machine — the argument is the one made two jobs up for
+    # Windows, and it applies verbatim: a warm CMake tree hides target-id and
+    # generator failures that a clean runner shows immediately.
+    #
+    # The build needs clang, cmake, ninja, pkg-config and the GTK3 headers, and a
+    # GitHub runner has none of them by default, so this is also the only place
+    # that the dependency list in `flake.nix` is exercised from scratch. That is
+    # the point: a build environment that only ever works on the machine that
+    # wrote it is not a build environment.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # The same `nix develop` the developer uses, so there is one answer to "how
+      # do I build this" rather than two that drift.
+      #
+      # `install-nix-action` rather than `apt-get install nix-bin`: the runner
+      # image already has Nix in it, and apt's copy lands beside the existing
+      # one, which is a store the two then disagree about. The action reuses
+      # what is there and turns flakes on.
+      - uses: cachix/install-nix-action@v31
+
+      - name: Build with the flake's toolchain
+        run: nix develop --command bash -c 'flutter build linux --release'
+
+      # For the same reason the R8 and Windows assertions exist: the build command
+      # exits zero whether or not it produced something runnable, and "it
+      # compiled" is not the question this job asks.
+      - name: Assert the release build produced a bundle
+        run: |
+          if [ ! -x build/linux/x64/release/bundle/chovos_hayom ]; then
+            echo "::error::No Linux binary — the release build exited zero without producing one."
+            ls -R build/linux/x64/release || true
+            exit 1
+          fi
+          if [ ! -f build/linux/x64/release/bundle/lib/libflutter_linux_gtk.so ]; then
+            echo "::error::No libflutter_linux_gtk.so in the bundle — the engine is missing."
+            ls -R build/linux/x64/release/bundle || true
+            exit 1
+          fi
+          file build/linux/x64/release/bundle/chovos_hayom

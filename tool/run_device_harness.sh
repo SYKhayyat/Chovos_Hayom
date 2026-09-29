@@ -20,6 +20,7 @@
 #     the device showed. This is the one that finds "the label does not fit".
 #
 # Usage:
+#   nix develop --command tool/run_device_harness.sh    # on Linux
 #   tool/run_device_harness.sh                 # every journey, on the only device
 #   tool/run_device_harness.sh --keys          # drive it with the D-pad instead
 #   tool/run_device_harness.sh --shots         # and collect screenshots
@@ -79,9 +80,16 @@ No device found.
 
   * A phone must be connected with USB debugging on, and `adb devices` must
     list it. Check `flutter devices`.
-  * A Linux desktop works too — `flutter run -d linux` — though the repo has no
-    linux/ platform folder yet, so it needs `flutter create --platforms=linux .`
-    and a clang/ninja/GTK toolchain first.
+  * A Linux desktop works too, and the repo now has a linux/ target — but
+    building it needs clang, cmake, ninja and the GTK3 headers, none of which
+    are on a machine that has not installed them:
+
+        nix develop --command tool/run_device_harness.sh
+
+    and it needs a display that can actually create an EGL context. A headless
+    box, a VM without a passed-through GPU, or a `ssh` session with no X
+    forwarding will build the app perfectly and then abort on the first frame
+    with "No provider of eglGetPlatformDisplayEXT found".
 EOF
   exit 1
 fi
