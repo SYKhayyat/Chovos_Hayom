@@ -13,6 +13,33 @@ import 'package:flutter/services.dart';
 
 import 'breakpoints.dart';
 
+/// The largest share of the screen a ring may cover and still be worth drawing.
+///
+/// A focus ring is the *only* thing on a keypad phone saying which control is
+/// about to be pressed, so it is worth almost any area — but a ring around
+/// something the size of the display says nothing about *what* is selected, and
+/// it obscures the screen it is meant to be describing. Six tenths is the line,
+/// and it is a line rather than a shape because the decision is about area.
+const double _maxRingFraction = 0.6;
+
+/// Whether a ring drawn around [rect] on a [screen] would say anything.
+///
+/// **Public, and extracted, because a second copy of this judgement is exactly
+/// the shape of mistake this file is about.** The device harness
+/// (`integration_test/`) has to answer "will pressing this key be visible?" and
+/// the only honest way is to ask the same question the overlay asks. A harness
+/// with its own copy of the rule would be able to report a focus ring the app
+/// never draws, which is worse than reporting nothing: the planner calendar
+/// pages by focus moving onto the pager, which is very nearly a whole-screen
+/// node, and that is precisely the case this answers "no" to.
+///
+/// Exported for that use, and used by the overlay, so the two cannot disagree.
+/// The empty-rect case is *not* decided here — the caller rejects it one line
+/// earlier — so this stays a pure extraction of the threshold, and a harness
+/// asking about a settled element gets exactly the answer the app would give.
+bool ringWouldSayAnything(Rect rect, Size screen) =>
+    rect.width * rect.height <= screen.width * screen.height * _maxRingFraction;
+
 /// The keys that open a context menu on the focused control.
 ///
 /// Android's `KEYCODE_MENU` — the left soft key on the XP5s keypad — arrives as
@@ -254,9 +281,7 @@ class _FocusRingOverlayState extends State<FocusRingOverlay> {
     // would outline the entire display, which says nothing about *what* is
     // selected. Those are skipped rather than drawn.
     final screen = MediaQuery.sizeOf(context);
-    if (rect.width * rect.height > screen.width * screen.height * 0.6) {
-      return null;
-    }
+    if (!ringWouldSayAnything(rect, screen)) return null;
     return rect;
   }
 

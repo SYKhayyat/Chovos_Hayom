@@ -124,6 +124,22 @@ readable on a 240dp screen — only an eye can, and an eye needs a real typeface
   the suite stays font-agnostic, the goldens carry the typographic judgement, and a
   test that would have to measure a glyph says so rather than measuring one.
 
+**And a third instrument, for the things neither of the two can see.**
+`integration_test/` drives the real app on real hardware, as a person drives it —
+through the drawer, with the real font, at the real size, and with the D-pad as
+well as a tap. `tool/run_device_harness.sh --list` prints the catalogue with no
+device attached, and `--keys` re-runs the same journeys through the focus tree,
+which is the Sonim's only input. The widget suite and the goldens are both blind
+in the same place — a label that does not fit in the real font is green in both —
+and that is what the harness is for. `docs/DEVICE_HARNESS.md` has the rest.
+
+Because a harness is a suite nobody runs by default, `test/app/device_harness_coverage_test.dart`
+guards it in CI instead: every route in `Routes` — including the `/sefer/<id>`
+families a drawer inventory cannot find — must be claimed by a journey in
+`integration_test/harness/coverage.dart`, and no journey may claim a screen it
+does not open. A claim that is not backed is worse than a gap, because it reads
+as coverage.
+
 Three habits this codebase holds to:
 
 - **Watch the test fail.** A correctness fix ships with a test that fails before it and passes
