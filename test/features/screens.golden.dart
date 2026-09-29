@@ -71,6 +71,19 @@ Future<void> loadDeviceFonts() async {
       '$flutterRoot/engine/src/flutter/tools/font_subset/fixtures/'
           'MaterialIcons-Regular.ttf',
     ],
+    // **Roboto has no Hebrew in it.** Without a Hebrew family the entire Hebrew
+    // interface renders as notdef boxes — which is the entire point of the
+    // parser, the calendar's Hebrew mode and the date field's right-to-left
+    // layout, none of which had been *looked* at before this. The family is
+    // found by search for the same reason as the others, and its absence is
+    // reported rather than silently producing boxes.
+    'Noto Sans Hebrew': [
+      for (final dir in [
+        '/run/current-system/sw/share/X11/fonts',
+        '$home/.nix-profile/share/X11/fonts',
+      ])
+        '$dir/NotoSansHebrew.ttf',
+    ],
   };
   for (final entry in wanted.entries) {
     final paths = entry.value.toSet();
@@ -221,6 +234,52 @@ void main() {
           '"weekdayAmounts":{"6":0}}]}',
     );
     await shoot(tester, '05-plan-sequence-sonim');
+  });
+
+  testWidgets('the calendar in Hebrew, which no previous render could show',
+      (tester) async {
+    await at(
+      tester,
+      home: const PlannerCalendarScreen(),
+      plans: '{"plans":[{"id":"p","name":"\u05d9\u05d5\u05de\u05d4",'
+          '"displayCalendar":"hebrew","assignments":[{"id":"a",'
+          '"rule":{"type":"daily"},"targetNodeId":"shas.moed.shabbos"}],'
+          '"overrides":[],"unitsPerDay":12,"spillover":"ignore",'
+          '"flowsToNextItem":true}]}',
+    );
+    // The setting the app stores is the *calendar* to show; a reader also has to
+    // have turned it on. This is the view as such a reader sees it.
+    await tester.tap(find.text('Month'));
+    await tester.pumpAndSettle();
+    await shoot(tester, '07-calendar-month-hebrew');
+  });
+
+  testWidgets('the date field with a Hebrew-script date in it', (tester) async {
+    await at(tester, home: Builder(
+      builder: (context) => Scaffold(
+        body: Center(
+          child: TextButton(
+            onPressed: () => promptForDate(
+              context,
+              initial: Day.of(DateTime(2026, 1, 10)),
+              reference: Day.of(DateTime(2026, 1, 10)),
+              mode: CalendarMode.gregorian,
+              title: 'Set the date',
+              confirmLabel: 'Save',
+              cancelLabel: 'Cancel',
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    // The form the app's own formatter emits, typed back into the field that
+    // parses it: the round trip, in Hebrew script, on a 240dp screen.
+    await tester.enterText(find.byType(TextField).last, 'ג׳ תשרי תשפ״ז');
+    await tester.pumpAndSettle();
+    await shoot(tester, '08-date-entry-hebrew');
   });
 
   testWidgets('the calendar on an ordinary phone, for comparison', (tester) async {
