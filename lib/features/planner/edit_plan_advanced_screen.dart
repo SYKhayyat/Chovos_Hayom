@@ -11,7 +11,7 @@ import '../../core/day.dart';
 import '../../core/parse.dart';
 import '../../domain/entities/catalog.dart';
 import '../../domain/usecases/learning_plan.dart';
-import '../../domain/usecases/plan_position.dart';
+import '../../domain/usecases/plan_run.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/date_field.dart';
 import '../common/guarded.dart';
@@ -65,6 +65,18 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
   late Map<Day, int> _dates;
   late List<PlanItem> _items;
   late bool _flows;
+  late bool _startToday;
+  late Day? _startDay;
+  late PlanPacing _pacing;
+
+  /// Why the start date is a toggle and not a field showing today.
+  ///
+  /// The plan's own rule is that an unset start date *means* today
+  /// (`LearningPlan.startDay` is null), and it is stored that way so "starts
+  /// today" stays true as the days pass. A field pre-filled with today's date
+  /// would therefore freeze a day the user never chose, and the plan would stop
+  /// following the device — a change the user did not make and cannot see.
+  bool get _startsToday => _startToday;
 
   @override
   void initState() {
@@ -73,6 +85,9 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
     _dates = {...widget.plan.dateAmounts};
     _items = [...widget.plan.items];
     _flows = widget.plan.flowsToNextItem;
+    _startToday = widget.plan.startDay == null;
+    _startDay = widget.plan.startDay;
+    _pacing = widget.plan.pacing;
   }
 
   /// Applies the edits to the plan they came from, rather than rebuilding it.
@@ -94,6 +109,8 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
       spillover: p.spillover,
       items: _items,
       flowsToNextItem: _flows,
+      startDay: _startsToday ? null : _startDay,
+      pacing: _pacing,
     );
   }
 
@@ -391,7 +408,7 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                l10n.plansSequenceTotal(_totalUnits(catalog)),
+                _totalLabel(l10n, catalog),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -407,24 +424,205 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
             ),
           ),
           SwitchListTile(
+            key: const ValueKey('flow-to-next'),
             contentPadding: EdgeInsets.zero,
             value: _flows,
             onChanged: (v) => setState(() => _flows = v),
             title: Text(l10n.plansFlowToNext),
             subtitle: Text(l10n.plansFlowToNextHelp),
           ),
+          _rangeEditor(l10n, catalog),
+          const Divider(height: 32),
+          _header(l10n.plansStartDay),
+          SwitchListTile(
+            key: const ValueKey('start-today'),
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            value: _startsToday,
+            onChanged: (v) => setState(() {
+              _startToday = v;
+              // Switching away from "today" needs a day to switch to, and the
+              // clock is the only honest source for the default. Taken at the
+              // moment the toggle is flipped rather than at build, so the field
+              // does not silently re-anchor on a rebuild.
+              if (!v) _startDay ??= Day.of(ref.read(clockProvider)());
+            }),
+            title: Text(l10n.plansStartDayToday),
+          ),
+          if (!_startsToday) ...[
+            ListTile(
+              key: const ValueKey('start-day'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(DateDisplay.format(_startDay!.midnight, mode)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _pickStartDay,
+            ),
+          ],
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              l10n.plansStartDayHelp,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          const Divider(height: 32),
+          _header(l10n.plansPacing),
+          // **Two radios, not a dropdown, and not two independent fields.**
+          // Pacing is one of two answers to one question, so the UI offers them
+          // as one choice; letting both be filled in is what the sealed
+          // `PlanPacing` exists to make unrepresentable in the first place.
+          RadioGroup<_PacingKind>(
+            groupValue: _pacingKind,
+            onChanged: (v) => setState(() => _setPacingKind(v!)),
+            child: Column(
+              children: [
+                for (final kind in _PacingKind.values)
+                  RadioListTile<_PacingKind>(
+                    key: ValueKey('pacing-${kind.name}'),
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    value: kind,
+                    title: Text(
+                      kind == _PacingKind.perDay
+                          ? l10n.plansPacingPerDay
+                          : l10n.plansPacingFinishBy,
+                    ),
+                    subtitle: kind == _PacingKind.finishBy
+                        ? Text(l10n.plansPacingFinishByHelp)
+                        : null,
+                  ),
+              ],
+            ),
+          ),
+          if (_pacingKind == _PacingKind.finishBy)
+            ListTile(
+              key: const ValueKey('pacing-finish-date'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(DateDisplay.format(
+                  (_pacing.finishDay ?? Day.of(ref.read(clockProvider)())).midnight,
+                  mode)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _pickFinishDay,
+            ),
           const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  int _totalUnits(Catalog? catalog) {
-    if (catalog == null) return 0;
-    return PlanProgress.totalUnits(_applyTo(), catalog);
+  _PacingKind get _pacingKind =>
+      _pacing.finishDay != null ? _PacingKind.finishBy : _PacingKind.perDay;
+
+  /// Switching pacing mode keeps whichever answer is already filled in, so
+  /// flipping to finish-by and back does not lose the daily amount.
+  void _setPacingKind(_PacingKind kind) {
+    setState(() {
+      _pacing = switch (kind) {
+        _PacingKind.perDay => AmountPerDay(
+            _pacing.unitsPerDay ?? widget.plan.unitsPerDay,
+          ),
+        _PacingKind.finishBy => FinishBy(
+            _pacing.finishDay ?? Day.of(ref.read(clockProvider)()),
+          ),
+      };
+    });
+  }
+
+  Future<void> _pickStartDay() async {
+    final l10n = AppLocalizations.of(context);
+    final today = Day.of(ref.read(clockProvider)());
+    final picked = await promptForDate(
+      context,
+      initial: _startDay ?? today,
+      reference: today,
+      mode: ref.read(settingsProvider).calendar,
+      title: l10n.plansStartDay,
+      confirmLabel: l10n.plansSave,
+      cancelLabel: l10n.plansCancel,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _startDay = picked);
+  }
+
+  Future<void> _pickFinishDay() async {
+    final l10n = AppLocalizations.of(context);
+    final today = Day.of(ref.read(clockProvider)());
+    final picked = await promptForDate(
+      context,
+      initial: _pacing.finishDay ?? today,
+      reference: today,
+      mode: ref.read(settingsProvider).calendar,
+      title: l10n.plansPacingFinishDate,
+      confirmLabel: l10n.plansSave,
+      cancelLabel: l10n.plansCancel,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _pacing = FinishBy(picked));
+  }
+
+  /// The chain's total, or the honest statement that it has none.
+  ///
+  /// **A wrapping or open-ended range has no total, so it does not get a
+  /// fraction.** The owner's ruling: progress there is how many units have been
+  /// done, and the *plan* screen is where that count belongs — this is the
+  /// editor, and it has no fold to read, so it says only that there is no end
+  /// set. Inventing a denominator for an endless plan is the kind of number this
+  /// repository's rules exist to stop.
+  ///
+  /// Empty rather than a misleading zero when the catalog has not loaded: this
+  /// screen watches for it and re-renders, so the line appears once it can be
+  /// answered.
+  String _totalLabel(AppLocalizations l10n, Catalog? catalog) {
+    if (catalog == null || _items.isEmpty) return '';
+    final total = PlanRunProgress.totalUnits(_applyTo(), catalog);
+    if (total != null) return l10n.plansSequenceTotal(total);
+    final open = _items.any((i) => i.wrapsRange || i.endUnit == null);
+    return open
+        ? l10n.plansSequenceTotalOpen(totalUnitsWhenOpen(catalog))
+        : '';
+  }
+
+  /// Units in the chain, used only as the "so far" figure on the endless line.
+  ///
+  /// Zero here is a real answer, not a placeholder: with no log in scope the
+  /// count of *learned* units is genuinely zero, and the figure that matters to
+  /// a user reading their own plan is how big it is, not how far along they are.
+  int totalUnitsWhenOpen(Catalog catalog) {
+    var total = 0;
+    for (var i = 0; i < _items.length; i++) {
+      final range = PlanRange.resolve(_applyTo(), catalog, i);
+      if (range == null) continue;
+      total += range.wraps
+          ? (range.node.isLeaf ? range.length : 0)
+          : (range.node.isLeaf
+              ? range.length
+              : range.walk(catalog).length);
+    }
+    return total;
   }
 
   /// One row of the sequence, keyed by the item's own id.
+  ///
+  /// The key is the id, not the index and not the row's text, and both of the
+  /// alternatives are the reason this section had no widget coverage at all.
+  /// `find.text('Shabbos')` is ambiguous the moment the same sefer is in the
+  /// list twice — which is a legitimate thing for a sequence to be — and "the
+  /// tile at index N" is a claim about scroll position, which a finder cannot
+  /// rely on in a `ListView` that builds lazily. Untestable is how a screen
+  /// whose *Add a sefer* button opened nothing kept shipping.
+  ///
+  /// The id rather than `'${item.id}#$i'`, the shape `EditCycleScreen` uses:
+  /// the index there cannot collide, because a cycle's segments are the node
+  /// itself, whereas here the id has to be an identity for its own sake and
+  /// carrying the index only hid that.
+  /// One row of the sequence.
+  ///
+  /// **A flat `ListTile`, and deliberately not a `Column` wrapping one.** The row
+  /// sits directly inside [ReorderableListView], which lays its children out
+  /// itself and needs each of them to be the row — a wrapper changed the height
+  /// the reorder maths uses and the list stopped building. So the range editor
+  /// is a sibling section below the list rather than something folded into a row,
+  /// which also keeps a four-sefer chain from opening as eight sets of fields.
   ///
   /// The key is the id, not the index and not the row's text, and both of the
   /// alternatives are the reason this section had no widget coverage at all.
@@ -447,6 +645,7 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
       leading: ReorderableDragStartListener(
           index: i, child: const Icon(Icons.drag_handle)),
       title: Text(node == null ? item.nodeId : nodeName(l10n, node)),
+      subtitle: _rangeSubtitle(l10n, item),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -474,11 +673,184 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
     );
   }
 
+  /// One line saying what the range currently is, so it is visible without
+  /// opening the section below. Absent bounds are described, not shown blank.
+  Widget? _rangeSubtitle(AppLocalizations l10n, PlanItem item) {
+    final parts = <String>[];
+    if (item.startUnit != null) {
+      parts.add('${l10n.plansRangeFrom} ${item.startUnit}');
+    }
+    parts.add(item.endUnit == null
+        ? l10n.plansRangeNoEnd
+        : '${l10n.plansRangeTo} ${item.endUnit}');
+    if (item.wrapsRange) parts.add(l10n.plansRangeWrap);
+    return Text(parts.join(' · '),
+        style: Theme.of(context).textTheme.bodySmall);
+  }
+
+  /// The range controls, one block per sefer in the chain.
+  ///
+  /// Keys carry the item's id because two entries may legitimately be the same
+  /// sefer, and a finder keyed on position would then be pointing at whichever
+  /// one happens to be laid out first.
+  Widget _rangeEditor(AppLocalizations l10n, Catalog? catalog) {
+    if (catalog == null || _items.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Divider(height: 32),
+        _header(l10n.plansRange),
+        Text(l10n.plansRangeHelp,
+            style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 8),
+        for (final item in _items) _rangeRow(l10n, item),
+      ],
+    );
+  }
+
+  Widget _rangeRow(AppLocalizations l10n, PlanItem item) {
+    void replace(PlanItem next) => setState(() {
+          final at = _items.indexWhere((i) => i.id == item.id);
+          if (at >= 0) _items[at] = next;
+        });
+
+    return Padding(
+      key: ValueKey('range-${item.id}'),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _UnitField(
+                  key: ValueKey('range-from-${item.id}'),
+                  label: l10n.plansRangeFrom,
+                  value: item.startUnit,
+                  onChanged: (v) => replace(
+                    _copyItem(item, startUnit: v, clearStart: v == null),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _UnitField(
+                  key: ValueKey('range-to-${item.id}'),
+                  label: l10n.plansRangeTo,
+                  value: item.endUnit,
+                  onChanged: (v) => replace(
+                    _copyItem(item, endUnit: v, clearEnd: v == null),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SwitchListTile(
+            key: ValueKey('wrap-${item.id}'),
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            value: item.wrapsRange,
+            onChanged: (v) => replace(_copyItem(item, wrapsRange: v)),
+            title: Text(l10n.plansRangeWrap),
+            subtitle: Text(l10n.plansRangeWrapHelp),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// A copy of [item] with the named bounds changed.
+  ///
+  /// **Null is a value here, not "leave it alone."** Clearing the last unit is
+  /// how a user says "no end", which is a different plan from one that ends at
+  /// the sefer's last unit — so the field has to be able to produce null, and
+  /// this is where that happens. `clearStart`/`clearEnd` are separate from the
+  /// values because a `?? item.startUnit` fallback would turn an explicit null
+  /// back into the old one, and the field could then never clear anything.
+  static PlanItem _copyItem(
+    PlanItem item, {
+    int? startUnit,
+    int? endUnit,
+    bool clearStart = false,
+    bool clearEnd = false,
+    bool? wrapsRange,
+  }) =>
+      PlanItem(
+        id: item.id,
+        nodeId: item.nodeId,
+        label: item.label,
+        startUnit: clearStart ? null : (startUnit ?? item.startUnit),
+        endUnit: clearEnd ? null : (endUnit ?? item.endUnit),
+        wrapsRange: wrapsRange ?? item.wrapsRange,
+      );
+
   Widget _header(String text) =>
       Text(text, style: Theme.of(context).textTheme.titleMedium);
 
   Widget _empty(String text) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+      );
+}
+
+/// Which of pacing's two mutually exclusive answers is in force.
+///
+/// A UI-side enum rather than `switch`ing on the sealed type, so the radio group
+/// has a value type to compare and the choice is made in exactly one place
+/// ([_AdvancedFormState._setPacingKind]).
+enum _PacingKind { perDay, finishBy }
+
+/// One optional unit bound.
+///
+/// **Empty means "not set", and that is a real setting** — the whole sefer, or
+/// no end — so the field reports null rather than 0 for a blank, and the parser
+/// it uses refuses anything that is not a positive number rather than accepting
+/// a zero that would mean "no units at all".
+class _UnitField extends StatefulWidget {
+  const _UnitField({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final int? value;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  State<_UnitField> createState() => _UnitFieldState();
+}
+
+class _UnitFieldState extends State<_UnitField> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.value?.toString() ?? '');
+
+  @override
+  void didUpdateWidget(covariant _UnitField old) {
+    super.didUpdateWidget(old);
+    // Rebuilt from the item when the list reorders or another field changes it,
+    // so the text has to follow — otherwise the field keeps showing a number
+    // the plan no longer holds.
+    final next = widget.value?.toString() ?? '';
+    if (_controller.text != next) _controller.text = next;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => TextField(
+        controller: _controller,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          labelText: widget.label,
+          isDense: true,
+          border: const OutlineInputBorder(),
+        ),
+        onChanged: (raw) => widget.onChanged(nonNegativeInt(raw)),
       );
 }

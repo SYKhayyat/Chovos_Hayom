@@ -5,6 +5,7 @@ import '../entities/layer.dart';
 import 'fold_log.dart';
 import 'layer_roles.dart';
 import 'learning_plan.dart';
+import 'plan_run.dart';
 
 /// Where a learner has got to in a plan's sequence: which item, and which unit
 /// of it.
@@ -174,6 +175,12 @@ class PlanProgress {
   /// An item whose node is not in the catalog is skipped rather than fatal: a
   /// custom node can be deleted out from under a plan, and the plan must keep
   /// opening.
+  ///
+  /// **Range-aware since #41.** The unit comes from
+  /// [PlanRunProgress.unitInRange], so an item's unit range and its wrap setting
+  /// are honoured *here* as well as in the totals — one implementation of "the
+  /// next unit", so the plan screen and the calendar cannot disagree about the
+  /// same daf.
   static PlanPosition positionOn(
     LearningPlan plan,
     Catalog catalog,
@@ -181,9 +188,7 @@ class PlanProgress {
     Day asOf, {
     LayerRoles? layers,
   }) {
-    final remaining = (totalUnits(plan, catalog) -
-            doneUnits(plan, catalog, fold, asOf, layers: layers))
-        .clamp(0, 1 << 62);
+    final remaining = _remaining(plan, catalog, fold, asOf, layers);
 
     if (plan.items.isEmpty) {
       // No sequence: the first assignment target with anything owing.
@@ -218,8 +223,8 @@ class PlanProgress {
       final item = plan.items[i];
       final node = catalog.byId(item.nodeId);
       if (node == null) continue;
-      final next = nextUnitUnder(node, catalog, fold,
-          layers: layers, asOf: asOf);
+      final next = PlanRunProgress.unitInRange(
+          plan, catalog, fold, asOf, i, layers: layers);
       if (next == null) {
         if (plan.flowsToNextItem) continue;
         // Stopped at the end of this item, by choice.
@@ -236,8 +241,8 @@ class PlanProgress {
         itemIndex: i,
         itemId: item.id,
         nodeId: node.id,
-        unitNodeId: next.$1.id,
-        unitIndex: next.$2,
+        unitNodeId: _leafFor(catalog, node, next)?.id ?? node.id,
+        unitIndex: next,
         remaining: remaining,
       );
     }
@@ -253,6 +258,43 @@ class PlanProgress {
       unitIndex: null,
       remaining: remaining,
     );
+  }
+
+  /// Units still owed, for the plan that has an end.
+  ///
+  /// **An infinite plan owes an unknowable number, so it reports 0 here** — and
+  /// that is why [remaining] must not be read as "finished" on its own. The
+  /// distinction is carried by [PlanRunProgress.totalUnits] being **null** for a
+  /// plan with no end, and the plan screen shows the bare count from
+  /// [PlanRunProgress.doneUnits] in that case rather than a fraction.
+  ///
+  /// Returning 0 rather than throwing is deliberate: [PlanPosition] is read on
+  /// every screen that shows a plan, and a plan without an end is a normal plan,
+  /// not an error to be raised at a reader.
+  static int _remaining(
+    LearningPlan plan,
+    Catalog catalog,
+    LogFold fold,
+    Day asOf,
+    LayerRoles? layers,
+  ) {
+    final total = PlanRunProgress.totalUnits(plan, catalog);
+    if (total == null) return 0;
+    final done =
+        PlanRunProgress.doneUnits(plan, catalog, fold, asOf, layers: layers);
+    return (total - done).clamp(0, 1 << 62);
+  }
+
+  /// The leaf a unit belongs to when [node] is a category, else [node].
+  ///
+  /// Null when the unit is in no leaf, which a catalog edit can cause; the
+  /// caller then falls back to the category itself rather than inventing a leaf.
+  static CatalogNode? _leafFor(Catalog catalog, CatalogNode node, int unit) {
+    if (node.isLeaf) return node;
+    for (final leaf in catalog.leavesUnder(node.id)) {
+      if (leaf.containsUnit(unit)) return leaf;
+    }
+    return null;
   }
 
   /// The layers a unit must carry at [nodeId]. With no roles configured, the main

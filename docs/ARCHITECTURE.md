@@ -177,6 +177,13 @@ lib/
                         - BatchHistory   (log -> the undoable bulk actions in it)
                         - SiyumFinder    (progress forest -> completed nodes at
                                           every level, not just leaves)
+                        - PlanRunProgress (a plan's unit ranges -> what is owed
+                                          inside one, and the total. A range with
+                                          no end has NO total and reports null,
+                                          because an endless plan has nothing to
+                                          be a fraction of. No lap counter: a
+                                          wrapping range is infinite, so "which
+                                          round" is a question with no answer)
   data/            depends on domain. Only lib/application/providers.dart and
                    lib/main.dart may import it — the two composition roots.
                    test/data/dependency_rule_test.dart holds that line, which is

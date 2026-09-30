@@ -102,10 +102,9 @@ class PlanOverride {
 
 /// The plan half. A plan fires on a day when any assignment's rule matches;
 /// overlapping assignments all fire.
-/// One entry in a plan's ordered sequence of seferim — "Yoma, then Sukkah, then
-/// Chagigah, then Moed".
+/// One sefer in a plan's chain — "Yoma, then Sukkah, then Chagigah, then Moed".
 ///
-/// **A sequence, not a set of [PlanAssignment]s.** An assignment says *when*
+/// **A chain, not a set of [PlanAssignment]s.** An assignment says *when*
 /// something fires and may overlap freely; an item says *what comes next*, and
 /// the order is the whole point. Keeping them separate is what lets a plan say
 /// "ten a day, daily" (the assignment) and "work through these four in this
@@ -115,6 +114,9 @@ class PlanItem {
     required this.id,
     required this.nodeId,
     this.label,
+    this.startUnit,
+    this.endUnit,
+    this.wrapsRange = false,
   });
 
   final String id;
@@ -127,27 +129,196 @@ class PlanItem {
   /// user wants to read.
   final String? label;
 
+  /// First unit of the range this item covers, or null for the sefer's own
+  /// first unit. Null is not zero: a sefer whose units are numbered from 2 has
+  /// no unit 0, and treating "unspecified" as 0 would be a range that starts
+  /// outside the sefer.
+  final int? startUnit;
+
+  /// Last unit of the range, or null for **no end** — a plan that simply
+  /// continues. This is the difference between a finite plan and an infinite
+  /// one, and it is why an endless plan reports a bare count rather than a
+  /// fraction (see `PlanProgress.totalUnits`).
+  final int? endUnit;
+
+  /// Whether the range is circular, so that reaching its end returns to its
+  /// start rather than ending the run.
+  ///
+  /// **This is not the same as [LearningPlan.flowsToNextItem].** That one asks
+  /// *which sefer comes next*; this one asks *whether the range or the chain
+  /// starts over*. They are orthogonal, and collapsing them would lose a real
+  /// case: a single-sefer plan with no chain and no "continue" anywhere in it
+  /// can still wrap its own range, going 25 → 2 across a 2-25 range.
+  final bool wrapsRange;
+
+  /// True when this item has no end, and so is an endless range.
+  bool get isOpenEnded => endUnit == null;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'nodeId': nodeId,
         if (label != null) 'label': label,
+        if (startUnit != null) 'startUnit': startUnit,
+        if (endUnit != null) 'endUnit': endUnit,
+        if (wrapsRange) 'wrapsRange': true,
       };
 
-  factory PlanItem.fromJson(Map<String, dynamic> json) => PlanItem(
-        id: json['id'] as String,
-        nodeId: json['nodeId'] as String,
-        label: json['label'] as String?,
-      );
+  factory PlanItem.fromJson(Map<String, dynamic> json) {
+    final start = _unit(json['startUnit'], 'startUnit');
+    final end = _unit(json['endUnit'], 'endUnit');
+    // The one bound check that needs no catalog. A range of 20-10 is malformed
+    // against any sefer, and letting it through would produce a range whose
+    // `length` is negative — a total that is quietly wrong rather than refused.
+    if (start != null && end != null && end < start) {
+      throw FormatException('endUnit ($end) is before startUnit ($start)');
+    }
+    return PlanItem(
+      id: json['id'] as String,
+      nodeId: json['nodeId'] as String,
+      label: json['label'] as String?,
+      startUnit: start,
+      endUnit: end,
+      wrapsRange: json['wrapsRange'] == true,
+    );
+  }
+
+  /// A unit index is validated at the boundary rather than trusted, because an
+  /// impossible one is a setting the user believes is in force and that never
+  /// fires — the failure this whole feature is most able to produce. Whether it
+  /// falls *inside* the sefer is a question about the catalog, answered by
+  /// `PlanRange.resolve`.
+  ///
+  /// **`startUnit` is refused outright at zero**, and `endUnit` is refused when
+  /// it precedes the start, because both are knowable without a catalog: a range
+  /// of 0-5, or of 20-10, is malformed whatever sefer it is attached to. A range
+  /// that merely runs past the end of *this* sefer is a different question and is
+  /// answered where the sefer is known.
+  static int? _unit(Object? raw, String what) {
+    if (raw == null) return null;
+    final value = (raw as num).toInt();
+    if (value < 0) throw FormatException('$what must not be negative');
+    return value;
+  }
 
   @override
   bool operator ==(Object other) =>
       other is PlanItem &&
       other.id == id &&
       other.nodeId == nodeId &&
-      other.label == label;
+      other.label == label &&
+      other.startUnit == startUnit &&
+      other.endUnit == endUnit &&
+      other.wrapsRange == wrapsRange;
 
   @override
-  int get hashCode => Object.hash(id, nodeId, label);
+  int get hashCode =>
+      Object.hash(id, nodeId, label, startUnit, endUnit, wrapsRange);
+}
+
+/// How a plan paces itself: **either** an amount per day, **or** a date it must
+/// finish by.
+///
+/// A sealed union rather than two nullable fields, so the mutual exclusion is a
+/// property of the *type* and not a convention every call site has to remember.
+/// Letting both be set invites a plan that contradicts itself, and the two are
+/// answers to the same question asked twice.
+sealed class PlanPacing {
+  const PlanPacing();
+
+  /// An amount per day, or null when this plan is paced by its finish date.
+  int? get unitsPerDay => null;
+
+  /// A day the run must be finished by, or null when it is paced per day.
+  Day? get finishDay => null;
+
+  /// True when this plan has an end it is working towards — the only case in
+  /// which a fraction means anything.
+  bool get hasTarget => finishDay != null;
+
+  Map<String, dynamic> toJson();
+
+  factory PlanPacing.fromJson(Map<String, dynamic> json) =>
+      switch (json['mode']) {
+        'amountPerDay' => AmountPerDay(_amount(json)),
+        'finishBy' => FinishBy(
+            Day.of(DateTime.parse(json['finishDay'] as String))),
+        _ => throw FormatException(
+            'unknown pacing mode: ${json['mode']} — expected '
+            '"amountPerDay" or "finishBy"'),
+      };
+
+  /// Refuses a negative amount, as the planner does everywhere else.
+  ///
+  /// Not new validation so much as the same rule reaching this field: a plan
+  /// asking for a negative number of units a day is a schedule nobody can
+  /// satisfy, and accepting it would put the nonsense past the boundary where
+  /// everything else is refused.
+  static int _amount(Map<String, dynamic> json) {
+    final value = (json['unitsPerDay'] as num?)?.toInt();
+    if (value == null) {
+      throw const FormatException(
+          'amountPerDay pacing needs a unitsPerDay');
+    }
+    if (value < 0) {
+      throw FormatException('unitsPerDay must not be negative, got $value');
+    }
+    return value;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other.runtimeType == runtimeType && _same(other as PlanPacing);
+
+  bool _same(PlanPacing other);
+
+  @override
+  int get hashCode => Object.hash(runtimeType, unitsPerDay, finishDay);
+}
+
+/// "N a day." The plan has no date it is racing.
+class AmountPerDay extends PlanPacing {
+  const AmountPerDay(this.unitsPerDay);
+
+  @override
+  final int unitsPerDay;
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'mode': 'amountPerDay',
+        'unitsPerDay': unitsPerDay,
+      };
+
+  factory AmountPerDay.fromJson(Map<String, dynamic> json) =>
+      AmountPerDay(PlanPacing.fromJson(json).unitsPerDay!);
+
+  @override
+  bool _same(PlanPacing other) => other is AmountPerDay && other.unitsPerDay == unitsPerDay;
+
+  @override
+  String toString() => 'AmountPerDay($unitsPerDay)';
+}
+
+/// "Finished by this day." The amount per day is whatever the run needs.
+class FinishBy extends PlanPacing {
+  const FinishBy(this.finishDay);
+
+  @override
+  final Day finishDay;
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'mode': 'finishBy',
+        'finishDay': finishDay.toString(),
+      };
+
+  factory FinishBy.fromJson(Map<String, dynamic> json) =>
+      FinishBy(PlanPacing.fromJson(json).finishDay!);
+
+  @override
+  bool _same(PlanPacing other) => other is FinishBy && other.finishDay == finishDay;
+
+  @override
+  String toString() => 'FinishBy($finishDay)';
 }
 
 /// What a plan does about a day it did not finish.
@@ -190,6 +361,8 @@ class LearningPlan {
     this.spillover = SpilloverMode.ignore,
     this.items = const [],
     this.flowsToNextItem = false,
+    this.startDay,
+    this.pacing = const AmountPerDay(1),
   });
 
   final String id;
@@ -239,8 +412,26 @@ class LearningPlan {
   /// Off by default: a plan that lists four seferim and is told to stop at the
   /// first is expressing a real intention (learn Yoma, then decide), and
   /// defaulting to flowing on would quietly discard it.
+  ///
+  /// **This is the chain-level wrap, and it is not [PlanItem.wrapsRange].**
+  /// That one is whether a range starts over; this one is which sefer comes
+  /// next. See [PlanItem.wrapsRange] for why they cannot be one setting.
   final bool flowsToNextItem;
 
+  /// When the run begins, or null to mean **today**.
+  ///
+  /// Null rather than a stored day so that "starts today" stays true: a plan
+  /// created this morning and opened this evening means the same thing by both
+  /// readings, and freezing the day would make the second one a different plan.
+  final Day? startDay;
+
+  /// How this plan paces itself — an amount per day, or a finish date, never
+  /// both. See [PlanPacing].
+  final PlanPacing pacing;
+
+  /// True once [startDay] has arrived. Null means today, so this is
+  /// `startDay == null || !today.isBefore(startDay!)`.
+  bool startsOn(Day day) => startDay == null || !(day < startDay!);
 
   bool get hasHebrewRules =>
       assignments.any((a) => a.rule.calendar == RuleCalendar.hebrew);
@@ -255,6 +446,9 @@ class LearningPlan {
         'spillover': spillover.name,
         if (items.isNotEmpty) 'items': [for (final i in items) i.toJson()],
         'flowsToNextItem': flowsToNextItem,
+        // Omitted when null, which is "today". See [startDay].
+        if (startDay != null) 'startDay': startDay.toString(),
+        'pacing': pacing.toJson(),
         if (weekdayAmounts.isNotEmpty)
           'weekdayAmounts': {
             for (final e in weekdayAmounts.entries) '${e.key}': e.value,
@@ -303,6 +497,16 @@ class LearningPlan {
           PlanItem.fromJson((i as Map<dynamic, dynamic>).cast<String, dynamic>()),
       ],
       flowsToNextItem: json['flowsToNextItem'] == true,
+      startDay: json['startDay'] == null
+          ? null
+          : Day.of(DateTime.parse(json['startDay'] as String)),
+      // A plan written before pacing existed reads as "N a day", which is what
+      // its own unitsPerDay always meant — so the fallback is the old
+      // behaviour rather than a new default.
+      pacing: json['pacing'] == null
+          ? AmountPerDay(unitsPerDay)
+          : PlanPacing.fromJson(
+              (json['pacing'] as Map<dynamic, dynamic>).cast<String, dynamic>()),
       weekdayAmounts: _weekdayAmountsFrom(json['weekdayAmounts']),
       dateAmounts: _dateAmountsFrom(json['dateAmounts']),
     );
@@ -350,6 +554,8 @@ class LearningPlan {
       other.unitsPerDay == unitsPerDay &&
       other.spillover == spillover &&
       other.flowsToNextItem == flowsToNextItem &&
+      other.startDay == startDay &&
+      other.pacing == pacing &&
       _sameItems(items, other.items) &&
       mapEquals(other.weekdayAmounts, weekdayAmounts) &&
       mapEquals(other.dateAmounts, dateAmounts) &&
@@ -363,6 +569,8 @@ class LearningPlan {
         displayCalendar,
         unitsPerDay,
         spillover,
+        startDay,
+        pacing,
         Object.hashAllUnordered(
           weekdayAmounts.entries.map((e) => Object.hash(e.key, e.value)),
         ),
@@ -398,6 +606,8 @@ class LearningPlan {
         spillover: spillover,
         items: items,
         flowsToNextItem: flowsToNextItem,
+        startDay: startDay,
+        pacing: pacing,
       );
 
   static bool _sameItems(List<PlanItem> a, List<PlanItem> b) {

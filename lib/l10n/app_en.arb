@@ -1157,6 +1157,27 @@
   "@plansSequenceTotal": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "plansSequenceTotalOpen": "{count} units done, no end set",
+  "@plansSequenceTotalOpen": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "@_PLAN_RUN": {},
+  "plansRange": "Range of units",
+  "plansRangeHelp": "Leave a bound empty to use the whole sefer.",
+  "plansRangeFrom": "First unit",
+  "plansRangeTo": "Last unit",
+  "plansRangeNoEnd": "No last unit — the plan just continues.",
+  "plansRangeWrap": "Start again at the beginning",
+  "plansRangeWrapHelp": "When the last unit is reached, go back to the first one. A plan that wraps never finishes, so it shows a count rather than a percentage.",
+  "plansStartDay": "Start date",
+  "plansStartDayHelp": "Defaults to today.",
+  "plansStartDayToday": "Today",
+  "plansPacing": "Pacing",
+  "plansPacingPerDay": "An amount per day",
+  "plansPacingFinishBy": "A date to finish by",
+  "plansPacingFinishByHelp": "The daily amount is worked out from what is left and how many days remain.",
+  "plansPacingFinishDate": "Finish by",
 
   "@_CRASH_LOG": {},
   "crashLogTitle": "Crash log",
