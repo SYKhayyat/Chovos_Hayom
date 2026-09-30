@@ -56,9 +56,18 @@ what changes is what a plan is, and the rest are consequences. Nobody is using
 the app yet, so there is **no migration work** on any of this — the migration
 instinct that governs the rest of this file is pure cost here.
 
-Start at the top: the rest are inexpressible without it.
+Start at the top: the rest are inexpressible without it. **#41 landed** — with
+one ruling that shaped it and one consequence worth knowing before #42:
 
-- [ ] #41 the plan as a real entity: sefer chain, per-sefer unit range, start
+- A **wrapping range is infinite, so a plan has no lap counter and no "remaining"**.
+  `PlanRunProgress.totalUnits` returns **null** (not zero) for such a plan, and
+  the plan screen shows a bare count. Only a finite plan can be a fraction.
+- The **position** — first unit not done, or the range's start again when they
+  are all done — is the **calendar's** to show (#42), not the plan screen's.
+- `LearningEvent` still carries **no `planId`**. Where two plans overlap, a tick
+  is attributable to neither. #42 is where that has to be decided.
+
+- [x] #41 the plan as a real entity: sefer chain, per-sefer unit range, start
   date (default today), wrap (two levels) and exactly one pacing mode. (High)
 - [ ] #42 the day ledger: per-unit checkboxes in the day sheet, one shared state.
   Ticking from the calendar writes the log; ticking from the unit grid shows on
