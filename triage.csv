@@ -1,0 +1,12 @@
+number,title,url,D,R,why,risk
+39,Linux app aborts on first frame on NixOS: EGL eglInitialize fails,https://github.com/SYKhayyat/Chovos_Hayom/issues/39,3,3,NixOS/libepoxy driver env trace; abort is loud no data at stake,Loud abort
+40,Device harness: 34 of 35 journeys failed on one bug (no reset between journeys),https://github.com/SYKhayyat/Chovos_Hayom/issues/40,2,2,Single harness reset bug pinned; test-only app untouched,Test-only
+41,The plan as a real editable entity: a sefer chain a range a start date,https://github.com/SYKhayyat/Chovos_Hayom/issues/41,5,4,New plan invariant reshapes model; wrong shape silently mis-schedules,Silent mis-schedule
+42,The day ledger: per-unit checkboxes in the calendar one shared state,https://github.com/SYKhayyat/Chovos_Hayom/issues/42,3,4,Calendar+log shared tick state; wrong fold corrupts done-state silently,Silent done-state corruption
+43,Adding and removing a unit on a day: the plus and minus planning commands,https://github.com/SYKhayyat/Chovos_Hayom/issues/43,4,4,Plan-vs-log edit semantics need ruling; wrong choice rewrites schedule,Silent schedule rewrite
+44,Recompute: reflow one plan's shortfall from a chosen day,https://github.com/SYKhayyat/Chovos_Hayom/issues/44,4,4,Reflow scope/mode is a design decision; wrong spread corrupts targets,Silent target corruption
+45,Chazara is one rule: learned means chazara and the scheduler and screen go,https://github.com/SYKhayyat/Chovos_Hayom/issues/45,5,4,Deletes scheduler/screen for pass-count invariant; wrong fold lies silently,Silent false chazara
+46,Progress bar and box: showing learned and chazara apart,https://github.com/SYKhayyat/Chovos_Hayom/issues/46,3,2,Two-line bar across grids; wrong counts are visible metadata,Visible miscount
+47,A screen per plan: where it stands and how fast you are moving,https://github.com/SYKhayyat/Chovos_Hayom/issues/47,3,2,New per-plan screen+rate; wrong rate is visible mis-report,Visible mis-report
+48,The day sheet's layout is a setting with three layouts,https://github.com/SYKhayyat/Chovos_Hayom/issues/48,2,1,Settings-driven layout switch; cosmetic reversible,Cosmetic
+49,26 of 30 device journeys still fail on wrong selectors,https://github.com/SYKhayyat/Chovos_Hayom/issues/49,2,2,Per-journey finder fixes with on-device output; test-only grind,Test-only
