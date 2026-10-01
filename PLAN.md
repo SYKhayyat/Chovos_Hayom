@@ -69,10 +69,13 @@ one ruling that shaped it and one consequence worth knowing before #42:
 
 - [x] #41 the plan as a real entity: sefer chain, per-sefer unit range, start
   date (default today), wrap (two levels) and exactly one pacing mode. (High)
-- [ ] #42 the day ledger: per-unit checkboxes in the day sheet, one shared state.
+- [x] #42 the day ledger: per-unit checkboxes in the day sheet, one shared state.
   Ticking from the calendar writes the log; ticking from the unit grid shows on
   the plan but **never erases it** — the plan is what was asked, the log is what
   happened, and the gap between them is the point. (High)
+  Landed with the **event carrying the plan and day it was made for** (a
+  `planId`, null meaning "made in the grid"), which is what lets the two screens
+  stay independent instead of one having to know about the other.
 - [ ] #43 `+` and `−` on a day: add units, remove a unit, or skip the plan that
   day. Planning commands; write no log; reflow nothing. Past days behave like any
   other day. (High)
