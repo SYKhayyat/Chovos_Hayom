@@ -27,6 +27,15 @@ void main() {
         doneAtByNode: {leaf: doneAt},
         touchedAtByNode: const {},
         annotatedByNode: const {},
+        doneCountByNode: {
+          // A hand-built fold says which units are done *and when*, so the
+          // per-day tally has to agree or the two would describe different
+          // histories. One tick on the given day, per unit.
+          leaf: {
+            for (final u in doneAt.keys) u: {Day.of(doneAt[u]!): 1},
+          },
+        },
+        planDoneCountById: const {},
       );
 
   List<PlannedDay> days(LogFold log) => PlannerCalendar.between(

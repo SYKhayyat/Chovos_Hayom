@@ -137,7 +137,7 @@ void main() {
 
   /// Writes a tick that *names a plan*, which is the value the new column exists
   /// to hold and the one a restore must not lose.
-  Future<void> _insertPlannedEvent(String path) async {
+  Future<void> insertPlannedEvent(String path) async {
     final db = AppDatabase(NativeDatabase(File(path)));
     try {
       await db.customStatement(
@@ -299,7 +299,7 @@ void main() {
       // prevent.
       await open();
       await expectLater(
-        _insertPlannedEvent(path),
+        insertPlannedEvent(path),
         completes,
       );
       final after = inspect();

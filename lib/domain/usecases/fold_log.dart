@@ -1,3 +1,4 @@
+import '../../core/day.dart';
 import '../entities/enums.dart';
 import '../entities/layer.dart';
 import '../entities/learning_event.dart';
@@ -32,6 +33,8 @@ class LogFold {
     required this.doneAtByNode,
     required this.touchedAtByNode,
     required this.annotatedByNode,
+    required this.doneCountByNode,
+    required this.planDoneCountById,
   });
 
   /// nodeId -> (unit index -> set of layer ids completed).
@@ -53,6 +56,24 @@ class LogFold {
   /// The grid's "there are details here" dot reads this instead of re-scanning
   /// the log on every rebuild.
   final Map<String, Set<int>> annotatedByNode;
+
+  /// nodeId -> unit -> **day** -> how many times that unit was done that day.
+  ///
+  /// **Per-day rather than one count, and that is load-bearing.** A single
+  /// all-time number cannot answer a historical question: asked "how many times
+  /// had I done this by 2019?", it would credit a 2026 tick to 2019. Keyed by day,
+  /// every "as of" query is the same sum over the days before it — which is the
+  /// query the planner's progress and completion already make, so those keep
+  /// working unchanged and start answering questions they previously could not.
+  final Map<String, Map<int, Map<Day, int>>> doneCountByNode;
+
+  /// planId -> how many ticks carry it, across the whole log.
+  ///
+  /// Kept alongside [doneCountByNode] rather than derivable from it, because the
+  /// day ledger asks "what did *this plan* have ticked" and answering that from
+  /// the per-day map would mean walking the entire log per screen. Off-plan
+  /// ticks are absent by design — that is the grid/plan asymmetry.
+  final Map<String, int> planDoneCountById;
 
   /// The layers completed for one unit (empty if none).
   Set<String> completedLayers(String nodeId, int unitIndex) =>
@@ -87,6 +108,63 @@ class LogFold {
     return out;
   }
 
+  /// How many times [unitIndex] of [nodeId] has been marked done, ever.
+  ///
+  /// **A count, not a date, and that changed what this class could answer.** It
+  /// used to keep one `doneAt` per unit, so a second tick *overwrote* the first
+  /// and "how many times have you done this" was unanswerable — the information
+  /// was in the log and thrown away here. A unit learned seven years ago and
+  /// again this month has been learned twice, and a summary reporting once is
+  /// wrong about the user's own history.
+  ///
+  /// Counts days, so it is **one less per day than the number of ticks** — which
+  /// is the point rather than an approximation: two plans both covering a unit
+  /// and both ticked on one day is one *day* done twice, and
+  /// [doneCountOn]/[doneCountAsOf] are what every historical question reads.
+  int doneCount(String nodeId, int unitIndex) {
+    final byDay = doneCountByNode[nodeId]?[unitIndex];
+    if (byDay == null) return 0;
+    var total = 0;
+    for (final n in byDay.values) {
+      total += n;
+    }
+    return total;
+  }
+
+  /// How many times [unitIndex] of [nodeId] was done on [day] specifically.
+  int doneCountOn(String nodeId, int unitIndex, Day day) =>
+      doneCountByNode[nodeId]?[unitIndex]?[day] ?? 0;
+
+  /// How many times [unitIndex] of [nodeId] was done **before** [day].
+  ///
+  /// **Exclusive, and the exclusion is the rule the planner depends on**: a unit
+  /// learned *on* a day has not been done *by* that day, which is what stops a
+  /// plan reporting itself finished on the day it finishes. Asking for a day in
+  /// the past therefore counts the ticks up to it and no further.
+  int doneCountAsOf(String nodeId, int unitIndex, Day day) {
+    final byDay = doneCountByNode[nodeId]?[unitIndex];
+    if (byDay == null) return 0;
+    var total = 0;
+    for (final entry in byDay.entries) {
+      if (entry.key < day) total += entry.value;
+    }
+    return total;
+  }
+
+  /// How many ticks carry [planId] — what one plan's day ledger asks about.
+  ///
+  /// Off-plan ticks (a null `planId`, made in the unit grid) are **not** in here,
+  /// which is what makes the grid/plan asymmetry work without either screen
+  /// knowing about the other: a grid tick cannot add to a plan, and a grid
+  /// un-tick cannot remove from one.
+  int doneCountForPlan(String planId) {
+    var total = 0;
+    planDoneCountById.forEach((id, count) {
+      if (id == planId) total = count;
+    });
+    return total;
+  }
+
   static bool _subset(Set<String> required, Set<String> have) {
     for (final r in required) {
       if (!have.contains(r)) return false;
@@ -118,6 +196,8 @@ class FoldLog {
     final doneAt = <String, Map<int, DateTime>>{};
     final touchedAt = <String, Map<int, DateTime>>{};
     final annotated = <String, Set<int>>{};
+    final doneCount = <String, Map<int, Map<Day, int>>>{};
+    final planCounts = <String, int>{};
 
     for (final e in sorted) {
       switch (e.action) {
@@ -128,6 +208,19 @@ class FoldLog {
           // the same rule UnitHistoryFinder shows the user.
           (doneAt[e.nodeId] ??= <int, DateTime>{})[e.unitIndex] = e.occurredAt;
           (touchedAt[e.nodeId] ??= <int, DateTime>{})[e.unitIndex] = e.occurredAt;
+          // **Counted, not overwritten.** The date above is still "the last time",
+          // which is a different question; this is "how many times", and it is
+          // keyed by the day the user gave the tick — so a tick made on Friday
+          // for last Thursday lands on Thursday, and un-ticking Thursday takes
+          // Thursday's back rather than the most recent one's.
+          final byDay = doneCount[e.nodeId] ??= <int, Map<Day, int>>{};
+          final days = byDay[e.unitIndex] ??= <Day, int>{};
+          final tickedDay = Day.of(e.occurredAt);
+          days[tickedDay] = (days[tickedDay] ?? 0) + 1;
+          final planId = e.planId;
+          if (planId != null) {
+            planCounts[planId] = (planCounts[planId] ?? 0) + 1;
+          }
           final hasDetails =
               (e.note != null && e.note!.isNotEmpty) || e.durationMin != null;
           if (hasDetails) {
@@ -154,6 +247,36 @@ class FoldLog {
               annotated[e.nodeId]?.remove(e.unitIndex);
             }
           }
+          // **The count is taken back from the day the un-tick names**, and only
+          // if that day still holds a tick. Not the latest day, and not
+          // unconditionally: you can tick things in the past, so an un-tick is a
+          // statement about a particular day rather than a mechanical undo of
+          // "the most recent one". Clamped at zero so a stray un-tick cannot
+          // drive a count negative, which would be a number no read explains.
+          //
+          // A day running out does **not** un-learn the unit — the layers above
+          // decide that, and they survive any day still holding a tick. The two
+          // agreeing is the whole point of keeping them separate: "learned once
+          // rather than twice" and "not learned" are different statements.
+          final undoneDay = Day.of(e.occurredAt);
+          final days = doneCount[e.nodeId]?[e.unitIndex];
+          if (days != null && days.containsKey(undoneDay)) {
+            final left = days[undoneDay]! - 1;
+            if (left <= 0) {
+              days.remove(undoneDay);
+            } else {
+              days[undoneDay] = left;
+            }
+          }
+          final planId = e.planId;
+          if (planId != null && planCounts.containsKey(planId)) {
+            final left = planCounts[planId]! - 1;
+            if (left <= 0) {
+              planCounts.remove(planId);
+            } else {
+              planCounts[planId] = left;
+            }
+          }
         case EventAction.reviewed:
           // A pass over something not currently learned isn't a chazara of it,
           // so it moves nothing. (UnitHistoryFinder shows the same to the user.)
@@ -170,6 +293,8 @@ class FoldLog {
       doneAtByNode: doneAt,
       touchedAtByNode: touchedAt,
       annotatedByNode: annotated,
+      doneCountByNode: doneCount,
+      planDoneCountById: planCounts,
     );
   }
 }
