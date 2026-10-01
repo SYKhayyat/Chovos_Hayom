@@ -1148,6 +1148,26 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "plansDaySheetNothing": "Nothing is scheduled on this day.",
+  "plansLedgerDone": "Done this day",
+  "plansLedgerDoneElsewhere": "Done on {date}",
+  "@plansLedgerDoneElsewhere": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "plansLedgerOwed": "Owed",
+  "plansLedgerCount": "{done} of {total} done",
+  "@plansLedgerCount": {
+    "placeholders": { "done": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "plansLedgerEmpty": "Nothing is owed on this day.",
+  "plansLedgerDoneAll": "Everything for this day is done.",
+  "unitDoneSnackbar": "{unit} is done for {day}",
+  "@unitDoneSnackbar": {
+    "placeholders": { "unit": { "type": "String" }, "day": { "type": "String" } }
+  },
+  "unitUndoneSnackbar": "{unit} is no longer done for {day}",
+  "@unitUndoneSnackbar": {
+    "placeholders": { "unit": { "type": "String" }, "day": { "type": "String" } }
+  },
   "plansDaySheetClear": "Clear this date's overrides",
   "plansDaySheetSetFor": "Amount for {plan} on this day",
   "@plansDaySheetSetFor": {

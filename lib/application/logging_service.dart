@@ -39,6 +39,7 @@ class LoggingService {
     DateTime? occurredAt,
     int? durationMin,
     String? note,
+    String? planId,
     List<String> layers = const [mainLayerId],
   }) async {
     final now = _now();
@@ -53,15 +54,25 @@ class LoggingService {
       durationMin: durationMin,
       note: note,
       layers: layers,
+      planId: planId,
     );
     await _repo.addEvent(event);
     return event;
   }
 
+  /// Mark [unitIndex] of [nodeId] done.
+  ///
+  /// [occurredAt] is the day the work is *for*, which is not always today — a
+  /// tick made on Friday for last Thursday belongs to Thursday. [planId] names
+  /// the plan that asked for it, and is null for a tick made in the unit grid:
+  /// that one is a claim about the learner and belongs to no plan, which is what
+  /// keeps a grid tick from adding to a plan and a grid un-tick from removing
+  /// from one.
   Future<LearningEvent> markDone(String nodeId, int unitIndex,
           {DateTime? occurredAt,
           int? durationMin,
           String? note,
+          String? planId,
           List<String> layers = const [mainLayerId]}) =>
       log(
         nodeId: nodeId,
@@ -70,15 +81,25 @@ class LoggingService {
         occurredAt: occurredAt,
         durationMin: durationMin,
         note: note,
+        planId: planId,
         layers: layers,
       );
 
+  /// Take a tick back.
+  ///
+  /// **[occurredAt] names the day being taken back**, and this is the same
+  /// parameter [markDone] has rather than a separate concept: a tick carries the
+  /// day it is for, so an un-tick carries the day it is undoing. Not "the latest
+  /// one" — you can tick things in the past, and an un-tick that reached for the
+  /// most recent would take back work you did not mean to touch.
   Future<LearningEvent> markUndone(String nodeId, int unitIndex,
-          {List<String> layers = const [mainLayerId]}) =>
+      {DateTime? occurredAt, String? planId, List<String> layers = const [mainLayerId]}) =>
       log(
           nodeId: nodeId,
           unitIndex: unitIndex,
           action: EventAction.undone,
+          occurredAt: occurredAt,
+          planId: planId,
           layers: layers);
 
   /// Append many marks in bounded transactions, all sharing a single timestamp

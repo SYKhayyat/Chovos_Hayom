@@ -20,6 +20,7 @@ import '../../domain/usecases/plan_chain.dart';
 import '../../domain/usecases/plan_completion.dart';
 import '../../domain/usecases/planner_calendar.dart';
 import '../../domain/usecases/day_amount.dart';
+import '../../domain/usecases/day_ledger.dart';
 import '../../domain/usecases/recurrence.dart';
 import '../../domain/usecases/siyum_schedule.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -361,6 +362,146 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
           back ? l10n.plannerCalendarPrevious : l10n.plannerCalendarNext,
       };
 
+  /// The day's ledger, or an empty list when the catalog or log has not loaded.
+  ///
+  /// **Empty rather than a throw**, because this is a modal opened from a
+  /// calendar cell and neither the catalog nor the fold is guaranteed to be there
+  /// by then — a cold start is a legitimate state, not a failure.
+  List<({LearningPlan plan, List<LedgerUnit> units})> _ledgerFor(
+    WidgetRef ref,
+    List<LearningPlan> firing,
+    Day day,
+  ) {
+    final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+    final fold = ref.watch(foldProvider).asData?.value;
+    if (catalog == null || fold == null) return const [];
+    return DayLedger.forDay(
+      firing,
+      catalog,
+      fold,
+      day,
+      layers: ref.watch(layerRolesProvider),
+    );
+  }
+
+  /// Whether every unit every firing plan owes on [day] is already done.
+  bool _ledgerAllDone(WidgetRef ref, List<LearningPlan> firing, Day day) {
+    final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+    final fold = ref.watch(foldProvider).asData?.value;
+    if (catalog == null || fold == null) return false;
+    final ledgers = DayLedger.forDay(
+      firing,
+      catalog,
+      fold,
+      day,
+      layers: ref.watch(layerRolesProvider),
+    );
+    if (ledgers.isEmpty) return false;
+    return ledgers.every((e) => DayLedger.owed(e.units) == 0);
+  }
+
+  /// One plan's ledger: its units, each with a checkbox.
+  ///
+  /// **A tick is not an edit of the plan.** It writes to the event log with this
+  /// plan's id and the day being looked at, so the unit grid, the progress bars
+  /// and every count update immediately — and the plan still asks for the unit,
+  /// which is the whole point of the ledger. Setting an amount, above, is the
+  /// opposite act and goes to the plan instead.
+  List<Widget> _ledgerSection(
+    BuildContext sheetContext,
+    WidgetRef ref,
+    Day day,
+    LearningPlan plan,
+    List<LedgerUnit> units,
+    CalendarMode mode,
+  ) {
+    if (units.isEmpty) return const [];
+    final l10n = AppLocalizations.of(sheetContext);
+    final catalog = ref.read(mergedCatalogProvider).asData?.value;
+    final logger = ref.read(loggingServiceProvider);
+    final doneHere = DayLedger.doneOnDay(units);
+
+    Widget rowFor(LedgerUnit u) {
+      final node = catalog?.byId(u.nodeId);
+      final label = node == null ? '${u.nodeId} ${u.unitIndex}' : nodeAndUnit(l10n, node, u.unitIndex);
+      final dayText = DateDisplay.format(day.midnight, mode);
+
+      String? subtitle;
+      if (u.doneHere) {
+        subtitle = l10n.plansLedgerDone;
+      } else if (u.doneElsewhere) {
+        // Shown rather than hidden: a backlog is the reader's business, and the
+        // plan's pacing is what acts on it — not this sheet.
+        subtitle = l10n.plansLedgerDoneElsewhere(
+          DateDisplay.format(u.doneOn!.midnight, mode),
+        );
+      } else {
+        subtitle = l10n.plansLedgerOwed;
+      }
+
+      return CheckboxListTile(
+        // Keyed by node and unit, never by position: a day's ledger can hold the
+        // same unit twice when two plans each contribute it, and a finder that
+        // counted rows would then be pointing at whichever happens to be first.
+        key: ValueKey('ledger-${plan.id}-${u.nodeId}-${u.unitIndex}'),
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        value: u.doneHere,
+        // A checkbox that is ticked by being looked at is a lie; it is written
+        // to the log, and every other view reads it from there.
+        onChanged: (v) async {
+          final navigator = Navigator.of(sheetContext);
+          if (!navigator.mounted) return;
+          // The day is the *plan's* day, not today: a tick made on Friday for
+          // last Thursday belongs to Thursday, which is the day whose ledger it
+          // is.
+          await guarded(
+            navigator.context,
+            ref,
+            () => v == true
+                ? logger.markDone(
+                    u.nodeId,
+                    u.unitIndex,
+                    occurredAt: day.midnight,
+                    planId: plan.id,
+                  )
+                : logger.markUndone(
+                    u.nodeId,
+                    u.unitIndex,
+                    // Named day, so the un-tick takes back *this* day's tick
+                    // rather than the most recent one — a tick made in the past
+                    // is the ordinary case, not the exotic one.
+                    occurredAt: day.midnight,
+                    planId: plan.id,
+                  ),
+            what: v == true
+                ? l10n.unitDoneSnackbar(label, dayText)
+                : l10n.unitUndoneSnackbar(label, dayText),
+          );
+        },
+        title: Text(label),
+        subtitle: Text(subtitle),
+      );
+    }
+
+    return [
+      Padding(
+        padding: const EdgeInsets.only(top: 8, bottom: 4),
+        child: Text(
+          // A day where nothing is owed is not a day of zero progress — it is a
+          // rest day, or one whose work is already done. The count line says so
+          // rather than printing "0 of 0", which reads as a failure.
+          DayLedger.owed(units) == 0
+              ? l10n.plansLedgerEmpty
+              : l10n.plansLedgerCount(doneHere, units.length),
+          style: Theme.of(sheetContext).textTheme.bodySmall,
+        ),
+      ),
+      for (final u in units) rowFor(u),
+      const Divider(height: 24),
+    ];
+  }
+
   /// Units due on [day], summed over every plan that fires on it.
   ///
   /// The **total**, not one plan's amount, because a day can have several plans
@@ -397,7 +538,14 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
 
     await showModalBottomSheet<void>(
       context: context,
-      builder: (sheetContext) => SafeArea(
+      // **A `Consumer`, not a plain builder.** The ledger has to rebuild when the
+      // log changes, and a `ref.watch` called in a bare builder is read exactly
+      // once — when the sheet is built — so ticking a unit would write to the log
+      // and leave the row unticked, with no error anywhere. `ConsumerWidget`
+      // re-runs the subtree on every change, which is what makes "tick it and
+      // watch it tick" true.
+      builder: (sheetContext) => Consumer(builder: (sheetContext, sheetRef, _) {
+        return SafeArea(
         child: ListView(
           shrinkWrap: true,
           children: [
@@ -457,6 +605,32 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
                   navigator.pop();
                 },
               ),
+            // **The ledger: what this day asks for, with the log applied.**
+            //
+            // Deliberately below the per-plan rows rather than instead of them.
+            // Ticking here writes to the **event log**, which is a different act
+            // from editing the amount above it — the rows change *the plan*, and
+            // a tick is a claim about *what was learned*. Every other view
+            // updates at once because they all read the log.
+            //
+            // And the reverse does not happen: a unit ticked in the **unit
+            // grid** still appears here, because the plan still asks for it.
+            // Nothing leaves a plan by being learned; only a deliberate planning
+            // act changes what a day asks. The gap between the two is the thing
+            // the calendar exists to show.
+            for (final entry in _ledgerFor(sheetRef, firing, day))
+              ..._ledgerSection(
+                  sheetContext, sheetRef, day, entry.plan, entry.units, mode),
+            // A day that asks for units and has every one of them done is a
+            // finished day, and saying so is the point of the ledger. Written
+            // here rather than per plan, because it is a statement about the day.
+            if (_ledgerFor(sheetRef, firing, day).isNotEmpty &&
+                _ledgerAllDone(sheetRef, firing, day))
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(l10n.plansLedgerDoneAll,
+                    style: Theme.of(sheetContext).textTheme.bodySmall),
+              ),
             if (firing.any((p) => p.dateAmounts.containsKey(day)))
               TextButton.icon(
                 icon: const Icon(Icons.undo),
@@ -485,7 +659,8 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
               ),
           ],
         ),
-      ),
+      );
+      }),
     );
   }
 
