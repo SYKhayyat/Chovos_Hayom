@@ -93,6 +93,19 @@ one ruling that shaped it and one consequence worth knowing before #42:
 - [ ] #48 the day sheet's layout is a setting in Settings, with three layouts;
   default is grouped by plan, the only one readable when several plans fire. (Low)
 
+## Phase 7 — what a plan says about *how often* (new scope)
+
+Filed from the #41 session. A plan now says **what** to work through and **when**
+(#41's chain, unit range, start date, pacing); these are the next two questions
+about the same object. **After Phase 6** — nothing in it is blocked, and nothing
+in it blocks anything there.
+
+- [ ] #50 a plan says how many times: "do this N times a day" (not merely "N
+  units"), and a plan can ask to be **reviewed** — everything planned in the last
+  *y* days — on a fixed date, every *x* days, or a day of the week. (Medium)
+  Needs a ruling on whether "three times a day" is a counter separate from
+  chazara; #45 owns that answer, so land after it.
+
 Also open, from the same session and not planner scope:
 
 - [ ] #49 device harness: 26 of 30 journeys still fail on wrong selectors; the
