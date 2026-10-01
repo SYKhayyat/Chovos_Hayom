@@ -77,9 +77,14 @@ one ruling that shaped it and one consequence worth knowing before #42:
   Landed with the **event carrying the plan and day it was made for** (a
   `planId`, null meaning "made in the grid"), which is what lets the two screens
   stay independent instead of one having to know about the other.
-- [ ] #43 `+` and `−` on a day: add units, remove a unit, or skip the plan that
+- [x] #43 `+` and `−` on a day: add units, remove a unit, or skip the plan that
   day. Planning commands; write no log; reflow nothing. Past days behave like any
   other day. (High)
+  A **skip** is distinct from an amount of `0`: a zero says the plan was
+  scheduled and asked for nothing, a skip says it had nothing to do there, and
+  only the first leaves an answer for the day. A standalone `+` creates a real
+  (tiny) plan, because the ledger reads the plan and a day with no plan has no
+  row to tick.
 - [ ] #44 recompute: pick a plan and a day, then either keep the same amounts or
   spread the shortfall over the next *x* days (*x* = a number, all, or up to the
   plan's end). Two modes only — a plan is editable, so a different finish date
