@@ -85,10 +85,14 @@ one ruling that shaped it and one consequence worth knowing before #42:
   only the first leaves an answer for the day. A standalone `+` creates a real
   (tiny) plan, because the ledger reads the plan and a day with no plan has no
   row to tick.
-- [ ] #44 recompute: pick a plan and a day, then either keep the same amounts or
+- [x] #44 recompute: pick a plan and a day, then either keep the same amounts or
   spread the shortfall over the next *x* days (*x* = a number, all, or up to the
   plan's end). Two modes only — a plan is editable, so a different finish date
   needs no third. Invoked from the day sheet **and** the plan screen. (High)
+  A reflow **moves the plan's finish date** when the spread pushes past it, and
+  says so: everything is customizable, so a reflow that could not honour the
+  plan's own constraint would not be a reflow. It writes no events and touches
+  no other plan — both are structural, not guarded.
 - [ ] #45 chazara is one rule — learned means chazara, the count is the passes.
   Delete the scheduler and the Chazara screen; **wipe** the stored review dates.
   Marking a unit done from the calendar is what makes it chazara. (High)
