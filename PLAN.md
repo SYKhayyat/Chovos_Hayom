@@ -64,8 +64,9 @@ one ruling that shaped it and one consequence worth knowing before #42:
   the plan screen shows a bare count. Only a finite plan can be a fraction.
 - The **position** — first unit not done, or the range's start again when they
   are all done — is the **calendar's** to show (#42), not the plan screen's.
-- `LearningEvent` still carries **no `planId`**. Where two plans overlap, a tick
-  is attributable to neither. #42 is where that has to be decided.
+- **#42 answered the `planId` question this line used to leave open.** A tick
+  carries the plan it was made for and the day; a null plan id means "made in
+  the unit grid", which is what keeps the two screens independent.
 
 - [x] #41 the plan as a real entity: sefer chain, per-sefer unit range, start
   date (default today), wrap (two levels) and exactly one pacing mode. (High)
