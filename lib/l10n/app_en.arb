@@ -1148,6 +1148,25 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "plansDaySheetNothing": "Nothing is scheduled on this day.",
+  "plansDayAddWork": "Add work to this day",
+  "plansAddExisting": "Add to an existing plan",
+  "plansAddNew": "Start a new plan for this day",
+  "plansRemove": "Take work off this day",
+  "plansRemoveUnit": "Ask for one fewer unit",
+  "plansRemovePlan": "Skip this plan on this day",
+  "plansRemovePlanHelp": "The plan had nothing to do on this day, which is not the same as asking for nothing.",
+  "plansAddedUnits": "{plan} now asks for {count} on this day",
+  "@plansAddedUnits": {
+    "placeholders": { "plan": { "type": "String" }, "count": { "type": "int" } }
+  },
+  "plansRemovedUnit": "{plan} now asks for {count} on this day",
+  "@plansRemovedUnit": {
+    "placeholders": { "plan": { "type": "String" }, "count": { "type": "int" } }
+  },
+  "plansPlanSkipped": "{plan} has nothing to do on this day",
+  "@plansPlanSkipped": {
+    "placeholders": { "plan": { "type": "String" } }
+  },
   "plansLedgerDone": "Done this day",
   "plansLedgerDoneElsewhere": "Done on {date}",
   "@plansLedgerDoneElsewhere": {

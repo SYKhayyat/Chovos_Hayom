@@ -21,11 +21,13 @@ import '../../domain/usecases/plan_completion.dart';
 import '../../domain/usecases/planner_calendar.dart';
 import '../../domain/usecases/day_amount.dart';
 import '../../domain/usecases/day_ledger.dart';
+import '../../domain/usecases/plan_edit.dart';
 import '../../domain/usecases/recurrence.dart';
 import '../../domain/usecases/siyum_schedule.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
+import '../common/node_picker.dart';
 import '../common/text_prompt.dart';
 
 class PlannerCalendarScreen extends ConsumerStatefulWidget {
@@ -384,6 +386,254 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
     );
   }
 
+  /// The `+` and `−` row for the day.
+  ///
+  /// **Two removes, and they are not the same edit.** "Ask for one fewer" and
+  /// "this plan had nothing to do that day" are different statements: a `0` says
+  /// the plan was scheduled and asked for nothing, while skipping says it was
+  /// not on the day at all. The day sheet already prints `0 · day off` for the
+  /// first, and this keeps the distinction rather than collapsing it.
+  ///
+  /// `−` is offered only for plans the day has an opinion about — one that fires
+  /// today or carries a lift — because removing from a day with nothing to
+  /// remove would be a button that does nothing.
+  Widget _planCommands(
+    BuildContext sheetContext,
+    WidgetRef ref,
+    Day day,
+    List<LearningPlan> firing,
+    PlansConfig config,
+    CalendarMode mode,
+  ) {
+    final l10n = AppLocalizations.of(sheetContext);
+    final controller = ref.read(plansConfigProvider.notifier);
+    final mode2 = mode;
+
+    Future<void> save(LearningPlan next, String message) => guarded(
+          sheetContext,
+          ref,
+          () => controller.save(next),
+          what: message,
+        );
+
+    // Every plan, not just the firing ones: adding to a day a plan's rule skips
+    // is exactly what makes it "also how you force a plan onto a day its rule
+    // would not have chosen".
+    final all = [
+      ...firing,
+      for (final p in config.plans)
+        if (!firing.any((f) => f.id == p.id)) p,
+    ];
+    final removable = [
+      ...firing,
+      for (final p in config.plans)
+        if (!firing.any((f) => f.id == p.id) && p.dateAmounts.containsKey(day)) p,
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Divider(height: 24),
+        Wrap(
+          spacing: 8,
+          children: [
+            TextButton.icon(
+              key: const ValueKey('day-add'),
+              icon: const Icon(Icons.add),
+              label: Text(l10n.plansDayAddWork),
+              onPressed: () => _addToDay(
+                sheetContext,
+                ref,
+                day,
+                all,
+                mode2,
+                save,
+              ),
+            ),
+            if (removable.isNotEmpty)
+              TextButton.icon(
+                key: const ValueKey('day-remove'),
+                icon: const Icon(Icons.remove),
+                label: Text(l10n.plansRemove),
+                onPressed: () => _removeFromDay(
+                  sheetContext,
+                  ref,
+                  day,
+                  removable,
+                  save,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Asks which plan the extra work belongs to, then raises that day.
+  Future<void> _addToDay(
+    BuildContext sheetContext,
+    WidgetRef ref,
+    Day day,
+    List<LearningPlan> plans,
+    CalendarMode mode,
+    Future<void> Function(LearningPlan, String) save,
+  ) async {
+    final l10n = AppLocalizations.of(sheetContext);
+    final navigator = Navigator.of(sheetContext);
+    if (!navigator.mounted) return;
+
+    final chosen = await _pickPlanForDay(sheetContext, plans, l10n);
+    if (chosen == null || !navigator.mounted) return;
+
+    final next = PlanEdit.addUnits(chosen, day, 1);
+    final amount = DayAmount.of(next, dayInfoFor(day));
+    await save(next, l10n.plansAddedUnits(chosen.name, amount));
+  }
+
+  /// The plan chooser for the day, with a way to start a new plan.
+  Future<LearningPlan?> _pickPlanForDay(
+    BuildContext sheetContext,
+    List<LearningPlan> plans,
+    AppLocalizations l10n,
+  ) {
+    final catalog = ref.read(mergedCatalogProvider).asData?.value;
+
+    return showModalBottomSheet<LearningPlan>(
+      context: sheetContext,
+      builder: (sheet) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(l10n.plansAddExisting,
+                  style: Theme.of(sheet).textTheme.titleMedium),
+            ),
+            for (final plan in plans)
+              ListTile(
+                key: ValueKey('add-to-${plan.id}'),
+                title: Text(plan.name),
+                onTap: () => Navigator.of(sheet).pop(plan),
+              ),
+            ListTile(
+              key: const ValueKey('add-new-plan'),
+              leading: const Icon(Icons.add),
+              title: Text(l10n.plansAddNew),
+              // Disabled rather than inert: a button that does nothing on tap
+              // is a defect, and a cold start genuinely has no catalog to pick
+              // a sefer from.
+              onTap: catalog == null
+                  ? null
+                  : () async {
+                      final navigator = Navigator.of(sheet);
+                      // Read before the first await: reaching for `ref` after a
+                      // gap is the async-misuse the analyzer is right to refuse,
+                      // and a clock read does not need to be current.
+                      final today = Day.of(ref.read(clockProvider)());
+                      final chosen = await showNodePicker(
+                        sheet,
+                        title: l10n.plansAddNew,
+                        showKindIcon: true,
+                        choices: nodeChoices(l10n, catalog, order: NodeOrder.name),
+                      );
+                      if (chosen == null || !navigator.mounted) return;
+                      // **The navigator's context, not `sheet`.** The sheet is
+                      // the thing this callback is closing, so it is the one
+                      // context that is *not* guaranteed still to be mounted
+                      // after the picker closed; `navigator.mounted` is the
+                      // check that actually covers what is used here. This is the
+                      // same reasoning the day sheet's own prompts use.
+                      final name = await promptForText(
+                        navigator.context,
+                        title: l10n.plansAddNew,
+                        label: l10n.plansName,
+                        initialValue: nodeName(l10n, chosen),
+                        confirmLabel: l10n.plansSave,
+                        cancelLabel: l10n.plansCancel,
+                      );
+                      if (name == null || !navigator.mounted) return;
+                      final node = catalog.byId(chosen.id);
+                      if (node == null) return;
+                      // A real, tiny plan — see `PlanEdit.standalonePlan` for
+                      // why it cannot be a note: #42's ledger reads the plan, so
+                      // work added to a day with no plan has no row to tick.
+                      // **One unit**, because this is the `+` command and every
+                      // press of it is one more unit.
+                      final created = PlanEdit.standalonePlan(
+                        nodeId: node.id,
+                        name: name.trim().isEmpty
+                            ? nodeName(l10n, node)
+                            : name.trim(),
+                        day: today,
+                        units: 1,
+                      );
+                      navigator.pop(created);
+                    },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The two removes, as a choice rather than two buttons side by side.
+  ///
+  /// A sheet rather than a second row, because the two are the same gesture with
+  /// different meanings and a reader should be told which they are choosing.
+  Future<void> _removeFromDay(
+    BuildContext sheetContext,
+    WidgetRef ref,
+    Day day,
+    List<LearningPlan> plans,
+    Future<void> Function(LearningPlan, String) save,
+  ) async {
+    final l10n = AppLocalizations.of(sheetContext);
+    final navigator = Navigator.of(sheetContext);
+    if (!navigator.mounted) return;
+
+    final choice = await showModalBottomSheet<({LearningPlan plan, bool whole})>(
+      context: sheetContext,
+      builder: (sheet) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(l10n.plansRemove,
+                  style: Theme.of(sheet).textTheme.titleMedium),
+            ),
+            for (final plan in plans)
+              ListTile(
+                key: ValueKey('remove-one-${plan.id}'),
+                title: Text(l10n.plansRemoveUnit),
+                subtitle: Text(plan.name),
+                onTap: () => Navigator.of(sheet).pop((plan: plan, whole: false)),
+              ),
+            for (final plan in plans)
+              ListTile(
+                key: ValueKey('remove-all-${plan.id}'),
+                title: Text(l10n.plansRemovePlan),
+                subtitle: Text('${l10n.plansRemovePlanHelp} — ${plan.name}'),
+                onTap: () => Navigator.of(sheet).pop((plan: plan, whole: true)),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !navigator.mounted) return;
+
+    final next = choice.whole
+        ? PlanEdit.removePlanFromDay(choice.plan, day)
+        : PlanEdit.removeUnit(choice.plan, day);
+    await save(
+      next,
+      choice.whole
+          ? l10n.plansPlanSkipped(choice.plan.name)
+          : l10n.plansRemovedUnit(
+              choice.plan.name, DayAmount.of(next, dayInfoFor(day))),
+    );
+  }
+
   /// Whether every unit every firing plan owes on [day] is already done.
   bool _ledgerAllDone(WidgetRef ref, List<LearningPlan> firing, Day day) {
     final catalog = ref.watch(mergedCatalogProvider).asData?.value;
@@ -621,6 +871,19 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
             for (final entry in _ledgerFor(sheetRef, firing, day))
               ..._ledgerSection(
                   sheetContext, sheetRef, day, entry.plan, entry.units, mode),
+            // **The planning commands, on the day rather than on a plan row.**
+            //
+            // `+` lives here because the case that actually comes up is doing
+            // work on a day nothing scheduled — and a plan row is only on the
+            // day if a rule put it there, so a person doing extra on a quiet day
+            // has no row to press a button on and the feature is useless to
+            // them. `+` therefore offers every plan, **including one whose rule
+            // would not have fired today**, and a way to start a new one.
+            //
+            // Every one of these edits the *plan* and writes no event. A day can
+            // ask for eight units and have none done, and that is a legitimate
+            // state rather than an error.
+            _planCommands(sheetContext, sheetRef, day, firing, config, mode),
             // A day that asks for units and has every one of them done is a
             // finished day, and saying so is the point of the ledger. Written
             // here rather than per plan, because it is a statement about the day.

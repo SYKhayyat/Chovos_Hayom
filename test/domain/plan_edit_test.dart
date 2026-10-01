@@ -72,11 +72,11 @@ void main() {
       // A weekday plan on a day the rule skips. Forcing it onto the day is
       // exactly what this is for, and it works because the plan still carries a
       // rule — a date override alone would never make it fire.
-      final weekdays = LearningPlan(
+      const weekdays = LearningPlan(
         id: 'weekdays',
         name: 'Weekdays',
         unitsPerDay: 2,
-        assignments: const [
+        assignments: [
           PlanAssignment(
             id: 'a',
             rule: WeekdayRule(weekdays: {DateTime.monday}),
@@ -147,12 +147,12 @@ void main() {
       // A plan whose weekday already says 9 is **not** overridden on Thursday,
       // so removing Thursday must not touch it — an earlier version of this test
       // expected 2 here and was wrong about what the command does.
-      final p = LearningPlan(
+      const p = LearningPlan(
         id: 'p',
         name: 'P',
         unitsPerDay: 2,
-        weekdayAmounts: const {DateTime.thursday: 9},
-        assignments: const [PlanAssignment(id: 'a', rule: DailyRule())],
+        weekdayAmounts: {DateTime.thursday: 9},
+        assignments: [PlanAssignment(id: 'a', rule: DailyRule())],
       );
       expect(asks(p, thursday), 9);
       expect(asks(PlanEdit.removePlanFromDay(p, thursday), thursday), 9,
