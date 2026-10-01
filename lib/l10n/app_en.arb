@@ -1167,6 +1167,32 @@
   "@plansPlanSkipped": {
     "placeholders": { "plan": { "type": "String" } }
   },
+  "plansRecompute": "Recompute from this day",
+  "plansRecomputeKeep": "Keep the same amounts",
+  "plansRecomputeKeepHelp": "The shortfall stays where it is.",
+  "plansRecomputeSpread": "Spread the shortfall",
+  "plansRecomputeSpreadHelp": "Adds the missing units to the days that follow, so nothing is quietly dropped.",
+  "plansRecomputeOver": "Spread it over",
+  "plansRecomputeDays": "{count} days",
+  "@plansRecomputeDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "plansRecomputeAll": "all of them",
+  "plansRecomputeUntilEnd": "up to this plan\u2019s end",
+  "plansRecomputeNoEnd": "This plan has no end, so there is nothing to spread up to.",
+  "plansRecomputeNothingOwed": "Nothing is outstanding, so there is nothing to spread.",
+  "plansRecomputeDone": "Spread {count} units over {days} days",
+  "@plansRecomputeDone": {
+    "placeholders": { "count": { "type": "int" }, "days": { "type": "int" } }
+  },
+  "plansRecomputeKept": "{count} units are outstanding and were left as they are",
+  "@plansRecomputeKept": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "plansRecomputeFinishMoved": "This plan\u2019s finish date moved to {date}.",
+  "@plansRecomputeFinishMoved": {
+    "placeholders": { "date": { "type": "String" } }
+  },
   "plansLedgerDone": "Done this day",
   "plansLedgerDoneElsewhere": "Done on {date}",
   "@plansLedgerDoneElsewhere": {

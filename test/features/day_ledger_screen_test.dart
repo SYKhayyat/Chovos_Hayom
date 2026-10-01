@@ -51,13 +51,41 @@ void main() {
       );
 
   /// The day sheet, open on [theDay], over [repo].
+  /// Two plans, the second on a weekday rule so it is **not** firing on the 5th
+  /// and has no business being touched by a reflow aimed at the other.
+  String plansWithSecond() => jsonEncode(
+        const PlansConfig(
+          plans: [
+            LearningPlan(
+              id: 'daf-yomi',
+              name: 'Daf Yomi',
+              unitsPerDay: 3,
+              assignments: [PlanAssignment(id: 'a', rule: DailyRule())],
+              items: [PlanItem(id: 'i1', nodeId: shabbos)],
+            ),
+            LearningPlan(
+              id: 'other',
+              name: 'Other',
+              unitsPerDay: 2,
+              assignments: [
+                PlanAssignment(
+                    id: 'a', rule: WeekdayRule(weekdays: {DateTime.monday})),
+              ],
+              items: [PlanItem(id: 'i1', nodeId: shabbos)],
+            ),
+          ],
+        ).toJson(),
+      );
+
   Future<InMemoryPreferences> openSheet(
     WidgetTester tester, {
     String? plans,
     ProgressRepository? repo,
+    bool secondPlan = false,
   }) async {
     final prefs = InMemoryPreferences({
-      PrefKeys.scoped('default', PrefKeys.plans): plans ?? planJson(),
+      PrefKeys.scoped('default', PrefKeys.plans):
+          plans ?? (secondPlan ? plansWithSecond() : planJson()),
     });
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = const Size(900, 1600);
@@ -275,6 +303,88 @@ void main() {
       }
       await openSheet(tester, repo: repo);
       expect(find.text('Everything for this day is done.'), findsOneWidget);
+    });
+  });
+
+  group('recompute', () {
+    testWidgets('spreading writes a date override and no event',
+        (tester) async {
+      // **The promise that matters.** A reflow is a claim about the schedule,
+      // never about what was learned, so the log must be exactly as it was.
+      final repo = memoryRepository();
+      final prefs = await openSheet(tester, repo: repo);
+
+      await tester.tap(find.byKey(const ValueKey('recompute-open-daf-yomi')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('recompute-apply')));
+      await tester.pumpAndSettle();
+
+      final plan = PlansConfig.fromJson(
+              (jsonDecode(prefs.getString(
+                          PrefKeys.scoped('default', PrefKeys.plans)) ??
+                      '{}') as Map)
+                  .cast<String, dynamic>())
+          .plans
+          .firstWhere((p) => p.id == 'daf-yomi');
+      expect(plan.dateAmounts, isNotEmpty,
+          reason: 'the spread wrote the days it needed to');
+      expect(await repo.getEvents('default'), isEmpty,
+          reason: 'and wrote nothing that says anything was learned');
+    });
+
+    testWidgets('keeping the same amounts changes nothing', (tester) async {
+      final repo = memoryRepository();
+      final prefs = await openSheet(tester, repo: repo);
+
+      await tester.tap(find.byKey(const ValueKey('recompute-open-daf-yomi')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('recompute-keep')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('recompute-apply')));
+      await tester.pumpAndSettle();
+
+      final plan = PlansConfig.fromJson(
+              (jsonDecode(prefs.getString(
+                          PrefKeys.scoped('default', PrefKeys.plans)) ??
+                      '{}') as Map)
+                  .cast<String, dynamic>())
+          .plans
+          .firstWhere((p) => p.id == 'daf-yomi');
+      expect(plan.dateAmounts, isEmpty,
+          reason: 'mode 1 is a no-op, and must not put overrides on days that '
+              'never had any');
+    });
+
+    testWidgets('a plan with no end is not offered "up to its end"',
+        (tester) async {
+      final repo = memoryRepository();
+      await openSheet(tester, repo: repo);
+      await tester.tap(find.byKey(const ValueKey('recompute-open-daf-yomi')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('recompute-until-end')), findsNothing,
+          reason: 'an endless plan has no end to spread into, and the option '
+              'would do nothing');
+      expect(find.byKey(const ValueKey('recompute-all')), findsOneWidget,
+          reason: '"all" is the answer that does apply');
+    });
+
+    testWidgets('and it leaves other plans alone', (tester) async {
+      final repo = memoryRepository();
+      final prefs = await openSheet(tester, repo: repo, secondPlan: true);
+
+      await tester.tap(find.byKey(const ValueKey('recompute-open-daf-yomi')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('recompute-apply')));
+      await tester.pumpAndSettle();
+
+      final plans = PlansConfig.fromJson(
+          (jsonDecode(prefs.getString(PrefKeys.scoped('default', PrefKeys.plans)) ??
+                  '{}') as Map)
+              .cast<String, dynamic>())
+          .plans;
+      expect(plans.firstWhere((p) => p.id == 'other').dateAmounts, isEmpty,
+          reason: 'recomputing one plan must not disturb another');
     });
   });
 }
