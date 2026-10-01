@@ -130,10 +130,18 @@ class BackupService {
   /// v2 added customLayers, requirements, and settings. v3 added offered
   /// (checkable) layer configs. v4 added goals. v5 merged requirements+offered
   /// into one `layerConfigs` array carrying a role per layer. v6 dropped
-  /// `unitIndex` from those entries — a scope nothing ever wrote. Older backups
-  /// still import (missing fields default to empty; see [parse] for how v1–v5
-  /// layer settings are read back).
-  static const currentVersion = 6;
+  /// `unitIndex` from those entries — a scope nothing ever wrote. v7 added an
+  /// optional `planId` to each event, naming the plan a tick was made for.
+  /// Older backups still import (missing fields default to empty; see [parse]
+  /// for how v1–v5 layer settings are read back).
+  ///
+  /// **v7 is a shape change with nothing to migrate.** An event without a
+  /// `planId` was made in the unit grid, which is exactly what null means, so
+  /// every older file reads back correctly and no older file needs rewriting.
+  /// That is the reason the field is nullable rather than required — a required
+  /// one would make v6 backups unreadable for the sake of a distinction they
+  /// genuinely do carry.
+  static const currentVersion = 7;
 
   /// Build a portable JSON string for [profileId].
   ///

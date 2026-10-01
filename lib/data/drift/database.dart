@@ -36,6 +36,7 @@ class Profiles extends Table {
 /// The append-only event log — the single source of truth.
 @DataClassName('LearningEventRow')
 @TableIndex(name: 'learning_events_batch', columns: {#profileId, #batchId})
+@TableIndex(name: 'learning_events_plan', columns: {#profileId, #planId})
 class LearningEvents extends Table {
   TextColumn get id => text()();
   TextColumn get profileId => text()();
@@ -76,6 +77,16 @@ class LearningEvents extends Table {
   /// after the snackbar is gone. Null on ordinary single marks. Indexed, since
   /// the undo list groups the whole log by it.
   TextColumn get batchId => text().nullable()();
+
+  /// The plan this tick was made *for*, or null for an off-plan tick made in the
+  /// unit grid.
+  ///
+  /// Null is a real value rather than "not filled in": those ticks are the ones
+  /// the day ledger must *not* credit to a plan, and a grid un-tick must not
+  /// remove anything a plan asked for. Indexed because the day's ledger reads
+  /// one plan's ticks and "everything for this plan" is a query the grid does
+  /// not make.
+  TextColumn get planId => text().nullable()();
 
   // Events are profile-scoped, exactly like custom_nodes below: the same backup
   // imported into two profiles carries the same event ids into both, so a
@@ -203,7 +214,7 @@ class CustomNodes extends Table {
 /// file, and its own doc comment said to delete it once every install had opened
 /// a post-squash build. A v13 file now meets [SchemaMismatchException] like any
 /// other shape this build has no path to, and the message says what to do.
-const kSchemaVersion = 2;
+const kSchemaVersion = 3;
 
 /// The database on disk is a shape this build has no path to.
 ///
@@ -265,6 +276,7 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// - **A database at v1**, the shape the squash produced. [_dropUnitIndex]
   ///   rebuilds `layer_configs` without its dead third key column.
+  /// - **A database at v2.** [_addPlanId] adds `learning_events.plan_id`.
   /// - **Anything else.** Either a pre-squash database, whose shape this build
   ///   cannot produce and must not guess at, or a [schemaVersion] raised without
   ///   a step to go with it. Both throw, and the second one is the reason the
@@ -275,10 +287,49 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
+          // Steps are **chained, not matched one at a time.** A v1 install has
+          // to reach the tip, so it needs both of them, and matching only
+          // `from == 1 && to == 2` would leave every v1 user stranded — which is
+          // exactly the state the message below used to leave them in, and the
+          // reason this is a fall-through rather than a single `if`.
+          if (from == 1 && to == 3) {
+            await _dropUnitIndex(m);
+            return _addPlanId(m);
+          }
           if (from == 1 && to == 2) return _dropUnitIndex(m);
+          if (from == 2 && to == 3) return _addPlanId(m);
           throw SchemaMismatchException(from, to);
         },
       );
+
+  /// v2 -> v3: `learning_events` gains `plan_id`, nullable.
+  ///
+  /// **Every existing row reads back as null, which is the correct value**: a
+  /// tick written before plans existed was made in the unit grid, off-plan, and
+  /// saying otherwise would credit work to a plan that never asked for it. No
+  /// backfill, and none should be attempted — the information to backfill from
+  /// was never recorded.
+  ///
+  /// **The column check is load-bearing, not tidiness — this one nearly was
+  /// missed.** `addColumn` on an existing column raises `duplicate column name`,
+  /// and drift stamps `user_version` only *after* the callback returns. So a run
+  /// that dies between the two leaves a v3-shaped table in a file still marked
+  /// v2, and the next launch runs this step again against a table that already
+  /// has the column — which throws, every launch, forever. The install is stuck
+  /// at the door with no way out short of deleting the database.
+  ///
+  /// That is the exact failure [_dropUnitIndex] guards against one step earlier,
+  /// and the reason its check is there rather than assumed. `alterTable` there
+  /// made it necessary; `addColumn` looks like it does not, which is exactly why
+  /// it needed checking rather than an assumption.
+  Future<void> _addPlanId(Migrator m) async {
+    final columns =
+        await customSelect("SELECT name FROM pragma_table_info('learning_events')")
+            .get();
+    if (columns.any((r) => r.read<String>('name') == 'plan_id')) return;
+
+    await m.addColumn(learningEvents, learningEvents.planId);
+  }
 
   /// v1 -> v2: `layer_configs` loses `unit_index`, and its primary key with it.
   ///

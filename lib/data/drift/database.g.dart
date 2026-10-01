@@ -379,6 +379,15 @@ class $LearningEventsTable extends LearningEvents
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<String> planId = GeneratedColumn<String>(
+    'plan_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -392,6 +401,7 @@ class $LearningEventsTable extends LearningEvents
     note,
     layersJson,
     batchId,
+    planId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -469,6 +479,12 @@ class $LearningEventsTable extends LearningEvents
         batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta),
       );
     }
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    }
     return context;
   }
 
@@ -526,6 +542,10 @@ class $LearningEventsTable extends LearningEvents
         DriftSqlType.string,
         data['${effectivePrefix}batch_id'],
       ),
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_id'],
+      ),
     );
   }
 
@@ -581,6 +601,16 @@ class LearningEventRow extends DataClass
   /// after the snackbar is gone. Null on ordinary single marks. Indexed, since
   /// the undo list groups the whole log by it.
   final String? batchId;
+
+  /// The plan this tick was made *for*, or null for an off-plan tick made in the
+  /// unit grid.
+  ///
+  /// Null is a real value rather than "not filled in": those ticks are the ones
+  /// the day ledger must *not* credit to a plan, and a grid un-tick must not
+  /// remove anything a plan asked for. Indexed because the day's ledger reads
+  /// one plan's ticks and "everything for this plan" is a query the grid does
+  /// not make.
+  final String? planId;
   const LearningEventRow({
     required this.id,
     required this.profileId,
@@ -593,6 +623,7 @@ class LearningEventRow extends DataClass
     this.note,
     this.layersJson,
     this.batchId,
+    this.planId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -624,6 +655,9 @@ class LearningEventRow extends DataClass
     if (!nullToAbsent || batchId != null) {
       map['batch_id'] = Variable<String>(batchId);
     }
+    if (!nullToAbsent || planId != null) {
+      map['plan_id'] = Variable<String>(planId);
+    }
     return map;
   }
 
@@ -646,6 +680,9 @@ class LearningEventRow extends DataClass
       batchId: batchId == null && nullToAbsent
           ? const Value.absent()
           : Value(batchId),
+      planId: planId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planId),
     );
   }
 
@@ -668,6 +705,7 @@ class LearningEventRow extends DataClass
       note: serializer.fromJson<String?>(json['note']),
       layersJson: serializer.fromJson<String?>(json['layersJson']),
       batchId: serializer.fromJson<String?>(json['batchId']),
+      planId: serializer.fromJson<String?>(json['planId']),
     );
   }
   @override
@@ -687,6 +725,7 @@ class LearningEventRow extends DataClass
       'note': serializer.toJson<String?>(note),
       'layersJson': serializer.toJson<String?>(layersJson),
       'batchId': serializer.toJson<String?>(batchId),
+      'planId': serializer.toJson<String?>(planId),
     };
   }
 
@@ -702,6 +741,7 @@ class LearningEventRow extends DataClass
     Value<String?> note = const Value.absent(),
     Value<String?> layersJson = const Value.absent(),
     Value<String?> batchId = const Value.absent(),
+    Value<String?> planId = const Value.absent(),
   }) => LearningEventRow(
     id: id ?? this.id,
     profileId: profileId ?? this.profileId,
@@ -714,6 +754,7 @@ class LearningEventRow extends DataClass
     note: note.present ? note.value : this.note,
     layersJson: layersJson.present ? layersJson.value : this.layersJson,
     batchId: batchId.present ? batchId.value : this.batchId,
+    planId: planId.present ? planId.value : this.planId,
   );
   LearningEventRow copyWithCompanion(LearningEventsCompanion data) {
     return LearningEventRow(
@@ -734,6 +775,7 @@ class LearningEventRow extends DataClass
           ? data.layersJson.value
           : this.layersJson,
       batchId: data.batchId.present ? data.batchId.value : this.batchId,
+      planId: data.planId.present ? data.planId.value : this.planId,
     );
   }
 
@@ -750,7 +792,8 @@ class LearningEventRow extends DataClass
           ..write('durationMin: $durationMin, ')
           ..write('note: $note, ')
           ..write('layersJson: $layersJson, ')
-          ..write('batchId: $batchId')
+          ..write('batchId: $batchId, ')
+          ..write('planId: $planId')
           ..write(')'))
         .toString();
   }
@@ -768,6 +811,7 @@ class LearningEventRow extends DataClass
     note,
     layersJson,
     batchId,
+    planId,
   );
   @override
   bool operator ==(Object other) =>
@@ -783,7 +827,8 @@ class LearningEventRow extends DataClass
           other.durationMin == this.durationMin &&
           other.note == this.note &&
           other.layersJson == this.layersJson &&
-          other.batchId == this.batchId);
+          other.batchId == this.batchId &&
+          other.planId == this.planId);
 }
 
 class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
@@ -798,6 +843,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
   final Value<String?> note;
   final Value<String?> layersJson;
   final Value<String?> batchId;
+  final Value<String?> planId;
   final Value<int> rowid;
   const LearningEventsCompanion({
     this.id = const Value.absent(),
@@ -811,6 +857,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     this.note = const Value.absent(),
     this.layersJson = const Value.absent(),
     this.batchId = const Value.absent(),
+    this.planId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningEventsCompanion.insert({
@@ -825,6 +872,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     this.note = const Value.absent(),
     this.layersJson = const Value.absent(),
     this.batchId = const Value.absent(),
+    this.planId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        profileId = Value(profileId),
@@ -845,6 +893,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     Expression<String>? note,
     Expression<String>? layersJson,
     Expression<String>? batchId,
+    Expression<String>? planId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -859,6 +908,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
       if (note != null) 'note': note,
       if (layersJson != null) 'layers_json': layersJson,
       if (batchId != null) 'batch_id': batchId,
+      if (planId != null) 'plan_id': planId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -875,6 +925,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     Value<String?>? note,
     Value<String?>? layersJson,
     Value<String?>? batchId,
+    Value<String?>? planId,
     Value<int>? rowid,
   }) {
     return LearningEventsCompanion(
@@ -889,6 +940,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
       note: note ?? this.note,
       layersJson: layersJson ?? this.layersJson,
       batchId: batchId ?? this.batchId,
+      planId: planId ?? this.planId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -933,6 +985,9 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
     if (batchId.present) {
       map['batch_id'] = Variable<String>(batchId.value);
     }
+    if (planId.present) {
+      map['plan_id'] = Variable<String>(planId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -953,6 +1008,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
           ..write('note: $note, ')
           ..write('layersJson: $layersJson, ')
           ..write('batchId: $batchId, ')
+          ..write('planId: $planId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2326,6 +2382,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'learning_events_batch',
     'CREATE INDEX learning_events_batch ON learning_events (profile_id, batch_id)',
   );
+  late final Index learningEventsPlan = Index(
+    'learning_events_plan',
+    'CREATE INDEX learning_events_plan ON learning_events (profile_id, plan_id)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2337,6 +2397,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     customLayers,
     layerConfigs,
     learningEventsBatch,
+    learningEventsPlan,
   ];
 }
 
@@ -2512,6 +2573,7 @@ typedef $$LearningEventsTableCreateCompanionBuilder =
       Value<String?> note,
       Value<String?> layersJson,
       Value<String?> batchId,
+      Value<String?> planId,
       Value<int> rowid,
     });
 typedef $$LearningEventsTableUpdateCompanionBuilder =
@@ -2527,6 +2589,7 @@ typedef $$LearningEventsTableUpdateCompanionBuilder =
       Value<String?> note,
       Value<String?> layersJson,
       Value<String?> batchId,
+      Value<String?> planId,
       Value<int> rowid,
     });
 
@@ -2595,6 +2658,11 @@ class $$LearningEventsTableFilterComposer
     column: $table.batchId,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$LearningEventsTableOrderingComposer
@@ -2660,6 +2728,11 @@ class $$LearningEventsTableOrderingComposer
     column: $table.batchId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LearningEventsTableAnnotationComposer
@@ -2709,6 +2782,9 @@ class $$LearningEventsTableAnnotationComposer
 
   GeneratedColumn<String> get batchId =>
       $composableBuilder(column: $table.batchId, builder: (column) => column);
+
+  GeneratedColumn<String> get planId =>
+      $composableBuilder(column: $table.planId, builder: (column) => column);
 }
 
 class $$LearningEventsTableTableManager
@@ -2759,6 +2835,7 @@ class $$LearningEventsTableTableManager
                 Value<String?> note = const Value.absent(),
                 Value<String?> layersJson = const Value.absent(),
                 Value<String?> batchId = const Value.absent(),
+                Value<String?> planId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningEventsCompanion(
                 id: id,
@@ -2772,6 +2849,7 @@ class $$LearningEventsTableTableManager
                 note: note,
                 layersJson: layersJson,
                 batchId: batchId,
+                planId: planId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2787,6 +2865,7 @@ class $$LearningEventsTableTableManager
                 Value<String?> note = const Value.absent(),
                 Value<String?> layersJson = const Value.absent(),
                 Value<String?> batchId = const Value.absent(),
+                Value<String?> planId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningEventsCompanion.insert(
                 id: id,
@@ -2800,6 +2879,7 @@ class $$LearningEventsTableTableManager
                 note: note,
                 layersJson: layersJson,
                 batchId: batchId,
+                planId: planId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

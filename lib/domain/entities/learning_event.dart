@@ -16,6 +16,7 @@ class LearningEvent {
     this.note,
     this.layers = const [mainLayerId],
     this.batchId,
+    this.planId,
   });
 
   final String id;
@@ -55,6 +56,22 @@ class LearningEvent {
   /// how the event was written, not derived state, so the log stays the truth.
   final String? batchId;
 
+  /// The plan this tick was made *for*, or null when it was made off-plan.
+  ///
+  /// **Null is a real value, not "not filled in".** A tick made in the unit grid
+  /// is a claim about the learner and belongs to no plan; a tick made in a
+  /// plan's day ledger is that plan's, and the app has to be able to tell them
+  /// apart afterwards. Without this the two are the same event, and "what did I
+  /// do today?" cannot be answered without mixing in whatever the grid happened
+  /// to record.
+  ///
+  /// It is also what makes the grid/plan asymmetry work in both directions: a
+  /// grid tick does not add to a plan, and a grid un-tick does not remove from
+  /// one, because neither carries a plan at all. A `+` that creates work on a
+  /// day no plan asked for creates a real (if tiny) plan, so it has an id like
+  /// anything else.
+  final String? planId;
+
   /// Returns a copy with edited annotations. **Null clears the field** — it is
   /// how the user deletes a duration or a haara they had recorded, so it cannot
   /// also mean "leave this one alone".
@@ -83,6 +100,7 @@ class LearningEvent {
         note: note,
         layers: layers,
         batchId: batchId,
+        planId: planId,
       );
 
   /// The same event, belonging to [profileId].
@@ -112,6 +130,7 @@ class LearningEvent {
         note: note,
         layers: layers,
         batchId: batchId,
+        planId: planId,
       );
 
   Map<String, dynamic> toJson() => {
@@ -127,6 +146,7 @@ class LearningEvent {
         // Omit the default single-'main' list to keep old backups byte-identical.
         if (!(layers.length == 1 && layers.first == mainLayerId)) 'layers': layers,
         if (batchId != null) 'batchId': batchId,
+        if (planId != null) 'planId': planId,
       };
 
   factory LearningEvent.fromJson(Map<String, dynamic> json) => LearningEvent(
@@ -143,8 +163,11 @@ class LearningEvent {
         note: mergeNotes(json['note'] as String?, json['haara'] as String?),
         layers: (json['layers'] as List?)?.cast<String>() ??
             const [mainLayerId],
-        batchId: json['batchId'] as String?,
-      );
+      batchId: json['batchId'] as String?,
+      // Absent from a file written before plans existed, and null is the right
+      // reading of it: that work really was done, just without a plan attached.
+      planId: json['planId'] as String?,
+    );
 
   /// Folds a legacy (note, haara) pair into the single note field. Keeps both
   /// when both exist — separated by a blank line, learning-note first, matching

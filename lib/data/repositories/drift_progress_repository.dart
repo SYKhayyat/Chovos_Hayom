@@ -76,6 +76,7 @@ class DriftProgressRepository implements ProgressRepository {
         note: Value(e.note),
         layersJson: Value(_encodeLayers(e.layers)),
         batchId: Value(e.batchId),
+        planId: Value(e.planId),
       );
 
   @override
@@ -148,6 +149,7 @@ class DriftProgressRepository implements ProgressRepository {
         note: row.note,
         layers: _decodeLayers(row.layersJson),
         batchId: row.batchId,
+        planId: row.planId,
       );
 
   /// Stores the default single-'main' list as null to keep old rows unchanged.

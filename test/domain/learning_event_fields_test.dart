@@ -43,7 +43,9 @@ void main() {
   test('the field list is read, not assumed', () {
     final fields = constructorFields();
     expect(fields, containsAll(<String>['id', 'profileId', 'layers', 'batchId']));
-    expect(fields, hasLength(11));
+    expect(fields, hasLength(12),
+        reason: 'was 11 until #42 added planId, which a tick needs so the '
+            'app can tell a grid tick from a plan tick afterwards');
   });
 
   test('every place that copies an event names every field', () {

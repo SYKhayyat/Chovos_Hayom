@@ -75,6 +75,42 @@ void main() {
         'ON learning_events (profile_id, batch_id)',
   ];
 
+  /// The v3 shape: [v1Schema] with `learning_events.plan_id` added and an index
+  /// on it.
+  ///
+  /// Spelled out rather than computed from [v1Schema], on purpose. Deriving it
+  /// would make every assertion here agree with whatever the table class says,
+  /// which is the failure mode this file exists to prevent — the whole point is
+  /// that a column moving is *this test going red*, not the fixtures moving with
+  /// it.
+  const v3Schema = <String>[
+    'CREATE TABLE "custom_layers" ("id" TEXT NOT NULL, "profile_id" TEXT NOT '
+        'NULL, "name" TEXT NOT NULL, "name_hebrew" TEXT NULL, "sort_order" '
+        'INTEGER NOT NULL DEFAULT 0, PRIMARY KEY ("profile_id", "id"))',
+    'CREATE TABLE "custom_nodes" ("id" TEXT NOT NULL, "profile_id" TEXT NOT '
+        'NULL, "parent_id" TEXT NULL, "name" TEXT NOT NULL, "name_hebrew" TEXT '
+        'NULL, "sort_order" INTEGER NOT NULL DEFAULT 0, "kind" INTEGER NOT '
+        'NULL, "unit_label" INTEGER NULL, "unit_count" INTEGER NOT NULL DEFAULT '
+        '0, "unit_offset" INTEGER NOT NULL DEFAULT 0, "hidden" INTEGER NOT NULL '
+        'DEFAULT 0 CHECK ("hidden" IN (0, 1)), "unit_names_json" TEXT NULL, '
+        'PRIMARY KEY ("profile_id", "id"))',
+    'CREATE TABLE "layer_configs" ("profile_id" TEXT NOT NULL, "node_id" TEXT '
+        'NOT NULL, "roles_json" TEXT NOT NULL, PRIMARY KEY ("profile_id", '
+        '"node_id"))',
+    'CREATE TABLE "learning_events" ("id" TEXT NOT NULL, "profile_id" TEXT NOT '
+        'NULL, "node_id" TEXT NOT NULL, "unit_index" INTEGER NOT NULL, "action" '
+        'INTEGER NOT NULL, "occurred_at" INTEGER NOT NULL, "logged_at" INTEGER '
+        'NOT NULL, "duration_min" INTEGER NULL, "note" TEXT NULL, "layers_json" '
+        'TEXT NULL, "batch_id" TEXT NULL, "plan_id" TEXT NULL, PRIMARY KEY '
+        '("profile_id", "id"))',
+    'CREATE TABLE "profiles" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, '
+        '"created_at" INTEGER NOT NULL, PRIMARY KEY ("id"))',
+    'CREATE INDEX learning_events_batch '
+        'ON learning_events (profile_id, batch_id)',
+    'CREATE INDEX learning_events_plan '
+        'ON learning_events (profile_id, plan_id)',
+  ];
+
   /// One event, written the way a v1 database holds one: `logged_at` in
   /// microseconds, because that is what the last step of the deleted chain did
   /// and the squash inherited.
@@ -83,6 +119,37 @@ void main() {
       '(id, profile_id, node_id, unit_index, action, occurred_at, logged_at, note) '
       "VALUES ('e1', 'p1', 'berachos', 2, 0, 1750000000, $microseconds, "
       "'seven years of this')";
+
+  /// v3 minus `plan_id` — the shape a v2 database has, which is what the
+  /// v2 -> v3 step is handed.
+  ///
+  /// Derived from [v3Schema] rather than spelled out again, which is the one
+  /// place deriving is right: this fixture is *meant* to be "v3, minus the thing
+  /// this step adds", so writing it out by hand would let the two drift and the
+  /// step would then be tested against a database that never existed.
+  final v3SchemaNoPlan = <String>[
+    for (final s in v3Schema)
+      if (s.contains('"plan_id" TEXT NULL'))
+        s.replaceAll(', "plan_id" TEXT NULL', '')
+      else if (!s.contains('learning_events_plan'))
+        s,
+  ];
+
+  /// Writes a tick that *names a plan*, which is the value the new column exists
+  /// to hold and the one a restore must not lose.
+  Future<void> _insertPlannedEvent(String path) async {
+    final db = AppDatabase(NativeDatabase(File(path)));
+    try {
+      await db.customStatement(
+        'INSERT INTO learning_events (id, profile_id, node_id, unit_index, '
+        'action, occurred_at, logged_at, plan_id) '
+        "VALUES ('daf-yomi', 'p1', 'berachos', 2, 0, 1750000000, $microseconds, "
+        "'daf-yomi')",
+      );
+    } finally {
+      await db.close();
+    }
+  }
 
   /// Writes [statements] into the file and stamps `user_version`, so the app can
   /// be handed a database shaped exactly like some older install.
@@ -106,9 +173,9 @@ void main() {
     }
   }
 
-  /// `(user_version, schema statements, event ids, logged_at by id)`.
-  ({int version, List<String> schema, List<String> ids, List<int> loggedAt})
-      inspect() {
+  /// `(user_version, schema, event ids, logged_at by id, plan_id by id)`.
+  ({int version, List<String> schema, List<String> ids, List<int> loggedAt,
+      List<String?> planIds}) inspect() {
     final db = raw.sqlite3.open(path);
     final version =
         db.select('PRAGMA user_version').first['user_version'] as int;
@@ -117,13 +184,26 @@ void main() {
             'WHERE sql IS NOT NULL ORDER BY type DESC, name')
         .map((r) => r['sql'] as String)
         .toList();
-    final events = db.select('SELECT id, logged_at FROM learning_events '
-        'ORDER BY id');
+    // **Read defensively.** One of this file's jobs is to inspect a database
+    // this build *refuses* to open, and those are by definition older than the
+    // current schema — so a column that only exists at the tip is not there to
+    // select. Falling back to the columns that are keeps that job possible.
+    final hasPlanId = db
+        .select("SELECT name FROM pragma_table_info('learning_events')")
+        .any((r) => r['name'] == 'plan_id');
+    final events = db.select('SELECT id, logged_at'
+        '${hasPlanId ? ', plan_id' : ''} FROM learning_events ORDER BY id');
     final out = (
       version: version,
       schema: schema,
       ids: events.map((r) => r['id'] as String).toList(),
       loggedAt: events.map((r) => r['logged_at'] as int).toList(),
+      // The step's whole claim: an event written before plans existed reads
+      // back as off-plan, not as an error and not as a guess.
+      planIds: [
+        for (final r in events)
+          hasPlanId ? r['plan_id'] as String? : null,
+      ],
     );
     db.close();
     return out;
@@ -161,9 +241,9 @@ void main() {
     test('is created at the current version, in one step', () async {
       await open();
       expect(inspect().version, kSchemaVersion);
-      expect(kSchemaVersion, 2,
-          reason: 'the chain was squashed to 1 and has had exactly one step '
-              'since; a third means this file needs another group');
+      expect(kSchemaVersion, 3,
+          reason: 'the chain was squashed to 1; two steps since (drop '
+              'unit_index, add plan_id); a fourth needs another group here');
     });
 
     test('is the squashed shape, with unit_index gone from layer_configs',
@@ -175,11 +255,77 @@ void main() {
       // v3 step rather than to edit this list.
       await open();
 
+      // **v3 is v1 plus `learning_events.plan_id`**, and `layer_configs` at v2.
+      // Written as an explicit expectation rather than derived from v1Schema so
+      // that a column moving shows up here as a failure to read, which is the
+      // moment to write the next step — not as a test that agrees with whatever
+      // the table class now says.
       final schema = inspect().schema;
-      expect(schema.where((s) => !s.contains('layer_configs')),
-          v1Schema.where((s) => !s.contains('layer_configs')));
+      expect(
+        schema.where((s) => !s.contains('layer_configs')),
+        v3Schema.where((s) => !s.contains('layer_configs')),
+      );
       expect(schema.singleWhere((s) => s.contains('TABLE "layer_configs"')),
           layerConfigsAtV2);
+    });
+  });
+
+  group('a database at v2', () {
+    test('gains plan_id, and every existing event reads back off-plan',
+        () async {
+      seed([...v3SchemaNoPlan], userVersion: 2);
+      final before = raw.sqlite3.open(path);
+      before.execute(insertEvent);
+      before.close();
+
+      await open();
+
+      final after = inspect();
+      expect(after.version, kSchemaVersion);
+      expect(after.ids, ['e1'], reason: 'the log is not what this step touches');
+      expect(after.planIds, [null],
+          reason: 'null is the *correct* reading: that tick was made in the '
+              'unit grid, before plans existed, and crediting it to a plan that '
+              'never asked for it would be a lie the user cannot see');
+      expect(after.schema.singleWhere(
+              (s) => s.contains('TABLE "learning_events"')),
+          v3Schema.singleWhere((s) => s.contains('TABLE "learning_events"')));
+    });
+
+    test('a tick written by a plan keeps it across a backup restore', () async {
+      // The step is only half the claim. The other half is that a value written
+      // afterwards survives the round trip through the database, because a plan
+      // tick that reads back as off-plan is the failure this column exists to
+      // prevent.
+      await open();
+      await expectLater(
+        _insertPlannedEvent(path),
+        completes,
+      );
+      final after = inspect();
+      expect(after.planIds, ['daf-yomi']);
+    });
+
+    test('a half-finished run is replayable rather than stuck', () async {
+      // Same failure mode [_dropUnitIndex] guards against, and the reason that
+      // step has a column check. This one is an `addColumn`, which is naturally
+      // safe to repeat — but the *file* can still be left stamped v2 with a
+      // v3-shaped table if the process dies between the two, so the step has to
+      // be the kind that a second run can complete.
+      seed([...v3SchemaNoPlan], userVersion: 2);
+      await open();
+      // Stamp it back to v2 and leave the column in place: exactly what a crash
+      // between the migration and drift's `user_version` write leaves behind.
+      final db = raw.sqlite3.open(path);
+      db.execute('PRAGMA user_version = 2');
+      db.close();
+
+      await open();
+
+      expect(inspect().version, kSchemaVersion,
+          reason: 'a replay must finish the job, not fail on a column that is '
+              'already there — the install has to be able to recover by '
+              'relaunching, since that is the only thing a user can do');
     });
   });
 
@@ -190,7 +336,7 @@ void main() {
       await open();
 
       final after = inspect();
-      expect(after.version, kSchemaVersion, reason: 'stamped up to v2');
+      expect(after.version, kSchemaVersion, reason: 'stamped up to the tip');
       expect(after.ids, ['e1'], reason: 'the log is not what this step touches');
       expect(after.loggedAt, [microseconds],
           reason: 'the seconds-to-microseconds rewrite was the last step of the '
@@ -222,7 +368,7 @@ void main() {
       // column check in the step, the retry would die on `no such column:
       // unit_index` and the install would never open again. This is that file.
       seed([
-        for (final s in v1Schema)
+        for (final s in v3Schema)
           if (s.contains('TABLE "layer_configs"')) layerConfigsAtV2 else s,
         insertEvent,
         'INSERT INTO layer_configs (profile_id, node_id, roles_json) '
