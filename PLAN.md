@@ -93,9 +93,17 @@ one ruling that shaped it and one consequence worth knowing before #42:
   says so: everything is customizable, so a reflow that could not honour the
   plan's own constraint would not be a reflow. It writes no events and touches
   no other plan — both are structural, not guarded.
-- [ ] #45 chazara is one rule — learned means chazara, the count is the passes.
+- [x] #45 chazara is one rule — learned means chazara, the count is the passes.
   Delete the scheduler and the Chazara screen; **wipe** the stored review dates.
   Marking a unit done from the calendar is what makes it chazara. (High)
+  Shipped: `LogFold.chazaraCount` derives passes as reviews + 1, so the count is
+  a fold over the log and **nothing about a review is stored** — there were no
+  stored review dates to wipe, which is the point. The scheduler, the screen,
+  the `/chazara` route and the interval setting are gone; the drawer row reports
+  units passed more than once and opens statistics. **The destination is #46's
+  job**: the row points at the report screen, which does not show these numbers
+  yet, so #46 opens with a chazara section there rather than starting somewhere
+  else.
 - [ ] #46 progress bar and box: a completion line and a chazara line (units
   reviewed at least once), sometimes more than one chazara line; `due` comes out;
   the bar gets a colour; when a hairline will not fit the line changes colour

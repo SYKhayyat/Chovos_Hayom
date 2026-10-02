@@ -150,15 +150,6 @@ class SettingsScreen extends ConsumerWidget {
                 what: l10n.whatChangingNudge),
           ),
           const Divider(),
-          _SectionHeader(l10n.settingsSectionChazara),
-          ListTile(
-            leading: const Icon(Icons.repeat),
-            title: Text(l10n.settingsReviewIntervals),
-            subtitle: Text(l10n.settingsReviewIntervalsSubtitle(
-                settings.chazaraIntervals.join(', '))),
-            onTap: () => _editIntervals(context, ref, settings.chazaraIntervals),
-          ),
-          const Divider(),
           _SectionHeader(l10n.settingsSectionMeforishBars),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
@@ -338,38 +329,6 @@ class SettingsScreen extends ConsumerWidget {
       what: l10n.whatClearingSettings,
       success: l10n.settingsCleared,
     );
-  }
-
-  Future<void> _editIntervals(
-      BuildContext context, WidgetRef ref, List<int> current) async {
-    final guard = WriteGuard.of(context, ref);
-    final l10n = AppLocalizations.of(context);
-    final text = await promptForText(
-      context,
-      title: l10n.settingsIntervalsTitle,
-      body: l10n.settingsIntervalsBody,
-      hintText: l10n.settingsIntervalsHint,
-      initialValue: current.join(', '),
-      confirmLabel: l10n.actionSave,
-      cancelLabel: l10n.actionCancel,
-      // Says which part it could not read, rather than keeping the parts it
-      // could. `2, 5, x` used to save `[2, 5]` and close, so a typo silently
-      // shortened the schedule — and the *other* interval setting, two rows
-      // down this screen, rejected the same input out loud. One parse, and both
-      // of them now say so and stay open.
-      validate: (v) {
-        final parsed = positiveIntList(v);
-        if (parsed.rejected.isNotEmpty) {
-          return l10n.settingsIntervalsInvalid(parsed.rejected.join(', '));
-        }
-        return parsed.values.isEmpty ? l10n.settingsIntervalsNeedOne : null;
-      },
-    );
-    if (text == null) return;
-    final settings = ref.read(settingsProvider.notifier);
-    await guard.run(
-        () => settings.setChazaraIntervals(positiveIntList(text).values),
-        what: l10n.whatSavingIntervals);
   }
 
   Future<void> _editBackupInterval(

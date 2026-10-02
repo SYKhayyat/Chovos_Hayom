@@ -47,12 +47,18 @@ void main() {
   SettingsState settings() => container.read(settingsProvider);
 
   test('one profile’s settings do not follow you to another', () async {
-    await notifier().setChazaraIntervals([2, 4, 8]);
+    // The carrier here is deliberately **not** chazara: this file is about
+    // per-profile scoping, and the chazara intervals went with the scheduler in
+    // #45. The backup reminder interval is per-profile and still exists, so it
+    // stands in — and the assertion is the same one either way. 21, not the
+    // default 14, so "the other profile is back to the default" is a real
+    // assertion rather than a coincidence.
+    await notifier().setBackupIntervalDays(21);
     await notifier().setSort(const SortConfig(metric: SortMetric.percent));
 
     await switchTo('other');
 
-    expect(settings().chazaraIntervals, isNot([2, 4, 8]));
+    expect(settings().backupIntervalDays, 14);
     expect(settings().sort.metric, SortMetric.catalog);
   });
 
@@ -84,15 +90,15 @@ void main() {
   });
 
   test('clearing settings only clears the active profile', () async {
-    await notifier().setChazaraIntervals([2, 4, 8]);
+    await notifier().setBackupIntervalDays(21);
     await switchTo('other');
-    await notifier().setChazaraIntervals([3, 6, 9]);
+    await notifier().setBackupIntervalDays(30);
 
     await notifier().clearAll();
-    expect(settings().chazaraIntervals, isNot([3, 6, 9]));
+    expect(settings().backupIntervalDays, isNot(30));
 
     await switchTo('default');
-    expect(settings().chazaraIntervals, [2, 4, 8], reason: 'untouched');
+    expect(settings().backupIntervalDays, 21, reason: 'untouched');
   });
 
   test('clearing settings leaves the device’s language alone', () async {
@@ -120,7 +126,7 @@ void main() {
         PrefKeys.activeProfileId: 'yaakov',
         PrefKeys.themeMode: 'dark',
         PrefKeys.calendarMode: 'hebrew',
-        PrefKeys.chazaraIntervals: '2,4,8',
+        PrefKeys.sortMetric: 'percent',
       });
       container.dispose();
       container = build();
@@ -128,13 +134,13 @@ void main() {
       // Everything survives the upgrade for the person it belonged to...
       expect(settings().themeMode, ThemeMode.dark);
       expect(settings().calendar, CalendarMode.hebrew);
-      expect(settings().chazaraIntervals, [2, 4, 8]);
+      expect(settings().sort.metric, SortMetric.percent);
 
       // ...and only the learner's half is theirs alone. Theme and calendar
       // belong to the device, so the next profile keeps looking the same —
       // which is the whole point of the second migration.
       await switchTo('someone-else');
-      expect(settings().chazaraIntervals, isNot([2, 4, 8]));
+      expect(settings().sort.metric, isNot(SortMetric.percent));
       expect(settings().themeMode, ThemeMode.dark);
       expect(settings().calendar, CalendarMode.hebrew);
     });
@@ -142,17 +148,17 @@ void main() {
     test('the legacy keys are removed so it cannot run twice', () async {
       prefs = InMemoryPreferences({
         PrefKeys.themeMode: 'dark',
-        PrefKeys.chazaraIntervals: '2,4,8',
+        PrefKeys.sortMetric: 'percent',
       });
       container.dispose();
       container = build();
       container.read(settingsProvider); // force the notifier to build
 
       // The learner's key moved into the profile; the bare one is gone.
-      expect(prefs.getString(PrefKeys.chazaraIntervals), isNull);
+      expect(prefs.getString(PrefKeys.sortMetric), isNull);
       expect(
-          prefs.getString(PrefKeys.scoped('default', PrefKeys.chazaraIntervals)),
-          '2,4,8');
+          prefs.getString(PrefKeys.scoped('default', PrefKeys.sortMetric)),
+          'percent');
       expect(prefs.getString(PrefKeys.settingsScopedMigrated), 'true');
       // The device's key went into the profile and straight back out, so the
       // bare key is where it lives and the scoped copy is gone.
@@ -163,7 +169,7 @@ void main() {
 
       // A later profile switch must not re-import anything.
       await switchTo('other');
-      expect(settings().chazaraIntervals, isNot([2, 4, 8]));
+      expect(settings().sort.metric, isNot(SortMetric.percent));
     });
   });
 
@@ -175,23 +181,23 @@ void main() {
     await notifier().applyBackup({
       PrefKeys.hebrewLayout: 'false',
       PrefKeys.themeMode: 'light',
-      PrefKeys.chazaraIntervals: '5,10',
+      PrefKeys.sortMetric: 'percent',
     }, ImportMode.merge);
 
     expect(settings().hebrewLayout, isTrue);
     expect(settings().themeMode, ThemeMode.system);
-    expect(settings().chazaraIntervals, [5, 10],
+    expect(settings().sort.metric, SortMetric.percent,
         reason: 'the learner’s own settings still import');
   });
 
   test('an imported backup applies to the active profile only', () async {
     await switchTo('other');
     await notifier()
-        .applyBackup({PrefKeys.chazaraIntervals: '5,10'}, ImportMode.merge);
-    expect(settings().chazaraIntervals, [5, 10]);
+        .applyBackup({PrefKeys.sortMetric: 'percent'}, ImportMode.merge);
+    expect(settings().sort.metric, SortMetric.percent);
 
     await switchTo('default');
-    expect(settings().chazaraIntervals, isNot([5, 10]));
+    expect(settings().sort.metric, isNot(SortMetric.percent));
   });
 
   // The key-coverage guard above proves `PrefKeys.plans` *rides in* a backup.

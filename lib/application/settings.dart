@@ -6,7 +6,6 @@ import '../core/equality.dart';
 import '../core/parse.dart';
 import '../core/preferences.dart';
 import '../domain/usecases/backup_reminder.dart';
-import '../domain/usecases/chazara_schedule.dart';
 import 'backup_service.dart';
 import 'providers.dart';
 import 'sorting.dart';
@@ -19,7 +18,6 @@ class SettingsState {
     this.reminderEnabled = false,
     this.hebrewLayout = false,
     this.sort = const SortConfig(),
-    this.chazaraIntervals = ChazaraSchedule.defaultIntervals,
     this.hiddenMeforishBars = const {},
     this.backupReminderEnabled = true,
     this.backupIntervalDays = BackupReminder.defaultIntervalDays,
@@ -43,9 +41,6 @@ class SettingsState {
   /// How the catalog tree's children are ordered.
   final SortConfig sort;
 
-  /// Spaced-repetition intervals (days) for the chazara schedule, user-editable.
-  final List<int> chazaraIntervals;
-
   /// Layer ids whose per-meforish coverage line is hidden in the tree. Empty
   /// means every enabled meforish shows its bar.
   final Set<String> hiddenMeforishBars;
@@ -59,7 +54,6 @@ class SettingsState {
     bool? reminderEnabled,
     bool? hebrewLayout,
     SortConfig? sort,
-    List<int>? chazaraIntervals,
     Set<String>? hiddenMeforishBars,
     bool? backupReminderEnabled,
     int? backupIntervalDays,
@@ -70,7 +64,6 @@ class SettingsState {
         reminderEnabled: reminderEnabled ?? this.reminderEnabled,
         hebrewLayout: hebrewLayout ?? this.hebrewLayout,
         sort: sort ?? this.sort,
-        chazaraIntervals: chazaraIntervals ?? this.chazaraIntervals,
         hiddenMeforishBars: hiddenMeforishBars ?? this.hiddenMeforishBars,
         backupReminderEnabled:
             backupReminderEnabled ?? this.backupReminderEnabled,
@@ -84,7 +77,7 @@ class SettingsState {
   ///
   /// It also makes the `.select`s honest. `copyWith` passes untouched fields
   /// through by reference, so `select((s) => s.sort)` survives a change to the
-  /// chazara intervals on identity alone — but `_load()` builds a *fresh*
+  /// hidden bars on identity alone — but `_load()` builds a *fresh*
   /// `SortConfig` from the same stored strings, and without value equality on
   /// it that select fires on every reload. See [SortConfig].
   @override
@@ -97,7 +90,6 @@ class SettingsState {
       other.backupReminderEnabled == backupReminderEnabled &&
       other.backupIntervalDays == backupIntervalDays &&
       other.sort == sort &&
-      listEquals(other.chazaraIntervals, chazaraIntervals) &&
       setEquals(other.hiddenMeforishBars, hiddenMeforishBars);
 
   @override
@@ -190,7 +182,6 @@ class SettingsNotifier extends Notifier<SettingsState> {
         descending: _get(PrefKeys.sortDescending) == 'true',
         level: int.tryParse(_get(PrefKeys.sortLevel) ?? ''),
       ),
-      chazaraIntervals: _parseIntervals(_get(PrefKeys.chazaraIntervals)),
       hiddenMeforishBars: _parseIdSet(_get(PrefKeys.hiddenMeforishBars)),
       // Absent reads as ON — an install that predates this setting is exactly
       // the one whose learning has never been exported.
@@ -208,32 +199,6 @@ class SettingsNotifier extends Notifier<SettingsState> {
       for (final part in raw.split(','))
         if (part.trim().isNotEmpty) part.trim(),
     };
-  }
-
-  /// The stored intervals, or the defaults.
-  ///
-  /// The parse is [positiveIntList]'s, the same one the dialog validates
-  /// through; what is different *here* is the failure. A stored value can be
-  /// absent (a fresh profile), older than a change to the format, or edited by
-  /// hand — and there is nobody to ask about it, so a load falls back rather
-  /// than refusing. That is the one place a substitution is honest, and it used
-  /// to be three.
-  static List<int> _parseIntervals(String? raw) {
-    final parsed = positiveIntList(raw).values;
-    return parsed.isEmpty ? ChazaraSchedule.defaultIntervals : parsed;
-  }
-
-  /// Store the chazara schedule.
-  ///
-  /// The floor stays: a schedule with nothing in it is not a schedule, and the
-  /// chazara screen would simply be empty forever. Non-positive intervals are
-  /// dropped here as well as rejected at the dialog — belt and braces on the one
-  /// value in this file that would silently disable a whole screen.
-  Future<void> setChazaraIntervals(List<int> intervals) async {
-    final clean = intervals.where((n) => n > 0).toList();
-    final effective = clean.isEmpty ? ChazaraSchedule.defaultIntervals : clean;
-    await _set(PrefKeys.chazaraIntervals, effective.join(','));
-    state = state.copyWith(chazaraIntervals: effective);
   }
 
   /// Show or hide a single meforish's coverage line in the tree.
@@ -302,7 +267,6 @@ class SettingsNotifier extends Notifier<SettingsState> {
         PrefKeys.sortMetric: state.sort.metric.name,
         PrefKeys.sortDescending: state.sort.descending.toString(),
         PrefKeys.sortLevel: state.sort.level?.toString() ?? '',
-        PrefKeys.chazaraIntervals: state.chazaraIntervals.join(','),
         PrefKeys.hiddenMeforishBars: state.hiddenMeforishBars.join(','),
         PrefKeys.backupReminderEnabled: state.backupReminderEnabled.toString(),
         PrefKeys.backupIntervalDays: state.backupIntervalDays.toString(),
@@ -335,8 +299,8 @@ class SettingsNotifier extends Notifier<SettingsState> {
   /// filling in the effective value — which for an untouched profile is the
   /// default. So "the backup contains this key" carries no intent, and applying
   /// every key it contains meant a *merge* — the mode whose whole promise is
-  /// "remove nothing" — silently replaced the sort order, chazara intervals,
-  /// hidden bars and backup interval of the profile it was merged into.
+  /// "remove nothing" — silently replaced the sort order, hidden bars and
+  /// backup interval of the profile it was merged into.
   /// `cycles` made that outright destructive rather than merely surprising:
   /// the whole list serialises to one key, so merging a backup taken before a
   /// cycle was added *deleted* that cycle.

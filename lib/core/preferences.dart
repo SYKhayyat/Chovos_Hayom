@@ -38,8 +38,6 @@ class PrefKeys {
   static const sortMetric = 'sortMetric';
   static const sortDescending = 'sortDescending';
   static const sortLevel = 'sortLevel';
-  static const chazaraIntervals = 'chazaraIntervals';
-
   /// Comma-separated layer ids whose per-meforish coverage line is hidden in the
   /// tree. Absent/empty means every enabled meforish shows its bar.
   static const hiddenMeforishBars = 'hiddenMeforishBars';
@@ -105,7 +103,6 @@ class PrefKeys {
     sortMetric,
     sortDescending,
     sortLevel,
-    chazaraIntervals,
     hiddenMeforishBars,
     cycles,
     plans,

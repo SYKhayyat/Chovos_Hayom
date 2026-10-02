@@ -85,18 +85,21 @@ List<Journey> learningJourneys() => [
         ],
       ),
       Journey(
-        id: 'learning/chazara-due',
+        id: 'learning/chazara-report',
         area: 'learning',
-        task: 'see the chazara screen and what it says is due',
+        task: 'see the chazara row and what it reports about repeats',
         steps: [
           ...startAtHome(),
-          // The drawer only offers this when something is actually due, which is
-          // itself a behaviour worth recording: with nothing due the app does
-          // not offer a dead end.
+          // **The report, not a due list** (#45). There is no schedule, so this
+          // row never hides itself: "nothing is due" is not a state any more,
+          // and a row that appears and disappears with hidden state is a row
+          // nobody learns to find. What it carries is a count of units passed
+          // more than once, and it opens the statistics screen where the
+          // numbers live.
           const TapTooltip(Nav.openMenu),
-          const SeeAnyOf(['Chazara due']),
-          const TapAny(['Chazara due']),
-          const Settle('after opening chazara'),
+          const SeeAnyOf(['Chazara']),
+          const TapAny(['Chazara']),
+          const Settle('after opening the chazara row'),
           const SomethingIsShown(),
           const Shot('learning-chazara'),
         ],

@@ -62,7 +62,6 @@ void main() {
         Routes.calculator,
         Routes.cycles,
         Routes.goals,
-        Routes.chazara,
         Routes.siyumim,
         Routes.journal,
         Routes.mefarshim,

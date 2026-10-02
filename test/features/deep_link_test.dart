@@ -145,7 +145,6 @@ void main() {
       Routes.cycles,
       Routes.newCycle,
       Routes.goals,
-      Routes.chazara,
       Routes.siyumim,
       Routes.journal,
       Routes.mefarshim,

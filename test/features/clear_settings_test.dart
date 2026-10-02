@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:chovos_hayom/application/goals.dart';
 import 'package:chovos_hayom/application/providers.dart';
+import 'package:chovos_hayom/application/sorting.dart';
 import 'package:chovos_hayom/application/settings.dart';
 import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
@@ -52,7 +53,7 @@ void main() {
       PrefKeys.goalsFor('default'):
           jsonEncode({'shas.moed.shabbos': '2027-01-01T00:00:00.000'}),
       PrefKeys.themeMode: 'dark',
-      PrefKeys.scoped('default', PrefKeys.chazaraIntervals): '2,4,8',
+      PrefKeys.scoped('default', PrefKeys.sortMetric): 'percent',
     });
 
     await tester.pumpWidget(ProviderScope(
@@ -68,7 +69,7 @@ void main() {
     final container =
         ProviderScope.containerOf(tester.element(find.byType(SettingsScreen)));
     expect(container.read(goalsProvider), isNotEmpty);
-    expect(container.read(settingsProvider).chazaraIntervals, [2, 4, 8]);
+    expect(container.read(settingsProvider).sort.metric, SortMetric.percent);
 
     await tester.scrollUntilVisible(find.text('Clear settings'), 200);
     // scrollUntilVisible stops the moment the target is attached, which can
@@ -84,8 +85,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(goalsProvider), isEmpty);
-    expect(container.read(settingsProvider).chazaraIntervals,
-        isNot([2, 4, 8]));
+    expect(container.read(settingsProvider).sort.metric, isNot(SortMetric.percent));
     // The theme is the *device's*, and this resets one profile. A reset that
     // changes what language or theme you are looking at is not one anybody
     // asked for — and for a Hebrew reader it would mean pressing "Clear

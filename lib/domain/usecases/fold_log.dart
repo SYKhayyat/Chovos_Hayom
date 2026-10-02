@@ -165,6 +165,29 @@ class LogFold {
     return total;
   }
 
+  /// How many **passes** [unitIndex] of [nodeId] has had: one for being learned,
+  /// one more for every `reviewed` event since.
+  ///
+  /// **"Learned means chazara" (#45), which is a change of meaning and not just
+  /// a rename.** A learned unit used to score **zero** here, and a separate
+  /// spaced-repetition scheduler decided when it was "due" — a unit with real
+  /// state about when you last reviewed it, which had to be maintained from day
+  /// one or it quietly lied. The rule now is that the first pass *is* the
+  /// learning, so the count is the review count plus one, and nothing is stored.
+  ///
+  /// The old review counter still exists and is still the right number of
+  /// *reviews*, so this is that plus the learning rather than a second thing to
+  /// keep in step. A test states it as an identity so the two cannot drift.
+  int chazaraCount(String nodeId, int unitIndex) {
+    // **Learned is the condition, not a bonus.** A `reviewed` event over a unit
+    // that is not currently learned is not a pass at it, and the fold already
+    // refuses to count those; asking for the learned set first is what makes
+    // this answer "no" rather than a number for something unlearned.
+    if (completedLayers(nodeId, unitIndex).isEmpty) return 0;
+    if (doneAtByNode[nodeId]?[unitIndex] == null) return 0;
+    return reviewCount(nodeId, unitIndex) + 1;
+  }
+
   static bool _subset(Set<String> required, Set<String> have) {
     for (final r in required) {
       if (!have.contains(r)) return false;
@@ -235,12 +258,12 @@ class FoldLog {
             if (set.isEmpty) {
               completed[e.nodeId]!.remove(e.unitIndex);
               // Only a *full* un-mark clears the unit's review history, so a
-              // later re-mark starts fresh (matches ChazaraSchedule and the
-              // grid's ↻ badge). A partial un-mark — un-ticking one optional
-              // meforish while its required set survives — must leave the date,
-              // chazara count and haara intact: the unit is still learned, and
-              // the cumulative chart, the chazara schedule and its siyum all
-              // read these. Clearing them here was silent data loss.
+              // later re-mark starts fresh — which is what the grid's ↻ badge
+              // promises. A partial un-mark — un-ticking one optional meforish
+              // while its required set survives — must leave the date, chazara
+              // count and haara intact: the unit is still learned, and the
+              // cumulative chart, the chazara report and its siyum all read
+              // these. Clearing them here was silent data loss.
               reviews[e.nodeId]?.remove(e.unitIndex);
               doneAt[e.nodeId]?.remove(e.unitIndex);
               touchedAt[e.nodeId]?.remove(e.unitIndex);

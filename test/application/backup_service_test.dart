@@ -99,7 +99,7 @@ void main() {
 
     final json = await BackupService(source).export(
       'a',
-      settings: const {'chazaraIntervals': '2,4,8'},
+      settings: const {'sortMetric': 'percent'},
     );
 
     final target = memoryRepository();
@@ -118,7 +118,7 @@ void main() {
     // finished go incomplete on restore.
     expect(configs.single.required, {'main', 'rashi'});
     expect(configs.single.checkable, {'main', 'rashi', 'maharsha'});
-    expect(result.settings['chazaraIntervals'], '2,4,8');
+    expect(result.settings['sortMetric'], 'percent');
   });
 
   group('a layer setting pinned to one unit', () {

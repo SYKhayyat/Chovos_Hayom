@@ -622,20 +622,24 @@ class _AppDrawer extends ConsumerWidget {
               onTap: () => _go(context, Routes.plannerCalendar),
             ),
             Consumer(builder: (context, ref, _) {
+              // **How many units have been over more than once**, not how many
+              // are "due". The spaced-repetition screen this row opened is gone
+              // (#45): there is no schedule, nothing is late, and a badge of
+              // "what you have not done yet" was the wrong number to show on a
+              // drawer — it measured the app's state rather than the reader's.
+              //
               // The count, not the list. The drawer sits in the tree whether it
-              // is open or not, and `chazaraDueProvider` re-derives on every
-              // mark and every clock tick and hands back a fresh `List` each
-              // time — which is never `==` to the last one. All this row wants
-              // is a number, and the number rarely changes.
-              final dueCount =
-                  ref.watch(chazaraDueProvider.select((due) => due.length));
+              // is open or not, and the provider re-derives on every mark and
+              // hands back a fresh value each time. All this row wants is a
+              // number, and the number rarely changes.
+              final repeated = ref.watch(chazaraRepeatedCountProvider);
               return ListTile(
-                leading: const Icon(Icons.refresh),
-                title: Text(l10n.navChazaraDue),
-                trailing: dueCount == 0
-                    ? null
-                    : Badge(label: Text('$dueCount')),
-                onTap: () => _go(context, Routes.chazara),
+                leading: const Icon(Icons.repeat),
+                title: Text(l10n.navChazara),
+                subtitle: Text(l10n.navChazaraSubtitle),
+                trailing:
+                    repeated == 0 ? null : Badge(label: Text('$repeated')),
+                onTap: () => _go(context, Routes.stats),
               );
             }),
             // Five rows until this one: Statistics, Siyum calculator, Goals,

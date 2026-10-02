@@ -58,6 +58,9 @@ final Map<String, List<String>> harnessCovers = {
   Routes.stats: [
     'reports/tabs',
     'reports/calculator-answers',
+    // The chazara row opens here (#45): it reports repeats rather than being
+    // due, so there is no separate screen left for it to open.
+    'learning/chazara-report',
     'principles/compact-layout-holds',
   ],
   Routes.calculator: ['reports/tabs', 'reports/calculator-answers'],
@@ -70,10 +73,6 @@ final Map<String, List<String>> harnessCovers = {
     'principles/compact-layout-holds',
   ],
   Routes.newCycle: ['planner/cycles-round-trip'],
-  Routes.chazara: [
-    'learning/chazara-due',
-    'principles/compact-layout-holds',
-  ],
   Routes.journal: [
     'learning/journal-round-trip',
     'principles/compact-layout-holds',

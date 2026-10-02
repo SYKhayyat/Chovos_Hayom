@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/generated/app_localizations.dart';
-import '../features/chazara/chazara_screen.dart';
 import '../features/custom_node/add_custom_node_screen.dart';
 import '../features/cycles/cycles_screen.dart';
 import '../features/cycles/edit_cycle_screen.dart';
@@ -57,7 +56,6 @@ abstract final class Routes {
 
   static const cycles = '/cycles';
   static const newCycle = '/cycles/new';
-  static const chazara = '/chazara';
   static const journal = '/journal';
   static const profiles = '/profiles';
   static const settings = '/settings';
@@ -121,7 +119,6 @@ abstract final class AppRouter {
       ['cycles'] => const CyclesScreen(),
       ['cycles', 'new'] => const EditCycleScreen(),
       ['cycles', 'edit', final id] => EditCycleScreen(cycleId: id),
-      ['chazara'] => const ChazaraScreen(),
       ['journal'] => const NotesJournalScreen(),
       ['profiles'] => const ProfilesScreen(),
       ['settings'] => const SettingsScreen(),

@@ -4,13 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/day.dart';
 import '../core/equality.dart';
-import '../domain/usecases/chazara_schedule.dart';
+import '../domain/usecases/chazara.dart';
 import '../domain/usecases/predictor.dart';
 import '../domain/usecases/progress_series.dart';
 import '../domain/usecases/siyum.dart';
 import '../domain/usecases/siyum_schedule.dart';
 import 'providers.dart';
-import 'settings.dart';
 
 /// A derived snapshot of overall learning stats for the active profile.
 class StatsSummary {
@@ -198,25 +197,48 @@ final statsProvider = Provider<StatsSummary?>((ref) {
   );
 });
 
-/// Units currently due for a chazara (review) pass, most overdue first.
-final chazaraDueProvider = Provider<List<ChazaraItem>>((ref) {
+/// Every unit with at least one chazara (review) pass, most-passed first.
+///
+/// **This is a report, not a due list** (#45). There is no schedule, so nothing
+/// is late and nothing is "due today" — what is left is the thing the reader
+/// actually wants, which is *how many times have I been over this*. A pass is
+/// the learning itself plus every `reviewed` event since, all of it derived from
+/// the log by [LogFold.chazaraCount]; nothing about a review is stored.
+final chazaraReportProvider = Provider<List<ChazaraPass>>((ref) {
   final fold = ref.watch(foldProvider).asData?.value;
   if (fold == null) return const [];
-  final intervals = ref.watch(settingsProvider.select((s) => s.chazaraIntervals));
-  final layers = ref.watch(layerRolesProvider);
-  final items = ChazaraSchedule.due(fold, ref.watch(clockProvider)(),
-      intervals: intervals, layers: layers);
   final catalog = ref.watch(mergedCatalogProvider).asData?.value;
-  if (catalog == null) return items;
-  // Drop units whose node has since been hidden or removed, or that now sit
-  // above a lowered unitCount — the schedule reads the log, which still
-  // remembers them, but they can't be shown (the row would render a raw id) or
-  // reviewed, so they must not sit in the list or the due-count badge.
+  final report = Chazara.reviewedUnits(fold);
+  if (catalog == null) return report;
+  // The same catalog filter the due list had: a unit whose node has since been
+  // hidden or removed, or that now sits above a lowered unitCount, cannot be
+  // shown (the row would render a raw id), so it is dropped here rather than
+  // rendered as something the reader cannot act on.
   return [
-    for (final item in items)
-      if (catalog.byId(item.nodeId)?.containsUnit(item.unitIndex) ?? false)
-        item,
+    for (final pass in report)
+      if (catalog.byId(pass.nodeId)?.containsUnit(pass.unitIndex) ?? false)
+        pass,
   ];
+});
+
+/// How many units have more than one pass — the "been over this again" figure.
+///
+/// This is the number the drawer shows, and it is deliberately *not* a count of
+/// outstanding work: a badge of "what you have not done yet" measured the
+/// app's state rather than the reader's, which is the wrong thing to put in front
+/// of someone opening a menu.
+final chazaraRepeatedCountProvider = Provider<int>((ref) {
+  final fold = ref.watch(foldProvider).asData?.value;
+  if (fold == null) return 0;
+  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+  var total = 0;
+  for (final pass in Chazara.repeatedUnits(fold)) {
+    if (catalog == null ||
+        (catalog.byId(pass.nodeId)?.containsUnit(pass.unitIndex) ?? false)) {
+      total++;
+    }
+  }
+  return total;
 });
 
 /// Completed nodes at every level (siyumim), most-recently-finished first.

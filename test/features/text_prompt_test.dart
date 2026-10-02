@@ -102,82 +102,76 @@ void main() {
     expectNoFrameworkError();
   });
 
-  testWidgets('the chazara intervals dialog survives closing', (tester) async {
-    final prefs = InMemoryPreferences();
-    await tester.pumpWidget(host(const SettingsScreen(), prefs: prefs));
-    await tester.pumpAndSettle();
-
-    await openSettingsRow(tester, 'Review intervals');
-    await tester.enterText(find.byType(TextField), '2, 5, 9');
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
-    await tester.pumpAndSettle();
-
-    expectNoFrameworkError();
-    expect(prefs.getString(PrefKeys.scoped('default', PrefKeys.chazaraIntervals)),
-        '2,5,9');
-  });
-
-  /// The two interval settings, two rows apart, which used to disagree about
-  /// what happens to input neither of them can use: one silently kept the parts
-  /// it understood, the other closed and complained on a snackbar.
-  group('both interval dialogs say no the same way', () {
-    testWidgets('a part it cannot read is named, and nothing is saved',
-        (tester) async {
-      final prefs = InMemoryPreferences();
-      await tester.pumpWidget(host(const SettingsScreen(), prefs: prefs));
+  /// The backup interval dialog: the only number-input prompt left on this
+  /// screen (#45 took the chazara intervals dialog with the scheduler, and with
+  /// it the two-row disagreement below — two interval settings two rows apart
+  /// that used to treat unusable input differently, one silently keeping the
+  /// parts it understood and the other complaining on a snackbar after closing).
+  ///
+  /// What is left is the one behaviour both of them had to agree on, and it is
+  /// worth stating on its own now that it has no sibling to compare against:
+  /// **input the dialog cannot use is refused, out loud, and nothing is saved.**
+  group('the interval dialog says no in the dialog', () {
+    Future<void> openIntervalDialog(WidgetTester tester) async {
       await tester.pumpAndSettle();
-
-      await openSettingsRow(tester, 'Review intervals');
-      await tester.enterText(find.byType(TextField), '2, 5, x');
-      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      // The row sits behind the backup-reminder toggle, so it needs turning on
+      // first — the same guard a reader meets on the way there.
+      await tester.tap(find.byType(Switch).first);
       await tester.pumpAndSettle();
-
-      // Still open, still holding what was typed — and explicit about which
-      // part it did not understand. This used to save [2, 5] and close.
-      expect(find.text('Not a number of days: x'), findsOneWidget);
-      expect(find.text('2, 5, x'), findsOneWidget);
-      expect(prefs.getString(PrefKeys.scoped('default', PrefKeys.chazaraIntervals)),
-          isNull);
-
-      await tester.enterText(find.byType(TextField), '2, 5, 9');
-      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
-      await tester.pumpAndSettle();
-      expect(prefs.getString(PrefKeys.scoped('default', PrefKeys.chazaraIntervals)),
-          '2,5,9');
-      expectNoFrameworkError();
-    });
-
-    testWidgets('an empty schedule is refused rather than silently defaulted',
-        (tester) async {
-      await tester.pumpWidget(host(const SettingsScreen()));
-      await tester.pumpAndSettle();
-
-      await openSettingsRow(tester, 'Review intervals');
-      await tester.enterText(find.byType(TextField), '   ');
-      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('at least one interval'), findsOneWidget);
-      expectNoFrameworkError();
-    });
-
-    testWidgets('and the backup interval refuses in the same place',
-        (tester) async {
-      final prefs = InMemoryPreferences();
-      await tester.pumpWidget(host(const SettingsScreen(), prefs: prefs));
-      await tester.pumpAndSettle();
-
       await openSettingsRow(tester, 'Remind me after');
-      await tester.enterText(find.byType(TextField), '0');
+    }
+
+    testWidgets('input it cannot use is refused, and nothing is saved',
+        (tester) async {
+      final prefs = InMemoryPreferences();
+      await tester.pumpWidget(host(const SettingsScreen(), prefs: prefs));
+      await openIntervalDialog(tester);
+
+      await tester.enterText(find.byType(TextField), 'x');
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
 
-      // In the dialog, not on a snackbar behind a dialog that has already gone.
+      // Still open, still holding what was typed, and explicit about why not.
       expect(find.text('Enter a number of days above 0.'), findsOneWidget);
-      expect(find.text('0'), findsOneWidget);
+      expect(find.text('x'), findsOneWidget);
       expect(
-          prefs.getString(PrefKeys.scoped('default', PrefKeys.backupIntervalDays)),
+          prefs.getString(
+              PrefKeys.scoped('default', PrefKeys.backupIntervalDays)),
           isNull);
+
+      // The same dialog accepts what it can use, which is what makes the refusal
+      // a judgement rather than a wall.
+      await tester.enterText(find.byType(TextField), '21');
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+      expect(
+          prefs.getString(
+              PrefKeys.scoped('default', PrefKeys.backupIntervalDays)),
+          '21');
+      expectNoFrameworkError();
+    });
+
+    testWidgets('zero and blank are both refused rather than defaulted',
+        (tester) async {
+      final prefs = InMemoryPreferences();
+      await tester.pumpWidget(host(const SettingsScreen(), prefs: prefs));
+      await openIntervalDialog(tester);
+
+      // Zero would silently become "off" if it were stored, and blank would
+      // silently become the default — either way the reader would save a
+      // reminder interval they did not choose.
+      for (final bad in ['0', '   ']) {
+        await tester.enterText(find.byType(TextField), bad);
+        await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Enter a number of days above 0.'), findsOneWidget,
+            reason: 'why \'$bad\' was refused');
+        expect(
+            prefs.getString(
+                PrefKeys.scoped('default', PrefKeys.backupIntervalDays)),
+            isNull);
+      }
       expectNoFrameworkError();
     });
   });

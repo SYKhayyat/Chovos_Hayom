@@ -127,7 +127,7 @@ void main() {
     // A handful of specific ones, so the derivation cannot quietly start
     // returning an empty set and pass.
     expect(verbs, containsAll(<String>['markDone', 'addEvent', 'setGoal',
-      'setLayerConfig', 'removeBatch', 'setChazaraIntervals']));
+      'setLayerConfig', 'removeBatch', 'setBackupIntervalDays']));
     expect(verbs, isNot(contains('getEvents')));
     expect(verbs, isNot(contains('watchEvents')));
     expect(verbs.length, greaterThan(20));
