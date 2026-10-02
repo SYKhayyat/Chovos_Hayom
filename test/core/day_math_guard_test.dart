@@ -37,23 +37,27 @@ void main() {
     (
       why: 'computes a day ordinal by hand — use Day.of()',
       pattern: r'86400000',
-      sample: 'DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch '
+      sample:
+          'DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch '
           '~/ 86400000;',
     ),
     (
-      why: 'takes a day count from a Duration, which truncates a 23-hour '
+      why:
+          'takes a day count from a Duration, which truncates a 23-hour '
           'day to zero — use Day.difference()',
       pattern: r'\.difference\([^)]*\)\.inDays',
       sample: 'final days = b.difference(a).inDays;',
     ),
     (
-      why: 'truncates a DateTime to local midnight by hand — use Day.of(), '
+      why:
+          'truncates a DateTime to local midnight by hand — use Day.of(), '
           'and Day.midnight only where a DateTime has to leave',
       pattern: r'DateTime\(\s*\w+\.year\s*,\s*\w+\.month\s*,\s*\w+\.day\s*\)',
       sample: 'final today = DateTime(now.year, now.month, now.day);',
     ),
     (
-      why: 'steps a date by elapsed time, which shifts by an hour across a '
+      why:
+          'steps a date by elapsed time, which shifts by an hour across a '
           'DST boundary — use Day + n',
       pattern: r'Duration\(\s*days:',
       sample: 'from.add(const Duration(days: 180))',
@@ -70,9 +74,13 @@ void main() {
 
   test('the regexes actually match the shapes they ban', () {
     for (final ban in bans) {
-      expect(RegExp(ban.pattern).hasMatch(ban.sample), isTrue,
-          reason: 'the pattern for "${ban.why}" no longer matches its own '
-              'sample, so it is guarding nothing');
+      expect(
+        RegExp(ban.pattern).hasMatch(ban.sample),
+        isTrue,
+        reason:
+            'the pattern for "${ban.why}" no longer matches its own '
+            'sample, so it is guarding nothing',
+      );
     }
   });
 
@@ -95,12 +103,16 @@ final real = 86400000;
     for (final path in dartSourcesUnder()) {
       if (path.endsWith(home)) continue;
 
-      for (final line
-          in codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch)) {
+      for (final line in codeLines(
+        File(path).readAsStringSync(),
+        escapeHatch: escapeHatch,
+      )) {
         for (final ban in bans) {
           if (!RegExp(ban.pattern).hasMatch(line.text)) continue;
-          violations.add('$path:${line.line} ${ban.why}\n'
-              '    ${line.text.trim()}');
+          violations.add(
+            '$path:${line.line} ${ban.why}\n'
+            '    ${line.text.trim()}',
+          );
         }
       }
     }
@@ -108,7 +120,8 @@ final real = 86400000;
     expect(
       violations,
       isEmpty,
-      reason: 'Calendar-day arithmetic belongs in lib/core/day.dart and '
+      reason:
+          'Calendar-day arithmetic belongs in lib/core/day.dart and '
           'nowhere else.\n\n${violations.join('\n')}\n\n'
           'If a line genuinely needs the raw form, mark it '
           '`// $escapeHatch — <reason>`.',

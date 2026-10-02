@@ -20,26 +20,22 @@ void main() {
   const sunday = Day(3);
   const monday = Day(4);
 
-  DayInfo info(Day day) => DayInfo(
-        day: day,
-        weekday: day.weekday,
-        dayOfMonth: day.midnight.day,
-      );
+  DayInfo info(Day day) =>
+      DayInfo(day: day, weekday: day.weekday, dayOfMonth: day.midnight.day);
 
   LearningPlan plan({
     int unitsPerDay = 10,
     Map<int, int> weekdayAmounts = const {},
     Map<Day, int> dateAmounts = const {},
     SpilloverMode spillover = SpilloverMode.ignore,
-  }) =>
-      LearningPlan(
-        id: 'p',
-        name: 'P',
-        unitsPerDay: unitsPerDay,
-        weekdayAmounts: weekdayAmounts,
-        dateAmounts: dateAmounts,
-        spillover: spillover,
-      );
+  }) => LearningPlan(
+    id: 'p',
+    name: 'P',
+    unitsPerDay: unitsPerDay,
+    weekdayAmounts: weekdayAmounts,
+    dateAmounts: dateAmounts,
+    spillover: spillover,
+  );
 
   List<ScheduledDay> walk(
     LearningPlan p, {
@@ -47,9 +43,14 @@ void main() {
     int Function(Day day) doneOn = _none,
     Day from = thursday,
     Day to = monday,
-  }) =>
-      PlanSchedule.walk(p,
-          info: info, from: from, to: to, owedAtStart: owedAtStart, doneOn: doneOn);
+  }) => PlanSchedule.walk(
+    p,
+    info: info,
+    from: from,
+    to: to,
+    owedAtStart: owedAtStart,
+    doneOn: doneOn,
+  );
 
   group('the three modes are genuinely different', () {
     test('ignore: a missed day changes nothing downstream', () {
@@ -76,42 +77,67 @@ void main() {
       // was owed *when it started*, never a function of what it then owes.
       final days = walk(plan(spillover: SpilloverMode.catchUp));
       for (final d in days) {
-        expect(d.amount, d.base + d.owedEntering,
-            reason: '$d asked for more than its base plus its opening debt');
+        expect(
+          d.amount,
+          d.base + d.owedEntering,
+          reason: '$d asked for more than its base plus its opening debt',
+        );
       }
-      expect(days.last.amount, lessThan(100),
-          reason: 'a linear catch-up of ten a day cannot reach 160');
+      expect(
+        days.last.amount,
+        lessThan(100),
+        reason: 'a linear catch-up of ten a day cannot reach 160',
+      );
     });
 
     test('slide: daily amounts never grow, unlike catchUp', () {
       final days = walk(plan(spillover: SpilloverMode.slide));
-      expect(days.map((d) => d.amount), [10, 10, 10, 10, 10],
-          reason: 'the shortfall delays the timeline, it does not enlarge days');
-      expect(days.last.owedLeaving, 50, reason: 'but the debt is still tracked');
+      expect(
+        days.map((d) => d.amount),
+        [10, 10, 10, 10, 10],
+        reason: 'the shortfall delays the timeline, it does not enlarge days',
+      );
+      expect(
+        days.last.owedLeaving,
+        50,
+        reason: 'but the debt is still tracked',
+      );
     });
 
-    test('ignore and slide ask the same amount — the difference is the lag', () {
-      expect(
-        PlanSchedule.amountFor(
-            mode: SpilloverMode.ignore, base: 10, owed: 40),
-        10,
-      );
-      expect(
-        PlanSchedule.amountFor(mode: SpilloverMode.slide, base: 10, owed: 40),
-        10,
-      );
-      // ...and only slide expresses it as a delay.
-      expect(
-        PlanSchedule.lagDays(
-            mode: SpilloverMode.slide, owed: 40, unitsPerDay: 10),
-        4,
-      );
-      expect(
-        PlanSchedule.lagDays(
-            mode: SpilloverMode.ignore, owed: 40, unitsPerDay: 10),
-        0,
-      );
-    });
+    test(
+      'ignore and slide ask the same amount — the difference is the lag',
+      () {
+        expect(
+          PlanSchedule.amountFor(
+            mode: SpilloverMode.ignore,
+            base: 10,
+            owed: 40,
+          ),
+          10,
+        );
+        expect(
+          PlanSchedule.amountFor(mode: SpilloverMode.slide, base: 10, owed: 40),
+          10,
+        );
+        // ...and only slide expresses it as a delay.
+        expect(
+          PlanSchedule.lagDays(
+            mode: SpilloverMode.slide,
+            owed: 40,
+            unitsPerDay: 10,
+          ),
+          4,
+        );
+        expect(
+          PlanSchedule.lagDays(
+            mode: SpilloverMode.ignore,
+            owed: 40,
+            unitsPerDay: 10,
+          ),
+          0,
+        );
+      },
+    );
   });
 
   group('catchUp versus slide: the same shortfall, spent differently', () {
@@ -125,7 +151,10 @@ void main() {
       // The whole cost is heavier days, and no delay.
       expect(
         PlanSchedule.lagDays(
-            mode: SpilloverMode.catchUp, owed: 50, unitsPerDay: 10),
+          mode: SpilloverMode.catchUp,
+          owed: 50,
+          unitsPerDay: 10,
+        ),
         0,
       );
     });
@@ -137,7 +166,10 @@ void main() {
       // Fifty units behind at ten a day is five days late.
       expect(
         PlanSchedule.lagDays(
-            mode: SpilloverMode.slide, owed: 50, unitsPerDay: 10),
+          mode: SpilloverMode.slide,
+          owed: 50,
+          unitsPerDay: 10,
+        ),
         5,
       );
     });
@@ -149,22 +181,31 @@ void main() {
       // Neither a heavier day nor a delay: the plan is simply a plan.
       expect(
         PlanSchedule.lagDays(
-            mode: SpilloverMode.ignore, owed: 50, unitsPerDay: 10),
+          mode: SpilloverMode.ignore,
+          owed: 50,
+          unitsPerDay: 10,
+        ),
         0,
       );
     });
 
-    test('so catchUp is distinguished from the other two by asking for more', () {
-      final catchUp = walk(plan(spillover: SpilloverMode.catchUp));
-      final others = [
-        SpilloverMode.slide,
-        SpilloverMode.ignore,
-      ].map((m) => walk(plan(spillover: m)));
-      for (final day in others) {
-        expect(day.map((d) => d.amount), catchUp.map((d) => d.base),
-            reason: 'no mode but catchUp should enlarge a day');
-      }
-    });
+    test(
+      'so catchUp is distinguished from the other two by asking for more',
+      () {
+        final catchUp = walk(plan(spillover: SpilloverMode.catchUp));
+        final others = [
+          SpilloverMode.slide,
+          SpilloverMode.ignore,
+        ].map((m) => walk(plan(spillover: m)));
+        for (final day in others) {
+          expect(
+            day.map((d) => d.amount),
+            catchUp.map((d) => d.base),
+            reason: 'no mode but catchUp should enlarge a day',
+          );
+        }
+      },
+    );
   });
 
   group('a day off creates no debt', () {
@@ -203,8 +244,12 @@ void main() {
       final sundayDay = days.firstWhere((d) => d.day == sunday);
       expect(DayAmount.of(p, info(sunday)), 0, reason: 'the base is a rest');
       expect(sundayDay.base, 0);
-      expect(sundayDay.owedEntering, sundayDay.owedLeaving,
-          reason: 'a rest day adds no debt — it only carries what was already there');
+      expect(
+        sundayDay.owedEntering,
+        sundayDay.owedLeaving,
+        reason:
+            'a rest day adds no debt — it only carries what was already there',
+      );
     });
   });
 
@@ -233,7 +278,10 @@ void main() {
     test('a shortfall of exactly a day is one day of lag', () {
       expect(
         PlanSchedule.lagDays(
-            mode: SpilloverMode.slide, owed: 10, unitsPerDay: 10),
+          mode: SpilloverMode.slide,
+          owed: 10,
+          unitsPerDay: 10,
+        ),
         1,
       );
     });
@@ -244,7 +292,10 @@ void main() {
       // calendar can express.
       expect(
         PlanSchedule.lagDays(
-            mode: SpilloverMode.slide, owed: 4, unitsPerDay: 10),
+          mode: SpilloverMode.slide,
+          owed: 4,
+          unitsPerDay: 10,
+        ),
         1,
       );
     });
@@ -252,12 +303,18 @@ void main() {
     test('nothing owed, or no rate, is no lag', () {
       expect(
         PlanSchedule.lagDays(
-            mode: SpilloverMode.slide, owed: 0, unitsPerDay: 10),
+          mode: SpilloverMode.slide,
+          owed: 0,
+          unitsPerDay: 10,
+        ),
         0,
       );
       expect(
         PlanSchedule.lagDays(
-            mode: SpilloverMode.slide, owed: 10, unitsPerDay: 0),
+          mode: SpilloverMode.slide,
+          owed: 10,
+          unitsPerDay: 0,
+        ),
         0,
       );
     });
@@ -284,18 +341,18 @@ void main() {
       // A plan is a schedule, and an unreadable setting must not make it
       // un-openable; `ignore` is the one mode that changes no dates.
       expect(
-        LearningPlan.fromJson({'id': 'p', 'name': 'P', 'spillover': 'nope'})
-            .spillover,
+        LearningPlan.fromJson({
+          'id': 'p',
+          'name': 'P',
+          'spillover': 'nope',
+        }).spillover,
         SpilloverMode.ignore,
       );
     });
 
     test('the mode participates in equality', () {
       expect(plan(), plan());
-      expect(
-        plan(),
-        isNot(plan(spillover: SpilloverMode.slide)),
-      );
+      expect(plan(), isNot(plan(spillover: SpilloverMode.slide)));
     });
   });
 }

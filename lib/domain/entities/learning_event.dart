@@ -87,21 +87,20 @@ class LearningEvent {
     required DateTime occurredAt,
     required int? durationMin,
     required String? note,
-  }) =>
-      LearningEvent(
-        id: id,
-        profileId: profileId,
-        nodeId: nodeId,
-        unitIndex: unitIndex,
-        action: action,
-        occurredAt: occurredAt,
-        loggedAt: loggedAt,
-        durationMin: durationMin,
-        note: note,
-        layers: layers,
-        batchId: batchId,
-        planId: planId,
-      );
+  }) => LearningEvent(
+    id: id,
+    profileId: profileId,
+    nodeId: nodeId,
+    unitIndex: unitIndex,
+    action: action,
+    occurredAt: occurredAt,
+    loggedAt: loggedAt,
+    durationMin: durationMin,
+    note: note,
+    layers: layers,
+    batchId: batchId,
+    planId: planId,
+  );
 
   /// The same event, belonging to [profileId].
   ///
@@ -119,55 +118,54 @@ class LearningEvent {
   /// deliberately kept — the same backup imported into two profiles putting the
   /// same ids in both is the feature, not a collision.
   LearningEvent rescopedTo(String profileId) => LearningEvent(
-        id: id,
-        profileId: profileId,
-        nodeId: nodeId,
-        unitIndex: unitIndex,
-        action: action,
-        occurredAt: occurredAt,
-        loggedAt: loggedAt,
-        durationMin: durationMin,
-        note: note,
-        layers: layers,
-        batchId: batchId,
-        planId: planId,
-      );
+    id: id,
+    profileId: profileId,
+    nodeId: nodeId,
+    unitIndex: unitIndex,
+    action: action,
+    occurredAt: occurredAt,
+    loggedAt: loggedAt,
+    durationMin: durationMin,
+    note: note,
+    layers: layers,
+    batchId: batchId,
+    planId: planId,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'profileId': profileId,
-        'nodeId': nodeId,
-        'unitIndex': unitIndex,
-        'action': action.name,
-        'occurredAt': occurredAt.toIso8601String(),
-        'loggedAt': loggedAt.toIso8601String(),
-        if (durationMin != null) 'durationMin': durationMin,
-        if (note != null) 'note': note,
-        // Omit the default single-'main' list to keep old backups byte-identical.
-        if (!(layers.length == 1 && layers.first == mainLayerId)) 'layers': layers,
-        if (batchId != null) 'batchId': batchId,
-        if (planId != null) 'planId': planId,
-      };
+    'id': id,
+    'profileId': profileId,
+    'nodeId': nodeId,
+    'unitIndex': unitIndex,
+    'action': action.name,
+    'occurredAt': occurredAt.toIso8601String(),
+    'loggedAt': loggedAt.toIso8601String(),
+    if (durationMin != null) 'durationMin': durationMin,
+    if (note != null) 'note': note,
+    // Omit the default single-'main' list to keep old backups byte-identical.
+    if (!(layers.length == 1 && layers.first == mainLayerId)) 'layers': layers,
+    if (batchId != null) 'batchId': batchId,
+    if (planId != null) 'planId': planId,
+  };
 
   factory LearningEvent.fromJson(Map<String, dynamic> json) => LearningEvent(
-        id: json['id'] as String,
-        profileId: json['profileId'] as String,
-        nodeId: json['nodeId'] as String,
-        unitIndex: (json['unitIndex'] as num).toInt(),
-        action: EventAction.values.byName(json['action'] as String),
-        occurredAt: DateTime.parse(json['occurredAt'] as String),
-        loggedAt: DateTime.parse(json['loggedAt'] as String),
-        durationMin: (json['durationMin'] as num?)?.toInt(),
-        // Backups written before the merge carry a separate `haara`. Fold it in
-        // rather than dropping it — importing an old backup must not lose text.
-        note: mergeNotes(json['note'] as String?, json['haara'] as String?),
-        layers: (json['layers'] as List?)?.cast<String>() ??
-            const [mainLayerId],
-      batchId: json['batchId'] as String?,
-      // Absent from a file written before plans existed, and null is the right
-      // reading of it: that work really was done, just without a plan attached.
-      planId: json['planId'] as String?,
-    );
+    id: json['id'] as String,
+    profileId: json['profileId'] as String,
+    nodeId: json['nodeId'] as String,
+    unitIndex: (json['unitIndex'] as num).toInt(),
+    action: EventAction.values.byName(json['action'] as String),
+    occurredAt: DateTime.parse(json['occurredAt'] as String),
+    loggedAt: DateTime.parse(json['loggedAt'] as String),
+    durationMin: (json['durationMin'] as num?)?.toInt(),
+    // Backups written before the merge carry a separate `haara`. Fold it in
+    // rather than dropping it — importing an old backup must not lose text.
+    note: mergeNotes(json['note'] as String?, json['haara'] as String?),
+    layers: (json['layers'] as List?)?.cast<String>() ?? const [mainLayerId],
+    batchId: json['batchId'] as String?,
+    // Absent from a file written before plans existed, and null is the right
+    // reading of it: that work really was done, just without a plan attached.
+    planId: json['planId'] as String?,
+  );
 
   /// Folds a legacy (note, haara) pair into the single note field. Keeps both
   /// when both exist — separated by a blank line, learning-note first, matching

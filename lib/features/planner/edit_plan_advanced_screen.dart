@@ -43,7 +43,9 @@ class EditPlanAdvancedScreen extends ConsumerWidget {
     // linked after the thing it named is gone.
     if (plan == null) {
       return Scaffold(
-        appBar: AppBar(title: Text(AppLocalizations.of(context).plansAdvancedTitle)),
+        appBar: AppBar(
+          title: Text(AppLocalizations.of(context).plansAdvancedTitle),
+        ),
         body: const Center(child: Text('-')),
       );
     }
@@ -156,7 +158,9 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
             for (var d = DateTime.monday; d <= DateTime.sunday; d++)
               ListTile(
                 title: Text(weekdayName(l10n, d)),
-                trailing: _weekdays.containsKey(d) ? const Icon(Icons.check) : null,
+                trailing: _weekdays.containsKey(d)
+                    ? const Icon(Icons.check)
+                    : null,
                 onTap: () => Navigator.of(sheetContext).pop(d),
               ),
           ],
@@ -279,10 +283,7 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
       // [PlanPosition] reports `itemId`, so the position can no longer say
       // which sefer you are on. Same answer the cycle editor, the node editor
       // and the meforish sheet all already give.
-      _items = [
-        ..._items,
-        PlanItem(id: const Uuid().v4(), nodeId: chosen.id),
-      ];
+      _items = [..._items, PlanItem(id: const Uuid().v4(), nodeId: chosen.id)];
     });
   }
 
@@ -305,12 +306,7 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.plansAdvancedTitle),
-        actions: [
-          TextButton(
-            onPressed: _save,
-            child: Text(l10n.plansSave),
-          ),
-        ],
+        actions: [TextButton(onPressed: _save, child: Text(l10n.plansSave))],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -398,8 +394,8 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
               // onReorderItem, not onReorder: it already accounts for the removed
               // item, so no index fix-up is needed. Same reason as the cycle
               // editor's, which this pairs with.
-              onReorderItem: (from, to) => setState(
-                  () => _items.insert(to, _items.removeAt(from))),
+              onReorderItem: (from, to) =>
+                  setState(() => _items.insert(to, _items.removeAt(from))),
               children: [
                 for (var i = 0; i < _items.length; i++)
                   _itemTile(l10n, i, catalog),
@@ -498,9 +494,13 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
             ListTile(
               key: const ValueKey('pacing-finish-date'),
               contentPadding: EdgeInsets.zero,
-              title: Text(DateDisplay.format(
-                  (_pacing.finishDay ?? Day.of(ref.read(clockProvider)())).midnight,
-                  mode)),
+              title: Text(
+                DateDisplay.format(
+                  (_pacing.finishDay ?? Day.of(ref.read(clockProvider)()))
+                      .midnight,
+                  mode,
+                ),
+              ),
               trailing: const Icon(Icons.chevron_right),
               onTap: _pickFinishDay,
             ),
@@ -519,11 +519,11 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
     setState(() {
       _pacing = switch (kind) {
         _PacingKind.perDay => AmountPerDay(
-            _pacing.unitsPerDay ?? widget.plan.unitsPerDay,
-          ),
+          _pacing.unitsPerDay ?? widget.plan.unitsPerDay,
+        ),
         _PacingKind.finishBy => FinishBy(
-            _pacing.finishDay ?? Day.of(ref.read(clockProvider)()),
-          ),
+          _pacing.finishDay ?? Day.of(ref.read(clockProvider)()),
+        ),
       };
     });
   }
@@ -577,9 +577,7 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
     final total = PlanRunProgress.totalUnits(_applyTo(), catalog);
     if (total != null) return l10n.plansSequenceTotal(total);
     final open = _items.any((i) => i.wrapsRange || i.endUnit == null);
-    return open
-        ? l10n.plansSequenceTotalOpen(totalUnitsWhenOpen(catalog))
-        : '';
+    return open ? l10n.plansSequenceTotalOpen(totalUnitsWhenOpen(catalog)) : '';
   }
 
   /// Units in the chain, used only as the "so far" figure on the endless line.
@@ -594,9 +592,7 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
       if (range == null) continue;
       total += range.wraps
           ? (range.node.isLeaf ? range.length : 0)
-          : (range.node.isLeaf
-              ? range.length
-              : range.walk(catalog).length);
+          : (range.node.isLeaf ? range.length : range.walk(catalog).length);
     }
     return total;
   }
@@ -643,7 +639,9 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
       key: ValueKey('item-${item.id}'),
       contentPadding: EdgeInsets.zero,
       leading: ReorderableDragStartListener(
-          index: i, child: const Icon(Icons.drag_handle)),
+        index: i,
+        child: const Icon(Icons.drag_handle),
+      ),
       title: Text(node == null ? item.nodeId : nodeName(l10n, node)),
       subtitle: _rangeSubtitle(l10n, item),
       trailing: Row(
@@ -654,14 +652,16 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
             tooltip: l10n.tooltipMoveUp,
             onPressed: i == 0
                 ? null
-                : () => setState(() => _items.insert(i - 1, _items.removeAt(i))),
+                : () =>
+                      setState(() => _items.insert(i - 1, _items.removeAt(i))),
           ),
           IconButton(
             icon: const Icon(Icons.arrow_downward, size: 18),
             tooltip: l10n.tooltipMoveDown,
             onPressed: i == _items.length - 1
                 ? null
-                : () => setState(() => _items.insert(i + 1, _items.removeAt(i))),
+                : () =>
+                      setState(() => _items.insert(i + 1, _items.removeAt(i))),
           ),
           IconButton(
             icon: const Icon(Icons.close, size: 18),
@@ -680,12 +680,16 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
     if (item.startUnit != null) {
       parts.add('${l10n.plansRangeFrom} ${item.startUnit}');
     }
-    parts.add(item.endUnit == null
-        ? l10n.plansRangeNoEnd
-        : '${l10n.plansRangeTo} ${item.endUnit}');
+    parts.add(
+      item.endUnit == null
+          ? l10n.plansRangeNoEnd
+          : '${l10n.plansRangeTo} ${item.endUnit}',
+    );
     if (item.wrapsRange) parts.add(l10n.plansRangeWrap);
-    return Text(parts.join(' · '),
-        style: Theme.of(context).textTheme.bodySmall);
+    return Text(
+      parts.join(' · '),
+      style: Theme.of(context).textTheme.bodySmall,
+    );
   }
 
   /// The range controls, one block per sefer in the chain.
@@ -700,8 +704,7 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
       children: [
         const Divider(height: 32),
         _header(l10n.plansRange),
-        Text(l10n.plansRangeHelp,
-            style: Theme.of(context).textTheme.bodySmall),
+        Text(l10n.plansRangeHelp, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 8),
         for (final item in _items) _rangeRow(l10n, item),
       ],
@@ -710,9 +713,9 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
 
   Widget _rangeRow(AppLocalizations l10n, PlanItem item) {
     void replace(PlanItem next) => setState(() {
-          final at = _items.indexWhere((i) => i.id == item.id);
-          if (at >= 0) _items[at] = next;
-        });
+      final at = _items.indexWhere((i) => i.id == item.id);
+      if (at >= 0) _items[at] = next;
+    });
 
     return Padding(
       key: ValueKey('range-${item.id}'),
@@ -738,9 +741,8 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
                   key: ValueKey('range-to-${item.id}'),
                   label: l10n.plansRangeTo,
                   value: item.endUnit,
-                  onChanged: (v) => replace(
-                    _copyItem(item, endUnit: v, clearEnd: v == null),
-                  ),
+                  onChanged: (v) =>
+                      replace(_copyItem(item, endUnit: v, clearEnd: v == null)),
                 ),
               ),
             ],
@@ -774,23 +776,22 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
     bool clearStart = false,
     bool clearEnd = false,
     bool? wrapsRange,
-  }) =>
-      PlanItem(
-        id: item.id,
-        nodeId: item.nodeId,
-        label: item.label,
-        startUnit: clearStart ? null : (startUnit ?? item.startUnit),
-        endUnit: clearEnd ? null : (endUnit ?? item.endUnit),
-        wrapsRange: wrapsRange ?? item.wrapsRange,
-      );
+  }) => PlanItem(
+    id: item.id,
+    nodeId: item.nodeId,
+    label: item.label,
+    startUnit: clearStart ? null : (startUnit ?? item.startUnit),
+    endUnit: clearEnd ? null : (endUnit ?? item.endUnit),
+    wrapsRange: wrapsRange ?? item.wrapsRange,
+  );
 
   Widget _header(String text) =>
       Text(text, style: Theme.of(context).textTheme.titleMedium);
 
   Widget _empty(String text) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text(text, style: Theme.of(context).textTheme.bodySmall),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+  );
 }
 
 /// Which of pacing's two mutually exclusive answers is in force.
@@ -823,8 +824,9 @@ class _UnitField extends StatefulWidget {
 }
 
 class _UnitFieldState extends State<_UnitField> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.value?.toString() ?? '');
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.value?.toString() ?? '',
+  );
 
   @override
   void didUpdateWidget(covariant _UnitField old) {
@@ -844,13 +846,13 @@ class _UnitFieldState extends State<_UnitField> {
 
   @override
   Widget build(BuildContext context) => TextField(
-        controller: _controller,
-        keyboardType: TextInputType.number,
-        decoration: InputDecoration(
-          labelText: widget.label,
-          isDense: true,
-          border: const OutlineInputBorder(),
-        ),
-        onChanged: (raw) => widget.onChanged(nonNegativeInt(raw)),
-      );
+    controller: _controller,
+    keyboardType: TextInputType.number,
+    decoration: InputDecoration(
+      labelText: widget.label,
+      isDense: true,
+      border: const OutlineInputBorder(),
+    ),
+    onChanged: (raw) => widget.onChanged(nonNegativeInt(raw)),
+  );
 }

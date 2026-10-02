@@ -8,7 +8,11 @@ void main() {
 
   test('behind when current pace is below required', () {
     final s = GoalEvaluator.evaluate(
-        remaining: 100, from: from, target: target, currentPace: 5);
+      remaining: 100,
+      from: from,
+      target: target,
+      currentPace: 5,
+    );
     expect(s.requiredPerDay, closeTo(100 / 11, 0.001));
     expect(s.onTrack, isFalse);
     // 100 at 5/day = 20 learning days, today inclusive -> Jan 1 + 19 = Jan 20.
@@ -18,13 +22,21 @@ void main() {
 
   test('on track when pace meets required', () {
     final s = GoalEvaluator.evaluate(
-        remaining: 100, from: from, target: target, currentPace: 10);
+      remaining: 100,
+      from: from,
+      target: target,
+      currentPace: 10,
+    );
     expect(s.onTrack, isTrue);
   });
 
   test('achieved when nothing remains', () {
     final s = GoalEvaluator.evaluate(
-        remaining: 0, from: from, target: target, currentPace: 0);
+      remaining: 0,
+      from: from,
+      target: target,
+      currentPace: 0,
+    );
     expect(s.achieved, isTrue);
     expect(s.onTrack, isTrue);
     expect(s.requiredPerDay, 0);
@@ -32,7 +44,11 @@ void main() {
 
   test('daysOffTarget is null when there is no projection', () {
     final s = GoalEvaluator.evaluate(
-        remaining: 100, from: from, target: target, currentPace: 0);
+      remaining: 100,
+      from: from,
+      target: target,
+      currentPace: 0,
+    );
     expect(s.projectedFinish, isNull);
     expect(s.daysOffTarget, isNull);
   });

@@ -98,9 +98,14 @@ void main() {
     // has quietly stopped matching passes every time. So: prove it can see one,
     // and prove it is not fooled by the key appearing as a longer identifier or
     // as a bare word.
-    expect(isCalled('logSheetPickDate', 'Text(l10n.logSheetPickDate),'), isTrue);
     expect(
-        isCalled('appTitle', 'AppLocalizations.of(context).appTitle'), isTrue);
+      isCalled('logSheetPickDate', 'Text(l10n.logSheetPickDate),'),
+      isTrue,
+    );
+    expect(
+      isCalled('appTitle', 'AppLocalizations.of(context).appTitle'),
+      isTrue,
+    );
     expect(isCalled('errorTitle', 'final errorTitle = 3;'), isFalse);
     expect(isCalled('errorTitle', 'l10n.errorTitleBanner'), isFalse);
   });
@@ -109,9 +114,11 @@ void main() {
     expect(withoutPlaceholders('{node} · {unit}').trim(), '·');
     expect(withoutPlaceholders('{sefer} · דף {unit}'), contains('דף'));
     expect(
-        withoutPlaceholders('{count, plural, =1{1 siyum} other{{count} x}} — y!')
-            .trim(),
-        '— y!');
+      withoutPlaceholders(
+        '{count, plural, =1{1 siyum} other{{count} x}} — y!',
+      ).trim(),
+      '— y!',
+    );
   });
 
   test('every message in the template is read by something in lib/', () {
@@ -121,13 +128,17 @@ void main() {
         if (!isCalled(key, source)) key,
     ];
 
-    expect(dead, isEmpty,
-        reason: 'these keys are translated and never displayed. Delete them, '
-            'or find the screen that is building the string by hand instead — '
-            'which is how `dateTimeLabel` came to exist unused while '
-            'log_unit_sheet.dart formatted a date and a time itself, in the '
-            'one place in the app where the Hebrew calendar setting was '
-            'ignored.');
+    expect(
+      dead,
+      isEmpty,
+      reason:
+          'these keys are translated and never displayed. Delete them, '
+          'or find the screen that is building the string by hand instead — '
+          'which is how `dateTimeLabel` came to exist unused while '
+          'log_unit_sheet.dart formatted a date and a time itself, in the '
+          'one place in the app where the Hebrew calendar setting was '
+          'ignored.',
+    );
   });
 
   test('no message is its own translation', () {
@@ -141,14 +152,18 @@ void main() {
           '$key = ${en[key]}',
     ];
 
-    expect(identical, isEmpty,
-        reason: 'these entries are byte-identical in both locales and contain '
-            'words, so one of two things is true: the Hebrew is a copy nobody '
-            'translated (which the untranslated-locale gate cannot see, since '
-            'the key *is* present), or the string is locale-independent and '
-            'does not belong in a translated table at all. The second case is '
-            'what `cycleDafHebrew` was; it is now composed from `app_he.arb`\'s '
-            'own `unitLabelDaf` in features/common/naming.dart.');
+    expect(
+      identical,
+      isEmpty,
+      reason:
+          'these entries are byte-identical in both locales and contain '
+          'words, so one of two things is true: the Hebrew is a copy nobody '
+          'translated (which the untranslated-locale gate cannot see, since '
+          'the key *is* present), or the string is locale-independent and '
+          'does not belong in a translated table at all. The second case is '
+          'what `cycleDafHebrew` was; it is now composed from `app_he.arb`\'s '
+          'own `unitLabelDaf` in features/common/naming.dart.',
+    );
   });
 
   /// The placeholder names a message actually interpolates: `{name}` and the
@@ -156,9 +171,8 @@ void main() {
   /// method. Nested placeholders inside a plural's arms name the same argument
   /// as the head, so a set is the right shape.
   Set<String> placeholdersIn(String value) => {
-        for (final m in RegExp(r'\{\s*(\w+)\s*[,}]').allMatches(value))
-          m.group(1)!,
-      };
+    for (final m in RegExp(r'\{\s*(\w+)\s*[,}]').allMatches(value)) m.group(1)!,
+  };
 
   /// What `@key` declares, or the empty set when there is no block.
   Set<String> declaredFor(String key, Map<String, dynamic> arb) {
@@ -168,10 +182,14 @@ void main() {
   }
 
   test('the placeholder reader sees both shapes and invents nothing', () {
-    expect(placeholdersIn('By {date} · need {rate}/day · {status}'),
-        {'date', 'rate', 'status'});
-    expect(placeholdersIn('{count, plural, =1{1 goal} other{{count} goals}}'),
-        {'count'});
+    expect(placeholdersIn('By {date} · need {rate}/day · {status}'), {
+      'date',
+      'rate',
+      'status',
+    });
+    expect(placeholdersIn('{count, plural, =1{1 goal} other{{count} goals}}'), {
+      'count',
+    });
     expect(placeholdersIn('Nothing to interpolate here'), isEmpty);
   });
 
@@ -188,12 +206,16 @@ void main() {
           key,
     ];
 
-    expect(orphans, isEmpty,
-        reason: 'these blocks describe messages that are not in the table, so '
-            'they declare nothing and the message they were written for — if '
-            'it was renamed rather than deleted — now has its placeholders '
-            'inferred as Object. That is how `@goalBanner` outlived '
-            '`goalBanner`.');
+    expect(
+      orphans,
+      isEmpty,
+      reason:
+          'these blocks describe messages that are not in the table, so '
+          'they declare nothing and the message they were written for — if '
+          'it was renamed rather than deleted — now has its placeholders '
+          'inferred as Object. That is how `@goalBanner` outlived '
+          '`goalBanner`.',
+    );
   });
 
   test('every placeholder a message uses is declared with a type', () {
@@ -204,12 +226,16 @@ void main() {
           if (!declaredFor(key, en).contains(name)) '$key ← {$name}',
     ];
 
-    expect(undeclared, isEmpty,
-        reason: 'gen-l10n types an undeclared placeholder as `Object`, so the '
-            'generated method accepts anything and interpolates its '
-            '`toString()`. The declaration is the only thing that makes '
-            '`String date` mean a date somebody has already formatted.\n\n'
-            '${undeclared.join('\n')}');
+    expect(
+      undeclared,
+      isEmpty,
+      reason:
+          'gen-l10n types an undeclared placeholder as `Object`, so the '
+          'generated method accepts anything and interpolates its '
+          '`toString()`. The declaration is the only thing that makes '
+          '`String date` mean a date somebody has already formatted.\n\n'
+          '${undeclared.join('\n')}',
+    );
   });
 
   test('the two rules fail on a violation, rather than only passing', () {
@@ -217,16 +243,26 @@ void main() {
     // nothing", which is the assertion shape that passes when the list is empty
     // for the wrong reason — an .arb that failed to parse, a scan that matched
     // no files. Hand each one the defect it was written for.
-    expect(isCalled('aKeyNobodyCalls', appSource()), isFalse,
-        reason: 'a key that genuinely has no call site must not be found');
+    expect(
+      isCalled('aKeyNobodyCalls', appSource()),
+      isFalse,
+      reason: 'a key that genuinely has no call site must not be found',
+    );
 
     const same = 'שבת · דף 12';
-    expect(letter.hasMatch(withoutPlaceholders(same)), isTrue,
-        reason: 'the identical-value rule must see Hebrew script as words');
+    expect(
+      letter.hasMatch(withoutPlaceholders(same)),
+      isTrue,
+      reason: 'the identical-value rule must see Hebrew script as words',
+    );
     const pureTemplate = '{node} · {unit}';
-    expect(letter.hasMatch(withoutPlaceholders(pureTemplate)), isFalse,
-        reason: 'and must not see a bare placeholder template as words, or '
-            'every separator in the table becomes a violation');
+    expect(
+      letter.hasMatch(withoutPlaceholders(pureTemplate)),
+      isFalse,
+      reason:
+          'and must not see a bare placeholder template as words, or '
+          'every separator in the table becomes a violation',
+    );
 
     // And the same for the two rules above, fed the exact table that produced
     // them: a block left behind by a rename, and the message it stopped
@@ -240,11 +276,18 @@ void main() {
         },
       },
     };
-    expect(rotted.containsKey('goalBanner'), isFalse,
-        reason: 'the orphan rule must find a block whose message is gone');
-    expect(declaredFor('goalStatus', rotted), isEmpty,
-        reason: 'and the placeholder rule must read the orphaned block as '
-            'declaring nothing for the message that is actually there');
+    expect(
+      rotted.containsKey('goalBanner'),
+      isFalse,
+      reason: 'the orphan rule must find a block whose message is gone',
+    );
+    expect(
+      declaredFor('goalStatus', rotted),
+      isEmpty,
+      reason:
+          'and the placeholder rule must read the orphaned block as '
+          'declaring nothing for the message that is actually there',
+    );
     expect(placeholdersIn(rotted['goalStatus'] as String), {'date', 'rate'});
   });
 }

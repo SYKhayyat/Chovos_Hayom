@@ -79,8 +79,9 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
     // took whichever was non-null first.
     final source = roles.pinnedSource(widget.node.id);
     final pinnedHere = source == widget.node.id;
-    final inheritedNode =
-        pinnedHere || source == null ? null : catalog?.byId(source);
+    final inheritedNode = pinnedHere || source == null
+        ? null
+        : catalog?.byId(source);
     final String provenance;
     if (pinnedHere) {
       provenance = l10n.mefarshimSetHere;
@@ -99,18 +100,18 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(l10n.mefarshimTitle, style: theme.textTheme.titleLarge),
-              Text(nodeName(l10n, widget.node),
-                  style: theme.textTheme.titleSmall),
-              const SizedBox(height: 4),
               Text(
-                l10n.mefarshimExplainer,
-                style: theme.textTheme.bodySmall,
+                nodeName(l10n, widget.node),
+                style: theme.textTheme.titleSmall,
               ),
+              const SizedBox(height: 4),
+              Text(l10n.mefarshimExplainer, style: theme.textTheme.bodySmall),
               const SizedBox(height: 4),
               Text(
                 provenance,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(fontStyle: FontStyle.italic),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontStyle: FontStyle.italic,
+                ),
               ),
               const SizedBox(height: 12),
               for (final layer in layers)
@@ -143,10 +144,7 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
                     child: Text(l10n.mefarshimResetToInherited),
                   ),
                   const Spacer(),
-                  FilledButton(
-                    onPressed: _save,
-                    child: Text(l10n.actionSave),
-                  ),
+                  FilledButton(onPressed: _save, child: Text(l10n.actionSave)),
                 ],
               ),
             ],
@@ -235,7 +233,9 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
     ];
     // The warning is about completion breaking, so it counts the scopes that
     // *require* it — an optional one disappearing costs the user nothing.
-    final requiredCount = affected.where((e) => e.required.contains(layer.id)).length;
+    final requiredCount = affected
+        .where((e) => e.required.contains(layer.id))
+        .length;
 
     final ok = await showDialog<bool>(
       context: context,
@@ -253,8 +253,9 @@ class _MefarshimConfigSheetState extends ConsumerState<_MefarshimConfigSheet> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(l10n.actionCancel)),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.actionCancel),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: FilledButton.styleFrom(
@@ -437,9 +438,13 @@ class _MeforishRow extends StatelessWidget {
       segments: [
         ButtonSegment(value: null, label: Text(l10n.mefarshimOff)),
         ButtonSegment(
-            value: LayerRole.optional, label: Text(l10n.mefarshimAvailable)),
+          value: LayerRole.optional,
+          label: Text(l10n.mefarshimAvailable),
+        ),
         ButtonSegment(
-            value: LayerRole.required, label: Text(l10n.labelRequired)),
+          value: LayerRole.required,
+          label: Text(l10n.labelRequired),
+        ),
       ],
       selected: {role},
       // Same reasoning as the Calculator's mode switch: the tick costs ~24dp,
@@ -460,7 +465,12 @@ class _MeforishRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [Expanded(child: name), ...buttons]),
+          Row(
+            children: [
+              Expanded(child: name),
+              ...buttons,
+            ],
+          ),
           const SizedBox(height: 4),
           control,
         ],

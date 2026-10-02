@@ -51,40 +51,50 @@ void main() {
     }
   }
 
-  testWidgets('a mark with a goal set survives the trip back to the dashboard',
-      (tester) async {
-    await pumpApp(tester);
-    await tester.pumpAndSettle();
+  testWidgets(
+    'a mark with a goal set survives the trip back to the dashboard',
+    (tester) async {
+      await pumpApp(tester);
+      await tester.pumpAndSettle();
 
-    // A goal makes `goalStatusProvider` live on the grid *and* the goal row —
-    // and its chain to the log is the longest in the app: goal status, pace,
-    // the day index, the log. Without one, the whole chain is never built and
-    // the scenario proves nothing.
-    final scope = tester.element(find.byType(ChovosHayomApp));
-    await ProviderScope.containerOf(scope, listen: false)
-        .read(goalsProvider.notifier)
-        .setGoal('shas.moed.shabbos', DateTime(2027, 1, 1));
-    await tester.pumpAndSettle();
+      // A goal makes `goalStatusProvider` live on the grid *and* the goal row —
+      // and its chain to the log is the longest in the app: goal status, pace,
+      // the day index, the log. Without one, the whole chain is never built and
+      // the scenario proves nothing.
+      final scope = tester.element(find.byType(ChovosHayomApp));
+      await ProviderScope.containerOf(scope, listen: false)
+          .read(goalsProvider.notifier)
+          .setGoal('shas.moed.shabbos', DateTime(2027, 1, 1));
+      await tester.pumpAndSettle();
 
-    await openShabbosGrid(tester);
-    expect(find.text('2'), findsOneWidget);
+      await openShabbosGrid(tester);
+      expect(find.text('2'), findsOneWidget);
 
-    await tester.tap(find.text('2'));
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull,
-        reason: 'the grid re-derives its goal banner while the mark lands');
+      await tester.tap(find.text('2'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'the grid re-derives its goal banner while the mark lands',
+      );
 
-    await tester.pageBack();
-    await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
 
-    expect(tester.takeException(), isNull,
-        reason: 'the dashboard resumes every subscription it had paused, and '
-            'one of them is a nudge banner three providers from the log');
-    expect(find.textContaining('1 / 156'), findsWidgets);
-  });
+      expect(
+        tester.takeException(),
+        isNull,
+        reason:
+            'the dashboard resumes every subscription it had paused, and '
+            'one of them is a nudge banner three providers from the log',
+      );
+      expect(find.textContaining('1 / 156'), findsWidgets);
+    },
+  );
 
-  testWidgets('a second mark, with the dashboard already warm, is also clean',
-      (tester) async {
+  testWidgets('a second mark, with the dashboard already warm, is also clean', (
+    tester,
+  ) async {
     // The first trip warms every provider; the second is the one where a
     // *dirty* ancestor meets a *resuming* subscription, which is the actual
     // failing combination rather than a cold-start artefact.

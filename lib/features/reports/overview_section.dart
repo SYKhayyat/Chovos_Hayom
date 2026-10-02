@@ -36,21 +36,27 @@ class OverviewSection extends ConsumerWidget {
         children: [
           _SummaryGrid(stats: stats, mode: mode),
           const SizedBox(height: 24),
-          Text(l10n.statsProgressOverTime,
-              style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            l10n.statsProgressOverTime,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           // A fifth of a 324dp screen is a chart you cannot read a value
           // off; a fixed 200 left room for nothing else. Tied to the
           // viewport so it stays a readable share of whatever screen it
           // lands on.
           SizedBox(
-            height:
-                (MediaQuery.sizeOf(context).height * 0.42).clamp(140.0, 220.0),
+            height: (MediaQuery.sizeOf(context).height * 0.42).clamp(
+              140.0,
+              220.0,
+            ),
             child: _ProgressChart(stats: stats),
           ),
           const SizedBox(height: 24),
-          Text(l10n.statsActivity,
-              style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            l10n.statsActivity,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           _Heatmap(activity: stats.dailyActivity, now: now),
         ],
@@ -87,21 +93,28 @@ class _SummaryGrid extends StatelessWidget {
     // span two columns.
     final tiles = <_StatTile>[
       _StatTile(
-          label: l10n.statsOverall,
-          value: l10n.statsPercentValue(stats.percent.toStringAsFixed(1))),
+        label: l10n.statsOverall,
+        value: l10n.statsPercentValue(stats.percent.toStringAsFixed(1)),
+      ),
       _StatTile(
-          label: l10n.statsLearned,
-          // The space-padded fraction reverses under Hebrew — see
-          // [ltrNumerals].
-          value:
-              ltrNumerals(l10n.statsLearnedValue(stats.learned, stats.total))),
+        label: l10n.statsLearned,
+        // The space-padded fraction reverses under Hebrew — see
+        // [ltrNumerals].
+        value: ltrNumerals(l10n.statsLearnedValue(stats.learned, stats.total)),
+      ),
       _StatTile(
-          label: l10n.statsStreak, value: l10n.statsStreakValue(stats.streak)),
+        label: l10n.statsStreak,
+        value: l10n.statsStreakValue(stats.streak),
+      ),
       _StatTile(
-          label: l10n.statsAvgPerDay, value: stats.avgPerDay.toStringAsFixed(2)),
+        label: l10n.statsAvgPerDay,
+        value: stats.avgPerDay.toStringAsFixed(2),
+      ),
       _StatTile(label: l10n.statsTimeLearned, value: time(stats.totalMinutes)),
       _StatTile(
-          label: l10n.statsTimeThisMonth, value: time(stats.minutesThisMonth)),
+        label: l10n.statsTimeThisMonth,
+        value: time(stats.minutesThisMonth),
+      ),
       _StatTile(label: l10n.statsProjectedSiyum, value: finish, wide: true),
     ];
     return LayoutBuilder(
@@ -129,7 +142,11 @@ class _SummaryGrid extends StatelessWidget {
 }
 
 class _StatTile extends StatelessWidget {
-  const _StatTile({required this.label, required this.value, this.wide = false});
+  const _StatTile({
+    required this.label,
+    required this.value,
+    this.wide = false,
+  });
   final String label;
   final String value;
   final bool wide;
@@ -148,11 +165,12 @@ class _StatTile extends StatelessWidget {
           children: [
             Text(label, style: Theme.of(context).textTheme.labelSmall),
             const SizedBox(height: 4),
-            Text(value,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              value,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),
@@ -167,7 +185,9 @@ class _ProgressChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (stats.series.length < 2) {
-      return Center(child: Text(AppLocalizations.of(context).statsNeedMoreData));
+      return Center(
+        child: Text(AppLocalizations.of(context).statsNeedMoreData),
+      );
     }
     final first = stats.series.first.day;
     final spots = [
@@ -226,32 +246,35 @@ class _Heatmap extends StatelessWidget {
             Column(
               children: [
                 for (var d = 0; d < 7; d++)
-                  Builder(builder: (_) {
-                    // Counting in calendar days is what `Day` is for; this used
-                    // to hand-roll the same guarantee through the DateTime
-                    // constructor's out-of-range normalisation, because adding
-                    // a `Duration(days:)` to a local DateTime shifts by an hour
-                    // across a DST boundary and skips or repeats a column twice
-                    // a year.
-                    final day = today - (days - 1) + w * 7 + d;
-                    if (day > today) {
-                      return const SizedBox(width: 16, height: 16);
-                    }
-                    final count = activity[day] ?? 0;
-                    final intensity =
-                        count == 0 ? 0.0 : (count / maxCount).clamp(0.2, 1.0);
-                    return Container(
-                      width: 14,
-                      height: 14,
-                      margin: const EdgeInsets.all(1),
-                      decoration: BoxDecoration(
-                        color: count == 0
-                            ? scheme.surfaceContainerHighest
-                            : scheme.primary.withValues(alpha: intensity),
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    );
-                  }),
+                  Builder(
+                    builder: (_) {
+                      // Counting in calendar days is what `Day` is for; this used
+                      // to hand-roll the same guarantee through the DateTime
+                      // constructor's out-of-range normalisation, because adding
+                      // a `Duration(days:)` to a local DateTime shifts by an hour
+                      // across a DST boundary and skips or repeats a column twice
+                      // a year.
+                      final day = today - (days - 1) + w * 7 + d;
+                      if (day > today) {
+                        return const SizedBox(width: 16, height: 16);
+                      }
+                      final count = activity[day] ?? 0;
+                      final intensity = count == 0
+                          ? 0.0
+                          : (count / maxCount).clamp(0.2, 1.0);
+                      return Container(
+                        width: 14,
+                        height: 14,
+                        margin: const EdgeInsets.all(1),
+                        decoration: BoxDecoration(
+                          color: count == 0
+                              ? scheme.surfaceContainerHighest
+                              : scheme.primary.withValues(alpha: intensity),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      );
+                    },
+                  ),
               ],
             ),
         ],

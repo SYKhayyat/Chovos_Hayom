@@ -53,6 +53,7 @@ abstract final class Routes {
   static const goals = '/goals';
   static const siyumim = '/siyumim';
   static const mefarshim = '/mefarshim';
+
   /// The chazara report — a tab of the report screen (#46), not a screen
   /// of its own, so an old link to `/chazara` still lands somewhere.
   static const chazara = '/chazara';
@@ -93,8 +94,9 @@ abstract final class Routes {
   static String editPlanAdvanced(String planId) =>
       '/planner/plans/edit/${_seg(planId)}/advanced';
 
-  static String editPlan(String planId) =>
-      planId.isEmpty ? '/planner/plans/new' : '/planner/plans/edit/${_seg(planId)}';
+  static String editPlan(String planId) => planId.isEmpty
+      ? '/planner/plans/new'
+      : '/planner/plans/edit/${_seg(planId)}';
 
   static String _seg(String value) => Uri.encodeComponent(value);
 }
@@ -128,7 +130,9 @@ abstract final class AppRouter {
       ['settings'] => const SettingsScreen(),
       ['settings', 'history'] => const BulkHistoryScreen(),
       ['settings', 'crash-log'] => const CrashLogScreen(),
-      ['add-item'] => AddCustomNodeScreen(parentId: uri.queryParameters['parent']),
+      ['add-item'] => AddCustomNodeScreen(
+        parentId: uri.queryParameters['parent'],
+      ),
       ['edit-item', final id] => AddCustomNodeScreen(nodeId: id),
       ['sefer', final id] => UnitGridScreen(nodeId: id),
       ['category', final id] => NodeScreen(nodeId: id),
@@ -145,9 +149,9 @@ abstract final class AppRouter {
   /// Folding the authority in as a leading segment lets one table serve both.
   /// `pathSegments` percent-decodes, so an id survives the round trip.
   static List<String> _segments(Uri uri) => [
-        if (uri.host.isNotEmpty) uri.host,
-        ...uri.pathSegments,
-      ];
+    if (uri.host.isNotEmpty) uri.host,
+    ...uri.pathSegments,
+  ];
 
   static Route<void>? onGenerateRoute(RouteSettings settings) {
     final screen = screenFor(settings.name);

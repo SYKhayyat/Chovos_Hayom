@@ -46,10 +46,14 @@ class Day implements Comparable<Day> {
   /// Routed through `DateTime.utc` so the result is a pure function of the
   /// (year, month, day) fields and nothing else — no offset, no DST, no
   /// dependence on the host's zone.
-  factory Day.of(DateTime moment) =>
-      Day(DateTime.utc(moment.year, moment.month, moment.day)
-              .millisecondsSinceEpoch ~/
-          _msPerDay);
+  factory Day.of(DateTime moment) => Day(
+    DateTime.utc(
+          moment.year,
+          moment.month,
+          moment.day,
+        ).millisecondsSinceEpoch ~/
+        _msPerDay,
+  );
 
   static const _msPerDay = 86400000;
 
@@ -62,8 +66,10 @@ class Day implements Comparable<Day> {
   /// The expensive direction (see the class doc). Call it once per distinct
   /// day, at the edge; never inside a loop over the event log.
   DateTime get midnight {
-    final utc = DateTime.fromMillisecondsSinceEpoch(ordinal * _msPerDay,
-        isUtc: true);
+    final utc = DateTime.fromMillisecondsSinceEpoch(
+      ordinal * _msPerDay,
+      isUtc: true,
+    );
     return DateTime(utc.year, utc.month, utc.day);
   }
 
@@ -107,8 +113,10 @@ class Day implements Comparable<Day> {
   /// dates go through `DateDisplay`, which also speaks the Hebrew calendar.
   @override
   String toString() {
-    final utc = DateTime.fromMillisecondsSinceEpoch(ordinal * _msPerDay,
-        isUtc: true);
+    final utc = DateTime.fromMillisecondsSinceEpoch(
+      ordinal * _msPerDay,
+      isUtc: true,
+    );
     final m = utc.month.toString().padLeft(2, '0');
     final d = utc.day.toString().padLeft(2, '0');
     return '${utc.year}-$m-$d';

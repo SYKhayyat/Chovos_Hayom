@@ -71,12 +71,14 @@ class SiyumFinder {
 
       final finishedOn = last;
       if (n.isComplete && finishedOn != null) {
-        out.add(Siyum(
-          node: n.node,
-          completedOn: finishedOn,
-          units: n.total,
-          depth: depth,
-        ));
+        out.add(
+          Siyum(
+            node: n.node,
+            completedOn: finishedOn,
+            units: n.total,
+            depth: depth,
+          ),
+        );
       }
       return finishedOn;
     }

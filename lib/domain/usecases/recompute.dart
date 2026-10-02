@@ -100,13 +100,12 @@ class Recompute {
     Catalog catalog,
     LogFold fold,
     Day from,
-  ) =>
-      ReflowResult(
-        plan: plan,
-        shortfall: shortfallAsOf(plan, catalog, fold, from),
-        spreadOver: 0,
-        newFinishDay: plan.pacing.finishDay,
-      );
+  ) => ReflowResult(
+    plan: plan,
+    shortfall: shortfallAsOf(plan, catalog, fold, from),
+    spreadOver: 0,
+    newFinishDay: plan.pacing.finishDay,
+  );
 
   /// Mode 2: spread [spread]'s shortfall over the days that follow.
   ///
@@ -227,11 +226,7 @@ class Recompute {
   ///
   /// Bounded three ways, all of them necessary: by how many the caller asked
   /// for, by the plan's finish date when there is one, and by [_horizon].
-  static List<Day> _window(
-    LearningPlan plan,
-    ReflowSpread spread,
-    Day from,
-  ) {
+  static List<Day> _window(LearningPlan plan, ReflowSpread spread, Day from) {
     final wanted = switch (spread._kind) {
       _ReflowKind.days => spread.days ?? 0,
       _ReflowKind.all => _horizon,
@@ -263,7 +258,9 @@ class Recompute {
     // runs longer than the plan said", and they are different intentions.
     final finish = plan.pacing.finishDay;
     final bounded =
-        spread._kind == _ReflowKind.untilEnd && finish != null && from <= finish;
+        spread._kind == _ReflowKind.untilEnd &&
+        finish != null &&
+        from <= finish;
     final out = <Day>[];
     for (var i = 0; out.length < wanted && i < _horizon; i++) {
       final day = from + i;

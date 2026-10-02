@@ -124,8 +124,7 @@ AppLocalizations? _hebrew;
 /// node, including the ones nobody thought to annotate and the ones a user adds.
 String nodePath(AppLocalizations l10n, Catalog catalog, CatalogNode node) {
   final parts = <String>[];
-  var current =
-      node.parentId == null ? null : catalog.byId(node.parentId!);
+  var current = node.parentId == null ? null : catalog.byId(node.parentId!);
   // The cap is a display rule, not a safety one: [Catalog] guarantees the walk
   // terminates, and sixteen ancestors is already more breadcrumb than any row
   // can show. It used to be here to survive a parent cycle.
@@ -141,7 +140,10 @@ String nodePath(AppLocalizations l10n, Catalog catalog, CatalogNode node) {
 /// (search results, the calculator's dropdown, the two cycle pickers) that have
 /// no tree around them to supply the context.
 String qualifiedNodeName(
-    AppLocalizations l10n, Catalog catalog, CatalogNode node) {
+  AppLocalizations l10n,
+  Catalog catalog,
+  CatalogNode node,
+) {
   final path = nodePath(l10n, catalog, node);
   final name = nodeName(l10n, node);
   return path.isEmpty ? name : l10n.nodeWithPath(name, path);
@@ -174,8 +176,10 @@ String layerName(AppLocalizations l10n, Layer layer) {
 /// two that were right each carried a comment explaining why — which is how you
 /// get the same fix applied twice out of three.
 Layer layerById(AppLocalizations l10n, List<Layer> layers, String id) =>
-    layers.firstWhere((l) => l.id == id,
-        orElse: () => Layer(id: id, name: l10n.deletedMeforish));
+    layers.firstWhere(
+      (l) => l.id == id,
+      orElse: () => Layer(id: id, name: l10n.deletedMeforish),
+    );
 
 /// [layerById] in the reader's language — the form almost every call site wants.
 String layerNameById(AppLocalizations l10n, List<Layer> layers, String id) =>
@@ -271,12 +275,15 @@ String cycleNameById(AppLocalizations l10n, String id, String fallback) =>
       _ => fallback,
     };
 
-String cycleDescriptionById(AppLocalizations l10n, String id, String fallback) =>
-    switch (id) {
-      CalendarCycle.bavliId => l10n.cycleBavliDescription,
-      CalendarCycle.yerushalmiId => l10n.cycleYerushalmiDescription,
-      _ => fallback,
-    };
+String cycleDescriptionById(
+  AppLocalizations l10n,
+  String id,
+  String fallback,
+) => switch (id) {
+  CalendarCycle.bavliId => l10n.cycleBavliDescription,
+  CalendarCycle.yerushalmiId => l10n.cycleYerushalmiDescription,
+  _ => fallback,
+};
 
 /// A **required** daily pace, as the app says it: two decimals, rounded *up*.
 ///
@@ -324,14 +331,14 @@ String formatMinutes(AppLocalizations l10n, int minutes) {
 /// through `DateTime.sunday` (7) — the same numbering the planner's rules and
 /// `Day.weekday` use, so nothing has to be converted to use it.
 String weekdayName(AppLocalizations l10n, int weekday) => switch (weekday) {
-      DateTime.monday => l10n.plansWeekdayMonday,
-      DateTime.tuesday => l10n.plansWeekdayTuesday,
-      DateTime.wednesday => l10n.plansWeekdayWednesday,
-      DateTime.thursday => l10n.plansWeekdayThursday,
-      DateTime.friday => l10n.plansWeekdayFriday,
-      DateTime.saturday => l10n.plansWeekdaySaturday,
-      DateTime.sunday => l10n.plansWeekdaySunday,
-      // Unreachable for a stored key, which the domain validates to 1..7. Named
-      // rather than blank so a hand-edited file shows something.
-      _ => '?',
-    };
+  DateTime.monday => l10n.plansWeekdayMonday,
+  DateTime.tuesday => l10n.plansWeekdayTuesday,
+  DateTime.wednesday => l10n.plansWeekdayWednesday,
+  DateTime.thursday => l10n.plansWeekdayThursday,
+  DateTime.friday => l10n.plansWeekdayFriday,
+  DateTime.saturday => l10n.plansWeekdaySaturday,
+  DateTime.sunday => l10n.plansWeekdaySunday,
+  // Unreachable for a stored key, which the domain validates to 1..7. Named
+  // rather than blank so a hand-edited file shows something.
+  _ => '?',
+};

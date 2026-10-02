@@ -99,12 +99,14 @@ List<NodeChoice> nodeChoices(
   void walk(CatalogNode node, int depth) {
     if (exclude.contains(node.id)) return;
     if (where == null || where(node)) {
-      out.add(NodeChoice(
-        node: node,
-        label: qualifiedNodeName(l10n, catalog, node),
-        secondary: secondary?.call(l10n, node),
-        depth: order == NodeOrder.tree ? depth : 0,
-      ));
+      out.add(
+        NodeChoice(
+          node: node,
+          label: qualifiedNodeName(l10n, catalog, node),
+          secondary: secondary?.call(l10n, node),
+          depth: order == NodeOrder.tree ? depth : 0,
+        ),
+      );
     }
     if (depth >= maxDepth) return;
     for (final child in catalog.childrenOf(node.id)) {
@@ -170,8 +172,9 @@ Future<CatalogNode?> showNodePicker(
                     ? Icon(choice.node.isLeaf ? Icons.menu_book : Icons.folder)
                     : null,
                 title: Text(choice.label),
-                subtitle:
-                    choice.secondary == null ? null : Text(choice.secondary!),
+                subtitle: choice.secondary == null
+                    ? null
+                    : Text(choice.secondary!),
                 onTap: () => Navigator.pop(dialogContext, choice.node),
               );
             },
@@ -214,7 +217,9 @@ class NodeDropdown extends StatelessWidget {
       // A value the list does not contain throws; falling back to the none
       // entry (or the first row) is what makes a re-parent that excluded the
       // current parent survive being reopened.
-      initialValue: known ? value : (noneLabel != null ? null : choices.first.id),
+      initialValue: known
+          ? value
+          : (noneLabel != null ? null : choices.first.id),
       isExpanded: true,
       decoration: InputDecoration(labelText: label),
       items: [
@@ -223,8 +228,10 @@ class NodeDropdown extends StatelessWidget {
         for (final choice in choices)
           DropdownMenuItem(
             value: choice.id,
-            child: Text('${'   ' * choice.depth}${choice.label}',
-                overflow: TextOverflow.ellipsis),
+            child: Text(
+              '${'   ' * choice.depth}${choice.label}',
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
       ],
       onChanged: onChanged,

@@ -62,7 +62,8 @@ class PlanPosition {
       Object.hash(itemIndex, itemId, nodeId, unitNodeId, unitIndex, remaining);
 
   @override
-  String toString() => 'PlanPosition(item: $itemId, unit: $unitIndex, '
+  String toString() =>
+      'PlanPosition(item: $itemId, unit: $unitIndex, '
       'remaining: $remaining)';
 }
 
@@ -99,9 +100,11 @@ class PlanProgress {
   }) {
     for (final leaf in catalog.leavesUnder(node.id)) {
       final required = _requiredFor(layers, leaf.id);
-      for (var unit = leaf.unitOffset;
-          unit < leaf.unitOffset + leaf.unitCount;
-          unit++) {
+      for (
+        var unit = leaf.unitOffset;
+        unit < leaf.unitOffset + leaf.unitCount;
+        unit++
+      ) {
         // A unit learned on or after [asOf] has not been done *by* [asOf], so it
         // is the next one owed. Returning rather than skipping is the whole
         // point: skipping it would march past the owed unit and report the plan
@@ -119,10 +122,7 @@ class PlanProgress {
 
   /// Total units under every item of [plan], counting a node that appears in more
   /// than one item once per item — a sequence may legitimately revisit a sefer.
-  static int totalUnits(
-    LearningPlan plan,
-    Catalog catalog,
-  ) {
+  static int totalUnits(LearningPlan plan, Catalog catalog) {
     var total = 0;
     for (final item in plan.items) {
       final node = catalog.byId(item.nodeId);
@@ -196,8 +196,13 @@ class PlanProgress {
         final id = assignment.targetNodeId;
         final node = id == null ? null : catalog.byId(id);
         if (node == null) continue;
-        final next = nextUnitUnder(node, catalog, fold,
-            layers: layers, asOf: asOf);
+        final next = nextUnitUnder(
+          node,
+          catalog,
+          fold,
+          layers: layers,
+          asOf: asOf,
+        );
         if (next != null) {
           return PlanPosition(
             itemIndex: -1,
@@ -224,7 +229,13 @@ class PlanProgress {
       final node = catalog.byId(item.nodeId);
       if (node == null) continue;
       final next = PlanRunProgress.unitInRange(
-          plan, catalog, fold, asOf, i, layers: layers);
+        plan,
+        catalog,
+        fold,
+        asOf,
+        i,
+        layers: layers,
+      );
       if (next == null) {
         if (plan.flowsToNextItem) continue;
         // Stopped at the end of this item, by choice.
@@ -280,8 +291,13 @@ class PlanProgress {
   ) {
     final total = PlanRunProgress.totalUnits(plan, catalog);
     if (total == null) return 0;
-    final done =
-        PlanRunProgress.doneUnits(plan, catalog, fold, asOf, layers: layers);
+    final done = PlanRunProgress.doneUnits(
+      plan,
+      catalog,
+      fold,
+      asOf,
+      layers: layers,
+    );
     return (total - done).clamp(0, 1 << 62);
   }
 
@@ -322,12 +338,16 @@ class PlanProgress {
     var done = 0;
     for (final leaf in catalog.leavesUnder(node.id)) {
       final required = _requiredFor(layers, leaf.id);
-      for (var unit = leaf.unitOffset;
-          unit < leaf.unitOffset + leaf.unitCount;
-          unit++) {
+      for (
+        var unit = leaf.unitOffset;
+        unit < leaf.unitOffset + leaf.unitCount;
+        unit++
+      ) {
         final at = fold.doneAt(leaf.id, unit);
         if (at == null || Day.of(at) >= asOf) continue;
-        if (required.every(fold.completedLayers(leaf.id, unit).contains)) done++;
+        if (required.every(fold.completedLayers(leaf.id, unit).contains)) {
+          done++;
+        }
       }
     }
     return done;

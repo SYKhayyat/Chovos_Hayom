@@ -39,15 +39,19 @@ import '../../l10n/generated/app_localizations.dart';
 /// no `BuildContext` is used across an async gap).
 class WriteGuard {
   const WriteGuard(
-      this._messenger, this._navigator, this._crashLog, this._l10n);
+    this._messenger,
+    this._navigator,
+    this._crashLog,
+    this._l10n,
+  );
 
   /// Captures everything needed to report an outcome, up front.
   factory WriteGuard.of(BuildContext context, WidgetRef ref) => WriteGuard(
-        ScaffoldMessenger.of(context),
-        Navigator.of(context, rootNavigator: true),
-        ref.read(crashLogProvider),
-        AppLocalizations.of(context),
-      );
+    ScaffoldMessenger.of(context),
+    Navigator.of(context, rootNavigator: true),
+    ref.read(crashLogProvider),
+    AppLocalizations.of(context),
+  );
 
   final ScaffoldMessengerState _messenger;
   final NavigatorState _navigator;
@@ -89,14 +93,12 @@ class WriteGuard {
     String message, {
     SnackBarAction? action,
     Duration? duration,
-  }) =>
-      SnackBar(
-        content: Text(message),
-        action: action,
-        persist: false,
-        duration:
-            duration ?? (action == null ? messageDuration : actionDuration),
-      );
+  }) => SnackBar(
+    content: Text(message),
+    action: action,
+    persist: false,
+    duration: duration ?? (action == null ? messageDuration : actionDuration),
+  );
 
   /// Runs [write] and reports what happened. Returns true when it succeeded, so
   /// a caller can decide whether to close a form or leave it open with the
@@ -118,14 +120,16 @@ class WriteGuard {
       await write();
     } catch (error, stack) {
       await _crashLog.record(error, stack, context: what);
-      _messenger.showSnackBar(_bar(
-        describe?.call(error) ?? _l10n.writeFailed(what),
-        duration: failureDuration,
-        action: SnackBarAction(
-          label: _l10n.actionDetails,
-          onPressed: () => _navigator.pushNamed(Routes.crashLog),
+      _messenger.showSnackBar(
+        _bar(
+          describe?.call(error) ?? _l10n.writeFailed(what),
+          duration: failureDuration,
+          action: SnackBarAction(
+            label: _l10n.actionDetails,
+            onPressed: () => _navigator.pushNamed(Routes.crashLog),
+          ),
         ),
-      ));
+      );
       return false;
     }
     if (success != null) report(success, action: undo);
@@ -153,11 +157,7 @@ Future<bool> guarded(
   String? success,
   SnackBarAction? undo,
   String Function(Object error)? describe,
-}) =>
-    WriteGuard.of(context, ref).run(
-      write,
-      what: what,
-      success: success,
-      undo: undo,
-      describe: describe,
-    );
+}) => WriteGuard.of(
+  context,
+  ref,
+).run(write, what: what, success: success, undo: undo, describe: describe);

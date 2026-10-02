@@ -6,43 +6,51 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/fake_catalog.dart';
 import '../support/memory_database.dart';
 
-ProgressNode _leaf(List<ProgressNode> forest) =>
-    forest.single // root
-        .children.single // shas
-        .children.single // moed
-        .children.single; // shabbos
+ProgressNode _leaf(List<ProgressNode> forest) => forest
+    .single // root
+    .children
+    .single // shas
+    .children
+    .single // moed
+    .children
+    .single; // shabbos
 
 void main() {
-  test('appending an event reactively updates the derived progress tree', () async {
-    final repo = memoryRepository();
-    final container = ProviderContainer(overrides: [
-      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-      progressRepositoryProvider.overrideWithValue(repo),
-    ]);
-    addTearDown(container.dispose);
+  test(
+    'appending an event reactively updates the derived progress tree',
+    () async {
+      final repo = memoryRepository();
+      final container = ProviderContainer(
+        overrides: [
+          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+          progressRepositoryProvider.overrideWithValue(repo),
+        ],
+      );
+      addTearDown(container.dispose);
 
-    // Keep the derived provider (and its event-stream dependency) active.
-    final sub = container.listen(progressForestProvider, (_, _) {});
-    addTearDown(sub.close);
+      // Keep the derived provider (and its event-stream dependency) active.
+      final sub = container.listen(progressForestProvider, (_, _) {});
+      addTearDown(sub.close);
 
-    await container.read(catalogProvider.future);
-    await pumpEventQueue();
+      await container.read(catalogProvider.future);
+      await pumpEventQueue();
 
-    var forest = container.read(progressForestProvider).value!;
-    expect(forest.single.learned, 0, reason: 'starts empty');
+      var forest = container.read(progressForestProvider).value!;
+      expect(forest.single.learned, 0, reason: 'starts empty');
 
-    final logger = container.read(loggingServiceProvider);
-    await logger.markDone('shas.moed.shabbos', 2);
-    await pumpEventQueue();
+      final logger = container.read(loggingServiceProvider);
+      await logger.markDone('shas.moed.shabbos', 2);
+      await pumpEventQueue();
 
-    forest = container.read(progressForestProvider).value!;
-    expect(_leaf(forest).learned, 1);
-    expect(forest.single.learned, 1, reason: 'rolls up to the root');
+      forest = container.read(progressForestProvider).value!;
+      expect(_leaf(forest).learned, 1);
+      expect(forest.single.learned, 1, reason: 'rolls up to the root');
 
-    await logger.markUndone('shas.moed.shabbos', 2);
-    await pumpEventQueue();
+      await logger.markUndone('shas.moed.shabbos', 2);
+      await pumpEventQueue();
 
-    forest = container.read(progressForestProvider).value!;
-    expect(_leaf(forest).learned, 0, reason: 'undo removes it');
-  });
+      forest = container.read(progressForestProvider).value!;
+      expect(_leaf(forest).learned, 0, reason: 'undo removes it');
+    },
+  );
 }

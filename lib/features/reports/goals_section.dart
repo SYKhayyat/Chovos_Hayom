@@ -53,8 +53,9 @@ class _SetGoal extends StatelessWidget {
     return FilledButton.tonalIcon(
       icon: const Icon(Icons.flag_outlined, size: 18),
       label: Text(AppLocalizations.of(context).goalsSetOne),
-      onPressed: () => DefaultTabController.of(context)
-          .animateTo(ReportSection.calculator.index),
+      onPressed: () => DefaultTabController.of(
+        context,
+      ).animateTo(ReportSection.calculator.index),
     );
   }
 }
@@ -76,8 +77,10 @@ class _GoalRow extends ConsumerWidget {
     // this row and the unit grid's banner cannot drift into saying the same
     // thing two ways again.
     return ListTile(
-      leading:
-          Icon(goalStatusIcon(status), color: goalStatusColor(context, status)),
+      leading: Icon(
+        goalStatusIcon(status),
+        color: goalStatusColor(context, status),
+      ),
       title: Text(name),
       subtitle: Text(goalStatusText(l10n, status, mode)),
       trailing: IconButton(

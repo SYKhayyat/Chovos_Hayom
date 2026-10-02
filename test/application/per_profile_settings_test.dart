@@ -30,8 +30,8 @@ void main() {
   late ProviderContainer container;
 
   ProviderContainer build() => ProviderContainer(
-        overrides: [appPreferencesProvider.overrideWithValue(prefs)],
-      );
+    overrides: [appPreferencesProvider.overrideWithValue(prefs)],
+  );
 
   setUp(() {
     prefs = InMemoryPreferences();
@@ -73,8 +73,11 @@ void main() {
 
     await switchTo('other');
 
-    expect(settings().hebrewLayout, isTrue,
-        reason: 'a new profile must not silently change the language');
+    expect(
+      settings().hebrewLayout,
+      isTrue,
+      reason: 'a new profile must not silently change the language',
+    );
     expect(settings().themeMode, ThemeMode.dark);
     expect(settings().calendar, CalendarMode.hebrew);
   });
@@ -106,9 +109,13 @@ void main() {
 
     await notifier().clearAll();
 
-    expect(settings().hebrewLayout, isTrue,
-        reason: 'resetting one profile must not change what language the '
-            'person is reading');
+    expect(
+      settings().hebrewLayout,
+      isTrue,
+      reason:
+          'resetting one profile must not change what language the '
+          'person is reading',
+    );
   });
 
   test('meforish bar visibility is per-profile', () async {
@@ -157,14 +164,17 @@ void main() {
       // The learner's key moved into the profile; the bare one is gone.
       expect(prefs.getString(PrefKeys.sortMetric), isNull);
       expect(
-          prefs.getString(PrefKeys.scoped('default', PrefKeys.sortMetric)),
-          'percent');
+        prefs.getString(PrefKeys.scoped('default', PrefKeys.sortMetric)),
+        'percent',
+      );
       expect(prefs.getString(PrefKeys.settingsScopedMigrated), 'true');
       // The device's key went into the profile and straight back out, so the
       // bare key is where it lives and the scoped copy is gone.
       expect(prefs.getString(PrefKeys.themeMode), 'dark');
       expect(
-          prefs.getString(PrefKeys.scoped('default', PrefKeys.themeMode)), isNull);
+        prefs.getString(PrefKeys.scoped('default', PrefKeys.themeMode)),
+        isNull,
+      );
       expect(prefs.getString(PrefKeys.deviceWideMigrated), 'true');
 
       // A later profile switch must not re-import anything.
@@ -186,14 +196,18 @@ void main() {
 
     expect(settings().hebrewLayout, isTrue);
     expect(settings().themeMode, ThemeMode.system);
-    expect(settings().sort.metric, SortMetric.percent,
-        reason: 'the learner’s own settings still import');
+    expect(
+      settings().sort.metric,
+      SortMetric.percent,
+      reason: 'the learner’s own settings still import',
+    );
   });
 
   test('an imported backup applies to the active profile only', () async {
     await switchTo('other');
-    await notifier()
-        .applyBackup({PrefKeys.sortMetric: 'percent'}, ImportMode.merge);
+    await notifier().applyBackup({
+      PrefKeys.sortMetric: 'percent',
+    }, ImportMode.merge);
     expect(settings().sort.metric, SortMetric.percent);
 
     await switchTo('default');
@@ -219,7 +233,11 @@ void main() {
 
     final backup = notifier().toBackup();
     final raw = backup[PrefKeys.plans]!;
-    expect(raw, contains('unitsPerDay'), reason: 'the base amount must be stored');
+    expect(
+      raw,
+      contains('unitsPerDay'),
+      reason: 'the base amount must be stored',
+    );
     expect(raw, contains('weekdayAmounts'));
     expect(raw, contains('dateAmounts'));
 
@@ -228,8 +246,9 @@ void main() {
 
     await notifier().applyBackup(backup, ImportMode.merge);
     final stored = prefs.getString(PrefKeys.scoped('default', PrefKeys.plans))!;
-    final restored =
-        PlansConfig.fromJson((jsonDecode(stored) as Map).cast<String, dynamic>());
+    final restored = PlansConfig.fromJson(
+      (jsonDecode(stored) as Map).cast<String, dynamic>(),
+    );
     expect(restored.plans, [plan]);
   });
 
@@ -238,23 +257,35 @@ void main() {
     // silently doesn't survive export → clear → import. Cycles were that key.
     test('toBackup emits all of PrefKeys.perProfile', () {
       final keys = notifier().toBackup().keys.toSet();
-      expect(keys.containsAll(PrefKeys.perProfile), isTrue,
-          reason: 'missing: '
-              '${PrefKeys.perProfile.toSet().difference(keys)}');
+      expect(
+        keys.containsAll(PrefKeys.perProfile),
+        isTrue,
+        reason:
+            'missing: '
+            '${PrefKeys.perProfile.toSet().difference(keys)}',
+      );
     });
 
-    test('cycles are exported and cleared with the rest of the settings', () async {
-      // Cycles live under their own scoped pref (a separate controller owns them).
-      const raw = '{"custom":[],"hiddenBuiltIns":[],"mappings":{}}';
-      await prefs.setString(
-          PrefKeys.scoped('default', PrefKeys.cycles), raw);
+    test(
+      'cycles are exported and cleared with the rest of the settings',
+      () async {
+        // Cycles live under their own scoped pref (a separate controller owns them).
+        const raw = '{"custom":[],"hiddenBuiltIns":[],"mappings":{}}';
+        await prefs.setString(PrefKeys.scoped('default', PrefKeys.cycles), raw);
 
-      expect(notifier().toBackup()[PrefKeys.cycles], raw,
-          reason: 'cycles must ride in the backup');
+        expect(
+          notifier().toBackup()[PrefKeys.cycles],
+          raw,
+          reason: 'cycles must ride in the backup',
+        );
 
-      await notifier().clearAll();
-      expect(prefs.getString(PrefKeys.scoped('default', PrefKeys.cycles)), isNull,
-          reason: 'clear settings must take the cycles with it');
-    });
+        await notifier().clearAll();
+        expect(
+          prefs.getString(PrefKeys.scoped('default', PrefKeys.cycles)),
+          isNull,
+          reason: 'clear settings must take the cycles with it',
+        );
+      },
+    );
   });
 }

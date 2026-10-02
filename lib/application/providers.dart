@@ -25,8 +25,9 @@ import 'logging_service.dart';
 
 /// App-level key-value preferences. Overridden in `main` with a shared_preferences
 /// implementation; defaults to in-memory (used by tests).
-final appPreferencesProvider =
-    Provider<AppPreferences>((ref) => InMemoryPreferences());
+final appPreferencesProvider = Provider<AppPreferences>(
+  (ref) => InMemoryPreferences(),
+);
 
 /// The Drift database (app-wide singleton).
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -44,16 +45,19 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 final crashLogProvider = Provider<CrashLog>((ref) => CrashLog());
 
 /// Pluggable catalog source (bundled JSON for now).
-final catalogRepositoryProvider =
-    Provider<CatalogRepository>((ref) => JsonCatalogRepository());
+final catalogRepositoryProvider = Provider<CatalogRepository>(
+  (ref) => JsonCatalogRepository(),
+);
 
 /// The loaded, indexed base catalog (bundled reference data only).
-final catalogProvider =
-    FutureProvider<Catalog>((ref) => ref.watch(catalogRepositoryProvider).load());
+final catalogProvider = FutureProvider<Catalog>(
+  (ref) => ref.watch(catalogRepositoryProvider).load(),
+);
 
 /// Event-log persistence, Drift-backed.
 final progressRepositoryProvider = Provider<ProgressRepository>(
-    (ref) => DriftProgressRepository(ref.watch(databaseProvider)));
+  (ref) => DriftProgressRepository(ref.watch(databaseProvider)),
+);
 
 // ---------------------------------------------------------------------------
 // Profiles
@@ -74,8 +78,9 @@ class ActiveProfileController extends Notifier<String> {
   }
 }
 
-final activeProfileProvider =
-    NotifierProvider<ActiveProfileController, String>(ActiveProfileController.new);
+final activeProfileProvider = NotifierProvider<ActiveProfileController, String>(
+  ActiveProfileController.new,
+);
 
 /// All profiles; ensures a default profile exists on first run.
 class ProfilesController extends AsyncNotifier<List<Profile>> {
@@ -85,7 +90,8 @@ class ProfilesController extends AsyncNotifier<List<Profile>> {
     var list = await repo.getProfiles();
     if (list.isEmpty) {
       await repo.addProfile(
-          Profile(id: 'default', name: 'Default', createdAt: DateTime.now()));
+        Profile(id: 'default', name: 'Default', createdAt: DateTime.now()),
+      );
       list = await repo.getProfiles();
     }
     return list;
@@ -95,7 +101,9 @@ class ProfilesController extends AsyncNotifier<List<Profile>> {
   Future<void> create(String name) async {
     final repo = ref.read(progressRepositoryProvider);
     final id = const Uuid().v4();
-    await repo.addProfile(Profile(id: id, name: name, createdAt: DateTime.now()));
+    await repo.addProfile(
+      Profile(id: id, name: name, createdAt: DateTime.now()),
+    );
     ref.invalidateSelf();
     await future;
     await ref.read(activeProfileProvider.notifier).setProfile(id);
@@ -142,7 +150,8 @@ class ProfilesController extends AsyncNotifier<List<Profile>> {
 
 final profilesProvider =
     AsyncNotifierProvider<ProfilesController, List<Profile>>(
-        ProfilesController.new);
+      ProfilesController.new,
+    );
 
 // ---------------------------------------------------------------------------
 // Catalog + custom nodes
@@ -173,7 +182,7 @@ final mergedCatalogProvider = Provider<AsyncValue<Catalog>>((ref) {
       }
       final hiddenIds = {
         for (final entry in byId.entries)
-          if (entry.value.hidden) entry.key
+          if (entry.value.hidden) entry.key,
       };
       if (hiddenIds.isEmpty) return Catalog(byId.values.toList());
 
@@ -189,11 +198,14 @@ final mergedCatalogProvider = Provider<AsyncValue<Catalog>>((ref) {
           removeSubtree(child);
         }
       }
+
       for (final h in hiddenIds) {
         removeSubtree(h);
       }
-      return Catalog(
-          [for (final n in byId.values) if (!removed.contains(n.id)) n]);
+      return Catalog([
+        for (final n in byId.values)
+          if (!removed.contains(n.id)) n,
+      ]);
     }),
   );
 });
@@ -204,8 +216,10 @@ final mergedCatalogProvider = Provider<AsyncValue<Catalog>>((ref) {
 /// why. This one is the cheapest of the three to recompute (a map lookup) and
 /// the easiest to accumulate: every node reached from a chazara row, a goal
 /// row, the unit grid or the node editor mints an element keyed by its id.
-final catalogNodeProvider =
-    Provider.autoDispose.family<CatalogNode?, String>((ref, id) {
+final catalogNodeProvider = Provider.autoDispose.family<CatalogNode?, String>((
+  ref,
+  id,
+) {
   return ref.watch(mergedCatalogProvider).asData?.value.byId(id);
 });
 
@@ -249,19 +263,21 @@ final layerRolesProvider = Provider<LayerRoles>((ref) {
 /// Null catalog (still loading) yields an empty map: inheritance then resolves to
 /// the default, which is the same answer an unconfigured tree gives.
 Map<String, String?> parentsOf(Catalog? catalog) => {
-      if (catalog != null)
-        for (final n in catalog.all) n.id: n.parentId,
-    };
+  if (catalog != null)
+    for (final n in catalog.all) n.id: n.parentId,
+};
 
 // ---------------------------------------------------------------------------
 // Log + derived progress
 // ---------------------------------------------------------------------------
 
 /// Constructs + appends events with auto-timestamps.
-final loggingServiceProvider = Provider<LoggingService>((ref) => LoggingService(
-      repository: ref.watch(progressRepositoryProvider),
-      profileId: ref.watch(activeProfileProvider),
-    ));
+final loggingServiceProvider = Provider<LoggingService>(
+  (ref) => LoggingService(
+    repository: ref.watch(progressRepositoryProvider),
+    profileId: ref.watch(activeProfileProvider),
+  ),
+);
 
 /// Reactive event log for the active profile.
 ///
@@ -269,7 +285,8 @@ final loggingServiceProvider = Provider<LoggingService>((ref) => LoggingService(
 /// Anything else wanting a number out of the log wants one of them — see
 /// `log_pass_guard_test.dart` for the three exceptions and why each is its own
 /// axis.
-final eventsProvider = StreamProvider<List<LearningEvent>>((ref) { // log-pass: ok — the log's own carrier, not a walk of it
+final eventsProvider = StreamProvider<List<LearningEvent>>((ref) {
+  // log-pass: ok — the log's own carrier, not a walk of it
   final repo = ref.watch(progressRepositoryProvider);
   final profileId = ref.watch(activeProfileProvider);
   return repo.watchEvents(profileId);
@@ -384,4 +401,5 @@ final progressIndexProvider = Provider<Map<String, ProgressNode>>((ref) {
 /// [ProgressNode] has value equality, so an element that survives (because its
 /// screen is still open) still only notifies when its own subtree moved.
 final progressNodeProvider = Provider.autoDispose.family<ProgressNode?, String>(
-    (ref, id) => ref.watch(progressIndexProvider)[id]);
+  (ref, id) => ref.watch(progressIndexProvider)[id],
+);

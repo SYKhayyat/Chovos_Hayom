@@ -37,13 +37,14 @@ class UnitHistoryFinder {
     int unitIndex,
   ) {
     // Only this unit's events, in canonical append order.
-    final own = events
-        .where((e) => e.nodeId == nodeId && e.unitIndex == unitIndex)
-        .toList()
-      ..sort((a, b) {
-        final c = a.loggedAt.compareTo(b.loggedAt);
-        return c != 0 ? c : a.id.compareTo(b.id);
-      });
+    final own =
+        events
+            .where((e) => e.nodeId == nodeId && e.unitIndex == unitIndex)
+            .toList()
+          ..sort((a, b) {
+            final c = a.loggedAt.compareTo(b.loggedAt);
+            return c != 0 ? c : a.id.compareTo(b.id);
+          });
 
     LearningEvent? done;
     final completedLayers = <String>{};

@@ -36,17 +36,18 @@ class DeviceProfile {
   bool get isCompact => size.width < kCompactWidth;
 
   /// One line, printed first, so a failure report says which phone it was on.
-  String get describe => '${size.width.round()}x${size.height.round()} dp '
+  String get describe =>
+      '${size.width.round()}x${size.height.round()} dp '
       'at ${devicePixelRatio.toStringAsFixed(2)}x, $platform, '
       'text scale ${textScale.toStringAsFixed(2)}'
       '${isCompact ? ' (compact)' : ''}';
 
   static DeviceProfile read(WidgetTester tester) => DeviceProfile(
-        size: tester.view.physicalSize / tester.view.devicePixelRatio,
-        devicePixelRatio: tester.view.devicePixelRatio,
-        platform: defaultTargetPlatform.name,
-        textScale: tester.platformDispatcher.textScaleFactor,
-      );
+    size: tester.view.physicalSize / tester.view.devicePixelRatio,
+    devicePixelRatio: tester.view.devicePixelRatio,
+    platform: defaultTargetPlatform.name,
+    textScale: tester.platformDispatcher.textScaleFactor,
+  );
 }
 
 /// The Sonim XP5s, in logical pixels.
@@ -77,7 +78,8 @@ class Viewport {
   final double textScale;
 
   @override
-  String toString() => '$name (${size.width.round()}x${size.height.round()} dp'
+  String toString() =>
+      '$name (${size.width.round()}x${size.height.round()} dp'
       '${textScale == 1.0 ? '' : ', text ${textScale}x'})';
 
   /// Applies this viewport to the test view, keeping the device's own ratio so
@@ -111,23 +113,21 @@ class Viewport {
 /// emulated class comes second, and is the reason one device can stand in for
 /// the other.
 List<Viewport> viewportsUnderTest(DeviceProfile device) => [
-      Viewport(name: 'native ${device.isCompact ? 'compact' : 'roomy'}',
-          size: device.size),
-      Viewport(
-        name: device.isCompact ? 'roomy' : 'compact',
-        size: device.isCompact ? kPhoneDp : kSonimDp,
-      ),
-      // A third pass at a **larger text scale**, on the compact class only,
-      // because that is where overflow is born: an 8sp label that fits at 240dp
-      // stops fitting the moment a reader turns their system font up, and this
-      // app is for people who read Hebrew script all day.
-      if (!device.isCompact)
-        const Viewport(
-          name: 'compact, large text',
-          size: kSonimDp,
-          textScale: 1.3,
-        ),
-    ];
+  Viewport(
+    name: 'native ${device.isCompact ? 'compact' : 'roomy'}',
+    size: device.size,
+  ),
+  Viewport(
+    name: device.isCompact ? 'roomy' : 'compact',
+    size: device.isCompact ? kPhoneDp : kSonimDp,
+  ),
+  // A third pass at a **larger text scale**, on the compact class only,
+  // because that is where overflow is born: an 8sp label that fits at 240dp
+  // stops fitting the moment a reader turns their system font up, and this
+  // app is for people who read Hebrew script all day.
+  if (!device.isCompact)
+    const Viewport(name: 'compact, large text', size: kSonimDp, textScale: 1.3),
+];
 
 /// Whether this device can actually draw Hebrew.
 ///
@@ -148,9 +148,11 @@ bool hebrewRenders() {
   const notdef = '\uE000\uE001\uE002\uE003';
   final real = _textWidth(sample);
   final box = _textWidth(notdef);
-  say('  Hebrew probe: "$sample" is ${real.toStringAsFixed(1)}px wide, '
-      'a notdef box is ${box.toStringAsFixed(1)}px '
-      '${real == box ? '(NOT rendering)' : '(rendering)'}');
+  say(
+    '  Hebrew probe: "$sample" is ${real.toStringAsFixed(1)}px wide, '
+    'a notdef box is ${box.toStringAsFixed(1)}px '
+    '${real == box ? '(NOT rendering)' : '(rendering)'}',
+  );
   return real != box;
 }
 

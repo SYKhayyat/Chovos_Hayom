@@ -84,20 +84,19 @@ class CatalogNode {
     int? unitOffset,
     bool? hidden,
     List<String>? unitNames,
-  }) =>
-      CatalogNode(
-        id: id,
-        parentId: parentId == _keep ? this.parentId : parentId as String?,
-        name: name ?? this.name,
-        nameHebrew: nameHebrew == _keep ? this.nameHebrew : nameHebrew as String?,
-        sortOrder: sortOrder ?? this.sortOrder,
-        kind: kind ?? this.kind,
-        unitLabel: unitLabel == _keep ? this.unitLabel : unitLabel as UnitLabel?,
-        unitCount: unitCount ?? this.unitCount,
-        unitOffset: unitOffset ?? this.unitOffset,
-        hidden: hidden ?? this.hidden,
-        unitNames: unitNames ?? this.unitNames,
-      );
+  }) => CatalogNode(
+    id: id,
+    parentId: parentId == _keep ? this.parentId : parentId as String?,
+    name: name ?? this.name,
+    nameHebrew: nameHebrew == _keep ? this.nameHebrew : nameHebrew as String?,
+    sortOrder: sortOrder ?? this.sortOrder,
+    kind: kind ?? this.kind,
+    unitLabel: unitLabel == _keep ? this.unitLabel : unitLabel as UnitLabel?,
+    unitCount: unitCount ?? this.unitCount,
+    unitOffset: unitOffset ?? this.unitOffset,
+    hidden: hidden ?? this.hidden,
+    unitNames: unitNames ?? this.unitNames,
+  );
 
   static const _keep = Object();
 
@@ -109,34 +108,34 @@ class CatalogNode {
       index >= unitOffset && index < unitOffset + unitCount;
 
   factory CatalogNode.fromJson(Map<String, dynamic> json) => CatalogNode(
-        id: json['id'] as String,
-        parentId: json['parentId'] as String?,
-        name: json['name'] as String,
-        nameHebrew: json['nameHebrew'] as String?,
-        sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
-        kind: NodeKind.values.byName(json['kind'] as String),
-        unitLabel: json['unitLabel'] == null
-            ? null
-            : UnitLabel.values.byName(json['unitLabel'] as String),
-        unitCount: (json['unitCount'] as num?)?.toInt() ?? 0,
-        unitOffset: (json['unitOffset'] as num?)?.toInt() ?? 0,
-        hidden: json['hidden'] as bool? ?? false,
-        unitNames:
-            (json['unitNames'] as List?)?.map((e) => e as String).toList() ??
-                const [],
-      );
+    id: json['id'] as String,
+    parentId: json['parentId'] as String?,
+    name: json['name'] as String,
+    nameHebrew: json['nameHebrew'] as String?,
+    sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
+    kind: NodeKind.values.byName(json['kind'] as String),
+    unitLabel: json['unitLabel'] == null
+        ? null
+        : UnitLabel.values.byName(json['unitLabel'] as String),
+    unitCount: (json['unitCount'] as num?)?.toInt() ?? 0,
+    unitOffset: (json['unitOffset'] as num?)?.toInt() ?? 0,
+    hidden: json['hidden'] as bool? ?? false,
+    unitNames:
+        (json['unitNames'] as List?)?.map((e) => e as String).toList() ??
+        const [],
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'parentId': parentId,
-        'name': name,
-        if (nameHebrew != null) 'nameHebrew': nameHebrew,
-        'sortOrder': sortOrder,
-        'kind': kind.name,
-        if (unitLabel != null) 'unitLabel': unitLabel!.name,
-        'unitCount': unitCount,
-        'unitOffset': unitOffset,
-        if (hidden) 'hidden': true,
-        if (unitNames.isNotEmpty) 'unitNames': unitNames,
-      };
+    'id': id,
+    'parentId': parentId,
+    'name': name,
+    if (nameHebrew != null) 'nameHebrew': nameHebrew,
+    'sortOrder': sortOrder,
+    'kind': kind.name,
+    if (unitLabel != null) 'unitLabel': unitLabel!.name,
+    'unitCount': unitCount,
+    'unitOffset': unitOffset,
+    if (hidden) 'hidden': true,
+    if (unitNames.isNotEmpty) 'unitNames': unitNames,
+  };
 }

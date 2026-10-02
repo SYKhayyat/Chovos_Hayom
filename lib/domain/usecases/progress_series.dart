@@ -61,8 +61,6 @@ class ProgressSeries {
 
     final days = perDay.keys.toList()..sort();
     var running = 0;
-    return [
-      for (final day in days) SeriesPoint(day, running += perDay[day]!),
-    ];
+    return [for (final day in days) SeriesPoint(day, running += perDay[day]!)];
   }
 }

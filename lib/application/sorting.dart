@@ -35,12 +35,15 @@ class SortConfig {
 
   bool get active => metric != SortMetric.catalog;
 
-  SortConfig copyWith({SortMetric? metric, bool? descending, Object? level = _keep}) =>
-      SortConfig(
-        metric: metric ?? this.metric,
-        descending: descending ?? this.descending,
-        level: level == _keep ? this.level : level as int?,
-      );
+  SortConfig copyWith({
+    SortMetric? metric,
+    bool? descending,
+    Object? level = _keep,
+  }) => SortConfig(
+    metric: metric ?? this.metric,
+    descending: descending ?? this.descending,
+    level: level == _keep ? this.level : level as int?,
+  );
 
   static const _keep = Object();
 
@@ -135,7 +138,9 @@ List<ProgressNode> sortChildren(
       SortMetric.learned => a.learned.compareTo(b.learned),
       SortMetric.remaining => a.remaining.compareTo(b.remaining),
       SortMetric.lastLearned => _cmpNullableDate(
-          lastActivity[a.id], lastActivity[b.id]),
+        lastActivity[a.id],
+        lastActivity[b.id],
+      ),
       SortMetric.catalog => 0,
     };
     return config.descending ? -r : r;
@@ -158,7 +163,10 @@ int _cmpNullableDate(DateTime? a, DateTime? b) {
 
 /// Dart's [List.sort] is not guaranteed stable; this merge sort is, so equal
 /// keys keep their catalog order.
-void _mergeSort(List<ProgressNode> list, int Function(ProgressNode, ProgressNode) cmp) {
+void _mergeSort(
+  List<ProgressNode> list,
+  int Function(ProgressNode, ProgressNode) cmp,
+) {
   if (list.length < 2) return;
   final mid = list.length ~/ 2;
   final left = list.sublist(0, mid);

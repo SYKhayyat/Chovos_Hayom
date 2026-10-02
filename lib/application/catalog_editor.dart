@@ -20,9 +20,10 @@ class CatalogEditor {
       _ref.read(catalogProvider).asData?.value.byId(id) != null;
 
   /// True if a per-profile override/custom row exists for [id].
-  bool isOverridden(String id) => (_ref.read(customNodesProvider).asData?.value ??
-          const [])
-      .any((n) => n.id == id);
+  bool isOverridden(String id) =>
+      (_ref.read(customNodesProvider).asData?.value ?? const []).any(
+        (n) => n.id == id,
+      );
 
   /// Hide a node (and its subtree) — a reversible soft-delete via an override.
   Future<void> hide(CatalogNode node) => _ref

@@ -45,12 +45,12 @@ final _journalEntriesProvider = Provider<List<_JournalEntry>>((ref) {
       if (e.note != null && e.note!.trim().isNotEmpty)
         _JournalEntry(e, catalog?.byId(e.nodeId)),
   ]..sort((a, b) {
-      final occurred = b.event.occurredAt.compareTo(a.event.occurredAt);
-      if (occurred != 0) return occurred;
-      final logged = b.event.loggedAt.compareTo(a.event.loggedAt);
-      if (logged != 0) return logged;
-      return b.event.id.compareTo(a.event.id);
-    });
+    final occurred = b.event.occurredAt.compareTo(a.event.occurredAt);
+    if (occurred != 0) return occurred;
+    final logged = b.event.loggedAt.compareTo(a.event.loggedAt);
+    if (logged != 0) return logged;
+    return b.event.id.compareTo(a.event.id);
+  });
 });
 
 /// The **Notes Journal**: every haara you've written, newest first, each showing
@@ -141,13 +141,17 @@ class _NotesJournalScreenState extends ConsumerState<NotesJournalScreen> {
                       return ListTile(
                         leading: const Icon(Icons.lightbulb_outline),
                         title: Text(entry.event.note!.trim()),
-                        subtitle: Text(l10n.journalSubtitle(
-                          entry.location(l10n),
-                          DateDisplay.format(entry.event.occurredAt, mode),
-                        )),
+                        subtitle: Text(
+                          l10n.journalSubtitle(
+                            entry.location(l10n),
+                            DateDisplay.format(entry.event.occurredAt, mode),
+                          ),
+                        ),
                         onTap: node != null && node.isLeaf
                             ? () => Navigator.pushNamed(
-                                context, Routes.sefer(node.id))
+                                context,
+                                Routes.sefer(node.id),
+                              )
                             : null,
                       );
                     },

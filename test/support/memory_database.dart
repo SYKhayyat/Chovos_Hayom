@@ -61,8 +61,11 @@ AppDatabase memoryDatabase() {
   // option for exactly this situation. The cache it disables is a
   // production-latency optimisation with nothing to say about correctness.
   final db = AppDatabase(
-      DatabaseConnection(NativeDatabase.memory(),
-          closeStreamsSynchronously: true));
+    DatabaseConnection(
+      NativeDatabase.memory(),
+      closeStreamsSynchronously: true,
+    ),
+  );
   // Registered here rather than left to each caller: the majority of call sites
   // build the repository inline inside an `overrideWithValue`, where there is
   // no variable to close in a `tearDown`. `addTearDown` works from a test body

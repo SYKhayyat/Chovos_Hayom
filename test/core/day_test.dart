@@ -14,14 +14,21 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('identity', () {
     test('the same calendar day is the same Day, whatever the clock says', () {
-      expect(Day.of(DateTime(2026, 8, 5)), Day.of(DateTime(2026, 8, 5, 23, 59)));
-      expect(Day.of(DateTime(2026, 8, 5, 0, 0, 1)).hashCode,
-          Day.of(DateTime(2026, 8, 5, 12)).hashCode);
+      expect(
+        Day.of(DateTime(2026, 8, 5)),
+        Day.of(DateTime(2026, 8, 5, 23, 59)),
+      );
+      expect(
+        Day.of(DateTime(2026, 8, 5, 0, 0, 1)).hashCode,
+        Day.of(DateTime(2026, 8, 5, 12)).hashCode,
+      );
     });
 
     test('different calendar days are different Days', () {
-      expect(Day.of(DateTime(2026, 8, 5)) == Day.of(DateTime(2026, 8, 6)),
-          isFalse);
+      expect(
+        Day.of(DateTime(2026, 8, 5)) == Day.of(DateTime(2026, 8, 6)),
+        isFalse,
+      );
     });
 
     test('a Day is usable as a map key and a set member', () {
@@ -141,8 +148,9 @@ void main() {
         // Counting forward must agree with naming the date outright — the two
         // ways the old code arrived at "tomorrow", which disagreed on the two
         // transition days.
-        final named = Day.of(DateTime(
-            day.midnight.year, day.midnight.month, day.midnight.day + 1));
+        final named = Day.of(
+          DateTime(day.midnight.year, day.midnight.month, day.midnight.day + 1),
+        );
         expect(next, named, reason: 'counted $next vs named $named');
         day = next;
       }
@@ -173,8 +181,7 @@ void main() {
       }
     });
 
-    test(
-        'the naive local-DateTime forms this type replaced are not equivalent '
+    test('the naive local-DateTime forms this type replaced are not equivalent '
         'to it', () {
       // A negative control in the spirit of sheet_insets_test: if this ever
       // stops finding a disagreement on a DST host, the sweep above has stopped
@@ -203,9 +210,13 @@ void main() {
         }
         day += 1;
       }
-      expect(naiveWrong, greaterThan(0),
-          reason: 'the old .difference().inDays form should misread a '
-              'transition day');
+      expect(
+        naiveWrong,
+        greaterThan(0),
+        reason:
+            'the old .difference().inDays form should misread a '
+            'transition day',
+      );
     });
   });
 }

@@ -1,4 +1,3 @@
-
 /// Reading a date the reader **wrote**, as the counterpart to
 /// [DateDisplay.format] writing one.
 ///
@@ -31,6 +30,7 @@
 ///   month being viewed — and the caller echoes the resolved date back, so the
 ///   year that was filled in is visible rather than implied.
 library;
+
 import 'package:kosher_dart/kosher_dart.dart';
 
 import '../domain/usecases/recurrence.dart';
@@ -60,9 +60,9 @@ sealed class DateParse {
 
   /// The day, or null when there is not exactly one to report.
   Day? get dayOrNull => switch (this) {
-        DateParseExact(:final day) => day,
-        DateParseAmbiguous() || DateParseInvalid() => null,
-      };
+    DateParseExact(:final day) => day,
+    DateParseAmbiguous() || DateParseInvalid() => null,
+  };
 
   /// Whether this is a date, in the sense a caller can act on.
   bool get isValid => this is! DateParseInvalid;
@@ -137,14 +137,12 @@ class HebrewMonthName {
   /// them. Lowercase because Hebrew script has no case and ASCII comparisons
   /// should not depend on the keyboard.
   Iterable<String> get spellings => [
-        for (final name in [...hebrew, ...transliterated]) _normalise(name),
-      ];
+    for (final name in [...hebrew, ...transliterated]) _normalise(name),
+  ];
 }
 
-String _normalise(String name) => name
-    .toLowerCase()
-    .replaceAll(' ', '')
-    .replaceAll(_punctuation, '');
+String _normalise(String name) =>
+    name.toLowerCase().replaceAll(' ', '').replaceAll(_punctuation, '');
 
 /// The thirteen months, in the order a Hebrew year runs.
 ///
@@ -153,61 +151,74 @@ String _normalise(String name) => name
 /// leap year rather than picking the ordinary reading.
 const List<HebrewMonthName> hebrewMonthNames = [
   HebrewMonthName(
-      month: HebrewMonth.nissan,
-      hebrew: ['ניסן', 'נסן'],
-      transliterated: ['Nissan', 'Nisan']),
+    month: HebrewMonth.nissan,
+    hebrew: ['ניסן', 'נסן'],
+    transliterated: ['Nissan', 'Nisan'],
+  ),
   HebrewMonthName(
-      month: HebrewMonth.iyar,
-      hebrew: ['אייר', 'איר'],
-      transliterated: ['Iyar', 'Iyar', 'Eyar']),
+    month: HebrewMonth.iyar,
+    hebrew: ['אייר', 'איר'],
+    transliterated: ['Iyar', 'Iyar', 'Eyar'],
+  ),
   HebrewMonthName(
-      month: HebrewMonth.sivan,
-      hebrew: ['סיון', 'סיוון'],
-      transliterated: ['Sivan', 'Sivan']),
+    month: HebrewMonth.sivan,
+    hebrew: ['סיון', 'סיוון'],
+    transliterated: ['Sivan', 'Sivan'],
+  ),
   HebrewMonthName(
-      month: HebrewMonth.tammuz,
-      hebrew: ['תמוז', 'תמוז'],
-      transliterated: ['Tammuz', 'Tamuz', 'Tammouz']),
+    month: HebrewMonth.tammuz,
+    hebrew: ['תמוז', 'תמוז'],
+    transliterated: ['Tammuz', 'Tamuz', 'Tammouz'],
+  ),
   HebrewMonthName(
-      month: HebrewMonth.av,
-      hebrew: ['אב'],
-      transliterated: ['Av', 'Av']),
+    month: HebrewMonth.av,
+    hebrew: ['אב'],
+    transliterated: ['Av', 'Av'],
+  ),
   HebrewMonthName(
-      month: HebrewMonth.elul,
-      hebrew: ['אלול', 'אול'],
-      transliterated: ['Elul', 'Ellul']),
+    month: HebrewMonth.elul,
+    hebrew: ['אלול', 'אול'],
+    transliterated: ['Elul', 'Ellul'],
+  ),
   HebrewMonthName(
-      month: HebrewMonth.tishrei,
-      hebrew: ['תשרי'],
-      transliterated: ['Tishrei', 'Tishri', 'Tishrei']),
+    month: HebrewMonth.tishrei,
+    hebrew: ['תשרי'],
+    transliterated: ['Tishrei', 'Tishri', 'Tishrei'],
+  ),
   HebrewMonthName(
-      month: HebrewMonth.cheshvan,
-      hebrew: ['חשוון', 'חשוב', 'חסוון'],
-      transliterated: ['Cheshvan', 'Chesvan', 'Chevan']),
+    month: HebrewMonth.cheshvan,
+    hebrew: ['חשוון', 'חשוב', 'חסוון'],
+    transliterated: ['Cheshvan', 'Chesvan', 'Chevan'],
+  ),
   HebrewMonthName(
-      month: HebrewMonth.kislev,
-      hebrew: ['כסלו', 'כסלו'],
-      transliterated: ['Kislev', 'Chislev', 'Kislev']),
+    month: HebrewMonth.kislev,
+    hebrew: ['כסלו', 'כסלו'],
+    transliterated: ['Kislev', 'Chislev', 'Kislev'],
+  ),
   HebrewMonthName(
-      month: HebrewMonth.teves,
-      hebrew: ['טבת', 'טבת'],
-      // *Tevat* is the spelling the feature request itself was written in, so
-      // it is a spelling real readers are using.
-      transliterated: ['Teves', 'Tevet', 'Tevat', 'Tavas']),
+    month: HebrewMonth.teves,
+    hebrew: ['טבת', 'טבת'],
+    // *Tevat* is the spelling the feature request itself was written in, so
+    // it is a spelling real readers are using.
+    transliterated: ['Teves', 'Tevet', 'Tevat', 'Tavas'],
+  ),
   HebrewMonthName(
-      month: HebrewMonth.shevat,
-      hebrew: ['שבט'],
-      transliterated: ['Shevat', 'Shvat', 'Shbat']),
+    month: HebrewMonth.shevat,
+    hebrew: ['שבט'],
+    transliterated: ['Shevat', 'Shvat', 'Shbat'],
+  ),
   HebrewMonthName(
-      month: HebrewMonth.adar,
-      // Bare. *Adar I* and *Adar II* are the same word with a letter attached,
-      // and are listed against their own months below.
-      hebrew: ['אדר'],
-      transliterated: ['Adar']),
+    month: HebrewMonth.adar,
+    // Bare. *Adar I* and *Adar II* are the same word with a letter attached,
+    // and are listed against their own months below.
+    hebrew: ['אדר'],
+    transliterated: ['Adar'],
+  ),
   HebrewMonthName(
-      month: HebrewMonth.adarIi,
-      hebrew: ['אדר ב', 'אדר ב׳'],
-      transliterated: ['Adar II', 'Adar Ii', 'Adar 2', 'Adar Bet', 'Adar B']),
+    month: HebrewMonth.adarIi,
+    hebrew: ['אדר ב', 'אדר ב׳'],
+    transliterated: ['Adar II', 'Adar Ii', 'Adar 2', 'Adar Bet', 'Adar B'],
+  ),
 ];
 
 /// Adar I's own spellings, kept out of [hebrewMonthNames] because the numbering
@@ -230,9 +241,28 @@ final _punctuation = RegExp('[\'׳"״]');
 
 /// The value of a Hebrew letter: `א` is 1 through `ת` is 400.
 const Map<String, int> _letterValues = {
-  'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5, 'ו': 6, 'ז': 7, 'ח': 8, 'ט': 9,
-  'י': 10, 'כ': 20, 'ל': 30, 'מ': 40, 'נ': 50, 'ס': 60, 'ע': 70, 'פ': 80,
-  'צ': 90, 'ק': 100, 'ר': 200, 'ש': 300, 'ת': 400,
+  'א': 1,
+  'ב': 2,
+  'ג': 3,
+  'ד': 4,
+  'ה': 5,
+  'ו': 6,
+  'ז': 7,
+  'ח': 8,
+  'ט': 9,
+  'י': 10,
+  'כ': 20,
+  'ל': 30,
+  'מ': 40,
+  'נ': 50,
+  'ס': 60,
+  'ע': 70,
+  'פ': 80,
+  'צ': 90,
+  'ק': 100,
+  'ר': 200,
+  'ש': 300,
+  'ת': 400,
 };
 
 /// The five final forms, which are the same letters and the same values.
@@ -315,18 +345,31 @@ int? parseHebrewNumber(String text) {
 
 /// The Gregorian months, by the names a reader is likely to type.
 const Map<String, int> _gregorianMonths = {
-  'january': 1, 'jan': 1,
-  'february': 2, 'feb': 2, 'febr': 2,
-  'march': 3, 'mar': 3,
-  'april': 4, 'apr': 4,
+  'january': 1,
+  'jan': 1,
+  'february': 2,
+  'feb': 2,
+  'febr': 2,
+  'march': 3,
+  'mar': 3,
+  'april': 4,
+  'apr': 4,
   'may': 5,
-  'june': 6, 'jun': 6,
-  'july': 7, 'jul': 7,
-  'august': 8, 'aug': 8,
-  'september': 9, 'sep': 9, 'sept': 9,
-  'october': 10, 'oct': 10,
-  'november': 11, 'nov': 11,
-  'december': 12, 'dec': 12,
+  'june': 6,
+  'jun': 6,
+  'july': 7,
+  'jul': 7,
+  'august': 8,
+  'aug': 8,
+  'september': 9,
+  'sep': 9,
+  'sept': 9,
+  'october': 10,
+  'oct': 10,
+  'november': 11,
+  'nov': 11,
+  'december': 12,
+  'dec': 12,
 };
 
 final _isoDate = RegExp(r'^(\d{4})-(\d{1,2})-(\d{1,2})$');
@@ -372,28 +415,34 @@ DateParse parseDateText(String text, {Day? reference}) {
 }
 
 DateParse _single(List<Day> candidates) => switch (candidates.toSet().length) {
-      0 => const DateParseInvalid(),
-      1 => DateParseExact(candidates.first),
-      // Two readings of one string, ordered as they were tried. Reported rather
-      // than resolved: `4/1/2026` is April 1st in the United States and
-      // January 4th almost everywhere else, and this app does not know which of
-      // its readers is which.
-      _ => DateParseAmbiguous(candidates),
-    };
+  0 => const DateParseInvalid(),
+  1 => DateParseExact(candidates.first),
+  // Two readings of one string, ordered as they were tried. Reported rather
+  // than resolved: `4/1/2026` is April 1st in the United States and
+  // January 4th almost everywhere else, and this app does not know which of
+  // its readers is which.
+  _ => DateParseAmbiguous(candidates),
+};
 
 DateParse _parseGregorian(String text, Day? reference) {
   final iso = _isoDate.firstMatch(text);
   if (iso != null) {
     // Year-first, so this one is never ambiguous — which is most of why the
     // app's own output is the shape it is.
-    return _single(_gregorian(
-      nonNegativeInt(iso.group(1))!,
-      nonNegativeInt(iso.group(2))!,
-      nonNegativeInt(iso.group(3))!,
-    ));
+    return _single(
+      _gregorian(
+        nonNegativeInt(iso.group(1))!,
+        nonNegativeInt(iso.group(2))!,
+        nonNegativeInt(iso.group(3))!,
+      ),
+    );
   }
 
-  final tokens = text.toLowerCase().split(RegExp(r'[\s,]+')).where((t) => t.isNotEmpty).toList();
+  final tokens = text
+      .toLowerCase()
+      .split(RegExp(r'[\s,]+'))
+      .where((t) => t.isNotEmpty)
+      .toList();
 
   // "4/1/2026" and "1.4.2026": three numbers and no name, so the order is the
   // only thing saying which is the day. Where both orders are valid dates the
@@ -406,10 +455,7 @@ DateParse _parseGregorian(String text, Day? reference) {
     // Day-first first, then month-first, and the order is the order the
     // candidates are offered in. It is not a claim about which is right — both
     // come back — it is just a stable order to show them in.
-    return _single([
-      ..._gregorian(year, b, a),
-      ..._gregorian(year, a, b),
-    ]);
+    return _single([..._gregorian(year, b, a), ..._gregorian(year, a, b)]);
   }
 
   // Otherwise a month name with one or two numbers, in any order: "4 Jan 2026",
@@ -449,8 +495,7 @@ List<Day> _gregorian(int year, int month, int day) {
   return [Day.of(date)];
 }
 
-int _expandYear(int year) =>
-    year < 100 ? 2000 + year : year;
+int _expandYear(int year) => year < 100 ? 2000 + year : year;
 
 DateParse _parseHebrew(String text, Day? reference) {
   final tokens = text
@@ -471,8 +516,9 @@ DateParse _parseHebrew(String text, Day? reference) {
     // the one-token bare *Adar*. Reading the bare month first would take `אדר א`
     // as an ambiguous Adar followed by a day of one — and *Alef* is a letter,
     // so it parses as the numeral 1 rather than as being nothing at all.
-    final joined =
-        i + 1 < tokens.length ? _hebrewMonth('$token ${tokens[i + 1]}') : null;
+    final joined = i + 1 < tokens.length
+        ? _hebrewMonth('$token ${tokens[i + 1]}')
+        : null;
     final found = joined ?? _hebrewMonth(token);
     if (found != null) {
       if (month != null) return const DateParseInvalid();
@@ -487,7 +533,6 @@ DateParse _parseHebrew(String text, Day? reference) {
     return const DateParseInvalid();
   }
 
-
   // **`ה׳` is two different things and the text does not say which.** It is the
   // fifth of a month, and it is the five thousand a long-form year starts with.
   // The day reading is the default, and it is the one the app's own formatter
@@ -500,11 +545,14 @@ DateParse _parseHebrew(String text, Day? reference) {
   // and a year that are the *same string*, so a search for "the other one" finds
   // nothing and `lastWhere` throws — a date field crashing on a date somebody
   // typed. The fields are positional in every spelling, so position it is.
-  final isLongFormYear = numbers.length == 3 &&
+  final isLongFormYear =
+      numbers.length == 3 &&
       numbers.any((t) => _longYearThousands.contains(t.trim()));
   final fields = isLongFormYear
-      ? [for (final t in numbers)
-          if (!_longYearThousands.contains(t.trim())) t]
+      ? [
+          for (final t in numbers)
+            if (!_longYearThousands.contains(t.trim())) t,
+        ]
       : numbers;
   if (fields.isEmpty || fields.length > 2) return const DateParseInvalid();
   final dayToken = fields.first;
@@ -521,13 +569,10 @@ DateParse _parseHebrew(String text, Day? reference) {
       // Gregorian one: 2026 is 5786 only from Rosh Hashanah onwards, and the two
       // answers are seven months apart.
       ? (reference == null
-          ? null
-          : JewishDate.fromDateTime(reference.midnight).getJewishYear())
-      : parseHebrewYear(
-          yearToken,
-          thousands: isLongFormYear ? 5000 : 0,
-        ) ??
-          _asNumber(yearToken);
+            ? null
+            : JewishDate.fromDateTime(reference.midnight).getJewishYear())
+      : parseHebrewYear(yearToken, thousands: isLongFormYear ? 5000 : 0) ??
+            _asNumber(yearToken);
   if (year == null) return const DateParseInvalid();
 
   // A bare *Adar* in a leap year is two months, and the text does not say
@@ -536,9 +581,7 @@ DateParse _parseHebrew(String text, Day? reference) {
       ? [HebrewMonth.adar, HebrewMonth.adarIi]
       : [month.month];
 
-  return _single([
-    for (final m in months) ..._hebrew(year, m, day),
-  ]);
+  return _single([for (final m in months) ..._hebrew(year, m, day)]);
 }
 
 /// A token as a plain integer: ASCII digits, or Hebrew letters.
@@ -554,8 +597,7 @@ int? _asNumber(String token) {
   return parseHebrewNumber(trimmed);
 }
 
-bool _isHebrewLeapYear(int year) =>
-    ((7 * year) + 1) % 19 < 7;
+bool _isHebrewLeapYear(int year) => ((7 * year) + 1) % 19 < 7;
 
 List<Day> _hebrew(int year, int month, int day) {
   if (day < 1 || day > 30 || year < 1) return const [];
@@ -589,11 +631,15 @@ List<Day> _hebrew(int year, int month, int day) {
   if (date.getJewishDayOfMonth() != day) return const [];
   final gregorianYear = date.getGregorianYear();
   if (gregorianYear < 1 || gregorianYear > 9999) return const [];
-  return [Day.of(DateTime(
-    gregorianYear,
-    date.getGregorianMonth(),
-    date.getGregorianDayOfMonth(),
-  ))];
+  return [
+    Day.of(
+      DateTime(
+        gregorianYear,
+        date.getGregorianMonth(),
+        date.getGregorianDayOfMonth(),
+      ),
+    ),
+  ];
 }
 
 /// Which Hebrew month [token] names, and whether it named a bare *Adar*.
@@ -601,9 +647,11 @@ List<Day> _hebrew(int year, int month, int day) {
   final name = _normalise(token);
   // Longest spellings first: "adar ii" contains "adar", and matching the short
   // one first would read every Adar II as an ambiguous Adar.
-  final candidates = hebrewMonthNames.expand((m) => m.spellings.map((s) => (m.month, s)))
-      .toList()
-    ..sort((a, b) => b.$2.length.compareTo(a.$2.length));
+  final candidates =
+      hebrewMonthNames
+          .expand((m) => m.spellings.map((s) => (m.month, s)))
+          .toList()
+        ..sort((a, b) => b.$2.length.compareTo(a.$2.length));
   for (final (month, spelling) in candidates) {
     if (spelling == name) {
       return (month: month, bare: _isBareAdar(spelling));
@@ -617,7 +665,8 @@ List<Day> _hebrew(int year, int month, int day) {
   return null;
 }
 
-bool _isBareAdar(String normalised) => normalised == 'אדר' || normalised == 'adar';
+bool _isBareAdar(String normalised) =>
+    normalised == 'אדר' || normalised == 'adar';
 
 /// [day] written the way [DateDisplay] writes it in [mode], which is the string
 /// [parseDateText] is required to read back.

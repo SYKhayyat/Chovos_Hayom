@@ -46,11 +46,11 @@ class _CountingLeaf extends CatalogNode {
     required super.name,
     required int units,
   }) : super(
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf,
-          unitCount: units,
-          unitOffset: 1,
-        );
+         kind: NodeKind.leaf,
+         unitLabel: UnitLabel.daf,
+         unitCount: units,
+         unitOffset: 1,
+       );
 
   int fullScans = 0;
 
@@ -61,17 +61,20 @@ class _CountingLeaf extends CatalogNode {
   }
 }
 
-LearningEvent done(String node, int unit, {List<String> layers = const ['main']}) =>
-    LearningEvent(
-      id: '$node-$unit-${layers.join()}',
-      profileId: 'p',
-      nodeId: node,
-      unitIndex: unit,
-      action: EventAction.done,
-      occurredAt: DateTime(2026, 1, 1),
-      loggedAt: DateTime(2026, 1, 1),
-      layers: layers,
-    );
+LearningEvent done(
+  String node,
+  int unit, {
+  List<String> layers = const ['main'],
+}) => LearningEvent(
+  id: '$node-$unit-${layers.join()}',
+  profileId: 'p',
+  nodeId: node,
+  unitIndex: unit,
+  action: EventAction.done,
+  occurredAt: DateTime(2026, 1, 1),
+  loggedAt: DateTime(2026, 1, 1),
+  layers: layers,
+);
 
 /// The fastest of [rounds] timings of [body], in milliseconds.
 ///
@@ -101,10 +104,18 @@ void main() {
   setUp(() {
     // Far larger than Shas, so a full-range walk would be unmistakable.
     huge = _CountingLeaf(
-        id: 'huge', parentId: 'root', name: 'Huge', units: 500000);
+      id: 'huge',
+      parentId: 'root',
+      name: 'Huge',
+      units: 500000,
+    );
     catalog = Catalog([
       const CatalogNode(
-          id: 'root', parentId: null, name: 'Root', kind: NodeKind.category),
+        id: 'root',
+        parentId: null,
+        name: 'Root',
+        kind: NodeKind.category,
+      ),
       huge,
     ]);
   });
@@ -117,8 +128,11 @@ void main() {
 
     final root = RollUp.buildForest(catalog, fold).single;
 
-    expect(huge.fullScans, 0,
-        reason: 'per-layer coverage must walk the marked units, not all 500k');
+    expect(
+      huge.fullScans,
+      0,
+      reason: 'per-layer coverage must walk the marked units, not all 500k',
+    );
     expect(root.learned, 2);
     expect(root.total, 500000);
     expect(root.learnedFor('rashi'), 1);
@@ -190,9 +204,13 @@ void main() {
       // A per-event local DateTime lands well past 8x a fold; correct code is far
       // under it.
       final foldMs = fastestMs(() => FoldLog.fold(events));
-      expect(ms, lessThan(foldMs * 8),
-          reason: 'the series helpers took $ms ms against a $foldMs ms fold of '
-              'the same log — a per-event local DateTime construction is back');
+      expect(
+        ms,
+        lessThan(foldMs * 8),
+        reason:
+            'the series helpers took $ms ms against a $foldMs ms fold of '
+            'the same log — a per-event local DateTime construction is back',
+      );
     });
 
     // The index exists so that the *answers* stop costing the log. This asserts
@@ -214,18 +232,18 @@ void main() {
       // 10 units a day. The 30-day log is the last 30 days of the 300-day one,
       // so the two are indistinguishable as far as the window is concerned.
       List<LearningEvent> history(int days, int firstDay) => [
-            for (var d = firstDay; d < firstDay + days; d++)
-              for (var k = 0; k < 10; k++)
-                LearningEvent(
-                  id: 'd${d}_$k',
-                  profileId: 'p',
-                  nodeId: 'huge',
-                  unitIndex: d * 10 + k,
-                  action: EventAction.done,
-                  occurredAt: DateTime(2026, 1, 1).add(Duration(days: d)),
-                  loggedAt: DateTime(2026, 1, 1).add(Duration(days: d)),
-                ),
-          ];
+        for (var d = firstDay; d < firstDay + days; d++)
+          for (var k = 0; k < 10; k++)
+            LearningEvent(
+              id: 'd${d}_$k',
+              profileId: 'p',
+              nodeId: 'huge',
+              unitIndex: d * 10 + k,
+              action: EventAction.done,
+              occurredAt: DateTime(2026, 1, 1).add(Duration(days: d)),
+              loggedAt: DateTime(2026, 1, 1).add(Duration(days: d)),
+            ),
+      ];
 
       // 300 days of history ending today (ordinal 299), versus only its last 30.
       final today = Day.of(DateTime(2026, 1, 1).add(const Duration(days: 299)));
@@ -236,9 +254,13 @@ void main() {
       // both firstDayLearned values fall on or before the window start — so the
       // answer must be identical. It is 300 units over 30 days.
       expect(deep.averagePerDay(today), 10);
-      expect(deep.averagePerDay(today), shallow.averagePerDay(today),
-          reason: '270 extra days of history behind the window changed the '
-              'answer, so something read past the window');
+      expect(
+        deep.averagePerDay(today),
+        shallow.averagePerDay(today),
+        reason:
+            '270 extra days of history behind the window changed the '
+            'answer, so something read past the window',
+      );
 
       // And the total activity differs, which is what makes the comparison above
       // meaningful rather than vacuous: if the two logs were the same, this would
@@ -265,27 +287,38 @@ void main() {
       // is a curve. Folding a quarter as many events is the same operation on the
       // same data shape, measured in this run: linear work keeps the ratio near
       // 4, and a quadratic fold lands far above 8.
-      final smallMs = fastestMs(() => FoldLog.fold(syntheticLog(25000)),
-          rounds: 2);
-      expect(ms, lessThan(smallMs * 8),
-          reason: '100k events took $ms ms against $smallMs ms for 25k — a fold '
-              'that grows faster than the events it reads is back');
+      final smallMs = fastestMs(
+        () => FoldLog.fold(syntheticLog(25000)),
+        rounds: 2,
+      );
+      expect(
+        ms,
+        lessThan(smallMs * 8),
+        reason:
+            '100k events took $ms ms against $smallMs ms for 25k — a fold '
+            'that grows faster than the events it reads is back',
+      );
     });
   });
 
   test('out-of-range marks still cannot inflate learned', () {
     // The clamp has to survive the switch from walking units to walking marks.
     const small = CatalogNode(
-        id: 'small',
-        parentId: 'root',
-        name: 'Small',
-        kind: NodeKind.leaf,
-        unitLabel: UnitLabel.daf,
-        unitCount: 2,
-        unitOffset: 1);
+      id: 'small',
+      parentId: 'root',
+      name: 'Small',
+      kind: NodeKind.leaf,
+      unitLabel: UnitLabel.daf,
+      unitCount: 2,
+      unitOffset: 1,
+    );
     final c = Catalog([
       const CatalogNode(
-          id: 'root', parentId: null, name: 'Root', kind: NodeKind.category),
+        id: 'root',
+        parentId: null,
+        name: 'Root',
+        kind: NodeKind.category,
+      ),
       small,
     ]);
     final fold = FoldLog.fold([
@@ -296,6 +329,10 @@ void main() {
 
     final root = RollUp.buildForest(c, fold).single;
     expect(root.learned, 2);
-    expect(root.learnedFor('rashi'), 1, reason: 'the stray mark is not counted');
+    expect(
+      root.learnedFor('rashi'),
+      1,
+      reason: 'the stray mark is not counted',
+    );
   });
 }

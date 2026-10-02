@@ -28,13 +28,17 @@ void main() {
   /// is no reflection under `flutter_test`, and a list typed here would be the
   /// same hand-written enumeration this test exists to catch.
   List<String> constructorFields() {
-    final source =
-        File('lib/domain/entities/learning_event.dart').readAsStringSync();
-    final ctor = RegExp(r'const LearningEvent\(\{([\s\S]*?)\}\);')
-        .firstMatch(source)
-        ?.group(1);
-    expect(ctor, isNotNull,
-        reason: 'the constructor has moved, so this guard reads nothing');
+    final source = File(
+      'lib/domain/entities/learning_event.dart',
+    ).readAsStringSync();
+    final ctor = RegExp(
+      r'const LearningEvent\(\{([\s\S]*?)\}\);',
+    ).firstMatch(source)?.group(1);
+    expect(
+      ctor,
+      isNotNull,
+      reason: 'the constructor has moved, so this guard reads nothing',
+    );
     return [
       for (final m in RegExp(r'this\.(\w+)').allMatches(ctor!)) m.group(1)!,
     ];
@@ -42,24 +46,33 @@ void main() {
 
   test('the field list is read, not assumed', () {
     final fields = constructorFields();
-    expect(fields, containsAll(<String>['id', 'profileId', 'layers', 'batchId']));
-    expect(fields, hasLength(12),
-        reason: 'was 11 until #42 added planId, which a tick needs so the '
-            'app can tell a grid tick from a plan tick afterwards');
+    expect(
+      fields,
+      containsAll(<String>['id', 'profileId', 'layers', 'batchId']),
+    );
+    expect(
+      fields,
+      hasLength(12),
+      reason:
+          'was 11 until #42 added planId, which a tick needs so the '
+          'app can tell a grid tick from a plan tick afterwards',
+    );
   });
 
   test('every place that copies an event names every field', () {
-    final source =
-        File('lib/domain/entities/learning_event.dart').readAsStringSync();
-    final repository =
-        File('lib/data/repositories/drift_progress_repository.dart')
-            .readAsStringSync();
+    final source = File(
+      'lib/domain/entities/learning_event.dart',
+    ).readAsStringSync();
+    final repository = File(
+      'lib/data/repositories/drift_progress_repository.dart',
+    ).readAsStringSync();
 
     /// The body of a member, so a field mentioned elsewhere in the file does
     /// not excuse the one that omits it.
     String body(String haystack, String signature, String end) {
-      final m = RegExp(RegExp.escape(signature) + r'[\s\S]*?' + RegExp.escape(end))
-          .firstMatch(haystack);
+      final m = RegExp(
+        RegExp.escape(signature) + r'[\s\S]*?' + RegExp.escape(end),
+      ).firstMatch(haystack);
       expect(m, isNotNull, reason: '$signature has moved');
       return m!.group(0)!;
     }
@@ -69,8 +82,11 @@ void main() {
       'rescopedTo': body(source, 'LearningEvent rescopedTo(', ');'),
       'toJson': body(source, 'Map<String, dynamic> toJson()', '};'),
       'fromJson': body(source, 'factory LearningEvent.fromJson(', ');'),
-      '_eventCompanion':
-          body(repository, 'LearningEventsCompanion _eventCompanion(', ');'),
+      '_eventCompanion': body(
+        repository,
+        'LearningEventsCompanion _eventCompanion(',
+        ');',
+      ),
       '_toEvent': body(repository, 'LearningEvent _toEvent(', ');'),
     };
 
@@ -92,10 +108,14 @@ void main() {
       }
     }
 
-    expect(missing, isEmpty,
-        reason: 'a field this class carries and one of its copiers does not is '
-            'lost silently — on an import, on an edit, or at rest:\n'
-            '${missing.join('\n')}');
+    expect(
+      missing,
+      isEmpty,
+      reason:
+          'a field this class carries and one of its copiers does not is '
+          'lost silently — on an import, on an edit, or at rest:\n'
+          '${missing.join('\n')}',
+    );
   });
 
   test('re-scoping changes the profile and nothing else', () {
@@ -123,9 +143,13 @@ void main() {
     final before = original.toJson()..remove('profileId');
     final after = moved.toJson()..remove('profileId');
     expect(after, before);
-    expect(moved.id, 'e1',
-        reason: 'ids are unique within a profile, not across the store — the '
-            'same backup in two profiles putting the same ids in both is the '
-            'feature');
+    expect(
+      moved.id,
+      'e1',
+      reason:
+          'ids are unique within a profile, not across the store — the '
+          'same backup in two profiles putting the same ids in both is the '
+          'feature',
+    );
   });
 }

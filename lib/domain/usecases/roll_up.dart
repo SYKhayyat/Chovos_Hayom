@@ -14,19 +14,29 @@ class RollUp {
 
   /// Build the full tree from the catalog roots. [layers] resolves which
   /// layers each unit needs to count as complete (null = text-only).
-  static List<ProgressNode> buildForest(Catalog catalog, LogFold fold,
-          [LayerRoles? layers]) =>
-      [for (final root in catalog.roots) _build(catalog, root, fold, layers)];
+  static List<ProgressNode> buildForest(
+    Catalog catalog,
+    LogFold fold, [
+    LayerRoles? layers,
+  ]) => [for (final root in catalog.roots) _build(catalog, root, fold, layers)];
 
   /// Build the subtree rooted at [nodeId], or null if it doesn't exist.
-  static ProgressNode? buildNode(Catalog catalog, String nodeId, LogFold fold,
-      [LayerRoles? layers]) {
+  static ProgressNode? buildNode(
+    Catalog catalog,
+    String nodeId,
+    LogFold fold, [
+    LayerRoles? layers,
+  ]) {
     final node = catalog.byId(nodeId);
     return node == null ? null : _build(catalog, node, fold, layers);
   }
 
-  static ProgressNode _build(Catalog catalog, CatalogNode node, LogFold fold,
-      LayerRoles? layers) {
+  static ProgressNode _build(
+    Catalog catalog,
+    CatalogNode node,
+    LogFold fold,
+    LayerRoles? layers,
+  ) {
     if (node.isLeaf) {
       final done = fold.doneUnits(node.id, layers);
       var learned = 0;

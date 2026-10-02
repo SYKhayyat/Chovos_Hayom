@@ -33,14 +33,16 @@ void main() {
 
   const bans = <({String why, String pattern, String sample, Set<String> allow})>[
     (
-      why: 'hand-rolls a picker dialog — showNodePicker owns the one clamp, '
+      why:
+          'hand-rolls a picker dialog — showNodePicker owns the one clamp, '
           'and both copies of it were wider than the screen',
       pattern: r'\bSimpleDialog\(',
       sample: '      builder: (ctx) => SimpleDialog(title: Text(t)),',
       allow: {home},
     ),
     (
-      why: 'builds a node list label itself — nodeChoices is what decides that '
+      why:
+          'builds a node list label itself — nodeChoices is what decides that '
           'a flat list of nodes is qualified, and the picker that skipped it '
           'is the one that shipped four indistinguishable rows',
       pattern: r'\bqualifiedNodeName\(',
@@ -48,7 +50,8 @@ void main() {
       allow: {home, naming},
     ),
     (
-      why: 'hand-rolls a node dropdown — NodeDropdown carries the indent, the '
+      why:
+          'hand-rolls a node dropdown — NodeDropdown carries the indent, the '
           'ellipsis and the fallback for a value the list no longer contains',
       pattern: r'DropdownButtonFormField<String',
       sample: 'DropdownButtonFormField<String?>(initialValue: _parentId,',
@@ -58,9 +61,13 @@ void main() {
 
   test('the regexes actually match the shapes they ban', () {
     for (final ban in bans) {
-      expect(RegExp(ban.pattern).hasMatch(ban.sample), isTrue,
-          reason: 'the pattern for "${ban.why}" no longer matches its own '
-              'sample, so it is guarding nothing');
+      expect(
+        RegExp(ban.pattern).hasMatch(ban.sample),
+        isTrue,
+        reason:
+            'the pattern for "${ban.why}" no longer matches its own '
+            'sample, so it is guarding nothing',
+      );
     }
   });
 
@@ -68,18 +75,21 @@ void main() {
     expect(File(home).existsSync(), isTrue);
   });
 
-  test('the search delegate is still the named exception, and still different',
-      () {
+  test('the search delegate is still the named exception, and still different', () {
     const search = 'lib/features/search/catalog_search_delegate.dart';
     final source = File(search).readAsStringSync();
 
     // If search ever starts folding the qualifier into its title, it has become
     // a picker row and should be one — so this assertion failing is a prompt to
     // delete the exception, not to widen it.
-    expect(source.contains('nodePath('), isTrue,
-        reason: '$search is excused from these rules because it puts the '
-            'qualifier in a subtitle beside the unit count. If it stopped '
-            'doing that, the exception has outlived its reason.');
+    expect(
+      source.contains('nodePath('),
+      isTrue,
+      reason:
+          '$search is excused from these rules because it puts the '
+          'qualifier in a subtitle beside the unit count. If it stopped '
+          'doing that, the exception has outlived its reason.',
+    );
     expect(source.contains('qualifiedNodeName('), isFalse);
   });
 
@@ -87,14 +97,18 @@ void main() {
     final violations = <String>[];
 
     for (final path in dartSourcesUnder()) {
-      final lines =
-          codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch);
+      final lines = codeLines(
+        File(path).readAsStringSync(),
+        escapeHatch: escapeHatch,
+      );
       for (final ban in bans) {
         if (ban.allow.contains(path)) continue;
         for (final line in lines) {
           if (!RegExp(ban.pattern).hasMatch(line.text)) continue;
-          violations.add('$path:${line.line} ${ban.why}\n'
-              '    ${line.text.trim()}');
+          violations.add(
+            '$path:${line.line} ${ban.why}\n'
+            '    ${line.text.trim()}',
+          );
         }
       }
     }
@@ -102,7 +116,8 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason: 'Picking a node out of the catalog is built in '
+      reason:
+          'Picking a node out of the catalog is built in '
           '$home.\n\n${violations.join('\n')}\n\n'
           'If a line genuinely needs the shape, mark it '
           '`// $escapeHatch — <reason>`.',

@@ -24,17 +24,17 @@ LearningEvent done(String node, int unit, List<String> layers, int seq) {
 void main() {
   final catalog = Catalog([
     const CatalogNode(
-        id: 'a',
-        parentId: null,
-        name: 'A',
-        kind: NodeKind.leaf,
-        unitLabel: UnitLabel.daf,
-        unitOffset: 2,
-        unitCount: 3), // 2,3,4
+      id: 'a',
+      parentId: null,
+      name: 'A',
+      kind: NodeKind.leaf,
+      unitLabel: UnitLabel.daf,
+      unitOffset: 2,
+      unitCount: 3,
+    ), // 2,3,4
   ]);
 
-  List<MefarshimStat> statsFor(List<LearningEvent> events,
-          [Catalog? c]) =>
+  List<MefarshimStat> statsFor(List<LearningEvent> events, [Catalog? c]) =>
       MefarshimStats.of(RollUp.buildForest(c ?? catalog, FoldLog.fold(events)));
 
   test('tallies learned units per layer, most-learned first', () {
@@ -63,13 +63,14 @@ void main() {
     final two = Catalog([
       ...catalog.all,
       const CatalogNode(
-          id: 'b',
-          parentId: null,
-          name: 'B',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf,
-          unitOffset: 1,
-          unitCount: 2),
+        id: 'b',
+        parentId: null,
+        name: 'B',
+        kind: NodeKind.leaf,
+        unitLabel: UnitLabel.daf,
+        unitOffset: 1,
+        unitCount: 2,
+      ),
     ]);
     final stats = statsFor([
       done('a', 2, ['main'], 0),
@@ -84,41 +85,50 @@ void main() {
   test('every total equals the sum of the same layer over the tree', () {
     final nested = Catalog([
       const CatalogNode(
-          id: 'root', parentId: null, name: 'Root', kind: NodeKind.category),
+        id: 'root',
+        parentId: null,
+        name: 'Root',
+        kind: NodeKind.category,
+      ),
       const CatalogNode(
-          id: 'x',
-          parentId: 'root',
-          name: 'X',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf,
-          unitOffset: 1,
-          unitCount: 4),
+        id: 'x',
+        parentId: 'root',
+        name: 'X',
+        kind: NodeKind.leaf,
+        unitLabel: UnitLabel.daf,
+        unitOffset: 1,
+        unitCount: 4,
+      ),
       const CatalogNode(
-          id: 'y',
-          parentId: 'root',
-          name: 'Y',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf,
-          unitOffset: 1,
-          unitCount: 4),
+        id: 'y',
+        parentId: 'root',
+        name: 'Y',
+        kind: NodeKind.leaf,
+        unitLabel: UnitLabel.daf,
+        unitOffset: 1,
+        unitCount: 4,
+      ),
     ]);
     final forest = RollUp.buildForest(
-        nested,
-        FoldLog.fold([
-          done('x', 1, ['main', 'rashi'], 0),
-          done('x', 2, ['main'], 1),
-          done('y', 1, ['main', 'rashi'], 2),
-          done('y', 9, ['main', 'rashi'], 3), // out of range
-        ]));
+      nested,
+      FoldLog.fold([
+        done('x', 1, ['main', 'rashi'], 0),
+        done('x', 2, ['main'], 1),
+        done('y', 1, ['main', 'rashi'], 2),
+        done('y', 9, ['main', 'rashi'], 3), // out of range
+      ]),
+    );
 
     final stats = {
-      for (final s in MefarshimStats.of(forest)) s.layerId: s.learnedUnits
+      for (final s in MefarshimStats.of(forest)) s.layerId: s.learnedUnits,
     };
     final leaves = forest.single.children;
     for (final layerId in stats.keys) {
-      expect(stats[layerId],
-          leaves.fold<int>(0, (n, leaf) => n + leaf.learnedFor(layerId)),
-          reason: '$layerId disagrees with the bars it is drawn from');
+      expect(
+        stats[layerId],
+        leaves.fold<int>(0, (n, leaf) => n + leaf.learnedFor(layerId)),
+        reason: '$layerId disagrees with the bars it is drawn from',
+      );
     }
     expect(stats['main'], 3);
     expect(stats['rashi'], 2);

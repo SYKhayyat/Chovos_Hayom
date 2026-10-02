@@ -33,14 +33,16 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   const bans = <({String why, String pattern, String sample})>[
     (
-      why: 'threads a parent map into the importer again — that map existed '
+      why:
+          'threads a parent map into the importer again — that map existed '
           'only to feed the deleted cycle check, and Catalog needs nothing '
           'from the caller to keep its promise',
       pattern: r'\bknownParents\b',
       sample: '    Map<String, String?> knownParents = const {},',
     ),
     (
-      why: 'is a second opinion about whether the catalog can loop — '
+      why:
+          'is a second opinion about whether the catalog can loop — '
           'Catalog._asForest is the answer, and two answers is how the '
           'app came to have six visited-sets and two infinite loops',
       pattern: r'''(is its own ancestor|contains a loop|hierarchy contains)''',
@@ -50,9 +52,13 @@ void main() {
 
   test('the regexes actually match the shapes they ban', () {
     for (final ban in bans) {
-      expect(RegExp(ban.pattern).hasMatch(ban.sample), isTrue,
-          reason: 'the pattern for "${ban.why}" no longer matches its own '
-              'sample, so it is guarding nothing');
+      expect(
+        RegExp(ban.pattern).hasMatch(ban.sample),
+        isTrue,
+        reason:
+            'the pattern for "${ban.why}" no longer matches its own '
+            'sample, so it is guarding nothing',
+      );
     }
   });
 
@@ -82,9 +88,13 @@ void main() {
         }
       }
     }
-    expect(violations, isEmpty,
-        reason: 'the forest invariant has grown a rival:\n'
-            '${violations.join('\n')}');
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'the forest invariant has grown a rival:\n'
+          '${violations.join('\n')}',
+    );
   });
 
   test('the invariant holds for a catalog built the way the app builds one', () {
@@ -94,15 +104,40 @@ void main() {
     // over them — because that is the only way a loop reaches the app, and it is
     // the shape a well-meaning refactor of the provider would break.
     const bundled = [
-      CatalogNode(id: 'root', parentId: null, name: 'Root', kind: NodeKind.category),
-      CatalogNode(id: 'shas', parentId: 'root', name: 'Shas', kind: NodeKind.category),
-      CatalogNode(id: 'moed', parentId: 'shas', name: 'Moed', kind: NodeKind.category),
       CatalogNode(
-          id: 'shabbos', parentId: 'moed', name: 'Shabbos', kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf, unitCount: 4, unitOffset: 2),
+        id: 'root',
+        parentId: null,
+        name: 'Root',
+        kind: NodeKind.category,
+      ),
+      CatalogNode(
+        id: 'shas',
+        parentId: 'root',
+        name: 'Shas',
+        kind: NodeKind.category,
+      ),
+      CatalogNode(
+        id: 'moed',
+        parentId: 'shas',
+        name: 'Moed',
+        kind: NodeKind.category,
+      ),
+      CatalogNode(
+        id: 'shabbos',
+        parentId: 'moed',
+        name: 'Shabbos',
+        kind: NodeKind.leaf,
+        unitLabel: UnitLabel.daf,
+        unitCount: 4,
+        unitOffset: 2,
+      ),
     ];
     const override = CatalogNode(
-        id: 'shas', parentId: 'moed', name: 'Shas', kind: NodeKind.category);
+      id: 'shas',
+      parentId: 'moed',
+      name: 'Shas',
+      kind: NodeKind.category,
+    );
 
     final byId = {for (final n in bundled) n.id: n}..[override.id] = override;
     final catalog = Catalog(byId.values.toList());
@@ -112,8 +147,11 @@ void main() {
       var steps = 0;
       while (current.parentId != null) {
         current = catalog.byId(current.parentId!)!;
-        expect(++steps, lessThanOrEqualTo(catalog.all.length),
-            reason: 'the chain above ${start.id} does not terminate');
+        expect(
+          ++steps,
+          lessThanOrEqualTo(catalog.all.length),
+          reason: 'the chain above ${start.id} does not terminate',
+        );
       }
     }
     // And the leaf is still findable from a root, which is the property that
@@ -122,8 +160,9 @@ void main() {
     // in the ring, so here Moed rises above Shas, and there is no way to cut a
     // ring that keeps everyone's idea of which way up it was.
     expect(
-      [for (final r in catalog.roots) ...catalog.leavesUnder(r.id)]
-          .map((n) => n.id),
+      [
+        for (final r in catalog.roots) ...catalog.leavesUnder(r.id),
+      ].map((n) => n.id),
       contains('shabbos'),
     );
   });

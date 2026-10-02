@@ -26,21 +26,23 @@ void main() {
   });
 
   LearningEvent event(String id, String profileId) => LearningEvent(
-        id: id,
-        profileId: profileId,
-        nodeId: 'shas.berachos',
-        unitIndex: 2,
-        action: EventAction.done,
-        occurredAt: DateTime(2026, 7, 1),
-        loggedAt: DateTime(2026, 7, 1),
-        layers: const [mainLayerId],
-      );
+    id: id,
+    profileId: profileId,
+    nodeId: 'shas.berachos',
+    unitIndex: 2,
+    action: EventAction.done,
+    occurredAt: DateTime(2026, 7, 1),
+    loggedAt: DateTime(2026, 7, 1),
+    layers: const [mainLayerId],
+  );
 
   test('the same backup imports into a second profile', () async {
     await repo.addProfile(
-        Profile(id: 'p1', name: 'Reuven', createdAt: DateTime(2026)));
+      Profile(id: 'p1', name: 'Reuven', createdAt: DateTime(2026)),
+    );
     await repo.addProfile(
-        Profile(id: 'p2', name: 'Shimon', createdAt: DateTime(2026)));
+      Profile(id: 'p2', name: 'Shimon', createdAt: DateTime(2026)),
+    );
 
     // p1 learns a daf, and exports.
     await repo.addEvent(event('evt-1', 'p1'));
@@ -52,9 +54,15 @@ void main() {
     // progress to a family member's profile on the same device.
     await service.importInto('p2', BackupService.parse(json));
 
-    expect((await repo.getEvents('p2')).length, 1,
-        reason: 'p2 should now hold the backed-up event');
-    expect((await repo.getEvents('p1')).length, 1,
-        reason: "p1's own log must be untouched");
+    expect(
+      (await repo.getEvents('p2')).length,
+      1,
+      reason: 'p2 should now hold the backed-up event',
+    );
+    expect(
+      (await repo.getEvents('p1')).length,
+      1,
+      reason: "p1's own log must be untouched",
+    );
   });
 }

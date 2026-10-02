@@ -8,8 +8,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   // Reads the real asset from disk (CWD is the package root under `flutter test`).
-  final catalog =
-      JsonCatalogRepository.parse(File('assets/catalog/catalog.json').readAsStringSync());
+  final catalog = JsonCatalogRepository.parse(
+    File('assets/catalog/catalog.json').readAsStringSync(),
+  );
   final all = catalog.all.toList();
 
   group('catalog integrity', () {
@@ -96,8 +97,11 @@ void main() {
     test('every non-root parentId resolves to an existing node', () {
       for (final n in all) {
         if (n.parentId != null) {
-          expect(catalog.byId(n.parentId!), isNotNull,
-              reason: '${n.id} has orphan parent ${n.parentId}');
+          expect(
+            catalog.byId(n.parentId!),
+            isNotNull,
+            reason: '${n.id} has orphan parent ${n.parentId}',
+          );
         }
       }
     });
@@ -115,7 +119,9 @@ void main() {
     test('categories are never leaves and vice versa', () {
       for (final n in all) {
         final hasChildren = catalog.childrenOf(n.id).isNotEmpty;
-        if (n.isLeaf) expect(hasChildren, isFalse, reason: '${n.id} leaf w/ children');
+        if (n.isLeaf) {
+          expect(hasChildren, isFalse, reason: '${n.id} leaf w/ children');
+        }
       }
     });
 

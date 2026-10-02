@@ -201,7 +201,8 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
     _manualDate = widget.initialOccurredAt != null;
     _date = widget.initialOccurredAt ?? ref.read(clockProvider)();
     _durationCtrl = TextEditingController(
-        text: widget.initialDurationMin?.toString() ?? '');
+      text: widget.initialDurationMin?.toString() ?? '',
+    );
     _noteCtrl = TextEditingController(text: widget.initialNote ?? '');
     _selectedLayers = {...widget.initialLayers};
     if (_selectedLayers.isEmpty) _selectedLayers.add(mainLayerId);
@@ -224,10 +225,12 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
     final ok = await guarded(
       context,
       ref,
-      () => timer.toggle(_now,
-          label: widget.title,
-          nodeId: widget.nodeId,
-          unitIndex: widget.unitIndex),
+      () => timer.toggle(
+        _now,
+        label: widget.title,
+        nodeId: widget.nodeId,
+        unitIndex: widget.unitIndex,
+      ),
       what: running ? l10n.whatPausingTimer : l10n.whatStartingTimer,
     );
     if (!ok) return;
@@ -254,8 +257,15 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
       lastDate: DateTime(2100),
     );
     if (picked != null) {
-      setState(() => _date =
-          DateTime(picked.year, picked.month, picked.day, _date.hour, _date.minute));
+      setState(
+        () => _date = DateTime(
+          picked.year,
+          picked.month,
+          picked.day,
+          _date.hour,
+          _date.minute,
+        ),
+      );
     }
   }
 
@@ -265,8 +275,15 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
       initialTime: TimeOfDay(hour: _date.hour, minute: _date.minute),
     );
     if (picked != null) {
-      setState(() => _date = DateTime(
-          _date.year, _date.month, _date.day, picked.hour, picked.minute));
+      setState(
+        () => _date = DateTime(
+          _date.year,
+          _date.month,
+          _date.day,
+          picked.hour,
+          picked.minute,
+        ),
+      );
     }
   }
 
@@ -284,17 +301,22 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
     // banner would otherwise keep counting a session the user thinks is over —
     // but it must not block the log itself, which is the point of the sheet.
     if (ref.read(sessionTimerProvider).isActive) {
-      await guarded(context, ref,
-          () => ref.read(sessionTimerProvider.notifier).reset(),
-          what: AppLocalizations.of(context).whatEndingTimer);
+      await guarded(
+        context,
+        ref,
+        () => ref.read(sessionTimerProvider.notifier).reset(),
+        what: AppLocalizations.of(context).whatEndingTimer,
+      );
     }
     if (!mounted) return;
-    Navigator.of(context).pop(LogUnitResult(
-      occurredAt: _manualDate ? _date : null,
-      durationMin: duration,
-      note: note.isEmpty ? null : note,
-      layers: _selectedLayers.toList(),
-    ));
+    Navigator.of(context).pop(
+      LogUnitResult(
+        occurredAt: _manualDate ? _date : null,
+        durationMin: duration,
+        note: note.isEmpty ? null : note,
+        layers: _selectedLayers.toList(),
+      ),
+    );
   }
 
   @override
@@ -323,12 +345,16 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
           children: [
             Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
             if (widget.subtitle != null)
-              Text(widget.subtitle!,
-                  style: Theme.of(context).textTheme.titleSmall),
+              Text(
+                widget.subtitle!,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
             const SizedBox(height: 8),
             if (widget.layerOptions.isNotEmpty) ...[
-              Text(widget.checklistLabel ?? l10n.logSheetWhatYouLearned,
-                  style: Theme.of(context).textTheme.labelLarge),
+              Text(
+                widget.checklistLabel ?? l10n.logSheetWhatYouLearned,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
               MeforishChecklist(
                 mefarshim: widget.layerOptions,
                 layers: widget.layers,
@@ -346,9 +372,11 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(l10n.logSheetManualDateTime),
-              subtitle: Text(_manualDate
-                  ? DateDisplay.formatWithTime(_date, calendar)
-                  : l10n.logSheetDefaultsToNow),
+              subtitle: Text(
+                _manualDate
+                    ? DateDisplay.formatWithTime(_date, calendar)
+                    : l10n.logSheetDefaultsToNow,
+              ),
               value: _manualDate,
               onChanged: (v) => setState(() => _manualDate = v),
             ),
@@ -370,21 +398,28 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
               ),
             Row(
               children: [
-                Text(l10n.logSheetTimer(_clock(elapsed)),
-                    style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  l10n.logSheetTimer(_clock(elapsed)),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const Spacer(),
                 if (session.isActive && !session.isRunning)
                   TextButton(
-                    onPressed: () => guarded(context, ref,
-                        () => ref.read(sessionTimerProvider.notifier).reset(),
-                        what: l10n.whatResettingTimer),
+                    onPressed: () => guarded(
+                      context,
+                      ref,
+                      () => ref.read(sessionTimerProvider.notifier).reset(),
+                      what: l10n.whatResettingTimer,
+                    ),
                     child: Text(l10n.actionReset),
                   ),
                 FilledButton.tonalIcon(
-                  icon: Icon(session.isRunning ? Icons.pause : Icons.play_arrow),
-                  label: Text(session.isRunning
-                      ? l10n.logSheetStop
-                      : l10n.logSheetStart),
+                  icon: Icon(
+                    session.isRunning ? Icons.pause : Icons.play_arrow,
+                  ),
+                  label: Text(
+                    session.isRunning ? l10n.logSheetStop : l10n.logSheetStart,
+                  ),
                   onPressed: _toggleTimer,
                 ),
               ],
@@ -397,9 +432,7 @@ class _LogUnitSheetState extends ConsumerState<_LogUnitSheet> {
             TextField(
               controller: _durationCtrl,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.logSheetDuration,
-              ),
+              decoration: InputDecoration(labelText: l10n.logSheetDuration),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -480,17 +513,20 @@ Future<void> logWithDetails(
     // required.
     initialLayers: layered
         ? (mefarshim.outstanding.isNotEmpty
-            ? mefarshim.outstanding
-            : mefarshim.required)
+              ? mefarshim.outstanding
+              : mefarshim.required)
         : UnitMefarshim.justTheText,
   );
   if (result == null) return;
   await guard.run(
-    () => logger.markDone(node.id, unit,
-        occurredAt: result.occurredAt,
-        durationMin: result.durationMin,
-        note: result.note,
-        layers: result.layers),
+    () => logger.markDone(
+      node.id,
+      unit,
+      occurredAt: result.occurredAt,
+      durationMin: result.durationMin,
+      note: result.note,
+      layers: result.layers,
+    ),
     what: l10n.whatLogging(heading),
   );
 }

@@ -8,11 +8,11 @@ import 'journeys/planning.dart';
 
 /// Every journey the harness knows about, in the order a person meets them.
 List<Journey> allJourneys() => [
-      ...learningJourneys(),
-      ...deepJourneys(),
-      ...planningJourneys(),
-      ...appJourneys(),
-    ];
+  ...learningJourneys(),
+  ...deepJourneys(),
+  ...planningJourneys(),
+  ...appJourneys(),
+];
 
 /// Which journeys are responsible for which screen.
 ///
@@ -100,7 +100,10 @@ final Map<String, List<String>> harnessCovers = {
     'learning/custom-sefer-round-trip',
     'principles/compact-layout-holds',
   ],
-  Routes.sefer('shas.moed.shabbos'): ['learning/sefer-grid', 'learning/mark-a-daf'],
+  Routes.sefer('shas.moed.shabbos'): [
+    'learning/sefer-grid',
+    'learning/mark-a-daf',
+  ],
   Routes.category('shas.moed'): ['learning/category-subtree'],
   Routes.editItem('shas.moed.shabbos'): ['learning/edit-node-details'],
   Routes.editCycle('harness-cycle'): ['planning/cycle-editor'],

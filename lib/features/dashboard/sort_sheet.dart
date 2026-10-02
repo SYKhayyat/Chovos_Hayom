@@ -42,9 +42,12 @@ class _SortSheet extends ConsumerWidget {
                 groupValue: config.metric,
                 onChanged: (v) {
                   if (v == null) return;
-                  guarded(context, ref,
-                      () => notifier.setSort(config.copyWith(metric: v)),
-                      what: l10n.whatSavingSortOrder);
+                  guarded(
+                    context,
+                    ref,
+                    () => notifier.setSort(config.copyWith(metric: v)),
+                    what: l10n.whatSavingSortOrder,
+                  );
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -66,9 +69,12 @@ class _SortSheet extends ConsumerWidget {
                 subtitle: Text(l10n.sortDescendingSubtitle),
                 value: config.descending,
                 onChanged: config.active
-                    ? (v) => guarded(context, ref,
+                    ? (v) => guarded(
+                        context,
+                        ref,
                         () => notifier.setSort(config.copyWith(descending: v)),
-                        what: l10n.whatSavingSortOrder)
+                        what: l10n.whatSavingSortOrder,
+                      )
                     : null,
               ),
               const SizedBox(height: 4),
@@ -79,8 +85,13 @@ class _SortSheet extends ConsumerWidget {
                 children: [
                   _levelChip(context, ref, config, null, l10n.sortAllLevels),
                   for (var l = 1; l <= 5; l++)
-                    _levelChip(context, ref, config, l,
-                        l == 1 ? l10n.sortChildren : l10n.sortLevel(l)),
+                    _levelChip(
+                      context,
+                      ref,
+                      config,
+                      l,
+                      l == 1 ? l10n.sortChildren : l10n.sortLevel(l),
+                    ),
                 ],
               ),
             ],
@@ -90,8 +101,13 @@ class _SortSheet extends ConsumerWidget {
     );
   }
 
-  Widget _levelChip(BuildContext context, WidgetRef ref, SortConfig config,
-      int? level, String label) {
+  Widget _levelChip(
+    BuildContext context,
+    WidgetRef ref,
+    SortConfig config,
+    int? level,
+    String label,
+  ) {
     return ChoiceChip(
       label: Text(label),
       selected: config.level == level,
@@ -102,7 +118,8 @@ class _SortSheet extends ConsumerWidget {
               () => ref
                   .read(settingsProvider.notifier)
                   .setSort(config.copyWith(level: level)),
-              what: AppLocalizations.of(context).whatSavingSortOrder)
+              what: AppLocalizations.of(context).whatSavingSortOrder,
+            )
           : null,
     );
   }

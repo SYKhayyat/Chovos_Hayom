@@ -58,7 +58,8 @@ import '../support/memory_database.dart';
 /// version of that claim that counts, and nothing here can settle it.
 Future<void> loadDeviceFonts() async {
   final home = Platform.environment['HOME'] ?? '';
-  final flutterRoot = Platform.environment['FLUTTER_ROOT'] ?? '$home/flutter-3.44.4';
+  final flutterRoot =
+      Platform.environment['FLUTTER_ROOT'] ?? '$home/flutter-3.44.4';
   const engineFonts =
       '/engine/src/flutter/txt/third_party/fonts/Roboto-Regular.ttf';
   final wanted = {
@@ -87,14 +88,15 @@ Future<void> loadDeviceFonts() async {
   };
   for (final entry in wanted.entries) {
     final paths = entry.value.toSet();
-    final file = paths.map(File.new).firstWhere(
-      (f) => f.existsSync(),
-      orElse: () => File('/nonexistent'),
-    );
+    final file = paths
+        .map(File.new)
+        .firstWhere((f) => f.existsSync(), orElse: () => File('/nonexistent'));
     if (!file.existsSync()) {
       // ignore: avoid_print
-      print('No ${entry.key} found; the render will have boxes. Tried:\n'
-          '${paths.join('\n')}');
+      print(
+        'No ${entry.key} found; the render will have boxes. Tried:\n'
+        '${paths.join('\n')}',
+      );
       continue;
     }
     final loader = FontLoader(entry.key)
@@ -116,7 +118,8 @@ void main() {
   Widget appOf(Widget home) => localizedApp(home: home, showBanner: false);
 
   /// One plan, asking something every day, so a month cell has an amount in it.
-  const plansJson = '{"plans":[{"id":"p","name":"Yoma",'
+  const plansJson =
+      '{"plans":[{"id":"p","name":"Yoma",'
       '"displayCalendar":"gregorian","assignments":[{"id":"a",'
       '"rule":{"type":"daily"},"targetNodeId":"shas.moed.shabbos",'
       '"unitsPerFiring":3,"label":"after Shacharis"}],"overrides":[],'
@@ -133,24 +136,31 @@ void main() {
     tester.view.devicePixelRatio = sonimDpr;
     tester.view.physicalSize = size;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        appPreferencesProvider.overrideWithValue(InMemoryPreferences(
-          plans == null ? null : {PrefKeys.scoped('default', PrefKeys.plans): plans},
-        )),
-        catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-        progressRepositoryProvider
-            .overrideWithValue(repo ?? memoryRepository()),
-        clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
-      ],
-      // A boundary to capture, because the test binding's root render object is
-      // a `_ReusableRenderView` and not a `RenderRepaintBoundary` — so there is
-      // nothing to call `toImage` on without putting one here.
-      // `debugShowCheckedModeBanner: false` because the debug banner is a red
-      // ribbon across the top right corner of *every* render, and it is very
-      // easy to read one of these and think the app has a red stripe on it.
-      child: RepaintBoundary(key: shootKey, child: appOf(home)),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appPreferencesProvider.overrideWithValue(
+            InMemoryPreferences(
+              plans == null
+                  ? null
+                  : {PrefKeys.scoped('default', PrefKeys.plans): plans},
+            ),
+          ),
+          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+          progressRepositoryProvider.overrideWithValue(
+            repo ?? memoryRepository(),
+          ),
+          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+        ],
+        // A boundary to capture, because the test binding's root render object is
+        // a `_ReusableRenderView` and not a `RenderRepaintBoundary` — so there is
+        // nothing to call `toImage` on without putting one here.
+        // `debugShowCheckedModeBanner: false` because the debug banner is a red
+        // ribbon across the top right corner of *every* render, and it is very
+        // easy to read one of these and think the app has a red stripe on it.
+        child: RepaintBoundary(key: shootKey, child: appOf(home)),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -169,15 +179,18 @@ void main() {
     final repo = memoryRepository();
     // A second sefer under Moed, so "add a sefer" has a category to offer and
     // the total is a real one.
-    await repo.addCustomNode('default', const CatalogNode(
-      id: 'shas.moed.eruvin',
-      parentId: 'shas.moed',
-      name: 'Eruvin',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.daf,
-      unitCount: 104,
-      unitOffset: 2,
-    ));
+    await repo.addCustomNode(
+      'default',
+      const CatalogNode(
+        id: 'shas.moed.eruvin',
+        parentId: 'shas.moed',
+        name: 'Eruvin',
+        kind: NodeKind.leaf,
+        unitLabel: UnitLabel.daf,
+        unitCount: 104,
+        unitOffset: 2,
+      ),
+    );
     await at(tester, home: const PlannerCalendarScreen(), repo: repo);
     await shoot(tester, '01-calendar-month-sonim');
   });
@@ -197,24 +210,27 @@ void main() {
   });
 
   testWidgets('the date entry, with a Hebrew date typed', (tester) async {
-    await at(tester, home: Builder(
-      builder: (context) => Scaffold(
-        body: Center(
-          child: TextButton(
-            onPressed: () => promptForDate(
-              context,
-              initial: Day.of(DateTime(2026, 1, 10)),
-              reference: Day.of(DateTime(2026, 1, 10)),
-              mode: CalendarMode.gregorian,
-              title: 'Amount for that date',
-              confirmLabel: 'Save',
-              cancelLabel: 'Cancel',
+    await at(
+      tester,
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: TextButton(
+              onPressed: () => promptForDate(
+                context,
+                initial: Day.of(DateTime(2026, 1, 10)),
+                reference: Day.of(DateTime(2026, 1, 10)),
+                mode: CalendarMode.gregorian,
+                title: 'Amount for that date',
+                confirmLabel: 'Save',
+                cancelLabel: 'Cancel',
+              ),
+              child: const Text('open'),
             ),
-            child: const Text('open'),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, '4 Tevet 5786');
@@ -226,7 +242,8 @@ void main() {
     await at(
       tester,
       home: const EditPlanAdvancedScreen(planId: 'p'),
-      plans: '{"plans":[{"id":"p","name":"Yoma","displayCalendar":"gregorian",'
+      plans:
+          '{"plans":[{"id":"p","name":"Yoma","displayCalendar":"gregorian",'
           '"assignments":[{"id":"a","rule":{"type":"daily"}}],"overrides":[],'
           '"unitsPerDay":12,"spillover":"ignore","flowsToNextItem":true,'
           '"items":[{"id":"i0","nodeId":"shas.moed.shabbos"},'
@@ -236,12 +253,14 @@ void main() {
     await shoot(tester, '05-plan-sequence-sonim');
   });
 
-  testWidgets('the calendar in Hebrew, which no previous render could show',
-      (tester) async {
+  testWidgets('the calendar in Hebrew, which no previous render could show', (
+    tester,
+  ) async {
     await at(
       tester,
       home: const PlannerCalendarScreen(),
-      plans: '{"plans":[{"id":"p","name":"\u05d9\u05d5\u05de\u05d4",'
+      plans:
+          '{"plans":[{"id":"p","name":"\u05d9\u05d5\u05de\u05d4",'
           '"displayCalendar":"hebrew","assignments":[{"id":"a",'
           '"rule":{"type":"daily"},"targetNodeId":"shas.moed.shabbos"}],'
           '"overrides":[],"unitsPerDay":12,"spillover":"ignore",'
@@ -255,24 +274,27 @@ void main() {
   });
 
   testWidgets('the date field with a Hebrew-script date in it', (tester) async {
-    await at(tester, home: Builder(
-      builder: (context) => Scaffold(
-        body: Center(
-          child: TextButton(
-            onPressed: () => promptForDate(
-              context,
-              initial: Day.of(DateTime(2026, 1, 10)),
-              reference: Day.of(DateTime(2026, 1, 10)),
-              mode: CalendarMode.gregorian,
-              title: 'Set the date',
-              confirmLabel: 'Save',
-              cancelLabel: 'Cancel',
+    await at(
+      tester,
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: TextButton(
+              onPressed: () => promptForDate(
+                context,
+                initial: Day.of(DateTime(2026, 1, 10)),
+                reference: Day.of(DateTime(2026, 1, 10)),
+                mode: CalendarMode.gregorian,
+                title: 'Set the date',
+                confirmLabel: 'Save',
+                cancelLabel: 'Cancel',
+              ),
+              child: const Text('open'),
             ),
-            child: const Text('open'),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     // The form the app's own formatter emits, typed back into the field that
@@ -282,7 +304,9 @@ void main() {
     await shoot(tester, '08-date-entry-hebrew');
   });
 
-  testWidgets('the calendar on an ordinary phone, for comparison', (tester) async {
+  testWidgets('the calendar on an ordinary phone, for comparison', (
+    tester,
+  ) async {
     await at(
       tester,
       home: const PlannerCalendarScreen(),

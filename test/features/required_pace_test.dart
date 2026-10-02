@@ -16,13 +16,15 @@ import '../support/source_scan.dart';
 /// a number you can follow exactly and still miss.
 void main() {
   group('requiredPerDayText', () {
-    test('rounds up, because a requirement understated is not a requirement',
-        () {
-      // 100 dapim in 30 days. 3.33 a day for 30 days is 99.9.
-      expect(requiredPerDayText(100 / 30), '3.34');
-      // 155 in 91 — the goal in `report_screen_test.dart`. 1.70 x 91 = 154.7.
-      expect(requiredPerDayText(155 / 91), '1.71');
-    });
+    test(
+      'rounds up, because a requirement understated is not a requirement',
+      () {
+        // 100 dapim in 30 days. 3.33 a day for 30 days is 99.9.
+        expect(requiredPerDayText(100 / 30), '3.34');
+        // 155 in 91 — the goal in `report_screen_test.dart`. 1.70 x 91 = 154.7.
+        expect(requiredPerDayText(155 / 91), '1.71');
+      },
+    );
 
     test('leaves a rate that already lands on two decimals alone', () {
       // The trap in rounding up: 3.33 is 3.3300000000000000710… in binary, so
@@ -79,8 +81,10 @@ void main() {
     final violations = <String>[];
     for (final path in dartSourcesUnder()) {
       if (path == home) continue;
-      final lines =
-          codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch);
+      final lines = codeLines(
+        File(path).readAsStringSync(),
+        escapeHatch: escapeHatch,
+      );
       if (!lines.any((l) => quantity.hasMatch(l.text))) continue;
       for (final line in lines) {
         if (!formatting.hasMatch(line.text)) continue;
@@ -88,10 +92,14 @@ void main() {
       }
     }
 
-    expect(violations, isEmpty,
-        reason: 'a required pace is rendered by requiredPerDayText, which is '
-            'where the decision to round *up* lives — and rounding it down is '
-            'advice that does not reach the '
-            'date.\n\n${violations.join('\n')}');
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'a required pace is rendered by requiredPerDayText, which is '
+          'where the decision to round *up* lives — and rounding it down is '
+          'advice that does not reach the '
+          'date.\n\n${violations.join('\n')}',
+    );
   });
 }

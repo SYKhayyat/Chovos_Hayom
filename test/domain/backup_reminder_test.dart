@@ -14,16 +14,15 @@ LearningEvent event(
   int unit, {
   required DateTime loggedAt,
   EventAction action = EventAction.done,
-}) =>
-    LearningEvent(
-      id: '$node-$unit-${loggedAt.microsecondsSinceEpoch}-${action.name}',
-      profileId: 'p',
-      nodeId: node,
-      unitIndex: unit,
-      action: action,
-      occurredAt: loggedAt,
-      loggedAt: loggedAt,
-    );
+}) => LearningEvent(
+  id: '$node-$unit-${loggedAt.microsecondsSinceEpoch}-${action.name}',
+  profileId: 'p',
+  nodeId: node,
+  unitIndex: unit,
+  action: action,
+  occurredAt: loggedAt,
+  loggedAt: loggedAt,
+);
 
 void main() {
   final now = DateTime(2026, 3, 1, 10);
@@ -38,25 +37,27 @@ void main() {
     List<LearningEvent> events = const [],
     int intervalDays = 14,
     bool enabled = true,
-  }) =>
-      BackupReminder.evaluate(
-        enabled: enabled,
-        lastBackupAt: lastBackupAt,
-        intervalDays: intervalDays,
-        unsavedUnits: BackupReminder.unsavedUnitsSince(events, lastBackupAt),
-        now: now,
+  }) => BackupReminder.evaluate(
+    enabled: enabled,
+    lastBackupAt: lastBackupAt,
+    intervalDays: intervalDays,
+    unsavedUnits: BackupReminder.unsavedUnitsSince(events, lastBackupAt),
+    now: now,
+  );
+
+  test(
+    'a profile that has never been exported, with learning in it, is due',
+    () {
+      final status = evaluate(
+        events: [event('shabbos', 2, loggedAt: DateTime(2026, 2, 20))],
       );
 
-  test('a profile that has never been exported, with learning in it, is due', () {
-    final status = evaluate(
-      events: [event('shabbos', 2, loggedAt: DateTime(2026, 2, 20))],
-    );
-
-    expect(status.neverBackedUp, isTrue);
-    expect(status.unsavedUnits, 1);
-    expect(status.daysSinceBackup, isNull);
-    expect(status.due, isTrue);
-  });
+      expect(status.neverBackedUp, isTrue);
+      expect(status.unsavedUnits, 1);
+      expect(status.daysSinceBackup, isNull);
+      expect(status.due, isTrue);
+    },
+  );
 
   test('an empty profile is never due — there is nothing to lose', () {
     // A fresh install must not open on a warning about data that doesn't exist.
@@ -74,8 +75,11 @@ void main() {
 
     expect(status.unsavedUnits, 0);
     expect(status.daysSinceBackup, greaterThan(2000));
-    expect(status.due, isFalse,
-        reason: 'the backup still contains everything there is');
+    expect(
+      status.due,
+      isFalse,
+      reason: 'the backup still contains everything there is',
+    );
   });
 
   test('unsaved learning inside the interval is counted but not yet due', () {
@@ -109,8 +113,12 @@ void main() {
       lastBackupAt: DateTime(2026, 2, 1),
       events: [
         event('shabbos', 2, loggedAt: DateTime(2026, 2, 10)),
-        event('shabbos', 2,
-            loggedAt: DateTime(2026, 2, 11), action: EventAction.undone),
+        event(
+          'shabbos',
+          2,
+          loggedAt: DateTime(2026, 2, 11),
+          action: EventAction.undone,
+        ),
         event('shabbos', 2, loggedAt: DateTime(2026, 2, 12)),
         event('shabbos', 3, loggedAt: DateTime(2026, 2, 13)),
       ],
@@ -144,8 +152,10 @@ void main() {
       loggedAt: DateTime(2026, 2, 28), // recorded after it
     );
 
-    final status =
-        evaluate(lastBackupAt: DateTime(2026, 2, 1), events: [backdated]);
+    final status = evaluate(
+      lastBackupAt: DateTime(2026, 2, 1),
+      events: [backdated],
+    );
 
     expect(status.unsavedUnits, 1);
     expect(status.due, isTrue);

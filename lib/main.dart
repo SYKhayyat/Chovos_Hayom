@@ -107,7 +107,9 @@ class _ChovosHayomAppState extends ConsumerState<ChovosHayomApp>
   /// Returning true claims the notification, which is what stops `WidgetsApp`'s
   /// own lossy handler from running afterwards.
   @override
-  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
+  Future<bool> didPushRouteInformation(
+    RouteInformation routeInformation,
+  ) async {
     final navigator = _navigator.currentState;
     if (navigator == null) return false;
     // `unawaited` on purpose, and not the fire-and-forget the analyzer is
@@ -121,8 +123,9 @@ class _ChovosHayomAppState extends ConsumerState<ChovosHayomApp>
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(settingsProvider.select((s) => s.themeMode));
-    final hebrewLayout =
-        ref.watch(settingsProvider.select((s) => s.hebrewLayout));
+    final hebrewLayout = ref.watch(
+      settingsProvider.select((s) => s.hebrewLayout),
+    );
     return MaterialApp(
       // `onGenerateTitle`, not `title`: the task-switcher label is a localized
       // string, and a plain `title` is resolved before any Localizations exist.

@@ -24,18 +24,14 @@ class ProfilesScreen extends ConsumerWidget {
         // Same move as the cycles screen: the floating button covers the last
         // profile in the list on a 324dp screen, and creating a profile exists
         // nowhere else, so it becomes the bar's one action instead.
-        actions: barActions(
-          context,
-          [
-            if (isCompact(context))
-              BarAction(
-                icon: Icons.person_add,
-                label: l10n.profilesNew,
-                onPressed: () => _createDialog(context, ref),
-              ),
-          ],
-          moreTooltip: l10n.tooltipMore,
-        ),
+        actions: barActions(context, [
+          if (isCompact(context))
+            BarAction(
+              icon: Icons.person_add,
+              label: l10n.profilesNew,
+              onPressed: () => _createDialog(context, ref),
+            ),
+        ], moreTooltip: l10n.tooltipMore),
       ),
       floatingActionButton: isCompact(context)
           ? null
@@ -57,25 +53,34 @@ class ProfilesScreen extends ConsumerWidget {
           children: [
             for (final p in list)
               ListTile(
-                leading: Icon(p.id == active
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked),
+                leading: Icon(
+                  p.id == active
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                ),
                 title: Text(p.name),
                 subtitle: p.id == active ? Text(l10n.profilesActive) : null,
                 onTap: () => guarded(
                   context,
                   ref,
-                  () => ref.read(activeProfileProvider.notifier).setProfile(p.id),
+                  () =>
+                      ref.read(activeProfileProvider.notifier).setProfile(p.id),
                   what: l10n.whatSwitchingProfile(p.name),
                 ),
                 trailing: PopupMenuButton<String>(
                   onSelected: (v) {
-                    if (v == 'rename') _renameDialog(context, ref, p.id, p.name);
-                    if (v == 'delete') _confirmDelete(context, ref, p.id, p.name);
+                    if (v == 'rename') {
+                      _renameDialog(context, ref, p.id, p.name);
+                    }
+                    if (v == 'delete') {
+                      _confirmDelete(context, ref, p.id, p.name);
+                    }
                   },
                   itemBuilder: (_) => [
                     PopupMenuItem(
-                        value: 'rename', child: Text(l10n.actionRename)),
+                      value: 'rename',
+                      child: Text(l10n.actionRename),
+                    ),
                     PopupMenuItem(
                       value: 'delete',
                       enabled: list.length > 1,
@@ -91,21 +96,33 @@ class ProfilesScreen extends ConsumerWidget {
   }
 
   Future<void> _renameDialog(
-      BuildContext context, WidgetRef ref, String id, String current) async {
+    BuildContext context,
+    WidgetRef ref,
+    String id,
+    String current,
+  ) async {
     final guard = WriteGuard.of(context, ref);
     final profiles = ref.read(profilesProvider.notifier);
     final l10n = AppLocalizations.of(context);
-    final name = await _promptForName(context,
-        title: l10n.profilesRenameTitle,
-        action: l10n.actionSave,
-        initial: current);
+    final name = await _promptForName(
+      context,
+      title: l10n.profilesRenameTitle,
+      action: l10n.actionSave,
+      initial: current,
+    );
     if (name == null || name.isEmpty) return;
-    await guard.run(() => profiles.rename(id, name),
-        what: l10n.whatRenamingProfile(current, name));
+    await guard.run(
+      () => profiles.rename(id, name),
+      what: l10n.whatRenamingProfile(current, name),
+    );
   }
 
   Future<void> _confirmDelete(
-      BuildContext context, WidgetRef ref, String id, String name) async {
+    BuildContext context,
+    WidgetRef ref,
+    String id,
+    String name,
+  ) async {
     final guard = WriteGuard.of(context, ref);
     final profiles = ref.read(profilesProvider.notifier);
     final l10n = AppLocalizations.of(context);
@@ -116,11 +133,13 @@ class ProfilesScreen extends ConsumerWidget {
         content: Text(l10n.profilesDeleteBody),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(l10n.actionCancel)),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.actionCancel),
+          ),
           FilledButton.tonal(
             style: FilledButton.styleFrom(
-                foregroundColor: Theme.of(dialogContext).colorScheme.error),
+              foregroundColor: Theme.of(dialogContext).colorScheme.error,
+            ),
             onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(l10n.actionDelete),
           ),
@@ -145,11 +164,16 @@ class ProfilesScreen extends ConsumerWidget {
     final guard = WriteGuard.of(context, ref);
     final profiles = ref.read(profilesProvider.notifier);
     final l10n = AppLocalizations.of(context);
-    final name = await _promptForName(context,
-        title: l10n.profilesNew, action: l10n.actionCreate);
+    final name = await _promptForName(
+      context,
+      title: l10n.profilesNew,
+      action: l10n.actionCreate,
+    );
     if (name == null || name.isEmpty) return;
-    await guard.run(() => profiles.create(name),
-        what: l10n.whatCreatingProfile(name));
+    await guard.run(
+      () => profiles.create(name),
+      what: l10n.whatCreatingProfile(name),
+    );
   }
 
   /// One name prompt for both create and rename. Shared so the controller has a

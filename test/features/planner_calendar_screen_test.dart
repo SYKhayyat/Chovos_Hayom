@@ -89,8 +89,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('a scheduled siyum is starred in the month grid',
-      (tester) async {
+  testWidgets('a scheduled siyum is starred in the month grid', (tester) async {
     await pumpCalendar(tester);
 
     // Root, Shas, Moed and Shabbos all owe the same 156 units, so they share one
@@ -122,12 +121,11 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            appPreferencesProvider
-                .overrideWithValue(InMemoryPreferences()),
-            catalogRepositoryProvider
-                .overrideWithValue(FakeCatalogRepository()),
-            progressRepositoryProvider
-                .overrideWithValue(memoryRepository()),
+            appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+            catalogRepositoryProvider.overrideWithValue(
+              FakeCatalogRepository(),
+            ),
+            progressRepositoryProvider.overrideWithValue(memoryRepository()),
             clockProvider.overrideWithValue(() => now),
           ],
           child: localizedApp(home: const PlannerCalendarScreen()),
@@ -140,9 +138,9 @@ void main() {
 
     /// The seven rows, in order, as the dates they render.
     List<String> rows(WidgetTester tester) => [
-          for (final tile in tester.widgetList<ListTile>(find.byType(ListTile)))
-            (tile.title! as Text).data!,
-        ];
+      for (final tile in tester.widgetList<ListTile>(find.byType(ListTile)))
+        (tile.title! as Text).data!,
+    ];
 
     testWidgets('the week containing today, Monday to Sunday', (tester) async {
       // 10 Jan 2026 is a Saturday, so its week is Mon 5 Jan - Sun 11 Jan.
@@ -166,8 +164,9 @@ void main() {
       expect(rows(tester).last, '2026-01-11');
     });
 
-    testWidgets('a Sunday belongs to the week that started six days earlier',
-        (tester) async {
+    testWidgets('a Sunday belongs to the week that started six days earlier', (
+      tester,
+    ) async {
       // 11 Jan 2026 is a Sunday; its week still starts Mon 5 Jan.
       await pumpAt(tester, DateTime(2026, 1, 11));
       expect(rows(tester).first, '2026-01-05');
@@ -199,12 +198,11 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            appPreferencesProvider
-                .overrideWithValue(InMemoryPreferences()),
-            catalogRepositoryProvider
-                .overrideWithValue(FakeCatalogRepository()),
-            progressRepositoryProvider
-                .overrideWithValue(memoryRepository()),
+            appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+            catalogRepositoryProvider.overrideWithValue(
+              FakeCatalogRepository(),
+            ),
+            progressRepositoryProvider.overrideWithValue(memoryRepository()),
             clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
           ],
           child: localizedApp(home: const PlannerCalendarScreen()),
@@ -218,19 +216,19 @@ void main() {
       expect(find.text('2026-02-01'), findsOneWidget, reason: 'February');
     });
 
-    testWidgets('a month step from the 31st clamps instead of spilling over',
-        (tester) async {
+    testWidgets('a month step from the 31st clamps instead of spilling over', (
+      tester,
+    ) async {
       // 31 Jan + 1 month is 28 Feb, not 3 Mar. Overflow here would silently
       // land the view in the wrong month.
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            appPreferencesProvider
-                .overrideWithValue(InMemoryPreferences()),
-            catalogRepositoryProvider
-                .overrideWithValue(FakeCatalogRepository()),
-            progressRepositoryProvider
-                .overrideWithValue(memoryRepository()),
+            appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+            catalogRepositoryProvider.overrideWithValue(
+              FakeCatalogRepository(),
+            ),
+            progressRepositoryProvider.overrideWithValue(memoryRepository()),
             clockProvider.overrideWithValue(() => DateTime(2026, 1, 31)),
           ],
           child: localizedApp(home: const PlannerCalendarScreen()),
@@ -263,10 +261,10 @@ void main() {
             appPreferencesProvider.overrideWithValue(
               InMemoryPreferences({PrefKeys.calendarMode: calendarMode}),
             ),
-            catalogRepositoryProvider
-                .overrideWithValue(FakeCatalogRepository()),
-            progressRepositoryProvider
-                .overrideWithValue(memoryRepository()),
+            catalogRepositoryProvider.overrideWithValue(
+              FakeCatalogRepository(),
+            ),
+            progressRepositoryProvider.overrideWithValue(memoryRepository()),
             clockProvider.overrideWithValue(() => now),
           ],
           child: localizedApp(home: const PlannerCalendarScreen()),
@@ -278,13 +276,12 @@ void main() {
     }
 
     List<String> weekRowTitles(WidgetTester tester) => [
-          for (final tile in tester.widgetList<ListTile>(find.byType(ListTile)))
-            (tile.title! as Text).data!,
-        ];
+      for (final tile in tester.widgetList<ListTile>(find.byType(ListTile)))
+        (tile.title! as Text).data!,
+    ];
 
     testWidgets('Hebrew mode shows Hebrew dates, not ISO', (tester) async {
-      await pumpWeek(tester,
-          now: DateTime(2026, 1, 5), calendarMode: 'hebrew');
+      await pumpWeek(tester, now: DateTime(2026, 1, 5), calendarMode: 'hebrew');
       final titles = weekRowTitles(tester);
       expect(titles, hasLength(7));
       // 5 Jan 2026 is a Monday, so the week is 5-11 Jan.
@@ -306,10 +303,14 @@ void main() {
       );
     });
 
-    testWidgets('Gregorian mode is unchanged, since DateDisplay is ISO there',
-        (tester) async {
-      await pumpWeek(tester,
-          now: DateTime(2026, 1, 5), calendarMode: 'gregorian');
+    testWidgets('Gregorian mode is unchanged, since DateDisplay is ISO there', (
+      tester,
+    ) async {
+      await pumpWeek(
+        tester,
+        now: DateTime(2026, 1, 5),
+        calendarMode: 'gregorian',
+      );
       expect(weekRowTitles(tester).first, '2026-01-05');
     });
   });
@@ -319,7 +320,9 @@ void main() {
   // for a D-pad phone and useless for "get me to roughly next month".
   group('day, week and month, browsable by scroll', () {
     /// A plan asking six units a day, so a day page has something to name.
-    String dailyPlanJson() => jsonEncode(const PlansConfig(plans: [
+    String dailyPlanJson() => jsonEncode(
+      const PlansConfig(
+        plans: [
           LearningPlan(
             id: 'p',
             name: 'Yoma',
@@ -332,7 +335,9 @@ void main() {
               ),
             ],
           ),
-        ]).toJson());
+        ],
+      ).toJson(),
+    );
 
     Future<void> pumpAt(
       WidgetTester tester, {
@@ -343,17 +348,19 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       tester.view.physicalSize = size;
       addTearDown(tester.view.reset);
-      final prefs = InMemoryPreferences(plansJson == null
-          ? null
-          : {PrefKeys.scoped('default', PrefKeys.plans): plansJson});
+      final prefs = InMemoryPreferences(
+        plansJson == null
+            ? null
+            : {PrefKeys.scoped('default', PrefKeys.plans): plansJson},
+      );
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             appPreferencesProvider.overrideWithValue(prefs),
-            catalogRepositoryProvider
-                .overrideWithValue(FakeCatalogRepository()),
-            progressRepositoryProvider
-                .overrideWithValue(memoryRepository()),
+            catalogRepositoryProvider.overrideWithValue(
+              FakeCatalogRepository(),
+            ),
+            progressRepositoryProvider.overrideWithValue(memoryRepository()),
             clockProvider.overrideWithValue(() => now),
           ],
           child: localizedApp(home: const PlannerCalendarScreen()),
@@ -367,11 +374,12 @@ void main() {
     /// By key rather than by content, because this is the one thing every
     /// paging assertion is about and a bare `Text` among several identical ones
     /// is not something a finder can point at.
-    String heading(WidgetTester tester) => (tester
-            .widget<Text>(find.descendant(
-                of: find.byKey(const ValueKey('calendar-heading')),
-                matching: find.byType(Text))))
-        .data!;
+    String heading(WidgetTester tester) => (tester.widget<Text>(
+      find.descendant(
+        of: find.byKey(const ValueKey('calendar-heading')),
+        matching: find.byType(Text),
+      ),
+    )).data!;
 
     testWidgets('all three ranges are offered', (tester) async {
       await pumpAt(tester, now: DateTime(2026, 1, 10));
@@ -381,7 +389,11 @@ void main() {
     });
 
     testWidgets('the day view names each plan firing that day', (tester) async {
-      await pumpAt(tester, now: DateTime(2026, 1, 10), plansJson: dailyPlanJson());
+      await pumpAt(
+        tester,
+        now: DateTime(2026, 1, 10),
+        plansJson: dailyPlanJson(),
+      );
       await tester.tap(find.text('Day'));
       await tester.pumpAndSettle();
 
@@ -393,8 +405,9 @@ void main() {
       expect(find.text('Saturday'), findsOneWidget);
     });
 
-    testWidgets('a day with nothing on it says so rather than showing nothing',
-        (tester) async {
+    testWidgets('a day with nothing on it says so rather than showing nothing', (
+      tester,
+    ) async {
       await pumpAt(tester, now: DateTime(2026, 1, 10));
       await tester.tap(find.text('Day'));
       await tester.pumpAndSettle();
@@ -418,7 +431,9 @@ void main() {
       expect(heading(tester), '2026-01-10');
     });
 
-    testWidgets('the arrows are named for the range they are in', (tester) async {
+    testWidgets('the arrows are named for the range they are in', (
+      tester,
+    ) async {
       await pumpAt(tester, now: DateTime(2026, 1, 10));
       expect(find.byTooltip('Next month'), findsOneWidget);
       expect(find.byTooltip('Next week'), findsNothing);
@@ -450,8 +465,9 @@ void main() {
       expect(heading(tester), '2026-01-10');
     });
 
-    testWidgets('a month page is named by its month, not by its first cell',
-        (tester) async {
+    testWidgets('a month page is named by its month, not by its first cell', (
+      tester,
+    ) async {
       // 1 Jan 2026 is a Thursday, so the grid opens on Mon 29 Dec 2025 to fill
       // six rows. Printing that would put December over January.
       await pumpAt(tester, now: DateTime(2026, 1, 10));
@@ -466,25 +482,18 @@ void main() {
 
     /// A left swipe on the pager: what a thumb or a D-pad user does to page.
     Future<void> swipeForward(WidgetTester tester) async {
-      await tester.fling(
-        find.byType(PageView),
-        const Offset(-400, 0),
-        1000,
-      );
+      await tester.fling(find.byType(PageView), const Offset(-400, 0), 1000);
       await tester.pumpAndSettle();
     }
 
     Future<void> swipeBack(WidgetTester tester) async {
-      await tester.fling(
-        find.byType(PageView),
-        const Offset(400, 0),
-        1000,
-      );
+      await tester.fling(find.byType(PageView), const Offset(400, 0), 1000);
       await tester.pumpAndSettle();
     }
 
-    testWidgets('a swipe pages forward by one unit, and back again',
-        (tester) async {
+    testWidgets('a swipe pages forward by one unit, and back again', (
+      tester,
+    ) async {
       await pumpAt(tester, now: DateTime(2026, 1, 10));
       // Month, because a month is the unit a swipe is really for.
       expect(heading(tester), '2026-01-01');
@@ -515,17 +524,25 @@ void main() {
       expect(heading(tester), '2026-01-05 – 2026-01-11');
     });
 
-    testWidgets('a page shows its own days, not the anchor page behind it',
-        (tester) async {
+    testWidgets('a page shows its own days, not the anchor page behind it', (
+      tester,
+    ) async {
       // The failure this guards: a pager that computes one window and draws it
       // three times, so the page a swipe arrives at is a copy of the one behind
       // it. Asserted on the rows of the page that is actually showing.
-      await pumpAt(tester,
-          now: DateTime(2026, 1, 10), plansJson: dailyPlanJson());
+      await pumpAt(
+        tester,
+        now: DateTime(2026, 1, 10),
+        plansJson: dailyPlanJson(),
+      );
       await tester.tap(find.text('Week'));
       await tester.pumpAndSettle();
       expect(find.text('2026-01-05'), findsOneWidget, reason: 'this week');
-      expect(find.text('2026-01-10'), findsOneWidget, reason: 'and today in it');
+      expect(
+        find.text('2026-01-10'),
+        findsOneWidget,
+        reason: 'and today in it',
+      );
       expect(find.text('2026-01-11'), findsOneWidget, reason: 'its Sunday');
 
       await swipeForward(tester);
@@ -537,22 +554,29 @@ void main() {
       expect(find.text('2026-01-05'), findsNothing);
     });
 
-    testWidgets('paging never materialises more than three windows',
-        (tester) async {
+    testWidgets('paging never materialises more than three windows', (
+      tester,
+    ) async {
       // The cost promise: on-demand generation means a swipe moves a window, it
       // does not build a calendar. Counted in *day cells*, which is what is
       // actually built, and bounded by three pages' worth — 42 each.
       int dayCells() => find
-          .byWidgetPredicate((w) =>
-              w.key is ValueKey && '${(w.key! as ValueKey).value}'.startsWith('day-'))
+          .byWidgetPredicate(
+            (w) =>
+                w.key is ValueKey &&
+                '${(w.key! as ValueKey).value}'.startsWith('day-'),
+          )
           .evaluate()
           .length;
 
       await pumpAt(tester, now: DateTime(2026, 1, 10));
       for (var i = 0; i < 6; i++) {
         await swipeForward(tester);
-        expect(dayCells(), lessThanOrEqualTo(3 * 42),
-            reason: 'after $i swipes only three pages may exist');
+        expect(
+          dayCells(),
+          lessThanOrEqualTo(3 * 42),
+          reason: 'after $i swipes only three pages may exist',
+        );
       }
       // Six month-swipes from January is July, and the cost did not grow: this
       // is what a pager over every day of a year would have cost instead.
@@ -560,12 +584,16 @@ void main() {
       expect(dayCells(), lessThanOrEqualTo(3 * 42));
     });
 
-    testWidgets('the whole calendar lays out on a 240dp screen', (tester) async {
+    testWidgets('the whole calendar lays out on a 240dp screen', (
+      tester,
+    ) async {
       for (final range in ['Day', 'Week', 'Month']) {
-        await pumpAt(tester,
-            now: DateTime(2026, 1, 10),
-            plansJson: dailyPlanJson(),
-            size: const Size(240, 324));
+        await pumpAt(
+          tester,
+          now: DateTime(2026, 1, 10),
+          plansJson: dailyPlanJson(),
+          size: const Size(240, 324),
+        );
         await tester.tap(find.text(range));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull, reason: range);
@@ -588,10 +616,10 @@ void main() {
         ProviderScope(
           overrides: [
             appPreferencesProvider.overrideWithValue(prefs),
-            catalogRepositoryProvider
-                .overrideWithValue(FakeCatalogRepository()),
-            progressRepositoryProvider
-                .overrideWithValue(memoryRepository()),
+            catalogRepositoryProvider.overrideWithValue(
+              FakeCatalogRepository(),
+            ),
+            progressRepositoryProvider.overrideWithValue(memoryRepository()),
             clockProvider.overrideWithValue(() => DateTime(2026, 1, 1)),
           ],
           child: localizedApp(home: const PlannerCalendarScreen()),
@@ -602,63 +630,72 @@ void main() {
 
     /// A daily plan asking six units, targeting the fake catalog's Shabbos.
     String sixADayJson({int unitsPerDay = 6, Map<String, int>? dates}) =>
-        jsonEncode(PlansConfig(plans: [
-          LearningPlan(
-            id: 'p',
-            name: 'Yoma',
-            unitsPerDay: unitsPerDay,
-            dateAmounts: {
-              for (final e in (dates ?? const <String, int>{}).entries)
-                Day.of(DateTime.parse(e.key)): e.value,
-            },
-            assignments: [
-              const PlanAssignment(
-                id: 'a',
-                rule: DailyRule(),
-                targetNodeId: 'shas.moed.shabbos',
+        jsonEncode(
+          PlansConfig(
+            plans: [
+              LearningPlan(
+                id: 'p',
+                name: 'Yoma',
+                unitsPerDay: unitsPerDay,
+                dateAmounts: {
+                  for (final e in (dates ?? const <String, int>{}).entries)
+                    Day.of(DateTime.parse(e.key)): e.value,
+                },
+                assignments: [
+                  const PlanAssignment(
+                    id: 'a',
+                    rule: DailyRule(),
+                    targetNodeId: 'shas.moed.shabbos',
+                  ),
+                ],
               ),
             ],
-          ),
-        ]).toJson());
+          ).toJson(),
+        );
 
-    testWidgets('a month cell states the units due that day',
-        (tester) async {
+    testWidgets('a month cell states the units due that day', (tester) async {
       await pumpWith(tester, sixADayJson());
       // The cell states the total for its day, so the number is on the calendar
       // and not only in the editor.
       expect(
         find.descendant(
           of: find.byKey(
-              ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')),
+            ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}'),
+          ),
           matching: find.text('6'),
         ),
         findsOneWidget,
       );
     });
 
-    testWidgets('tapping a day opens what each plan asks of it', (tester) async {
+    testWidgets('tapping a day opens what each plan asks of it', (
+      tester,
+    ) async {
       await pumpWith(tester, sixADayJson());
-      await tester.tap(find.byKey(ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')));
+      await tester.tap(
+        find.byKey(ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')),
+      );
       await tester.pumpAndSettle();
       expect(find.text('Yoma'), findsOneWidget, reason: 'the plan, by name');
       expect(find.textContaining('6'), findsWidgets);
     });
 
-    testWidgets('a day off reads as a day off, not as an empty day',
-        (tester) async {
-      await pumpWith(
-        tester,
-        sixADayJson(dates: {'2026-01-05': 0}),
+    testWidgets('a day off reads as a day off, not as an empty day', (
+      tester,
+    ) async {
+      await pumpWith(tester, sixADayJson(dates: {'2026-01-05': 0}));
+      await tester.tap(
+        find.byKey(ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')),
       );
-      await tester.tap(find.byKey(ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')));
       await tester.pumpAndSettle();
       // The distinction the whole design turns on: 0 is a fact, and saying so is
       // the UI's job because nothing else will.
       expect(find.textContaining('day off'), findsOneWidget);
     });
 
-    testWidgets('setting a day to 0 from the calendar writes a date override',
-        (tester) async {
+    testWidgets('setting a day to 0 from the calendar writes a date override', (
+      tester,
+    ) async {
       final prefs = InMemoryPreferences({
         PrefKeys.scoped('default', PrefKeys.plans): sixADayJson(),
       });
@@ -669,10 +706,10 @@ void main() {
         ProviderScope(
           overrides: [
             appPreferencesProvider.overrideWithValue(prefs),
-            catalogRepositoryProvider
-                .overrideWithValue(FakeCatalogRepository()),
-            progressRepositoryProvider
-                .overrideWithValue(memoryRepository()),
+            catalogRepositoryProvider.overrideWithValue(
+              FakeCatalogRepository(),
+            ),
+            progressRepositoryProvider.overrideWithValue(memoryRepository()),
             clockProvider.overrideWithValue(() => DateTime(2026, 1, 1)),
           ],
           child: localizedApp(home: const PlannerCalendarScreen()),
@@ -680,7 +717,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')));
+      await tester.tap(
+        find.byKey(ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.edit));
       await tester.pumpAndSettle();
@@ -692,16 +731,21 @@ void main() {
 
       // Edits the *plan*, never the log: a date override on 5 Jan at 0.
       final stored = PlansConfig.fromJson(
-          (jsonDecode(prefs.getString(
-                      PrefKeys.scoped('default', PrefKeys.plans)) ??
-                  '{}') as Map)
-              .cast<String, dynamic>());
-      expect(stored.plans.single.dateAmounts,
-          {Day.of(DateTime(2026, 1, 5)): 0});
+        (jsonDecode(
+                  prefs.getString(PrefKeys.scoped('default', PrefKeys.plans)) ??
+                      '{}',
+                )
+                as Map)
+            .cast<String, dynamic>(),
+      );
+      expect(stored.plans.single.dateAmounts, {
+        Day.of(DateTime(2026, 1, 5)): 0,
+      });
     });
 
-    testWidgets('a bad amount is refused and the plan is left alone',
-        (tester) async {
+    testWidgets('a bad amount is refused and the plan is left alone', (
+      tester,
+    ) async {
       final prefs = InMemoryPreferences({
         PrefKeys.scoped('default', PrefKeys.plans): sixADayJson(),
       });
@@ -712,17 +756,19 @@ void main() {
         ProviderScope(
           overrides: [
             appPreferencesProvider.overrideWithValue(prefs),
-            catalogRepositoryProvider
-                .overrideWithValue(FakeCatalogRepository()),
-            progressRepositoryProvider
-                .overrideWithValue(memoryRepository()),
+            catalogRepositoryProvider.overrideWithValue(
+              FakeCatalogRepository(),
+            ),
+            progressRepositoryProvider.overrideWithValue(memoryRepository()),
             clockProvider.overrideWithValue(() => DateTime(2026, 1, 1)),
           ],
           child: localizedApp(home: const PlannerCalendarScreen()),
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')));
+      await tester.tap(
+        find.byKey(ValueKey('day-${Day.of(DateTime(2026, 1, 5)).ordinal}')),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.edit));
       await tester.pumpAndSettle();
@@ -732,12 +778,18 @@ void main() {
 
       expect(find.text('Enter a whole number, zero or more.'), findsOneWidget);
       final stored = PlansConfig.fromJson(
-          (jsonDecode(prefs.getString(
-                      PrefKeys.scoped('default', PrefKeys.plans)) ??
-                  '{}') as Map)
-              .cast<String, dynamic>());
-      expect(stored.plans.single.dateAmounts, isEmpty,
-          reason: 'a refused amount must not be half-saved');
+        (jsonDecode(
+                  prefs.getString(PrefKeys.scoped('default', PrefKeys.plans)) ??
+                      '{}',
+                )
+                as Map)
+            .cast<String, dynamic>(),
+      );
+      expect(
+        stored.plans.single.dateAmounts,
+        isEmpty,
+        reason: 'a refused amount must not be half-saved',
+      );
     });
   });
 }

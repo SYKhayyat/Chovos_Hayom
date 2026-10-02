@@ -70,9 +70,7 @@ class _AssignmentTile extends ConsumerWidget {
         unit == null ? Icons.check_circle_outline : Icons.today_outlined,
       ),
       title: Text(title),
-      subtitle: Text(
-        assignment.assignment.label ?? l10n.plannerTodayScheduled,
-      ),
+      subtitle: Text(assignment.assignment.label ?? l10n.plannerTodayScheduled),
       trailing: unit == null
           ? null
           : FilledButton(

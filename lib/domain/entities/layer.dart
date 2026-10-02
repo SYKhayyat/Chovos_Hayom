@@ -44,18 +44,18 @@ class Layer {
   final bool builtIn;
 
   factory Layer.fromJson(Map<String, dynamic> json) => Layer(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        nameHebrew: json['nameHebrew'] as String?,
-        builtIn: json['builtIn'] as bool? ?? false,
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    nameHebrew: json['nameHebrew'] as String?,
+    builtIn: json['builtIn'] as bool? ?? false,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        if (nameHebrew != null) 'nameHebrew': nameHebrew,
-        'builtIn': builtIn,
-      };
+    'id': id,
+    'name': name,
+    if (nameHebrew != null) 'nameHebrew': nameHebrew,
+    'builtIn': builtIn,
+  };
 }
 
 /// The primary text of any unit — always present, and required by default so
@@ -65,7 +65,9 @@ const mainLayerId = 'main';
 /// What a node resolves to when nothing is configured on it or any ancestor:
 /// the text alone, required. That is exactly the pre-layers behaviour, so
 /// progress recorded before mefarshim existed stays complete.
-const Map<String, LayerRole> defaultLayerRoles = {mainLayerId: LayerRole.required};
+const Map<String, LayerRole> defaultLayerRoles = {
+  mainLayerId: LayerRole.required,
+};
 
 /// App-provided mefarshim available to add to any node's required set. Kept flat
 /// and universal; the user picks which apply where (nothing is imposed).
@@ -76,15 +78,26 @@ const List<Layer> builtInLayers = [
   Layer(id: 'maharsha', name: 'Maharsha', nameHebrew: 'מהרש״א', builtIn: true),
   Layer(id: 'rosh', name: 'Rosh', nameHebrew: 'רא״ש', builtIn: true),
   Layer(id: 'rif', name: 'Rif', nameHebrew: 'רי״ף', builtIn: true),
-  Layer(id: 'bartenura', name: 'Bartenura', nameHebrew: 'ברטנורא', builtIn: true),
   Layer(
-      id: 'tosafos_yom_tov',
-      name: 'Tosafos Yom Tov',
-      nameHebrew: 'תוספות יום טוב',
-      builtIn: true),
+    id: 'bartenura',
+    name: 'Bartenura',
+    nameHebrew: 'ברטנורא',
+    builtIn: true,
+  ),
+  Layer(
+    id: 'tosafos_yom_tov',
+    name: 'Tosafos Yom Tov',
+    nameHebrew: 'תוספות יום טוב',
+    builtIn: true,
+  ),
   Layer(id: 'ramban', name: 'Ramban', nameHebrew: 'רמב״ן', builtIn: true),
   Layer(id: 'sforno', name: 'Sforno', nameHebrew: 'ספורנו', builtIn: true),
-  Layer(id: 'ibn_ezra', name: 'Ibn Ezra', nameHebrew: 'אבן עזרא', builtIn: true),
+  Layer(
+    id: 'ibn_ezra',
+    name: 'Ibn Ezra',
+    nameHebrew: 'אבן עזרא',
+    builtIn: true,
+  ),
 ];
 
 final Map<String, Layer> builtInLayersById = {

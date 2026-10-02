@@ -9,8 +9,7 @@ import 'package:chovos_hayom/domain/entities/layer.dart';
 Map<String, LayerRole> roles({
   List<String> required = const [],
   List<String> optional = const [],
-}) =>
-    {
-      for (final id in optional) id: LayerRole.optional,
-      for (final id in required) id: LayerRole.required,
-    };
+}) => {
+  for (final id in optional) id: LayerRole.optional,
+  for (final id in required) id: LayerRole.required,
+};

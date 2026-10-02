@@ -7,24 +7,31 @@ import 'package:chovos_hayom/domain/usecases/roll_up.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Catalog _catalog() => Catalog(const [
-      CatalogNode(id: 'root', parentId: null, name: 'Root', kind: NodeKind.category),
-      CatalogNode(
-          id: 'a',
-          parentId: 'root',
-          name: 'A',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf,
-          unitCount: 3,
-          unitOffset: 2), // valid units: 2,3,4
-      CatalogNode(
-          id: 'b',
-          parentId: 'root',
-          name: 'B',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.perek,
-          unitCount: 2,
-          unitOffset: 1), // valid units: 1,2
-    ]);
+  CatalogNode(
+    id: 'root',
+    parentId: null,
+    name: 'Root',
+    kind: NodeKind.category,
+  ),
+  CatalogNode(
+    id: 'a',
+    parentId: 'root',
+    name: 'A',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.daf,
+    unitCount: 3,
+    unitOffset: 2,
+  ), // valid units: 2,3,4
+  CatalogNode(
+    id: 'b',
+    parentId: 'root',
+    name: 'B',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.perek,
+    unitCount: 2,
+    unitOffset: 1,
+  ), // valid units: 1,2
+]);
 
 /// Folds a `node -> unit -> layers` description through the real [FoldLog], so
 /// these tests exercise the fold the app actually runs rather than a hand-built
@@ -49,31 +56,43 @@ LogFold _fold(Map<String, Map<int, Set<String>>> marks) {
 
 /// Text-only (`{main}`) marks from plain done-unit sets.
 LogFold _doneOnly(Map<String, Set<int>> done) => _fold({
-      for (final e in done.entries)
-        e.key: {for (final u in e.value) u: {'main'}}
-    });
+  for (final e in done.entries)
+    e.key: {
+      for (final u in e.value) u: {'main'},
+    },
+});
 
 void main() {
   group('RollUp', () {
     test('leaf learned counts done units in range', () {
-      final fold = _doneOnly({'a': {2, 3}});
+      final fold = _doneOnly({
+        'a': {2, 3},
+      });
       final root = RollUp.buildForest(_catalog(), fold).single;
       final a = root.children.firstWhere((n) => n.id == 'a');
       expect(a.learned, 2);
       expect(a.total, 3);
     });
 
-    test('out-of-range done units are ignored (learned never exceeds total)', () {
-      final fold = _doneOnly({'a': {2, 3, 4, 99}});
-      final root = RollUp.buildForest(_catalog(), fold).single;
-      final a = root.children.firstWhere((n) => n.id == 'a');
-      expect(a.learned, 3);
-      expect(a.total, 3);
-      expect(a.isComplete, isTrue);
-    });
+    test(
+      'out-of-range done units are ignored (learned never exceeds total)',
+      () {
+        final fold = _doneOnly({
+          'a': {2, 3, 4, 99},
+        });
+        final root = RollUp.buildForest(_catalog(), fold).single;
+        final a = root.children.firstWhere((n) => n.id == 'a');
+        expect(a.learned, 3);
+        expect(a.total, 3);
+        expect(a.isComplete, isTrue);
+      },
+    );
 
     test('parent aggregates children', () {
-      final fold = _doneOnly({'a': {2, 3}, 'b': {1}});
+      final fold = _doneOnly({
+        'a': {2, 3},
+        'b': {1},
+      });
       final root = RollUp.buildForest(_catalog(), fold).single;
       expect(root.learned, 3);
       expect(root.total, 5);

@@ -30,8 +30,7 @@ void main() {
   PlansConfig config() {
     final raw =
         prefs.getString(PrefKeys.scoped('default', PrefKeys.plans)) ?? '{}';
-    return PlansConfig.fromJson(
-        (jsonDecode(raw) as Map<String, dynamic>));
+    return PlansConfig.fromJson((jsonDecode(raw) as Map<String, dynamic>));
   }
 
   Future<void> pump(WidgetTester tester, Widget home, {Size? size}) async {
@@ -85,24 +84,28 @@ void main() {
   group('the list screen', () {
     testWidgets('says so when there are no plans', (tester) async {
       await pump(tester, const PlansScreen());
-      expect(find.text('No plans yet. Add one to start scheduling.'),
-          findsOneWidget);
+      expect(
+        find.text('No plans yet. Add one to start scheduling.'),
+        findsOneWidget,
+      );
       expect(find.text('Add plan'), findsOneWidget);
     });
 
     testWidgets('lists a plan and says what it is', (tester) async {
       await prefs.setString(
         PrefKeys.scoped('default', PrefKeys.plans),
-        jsonEncode(const PlansConfig(plans: [
-          LearningPlan(
-            id: 'p',
-            name: 'Daf Yomi',
-            unitsPerDay: 7,
-            assignments: [
-              PlanAssignment(id: 'a', rule: DailyRule()),
+        jsonEncode(
+          const PlansConfig(
+            plans: [
+              LearningPlan(
+                id: 'p',
+                name: 'Daf Yomi',
+                unitsPerDay: 7,
+                assignments: [PlanAssignment(id: 'a', rule: DailyRule())],
+              ),
             ],
-          ),
-        ]).toJson()),
+          ).toJson(),
+        ),
       );
       await pump(tester, const PlansScreen());
 
@@ -115,8 +118,9 @@ void main() {
   });
 
   group('creating', () {
-    testWidgets('a new plan gets a rule, an amount and appears in the list',
-        (tester) async {
+    testWidgets('a new plan gets a rule, an amount and appears in the list', (
+      tester,
+    ) async {
       await pump(tester, const EditPlanScreen());
 
       expect(find.text('New plan'), findsOneWidget);
@@ -136,8 +140,9 @@ void main() {
       expect(saved.first.assignments.first.rule, isA<DailyRule>());
     });
 
-    testWidgets('the spillover mode is saved, not just displayed',
-        (tester) async {
+    testWidgets('the spillover mode is saved, not just displayed', (
+      tester,
+    ) async {
       await pump(tester, const EditPlanScreen());
       await scrollAndTap(tester, find.text('Slide the whole schedule'));
       await scrollAndTap(tester, find.text('Create'));
@@ -166,7 +171,10 @@ void main() {
 
       final rule = config().plans.single.assignments.single.rule;
       expect(rule, isA<WeekdayRule>());
-      expect((rule as WeekdayRule).weekdays, {DateTime.monday, DateTime.thursday});
+      expect((rule as WeekdayRule).weekdays, {
+        DateTime.monday,
+        DateTime.thursday,
+      });
     });
 
     testWidgets('a Hebrew day rule saves the day and month', (tester) async {
@@ -193,8 +201,9 @@ void main() {
       expect(config().plans, isEmpty, reason: 'nothing was saved');
     });
 
-    testWidgets('text that is not a number is refused with a message',
-        (tester) async {
+    testWidgets('text that is not a number is refused with a message', (
+      tester,
+    ) async {
       await pump(tester, const EditPlanScreen());
       await enterText(tester, 1, 'ten');
       await scrollAndTap(tester, find.text('Create'));
@@ -209,7 +218,10 @@ void main() {
       // never fires — the same failure as having no rule at all.
       await pump(tester, const EditPlanScreen());
       await scrollAndTap(tester, find.text('Certain weekdays'));
-      await scrollAndTap(tester, find.widgetWithText(OutlinedButton, '1')); // clear Monday
+      await scrollAndTap(
+        tester,
+        find.widgetWithText(OutlinedButton, '1'),
+      ); // clear Monday
       await scrollAndTap(tester, find.text('Create'));
       await tester.pumpAndSettle();
 
@@ -220,17 +232,22 @@ void main() {
 
   group('editing', () {
     Future<void> seed(LearningPlan plan) => prefs.setString(
-        PrefKeys.scoped('default', PrefKeys.plans),
-        jsonEncode(PlansConfig(plans: [plan]).toJson()));
+      PrefKeys.scoped('default', PrefKeys.plans),
+      jsonEncode(PlansConfig(plans: [plan]).toJson()),
+    );
 
     testWidgets('an existing plan opens with its values', (tester) async {
-      await seed(const LearningPlan(
-        id: 'p',
-        name: 'Yoma',
-        unitsPerDay: 7,
-        spillover: SpilloverMode.catchUp,
-        assignments: [PlanAssignment(id: 'a', rule: DailyRule(), unitsPerFiring: 3)],
-      ));
+      await seed(
+        const LearningPlan(
+          id: 'p',
+          name: 'Yoma',
+          unitsPerDay: 7,
+          spillover: SpilloverMode.catchUp,
+          assignments: [
+            PlanAssignment(id: 'a', rule: DailyRule(), unitsPerFiring: 3),
+          ],
+        ),
+      );
       await pump(tester, const EditPlanScreen(planId: 'p'));
 
       expect(find.text('Edit plan'), findsOneWidget);
@@ -241,12 +258,14 @@ void main() {
     });
 
     testWidgets('editing changes the amount and keeps the id', (tester) async {
-      await seed(const LearningPlan(
-        id: 'p',
-        name: 'Yoma',
-        unitsPerDay: 7,
-        assignments: [PlanAssignment(id: 'a', rule: DailyRule())],
-      ));
+      await seed(
+        const LearningPlan(
+          id: 'p',
+          name: 'Yoma',
+          unitsPerDay: 7,
+          assignments: [PlanAssignment(id: 'a', rule: DailyRule())],
+        ),
+      );
       await pump(tester, const EditPlanScreen(planId: 'p'));
 
       await enterText(tester, 1, '9');
@@ -258,21 +277,24 @@ void main() {
       expect(saved.unitsPerDay, 9);
     });
 
-    testWidgets('a save does not silently drop what this screen cannot edit',
-        (tester) async {
+    testWidgets('a save does not silently drop what this screen cannot edit', (
+      tester,
+    ) async {
       // The weekday overrides, date overrides and item sequence are #35's job.
       // They are not on this form, so a save here must carry them across rather
       // than rebuild the plan from the visible fields.
-      await seed(const LearningPlan(
-        id: 'p',
-        name: 'Daf Yomi',
-        unitsPerDay: 7,
-        weekdayAmounts: {DateTime.friday: 3},
-        dateAmounts: {},
-        items: [PlanItem(id: 'i1', nodeId: 'shas.moed.shabbos')],
-        flowsToNextItem: true,
-        assignments: [PlanAssignment(id: 'a', rule: DailyRule())],
-      ));
+      await seed(
+        const LearningPlan(
+          id: 'p',
+          name: 'Daf Yomi',
+          unitsPerDay: 7,
+          weekdayAmounts: {DateTime.friday: 3},
+          dateAmounts: {},
+          items: [PlanItem(id: 'i1', nodeId: 'shas.moed.shabbos')],
+          flowsToNextItem: true,
+          assignments: [PlanAssignment(id: 'a', rule: DailyRule())],
+        ),
+      );
       await pump(tester, const EditPlanScreen(planId: 'p'));
       await enterText(tester, 1, '8');
       await scrollAndTap(tester, find.text('Save'));
@@ -289,9 +311,11 @@ void main() {
     testWidgets('asks first, and deleting removes the plan', (tester) async {
       await prefs.setString(
         PrefKeys.scoped('default', PrefKeys.plans),
-        jsonEncode(const PlansConfig(plans: [
-          LearningPlan(id: 'p', name: 'Daf Yomi'),
-        ]).toJson()),
+        jsonEncode(
+          const PlansConfig(
+            plans: [LearningPlan(id: 'p', name: 'Daf Yomi')],
+          ).toJson(),
+        ),
       );
       await pump(tester, const EditPlanScreen(planId: 'p'));
 
@@ -309,8 +333,9 @@ void main() {
   });
 
   group('the D-pad device', () {
-    testWidgets('the editor lays out and is reachable on a 240dp screen',
-        (tester) async {
+    testWidgets('the editor lays out and is reachable on a 240dp screen', (
+      tester,
+    ) async {
       await pump(tester, const EditPlanScreen(), size: sonim);
 
       // The form is a scrollable ListView with focusable controls, so it both
@@ -332,8 +357,9 @@ void main() {
   });
 
   group('round trip', () {
-    testWidgets('a plan survives save, reload and backup export',
-        (tester) async {
+    testWidgets('a plan survives save, reload and backup export', (
+      tester,
+    ) async {
       await pump(tester, const EditPlanScreen());
       await enterText(tester, 0, 'Chulljuna');
       await enterText(tester, 1, '1');
@@ -348,9 +374,13 @@ void main() {
         );
         addTearDown(container.dispose);
         return PlansConfig.fromJson(
-          (jsonDecode(prefs.getString(
-                      PrefKeys.scoped('default', PrefKeys.plans)) ??
-                  '{}') as Map)
+          (jsonDecode(
+                    prefs.getString(
+                          PrefKeys.scoped('default', PrefKeys.plans),
+                        ) ??
+                        '{}',
+                  )
+                  as Map)
               .cast<String, dynamic>(),
         );
       });

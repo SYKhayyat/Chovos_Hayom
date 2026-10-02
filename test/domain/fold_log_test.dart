@@ -103,8 +103,13 @@ void main() {
     test('touchedAt follows reviews; doneAt does not', () {
       final fold = FoldLog.fold([
         ev('a', 2, EventAction.done, seq: 0, occurredAt: DateTime(2026, 1, 1)),
-        ev('a', 2, EventAction.reviewed,
-            seq: 1, occurredAt: DateTime(2026, 2, 1)),
+        ev(
+          'a',
+          2,
+          EventAction.reviewed,
+          seq: 1,
+          occurredAt: DateTime(2026, 2, 1),
+        ),
       ]);
       expect(fold.doneAt('a', 2), DateTime(2026, 1, 1));
       expect(fold.touchedAt('a', 2), DateTime(2026, 2, 1));
@@ -126,8 +131,11 @@ void main() {
         ev('a', 2, EventAction.done, seq: 0, note: 'first thought'),
         ev('a', 2, EventAction.done, seq: 1),
       ]);
-      expect(fold.isAnnotated('a', 2), isFalse,
-          reason: 'the later done is the one in force');
+      expect(
+        fold.isAnnotated('a', 2),
+        isFalse,
+        reason: 'the later done is the one in force',
+      );
     });
   });
 }

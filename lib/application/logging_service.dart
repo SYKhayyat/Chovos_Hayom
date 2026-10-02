@@ -16,9 +16,9 @@ class LoggingService {
     DateTime Function()? now,
     String Function()? idGen,
     this.maxBatchSize = defaultMaxBatchSize,
-  })  : _repo = repository,
-        _now = now ?? DateTime.now,
-        _idGen = idGen ?? const Uuid().v4 {
+  }) : _repo = repository,
+       _now = now ?? DateTime.now,
+       _idGen = idGen ?? const Uuid().v4 {
     if (maxBatchSize <= 0) {
       throw ArgumentError.value(maxBatchSize, 'maxBatchSize');
     }
@@ -68,22 +68,24 @@ class LoggingService {
   /// that one is a claim about the learner and belongs to no plan, which is what
   /// keeps a grid tick from adding to a plan and a grid un-tick from removing
   /// from one.
-  Future<LearningEvent> markDone(String nodeId, int unitIndex,
-          {DateTime? occurredAt,
-          int? durationMin,
-          String? note,
-          String? planId,
-          List<String> layers = const [mainLayerId]}) =>
-      log(
-        nodeId: nodeId,
-        unitIndex: unitIndex,
-        action: EventAction.done,
-        occurredAt: occurredAt,
-        durationMin: durationMin,
-        note: note,
-        planId: planId,
-        layers: layers,
-      );
+  Future<LearningEvent> markDone(
+    String nodeId,
+    int unitIndex, {
+    DateTime? occurredAt,
+    int? durationMin,
+    String? note,
+    String? planId,
+    List<String> layers = const [mainLayerId],
+  }) => log(
+    nodeId: nodeId,
+    unitIndex: unitIndex,
+    action: EventAction.done,
+    occurredAt: occurredAt,
+    durationMin: durationMin,
+    note: note,
+    planId: planId,
+    layers: layers,
+  );
 
   /// Take a tick back.
   ///
@@ -92,21 +94,28 @@ class LoggingService {
   /// day it is for, so an un-tick carries the day it is undoing. Not "the latest
   /// one" — you can tick things in the past, and an un-tick that reached for the
   /// most recent would take back work you did not mean to touch.
-  Future<LearningEvent> markUndone(String nodeId, int unitIndex,
-      {DateTime? occurredAt, String? planId, List<String> layers = const [mainLayerId]}) =>
-      log(
-          nodeId: nodeId,
-          unitIndex: unitIndex,
-          action: EventAction.undone,
-          occurredAt: occurredAt,
-          planId: planId,
-          layers: layers);
+  Future<LearningEvent> markUndone(
+    String nodeId,
+    int unitIndex, {
+    DateTime? occurredAt,
+    String? planId,
+    List<String> layers = const [mainLayerId],
+  }) => log(
+    nodeId: nodeId,
+    unitIndex: unitIndex,
+    action: EventAction.undone,
+    occurredAt: occurredAt,
+    planId: planId,
+    layers: layers,
+  );
 
   /// Append many marks in bounded transactions, all sharing a single timestamp
   /// and a single `batchId` — the backing operation for bulk finish/clear. The
   /// shared id is what makes the action undoable later from the log alone.
-  Future<List<LearningEvent>> logBatch(List<BulkMark> marks,
-      {DateTime? occurredAt}) async {
+  Future<List<LearningEvent>> logBatch(
+    List<BulkMark> marks, {
+    DateTime? occurredAt,
+  }) async {
     if (marks.isEmpty) return const [];
     final now = _now();
     final batchId = _idGen();
@@ -156,20 +165,22 @@ class LoggingService {
   /// its own date/time, duration, haara, and the [layers] (mefarshim) it covered
   /// — each chazara is defined independently of the main learning and of other
   /// passes.
-  Future<LearningEvent> markReview(String nodeId, int unitIndex,
-          {DateTime? occurredAt,
-          int? durationMin,
-          String? note,
-          List<String> layers = const [mainLayerId]}) =>
-      log(
-        nodeId: nodeId,
-        unitIndex: unitIndex,
-        action: EventAction.reviewed,
-        occurredAt: occurredAt,
-        durationMin: durationMin,
-        note: note,
-        layers: layers,
-      );
+  Future<LearningEvent> markReview(
+    String nodeId,
+    int unitIndex, {
+    DateTime? occurredAt,
+    int? durationMin,
+    String? note,
+    List<String> layers = const [mainLayerId],
+  }) => log(
+    nodeId: nodeId,
+    unitIndex: unitIndex,
+    action: EventAction.reviewed,
+    occurredAt: occurredAt,
+    durationMin: durationMin,
+    note: note,
+    layers: layers,
+  );
 }
 
 /// One item in a [LoggingService.logBatch] call — a single unit's mark. Carries

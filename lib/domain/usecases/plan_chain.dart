@@ -41,11 +41,11 @@ class PlanChain {
   final ChainMode mode;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'planIds': planIds,
-        'mode': mode.name,
-      };
+    'id': id,
+    'name': name,
+    'planIds': planIds,
+    'mode': mode.name,
+  };
 
   factory PlanChain.fromJson(Map<String, dynamic> json) {
     final planIds = [
@@ -64,7 +64,8 @@ class PlanChain {
         : ChainMode.values.firstWhere(
             (m) => m.name == rawMode,
             orElse: () => throw const FormatException(
-                'unknown chain mode — expected "priority" or "strict"'),
+              'unknown chain mode — expected "priority" or "strict"',
+            ),
           );
     return PlanChain(
       id: json['id'] as String,
@@ -110,7 +111,9 @@ class ChainSchedule {
     Day day,
     bool Function(String planId, Day day) complete,
   ) {
-    final firstIncomplete = chain.planIds.indexWhere((id) => !complete(id, day));
+    final firstIncomplete = chain.planIds.indexWhere(
+      (id) => !complete(id, day),
+    );
     if (firstIncomplete < 0) return const [];
 
     switch (chain.mode) {
@@ -129,10 +132,7 @@ class ChainSchedule {
     PlanChain chain,
     Day day,
     bool Function(String planId, Day day) complete,
-  ) =>
-      [
-        for (final i
-            in activePlanIndices(chain, day, complete))
-          chain.planIds[i],
-      ];
+  ) => [
+    for (final i in activePlanIndices(chain, day, complete)) chain.planIds[i],
+  ];
 }

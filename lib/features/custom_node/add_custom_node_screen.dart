@@ -114,9 +114,12 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
           );
     return Scaffold(
       appBar: AppBar(
-          title: Text(_isEdit
+        title: Text(
+          _isEdit
               ? l10n.editNodeTitle(nodeName(l10n, widget.existing!))
-              : l10n.addNodeTitle)),
+              : l10n.addNodeTitle,
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -160,7 +163,9 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
               items: [
                 for (final l in UnitLabel.values)
                   DropdownMenuItem(
-                      value: l, child: Text(unitLabelName(l10n, l))),
+                    value: l,
+                    child: Text(unitLabelName(l10n, l)),
+                  ),
               ],
               onChanged: (v) => setState(() => _label = v ?? UnitLabel.perek),
             ),
@@ -198,8 +203,9 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
           ],
           const SizedBox(height: 24),
           FilledButton(
-              onPressed: _save,
-              child: Text(_isEdit ? l10n.actionSave : l10n.actionAdd)),
+            onPressed: _save,
+            child: Text(_isEdit ? l10n.actionSave : l10n.actionAdd),
+          ),
         ],
       ),
     );
@@ -244,8 +250,9 @@ class _NodeFormState extends ConsumerState<_NodeForm> {
     }
     // Trim trailing blank lines but keep interior blanks (they line up unnamed
     // units with their index).
-    final names =
-        _isLeaf ? _names.text.split('\n').map((s) => s.trimRight()).toList() : <String>[];
+    final names = _isLeaf
+        ? _names.text.split('\n').map((s) => s.trimRight()).toList()
+        : <String>[];
     while (names.isNotEmpty && names.last.trim().isEmpty) {
       names.removeLast();
     }

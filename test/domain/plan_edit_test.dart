@@ -22,16 +22,15 @@ void main() {
   /// [weekdayAmount] null means "no override"; **0 means a deliberate day off**,
   /// and the two are different plans. A helper that collapsed them would have
   /// been the same bug the whole planner is careful about, one level down.
-  LearningPlan plan({int unitsPerDay = 2, int? weekdayAmount}) =>
-      LearningPlan(
-        id: 'daf-yomi',
-        name: 'Daf Yomi',
-        unitsPerDay: unitsPerDay,
-        weekdayAmounts: weekdayAmount == null
-            ? const {}
-            : {DateTime.thursday: weekdayAmount},
-        assignments: const [PlanAssignment(id: 'a', rule: DailyRule())],
-      );
+  LearningPlan plan({int unitsPerDay = 2, int? weekdayAmount}) => LearningPlan(
+    id: 'daf-yomi',
+    name: 'Daf Yomi',
+    unitsPerDay: unitsPerDay,
+    weekdayAmounts: weekdayAmount == null
+        ? const {}
+        : {DateTime.thursday: weekdayAmount},
+    assignments: const [PlanAssignment(id: 'a', rule: DailyRule())],
+  );
 
   /// What the day asks for, which is the only thing these commands change.
   int asks(LearningPlan p, Day day) => DayAmount.of(p, _info(day));
@@ -40,8 +39,11 @@ void main() {
     test('raises the day it is given, and only that day', () {
       final next = PlanEdit.addUnits(plan(), thursday, 3);
       expect(asks(next, thursday), 5);
-      expect(asks(next, thursday + 1), 2,
-          reason: 'the next day is untouched: no reflow, and none is implied');
+      expect(
+        asks(next, thursday + 1),
+        2,
+        reason: 'the next day is untouched: no reflow, and none is implied',
+      );
       expect(asks(next, nextThursday), 2);
     });
 
@@ -51,9 +53,13 @@ void main() {
       final tuesday = Day.of(DateTime.utc(2026, 3, 3));
       final next = PlanEdit.addUnits(plan(), tuesday, 4);
       expect(asks(next, tuesday), 6);
-      expect(asks(next, thursday), 2,
-          reason: 'later days do not move on their own; recompute is #44 and is '
-              'asked for explicitly');
+      expect(
+        asks(next, thursday),
+        2,
+        reason:
+            'later days do not move on their own; recompute is #44 and is '
+            'asked for explicitly',
+      );
     });
 
     test('a plan that was off that day can still be added to', () {
@@ -64,8 +70,11 @@ void main() {
       // The day asked for 0, so +3 asks for 3 — raised from what the day said,
       // not from the plan's base, or a day off could not be lifted by one unit.
       final next = PlanEdit.addUnits(off, thursday, 3);
-      expect(asks(next, thursday), 3,
-          reason: 'raised from the day\'s own answer, which was 0');
+      expect(
+        asks(next, thursday),
+        3,
+        reason: 'raised from the day\'s own answer, which was 0',
+      );
     });
 
     test('and so can a plan whose rule would not have fired', () {
@@ -84,14 +93,21 @@ void main() {
         ],
       );
       final next = PlanEdit.addUnits(weekdays, thursday, 1);
-      expect(asks(next, thursday), 3,
-          reason: 'base 2 plus one, and the date override is what makes the '
-              'plan fire on a day its rule skips');
+      expect(
+        asks(next, thursday),
+        3,
+        reason:
+            'base 2 plus one, and the date override is what makes the '
+            'plan fire on a day its rule skips',
+      );
       expect(next.dateAmounts[thursday], 3);
-      expect(next.assignments.single.rule,
-          const WeekdayRule(weekdays: {DateTime.monday}),
-          reason: 'and the rule is untouched — a date override raises the day '
-              'without rewriting when the plan fires');
+      expect(
+        next.assignments.single.rule,
+        const WeekdayRule(weekdays: {DateTime.monday}),
+        reason:
+            'and the rule is untouched — a date override raises the day '
+            'without rewriting when the plan fires',
+      );
     });
 
     test('adding zero changes nothing observable', () {
@@ -119,26 +135,36 @@ void main() {
     });
   });
 
-  group('removing the plan from the day is not the same as an amount of zero',
-      () {
+  group('removing the plan from the day is not the same as an amount of zero', () {
     test('a zero says the plan was scheduled and asked for nothing', () {
       final off = PlanEdit.removeUnit(plan(unitsPerDay: 1), thursday);
       expect(asks(off, thursday), 0);
-      expect(off.dateAmounts.containsKey(thursday), isTrue,
-          reason: 'the day is still answered — the plan was on it');
+      expect(
+        off.dateAmounts.containsKey(thursday),
+        isTrue,
+        reason: 'the day is still answered — the plan was on it',
+      );
     });
 
     test('removing the plan says it had nothing to do that day at all', () {
       // A daily plan, removed from one day. The day then asks for nothing,
       // where a zero would have left it asking for nothing *and on the record*.
       final removed = PlanEdit.removePlanFromDay(plan(), thursday);
-      expect(asks(removed, thursday), 2,
-          reason: 'a daily plan still fires, so the base applies again — the '
-              'difference from a zero is the *record*, which the next assertion '
-              'is about rather than the number');
-      expect(removed.dateAmounts.containsKey(thursday), isFalse,
-          reason: 'no answer for the day, which is what "not scheduled" means — '
-              'and it is why the two are distinct and both are offered');
+      expect(
+        asks(removed, thursday),
+        2,
+        reason:
+            'a daily plan still fires, so the base applies again — the '
+            'difference from a zero is the *record*, which the next assertion '
+            'is about rather than the number',
+      );
+      expect(
+        removed.dateAmounts.containsKey(thursday),
+        isFalse,
+        reason:
+            'no answer for the day, which is what "not scheduled" means — '
+            'and it is why the two are distinct and both are offered',
+      );
     });
 
     test('so removing undoes a lift made on that day, and nothing else', () {
@@ -155,25 +181,37 @@ void main() {
         assignments: [PlanAssignment(id: 'a', rule: DailyRule())],
       );
       expect(asks(p, thursday), 9);
-      expect(asks(PlanEdit.removePlanFromDay(p, thursday), thursday), 9,
-          reason: 'no date override, so there was nothing to remove; the '
-              'weekday\'s own answer stands');
+      expect(
+        asks(PlanEdit.removePlanFromDay(p, thursday), thursday),
+        9,
+        reason:
+            'no date override, so there was nothing to remove; the '
+            'weekday\'s own answer stands',
+      );
       expect(PlanEdit.removePlanFromDay(p, thursday).dateAmounts, isEmpty);
 
       // Lifted on the day, then removed: back to what the weekday asks.
       final lifted = PlanEdit.addUnits(p, thursday, 4);
       expect(asks(lifted, thursday), 13);
-      expect(asks(PlanEdit.removePlanFromDay(lifted, thursday), thursday), 9,
-          reason: 'and this time the day did carry an override, so removing it '
-              'uncovers the weekday underneath');
+      expect(
+        asks(PlanEdit.removePlanFromDay(lifted, thursday), thursday),
+        9,
+        reason:
+            'and this time the day did carry an override, so removing it '
+            'uncovers the weekday underneath',
+      );
     });
 
     test('removing a day that was never overridden is a no-op', () {
       final next = PlanEdit.removePlanFromDay(plan(), thursday);
       expect(next.dateAmounts, isEmpty);
-      expect(asks(next, thursday), 2,
-              reason: 'a DailyRule plan fires every day, so removing an override '
-                  'that is not there changes nothing — and does not invent one');
+      expect(
+        asks(next, thursday),
+        2,
+        reason:
+            'a DailyRule plan fires every day, so removing an override '
+            'that is not there changes nothing — and does not invent one',
+      );
     });
   });
 
@@ -199,8 +237,11 @@ void main() {
       expect(created.items, hasLength(1));
       expect(created.items.single.nodeId, 'shas.moed.shabbos');
       expect(asks(created, thursday), 2);
-      expect(created.unitsPerDay, 2,
-          reason: 'so the ledger has something to read before the override');
+      expect(
+        created.unitsPerDay,
+        2,
+        reason: 'so the ledger has something to read before the override',
+      );
     });
 
     test('and it is a real plan, which means it can be ticked', () {
@@ -210,8 +251,11 @@ void main() {
         day: thursday,
         units: 2,
       );
-      expect(LearningPlan.fromJson(created.toJson()), created,
-          reason: 'it round-trips, so it survives a restart like any other plan');
+      expect(
+        LearningPlan.fromJson(created.toJson()),
+        created,
+        reason: 'it round-trips, so it survives a restart like any other plan',
+      );
     });
   });
 }

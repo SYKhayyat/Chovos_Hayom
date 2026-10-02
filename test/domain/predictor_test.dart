@@ -10,22 +10,32 @@ void main() {
       expect(Predictor.daysToFinish(remaining: 10, perDay: 0), -1);
     });
 
-    test('finishDate projects forward, counting today as the first learning day', () {
-      final from = Day.of(DateTime(2026, 1, 1));
-      // 10 at 5/day: Jan1=5, Jan2=10 -> finishes Jan 2 (matches a [5] cycle).
-      expect(
-        Predictor.finishDate(remaining: 10, perDay: 5, from: from),
-        Day.of(DateTime(2026, 1, 2)),
-      );
-      expect(Predictor.finishDate(remaining: 10, perDay: 0, from: from), isNull);
-    });
+    test(
+      'finishDate projects forward, counting today as the first learning day',
+      () {
+        final from = Day.of(DateTime(2026, 1, 1));
+        // 10 at 5/day: Jan1=5, Jan2=10 -> finishes Jan 2 (matches a [5] cycle).
+        expect(
+          Predictor.finishDate(remaining: 10, perDay: 5, from: from),
+          Day.of(DateTime(2026, 1, 2)),
+        );
+        expect(
+          Predictor.finishDate(remaining: 10, perDay: 0, from: from),
+          isNull,
+        );
+      },
+    );
 
     test('flat finishDate agrees with an equivalent length-1 cycle', () {
       final from = Day.of(DateTime(2026, 1, 1));
       expect(
         Predictor.finishDate(remaining: 10, perDay: 2, from: from),
         Predictor.finishDateWithCycle(
-            remaining: 10, amounts: [2], startIndex: 0, from: from),
+          remaining: 10,
+          amounts: [2],
+          startIndex: 0,
+          from: from,
+        ),
       );
     });
   });
@@ -34,9 +44,10 @@ void main() {
     test('requiredPerDay divides remaining by inclusive days available', () {
       expect(
         Predictor.requiredPerDay(
-            remaining: 10,
-            from: Day.of(DateTime(2026, 1, 1)),
-            target: Day.of(DateTime(2026, 1, 11))),
+          remaining: 10,
+          from: Day.of(DateTime(2026, 1, 1)),
+          target: Day.of(DateTime(2026, 1, 11)),
+        ),
         closeTo(10 / 11, 0.001),
       );
     });
@@ -44,9 +55,10 @@ void main() {
     test('a target today requires all remaining units today', () {
       expect(
         Predictor.requiredPerDay(
-            remaining: 10,
-            from: Day.of(DateTime(2026, 1, 11)),
-            target: Day.of(DateTime(2026, 1, 11))),
+          remaining: 10,
+          from: Day.of(DateTime(2026, 1, 11)),
+          target: Day.of(DateTime(2026, 1, 11)),
+        ),
         10,
       );
     });
@@ -54,9 +66,10 @@ void main() {
     test('requiredPerDay is infinity when target is in the past', () {
       expect(
         Predictor.requiredPerDay(
-            remaining: 10,
-            from: Day.of(DateTime(2026, 1, 12)),
-            target: Day.of(DateTime(2026, 1, 11))),
+          remaining: 10,
+          from: Day.of(DateTime(2026, 1, 12)),
+          target: Day.of(DateTime(2026, 1, 11)),
+        ),
         double.infinity,
       );
     });
@@ -64,9 +77,10 @@ void main() {
     test('requiredPerDay is zero when nothing remains', () {
       expect(
         Predictor.requiredPerDay(
-            remaining: 0,
-            from: Day.of(DateTime(2026, 1, 1)),
-            target: Day.of(DateTime(2026, 2, 1))),
+          remaining: 0,
+          from: Day.of(DateTime(2026, 1, 1)),
+          target: Day.of(DateTime(2026, 2, 1)),
+        ),
         0,
       );
     });
@@ -78,7 +92,11 @@ void main() {
       // 10 units at 2/day -> 5 learning days -> finishes on day index 4.
       expect(
         Predictor.finishDateWithShabbos(
-            remaining: 10, weekdayAmount: 2, shabbosAmount: 2, from: from),
+          remaining: 10,
+          weekdayAmount: 2,
+          shabbosAmount: 2,
+          from: from,
+        ),
         Day.of(DateTime(2026, 1, 5)),
       );
     });
@@ -86,10 +104,11 @@ void main() {
     test('returns null when nothing is ever learned', () {
       expect(
         Predictor.finishDateWithShabbos(
-            remaining: 10,
-            weekdayAmount: 0,
-            shabbosAmount: 0,
-            from: Day.of(DateTime(2026, 1, 1))),
+          remaining: 10,
+          weekdayAmount: 0,
+          shabbosAmount: 0,
+          from: Day.of(DateTime(2026, 1, 1)),
+        ),
         isNull,
       );
     });
@@ -102,7 +121,11 @@ void main() {
       // 10 at 2/day: Jan1=2, Jan2=4, ... Jan5=10 -> finishes Jan 5.
       expect(
         Predictor.finishDateWithCycle(
-            remaining: 10, amounts: [2], startIndex: 0, from: from),
+          remaining: 10,
+          amounts: [2],
+          startIndex: 0,
+          from: from,
+        ),
         Day.of(DateTime(2026, 1, 5)),
       );
     });
@@ -112,10 +135,11 @@ void main() {
       // 10 remaining -> 5 today (day 0), 5 seven days later.
       expect(
         Predictor.finishDateWithCycle(
-            remaining: 10,
-            amounts: [5, 0, 0, 0, 0, 0, 0],
-            startIndex: 0,
-            from: from),
+          remaining: 10,
+          amounts: [5, 0, 0, 0, 0, 0, 0],
+          startIndex: 0,
+          from: from,
+        ),
         Day.of(DateTime(2026, 1, 8)),
       );
     });
@@ -124,7 +148,11 @@ void main() {
       // cycle [1,2,3]; today is cycle-day 3 -> startIndex 2 -> today does 3.
       expect(
         Predictor.finishDateWithCycle(
-            remaining: 3, amounts: [1, 2, 3], startIndex: 2, from: from),
+          remaining: 3,
+          amounts: [1, 2, 3],
+          startIndex: 2,
+          from: from,
+        ),
         from, // finishes today
       );
     });
@@ -132,7 +160,11 @@ void main() {
     test('an all-zero cycle never finishes', () {
       expect(
         Predictor.finishDateWithCycle(
-            remaining: 5, amounts: [0, 0], startIndex: 0, from: from),
+          remaining: 5,
+          amounts: [0, 0],
+          startIndex: 0,
+          from: from,
+        ),
         isNull,
       );
     });
@@ -160,39 +192,46 @@ void main() {
       return null;
     }
 
-    test('agrees with a day-by-day walk across cycles, offsets and remainders',
-        () {
-      const cycles = <List<double>>[
-        [1],
-        [2],
-        [0.5],
-        [0.1],
-        [3, 0],
-        [5, 0, 0, 0, 0, 0, 10],
-        [1, 2, 3],
-        [0, 0, 7],
-        [2.5, -1, 0.25], // a negative amount is "did not learn", not "un-learned"
-      ];
-      for (final amounts in cycles) {
-        for (var startIndex = 0; startIndex < amounts.length; startIndex++) {
-          for (var remaining = 1; remaining <= 40; remaining++) {
-            expect(
-              Predictor.finishDateWithCycle(
+    test(
+      'agrees with a day-by-day walk across cycles, offsets and remainders',
+      () {
+        const cycles = <List<double>>[
+          [1],
+          [2],
+          [0.5],
+          [0.1],
+          [3, 0],
+          [5, 0, 0, 0, 0, 0, 10],
+          [1, 2, 3],
+          [0, 0, 7],
+          [
+            2.5,
+            -1,
+            0.25,
+          ], // a negative amount is "did not learn", not "un-learned"
+        ];
+        for (final amounts in cycles) {
+          for (var startIndex = 0; startIndex < amounts.length; startIndex++) {
+            for (var remaining = 1; remaining <= 40; remaining++) {
+              expect(
+                Predictor.finishDateWithCycle(
                   remaining: remaining,
                   amounts: amounts,
                   startIndex: startIndex,
-                  from: from),
-              walk(remaining, amounts, startIndex),
-              reason: 'cycle $amounts from index $startIndex, '
-                  'remaining $remaining',
-            );
+                  from: from,
+                ),
+                walk(remaining, amounts, startIndex),
+                reason:
+                    'cycle $amounts from index $startIndex, '
+                    'remaining $remaining',
+              );
+            }
           }
         }
-      }
-    });
+      },
+    );
 
-    test('a pace too slow to finish inside the horizon says so, immediately',
-        () {
+    test('a pace too slow to finish inside the horizon says so, immediately', () {
       // The reproduction from the grade: `0.0001` a day is positive, so nothing
       // rejects it, and the answer is ~74,000 years away. It used to cost 200,000
       // `DateTime` allocations to discover that — inside `build`, per keystroke.
@@ -200,7 +239,11 @@ void main() {
       for (var i = 0; i < 1000; i++) {
         expect(
           Predictor.finishDateWithCycle(
-              remaining: 12092, amounts: const [0.0001], startIndex: 0, from: from),
+            remaining: 12092,
+            amounts: const [0.0001],
+            startIndex: 0,
+            from: from,
+          ),
           isNull,
         );
       }
@@ -210,8 +253,11 @@ void main() {
       // so a tight wall-clock bound measures the scheduler rather than the code —
       // a return to per-day iteration would miss this by four orders of
       // magnitude, not by a factor.
-      expect(sw.elapsedMilliseconds, lessThan(500),
-          reason: '1000 hopeless-pace answers took ${sw.elapsedMilliseconds}ms');
+      expect(
+        sw.elapsedMilliseconds,
+        lessThan(500),
+        reason: '1000 hopeless-pace answers took ${sw.elapsedMilliseconds}ms',
+      );
     });
 
     test('a long cycle costs its own length and nothing more', () {
@@ -220,7 +266,11 @@ void main() {
       final sw = Stopwatch()..start();
       for (var i = 0; i < 100; i++) {
         Predictor.finishDateWithCycle(
-            remaining: 2711, amounts: yearLong, startIndex: 100, from: from);
+          remaining: 2711,
+          amounts: yearLong,
+          startIndex: 100,
+          from: from,
+        );
       }
       sw.stop();
 
@@ -229,8 +279,11 @@ void main() {
       // 40x against a release build, so the number here is not a user-facing
       // latency — it is a tripwire for a return to per-day iteration, which would
       // miss it by orders of magnitude rather than by a factor.
-      expect(sw.elapsedMilliseconds, lessThan(500),
-          reason: '100 year-long-cycle answers took ${sw.elapsedMilliseconds}ms');
+      expect(
+        sw.elapsedMilliseconds,
+        lessThan(500),
+        reason: '100 year-long-cycle answers took ${sw.elapsedMilliseconds}ms',
+      );
     });
 
     test('the flat, Shabbos-aware and cycle forms agree about "never"', () {
@@ -240,30 +293,38 @@ void main() {
       const remaining = 12092;
       const tooSlow = 0.05;
       expect(
-          Predictor.finishDate(
-              remaining: remaining, perDay: tooSlow, from: from),
-          isNull);
+        Predictor.finishDate(remaining: remaining, perDay: tooSlow, from: from),
+        isNull,
+      );
       expect(
-          Predictor.finishDateWithCycle(
-              remaining: remaining,
-              amounts: const [tooSlow],
-              startIndex: 0,
-              from: from),
-          isNull);
+        Predictor.finishDateWithCycle(
+          remaining: remaining,
+          amounts: const [tooSlow],
+          startIndex: 0,
+          from: from,
+        ),
+        isNull,
+      );
       expect(
-          Predictor.finishDateWithShabbos(
-              remaining: remaining,
-              weekdayAmount: tooSlow,
-              shabbosAmount: tooSlow,
-              from: from),
-          isNull);
+        Predictor.finishDateWithShabbos(
+          remaining: remaining,
+          weekdayAmount: tooSlow,
+          shabbosAmount: tooSlow,
+          from: from,
+        ),
+        isNull,
+      );
     });
 
     test('a Shabbos cycle is aligned to the day it starts on', () {
       // 1 January 2026 is a Thursday, so day 2 of the walk is the Shabbos. With
       // nothing learned on weekdays, the finish can only land on a Saturday.
       final date = Predictor.finishDateWithShabbos(
-          remaining: 3, weekdayAmount: 0, shabbosAmount: 3, from: from);
+        remaining: 3,
+        weekdayAmount: 0,
+        shabbosAmount: 3,
+        from: from,
+      );
 
       expect(date, Day.of(DateTime(2026, 1, 3)));
       expect(date!.weekday, DateTime.saturday);

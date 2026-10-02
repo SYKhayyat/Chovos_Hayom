@@ -77,11 +77,13 @@ class UnitMefarshim {
     void take(String id) {
       if (!seen.add(id)) return;
       if (!rolesHere.containsKey(id) && !done.contains(id)) return;
-      out.add(UnitMeforish(
-        layerId: id,
-        role: rolesHere[id],
-        isDone: done.contains(id),
-      ));
+      out.add(
+        UnitMeforish(
+          layerId: id,
+          role: rolesHere[id],
+          isDone: done.contains(id),
+        ),
+      );
     }
 
     for (final id in layerOrder) {
@@ -99,24 +101,35 @@ class UnitMefarshim {
   }
 
   /// The ones this unit currently offers to be ticked.
-  List<UnitMeforish> get checkable =>
-      [for (final m in all) if (m.isCheckableHere) m];
+  List<UnitMeforish> get checkable => [
+    for (final m in all)
+      if (m.isCheckableHere) m,
+  ];
 
   /// The ones a chazara can be recorded against: what the unit asks for, plus
   /// whatever was learned on it — including a meforish that has since been
   /// turned off or deleted, because reviewing it is still a thing that happened.
-  List<UnitMeforish> get reviewable =>
-      [for (final m in all) if (m.isRequired || m.isDone) m];
+  List<UnitMeforish> get reviewable => [
+    for (final m in all)
+      if (m.isRequired || m.isDone) m,
+  ];
 
-  Set<String> get required =>
-      {for (final m in all) if (m.isRequired) m.layerId};
+  Set<String> get required => {
+    for (final m in all)
+      if (m.isRequired) m.layerId,
+  };
 
-  Set<String> get done => {for (final m in all) if (m.isDone) m.layerId};
+  Set<String> get done => {
+    for (final m in all)
+      if (m.isDone) m.layerId,
+  };
 
   /// Required and not yet learned — what *log this unit* should arrive with
   /// already ticked.
-  Set<String> get outstanding =>
-      {for (final m in all) if (m.isRequired && !m.isDone) m.layerId};
+  Set<String> get outstanding => {
+    for (final m in all)
+      if (m.isRequired && !m.isDone) m.layerId,
+  };
 
   /// Whether this unit wants a checklist rather than a one-tap toggle — i.e. it
   /// offers more than just the text.

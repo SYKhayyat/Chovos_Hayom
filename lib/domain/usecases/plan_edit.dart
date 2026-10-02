@@ -25,7 +25,8 @@ class PlanEdit {
   /// precedence the calendar reads, so the command and the display cannot
   /// disagree about what is being changed.
   static LearningPlan addUnits(LearningPlan plan, Day day, int units) {
-    final current = plan.dateAmounts[day] ??
+    final current =
+        plan.dateAmounts[day] ??
         plan.weekdayAmounts[day.weekday] ??
         plan.unitsPerDay;
     return _setDay(plan, day, current + units);
@@ -37,7 +38,8 @@ class PlanEdit {
   /// error**: the alternative is a command that throws because the user pressed
   /// it too often, which is the one thing a control on a phone should not do.
   static LearningPlan removeUnit(LearningPlan plan, Day day) {
-    final current = plan.dateAmounts[day] ??
+    final current =
+        plan.dateAmounts[day] ??
         // Not an explicit override, so the day's own answer is the base — and
         // removing from the base has to read it the same way the calendar does,
         // or the command and the display disagree about what it is removing.
@@ -52,11 +54,8 @@ class PlanEdit {
   /// less than it is", and routing the second through the first meant it added
   /// instead of subtracted — a test caught it, but only because the two were
   /// written separately.
-  static LearningPlan _setDay(LearningPlan plan, Day day, int amount) =>
-      plan.copyWithDateAmounts({
-        ...plan.dateAmounts,
-        day: amount < 0 ? 0 : amount,
-      });
+  static LearningPlan _setDay(LearningPlan plan, Day day, int amount) => plan
+      .copyWithDateAmounts({...plan.dateAmounts, day: amount < 0 ? 0 : amount});
 
   /// [plan] with **no answer at all** for [day].
   ///
@@ -67,9 +66,7 @@ class PlanEdit {
   /// afterwards. Collapsing the two would lose a statement the user is making.
   static LearningPlan removePlanFromDay(LearningPlan plan, Day day) {
     if (!plan.dateAmounts.containsKey(day)) return plan;
-    return plan.copyWithDateAmounts({
-      ...plan.dateAmounts..remove(day),
-    });
+    return plan.copyWithDateAmounts({...plan.dateAmounts..remove(day)});
   }
 
   /// A brand-new plan for work done on a day that nothing scheduled.

@@ -75,9 +75,7 @@ class _BulkActionsSheet extends ConsumerWidget {
                 children: [
                   Text(l10n.bulkTitle, style: theme.textTheme.titleLarge),
                   Text(
-                    node.isLeaf
-                        ? name
-                        : l10n.bulkAllUnitsUnderneath(name),
+                    node.isLeaf ? name : l10n.bulkAllUnitsUnderneath(name),
                     style: theme.textTheme.titleSmall,
                   ),
                 ],
@@ -94,7 +92,9 @@ class _BulkActionsSheet extends ConsumerWidget {
                 report: l10n.bulkReportFinished,
                 confirmLabel: l10n.actionFinish,
                 plan: (m) => m.planFinish(
-                    nodeId: node.id, selection: const RequiredLayerSelection()),
+                  nodeId: node.id,
+                  selection: const RequiredLayerSelection(),
+                ),
               ),
             ),
             for (final layer in perLayer)
@@ -108,10 +108,14 @@ class _BulkActionsSheet extends ConsumerWidget {
               ),
             const Divider(),
             ListTile(
-              leading: Icon(Icons.delete_sweep_outlined,
-                  color: theme.colorScheme.error),
-              title: Text(l10n.bulkClearAll,
-                  style: TextStyle(color: theme.colorScheme.error)),
+              leading: Icon(
+                Icons.delete_sweep_outlined,
+                color: theme.colorScheme.error,
+              ),
+              title: Text(
+                l10n.bulkClearAll,
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
               subtitle: Text(l10n.bulkClearAllSubtitle),
               onTap: () => _clearAll(l10n, name),
             ),
@@ -124,8 +128,12 @@ class _BulkActionsSheet extends ConsumerWidget {
 
   /// One `Mark all — <meforish>` row. Extracted so the layer's localized name is
   /// resolved once and shared by the row, its confirmation and its report.
-  Widget _layerTile(BuildContext context, AppLocalizations l10n, Layer layer,
-      String nodeDisplayName) {
+  Widget _layerTile(
+    BuildContext context,
+    AppLocalizations l10n,
+    Layer layer,
+    String nodeDisplayName,
+  ) {
     final label = layerName(l10n, layer);
     return ListTile(
       leading: const Icon(Icons.layers_outlined),
@@ -140,7 +148,9 @@ class _BulkActionsSheet extends ConsumerWidget {
         report: (units) => l10n.bulkReportMarkedLayer(units, label),
         confirmLabel: l10n.actionMark,
         plan: (m) => m.planFinish(
-            nodeId: node.id, selection: SingleLayerSelection(layer.id)),
+          nodeId: node.id,
+          selection: SingleLayerSelection(layer.id),
+        ),
       ),
     );
   }
@@ -152,11 +162,11 @@ class _BulkActionsSheet extends ConsumerWidget {
   /// The same guard every other write in the app uses, built from the host
   /// rather than from a `WidgetRef` — this sheet is gone by the time it writes.
   WriteGuard _guard(ProviderContainer container) => WriteGuard(
-        ScaffoldMessenger.of(host),
-        Navigator.of(host, rootNavigator: true),
-        container.read(crashLogProvider),
-        AppLocalizations.of(host),
-      );
+    ScaffoldMessenger.of(host),
+    Navigator.of(host, rootNavigator: true),
+    container.read(crashLogProvider),
+    AppLocalizations.of(host),
+  );
 
   /// Closes the sheet, plans the action, confirms it with the real unit count,
   /// then commits and reports with undo. [destructive] colours the confirm
@@ -207,7 +217,9 @@ class _BulkActionsSheet extends ConsumerWidget {
       what: what,
     );
     final done = result;
-    if (committed && done != null) _report(l10n, container, guard, report, done);
+    if (committed && done != null) {
+      _report(l10n, container, guard, report, done);
+    }
   }
 
   /// The one gate every bulk write goes through. Always states the exact number
@@ -231,8 +243,10 @@ class _BulkActionsSheet extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.bulkConfirmUnits(units),
-                  style: Theme.of(dialogContext).textTheme.titleMedium),
+              Text(
+                l10n.bulkConfirmUnits(units),
+                style: Theme.of(dialogContext).textTheme.titleMedium,
+              ),
               if (extraWarning != null) ...[
                 const SizedBox(height: 8),
                 Text(extraWarning),
@@ -243,14 +257,16 @@ class _BulkActionsSheet extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(l10n.actionCancel)),
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.actionCancel),
+            ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
               style: destructive
                   ? FilledButton.styleFrom(
                       backgroundColor: scheme.error,
-                      foregroundColor: scheme.onError)
+                      foregroundColor: scheme.onError,
+                    )
                   : null,
               child: Text(confirmLabel),
             ),
@@ -314,21 +330,26 @@ class _BulkActionsSheet extends ConsumerWidget {
   }
 
   Future<void> _clearAll(AppLocalizations l10n, String name) => _run(
-        l10n,
-        title: l10n.bulkClearAllTitle(name),
-        what: l10n.bulkWhatClearingAll(name),
-        report: l10n.bulkReportCleared,
-        confirmLabel: l10n.actionClear,
-        destructive: true,
-        extraWarning: node.isLeaf
-            ? l10n.bulkClearWarningLeaf
-            : l10n.bulkClearWarningCategory,
-        plan: (m) =>
-            m.planClear(nodeId: node.id, selection: const AllLayersSelection()),
-      );
+    l10n,
+    title: l10n.bulkClearAllTitle(name),
+    what: l10n.bulkWhatClearingAll(name),
+    report: l10n.bulkReportCleared,
+    confirmLabel: l10n.actionClear,
+    destructive: true,
+    extraWarning: node.isLeaf
+        ? l10n.bulkClearWarningLeaf
+        : l10n.bulkClearWarningCategory,
+    plan: (m) =>
+        m.planClear(nodeId: node.id, selection: const AllLayersSelection()),
+  );
 
-  void _report(AppLocalizations l10n, ProviderContainer container,
-      WriteGuard guard, String Function(int) report, BulkResult result) {
+  void _report(
+    AppLocalizations l10n,
+    ProviderContainer container,
+    WriteGuard guard,
+    String Function(int) report,
+    BulkResult result,
+  ) {
     if (result.isEmpty) {
       guard.report(l10n.bulkNothingToChange);
       return;
@@ -345,7 +366,10 @@ class _BulkActionsSheet extends ConsumerWidget {
               onPressed: () => guard.run(
                 () => container
                     .read(progressRepositoryProvider)
-                    .removeBatch(container.read(activeProfileProvider), batchId),
+                    .removeBatch(
+                      container.read(activeProfileProvider),
+                      batchId,
+                    ),
                 what: l10n.whatUndoingBulk,
               ),
             ),
@@ -369,8 +393,12 @@ UnitRange? _rangeOf(Map<String, String> values) {
 
 /// Why that range is not usable, or null if it is. Pure, so the arithmetic that
 /// decides whether a bulk action can run is testable without a dialog.
-String? _rangeError(AppLocalizations l10n, Map<String, String> values,
-    {required int first, required int last}) {
+String? _rangeError(
+  AppLocalizations l10n,
+  Map<String, String> values, {
+  required int first,
+  required int last,
+}) {
   final range = _rangeOf(values);
   if (range == null) return l10n.rangeErrorTwoNumbers;
   if (range.start < first || range.end > last) {

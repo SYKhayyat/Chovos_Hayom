@@ -67,8 +67,16 @@ class StatsSummary {
   /// keys a map on one of these, and hashing the series would walk it. Equal
   /// objects only have to *share* a hash; collisions are legal.
   @override
-  int get hashCode => Object.hash(learned, total, streak, avgPerDay,
-      projectedFinish, totalMinutes, minutesThisMonth, series.length);
+  int get hashCode => Object.hash(
+    learned,
+    total,
+    streak,
+    avgPerDay,
+    projectedFinish,
+    totalMinutes,
+    minutesThisMonth,
+    series.length,
+  );
 }
 
 /// Fires once at every local midnight, and whenever [invalidateClock] is called
@@ -146,8 +154,10 @@ void invalidateClock(WidgetRef ref) => ref.invalidate(_dayTickProvider);
 final paceProvider = Provider<double>((ref) {
   final activity = ref.watch(logActivityProvider).asData?.value;
   if (activity == null) return 0;
-  return activity.averagePerDay(Day.of(ref.watch(clockProvider)()),
-      windowDays: 30);
+  return activity.averagePerDay(
+    Day.of(ref.watch(clockProvider)()),
+    windowDays: 30,
+  );
 });
 
 /// Overall stats for the active profile, derived from the log. Null while the
@@ -193,7 +203,9 @@ final statsProvider = Provider<StatsSummary?>((ref) {
     // heatmap in one pointer read.
     dailyActivity: activity.dailyCounts,
     totalMinutes: activity.totalMinutes,
-    minutesThisMonth: activity.minutesSince(Day.of(DateTime(now.year, now.month, 1))),
+    minutesThisMonth: activity.minutesSince(
+      Day.of(DateTime(now.year, now.month, 1)),
+    ),
   );
 });
 

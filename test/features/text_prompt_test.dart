@@ -40,21 +40,22 @@ void main() {
   tearDown(() => FlutterError.onError = previous);
 
   void expectNoFrameworkError() {
-    expect(errors.map((e) => e.exceptionAsString()).toList(), isEmpty,
-        reason: 'the dialog must outlive its own controller');
+    expect(
+      errors.map((e) => e.exceptionAsString()).toList(),
+      isEmpty,
+      reason: 'the dialog must outlive its own controller',
+    );
   }
 
   Widget host(Widget child, {AppPreferences? prefs}) => ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider
-              .overrideWithValue(memoryRepository()),
-          appPreferencesProvider
-              .overrideWithValue(prefs ?? InMemoryPreferences()),
-          crashLogProvider.overrideWithValue(RecordingCrashLog()),
-        ],
-        child: localizedApp(home: child),
-      );
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(memoryRepository()),
+      appPreferencesProvider.overrideWithValue(prefs ?? InMemoryPreferences()),
+      crashLogProvider.overrideWithValue(RecordingCrashLog()),
+    ],
+    child: localizedApp(home: child),
+  );
 
   /// Scrolls a Settings row into view and taps it.
   Future<void> openSettingsRow(WidgetTester tester, String label) async {
@@ -121,8 +122,9 @@ void main() {
       await openSettingsRow(tester, 'Remind me after');
     }
 
-    testWidgets('input it cannot use is refused, and nothing is saved',
-        (tester) async {
+    testWidgets('input it cannot use is refused, and nothing is saved', (
+      tester,
+    ) async {
       final prefs = InMemoryPreferences();
       await tester.pumpWidget(host(const SettingsScreen(), prefs: prefs));
       await openIntervalDialog(tester);
@@ -135,9 +137,11 @@ void main() {
       expect(find.text('Enter a number of days above 0.'), findsOneWidget);
       expect(find.text('x'), findsOneWidget);
       expect(
-          prefs.getString(
-              PrefKeys.scoped('default', PrefKeys.backupIntervalDays)),
-          isNull);
+        prefs.getString(
+          PrefKeys.scoped('default', PrefKeys.backupIntervalDays),
+        ),
+        isNull,
+      );
 
       // The same dialog accepts what it can use, which is what makes the refusal
       // a judgement rather than a wall.
@@ -145,14 +149,17 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
       expect(
-          prefs.getString(
-              PrefKeys.scoped('default', PrefKeys.backupIntervalDays)),
-          '21');
+        prefs.getString(
+          PrefKeys.scoped('default', PrefKeys.backupIntervalDays),
+        ),
+        '21',
+      );
       expectNoFrameworkError();
     });
 
-    testWidgets('zero and blank are both refused rather than defaulted',
-        (tester) async {
+    testWidgets('zero and blank are both refused rather than defaulted', (
+      tester,
+    ) async {
       final prefs = InMemoryPreferences();
       await tester.pumpWidget(host(const SettingsScreen(), prefs: prefs));
       await openIntervalDialog(tester);
@@ -165,12 +172,17 @@ void main() {
         await tester.tap(find.widgetWithText(FilledButton, 'Save'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Enter a number of days above 0.'), findsOneWidget,
-            reason: 'why \'$bad\' was refused');
         expect(
-            prefs.getString(
-                PrefKeys.scoped('default', PrefKeys.backupIntervalDays)),
-            isNull);
+          find.text('Enter a number of days above 0.'),
+          findsOneWidget,
+          reason: 'why \'$bad\' was refused',
+        );
+        expect(
+          prefs.getString(
+            PrefKeys.scoped('default', PrefKeys.backupIntervalDays),
+          ),
+          isNull,
+        );
       }
       expectNoFrameworkError();
     });
@@ -188,9 +200,9 @@ void main() {
 
     expectNoFrameworkError();
     expect(
-        prefs.getString(
-            PrefKeys.scoped('default', PrefKeys.backupIntervalDays)),
-        '30');
+      prefs.getString(PrefKeys.scoped('default', PrefKeys.backupIntervalDays)),
+      '30',
+    );
   });
 
   testWidgets('the clipboard-import dialog survives closing', (tester) async {
@@ -210,27 +222,29 @@ void main() {
     Future<String?> show(WidgetTester tester, {int maxLines = 1}) async {
       String? result;
       var returned = false;
-      await tester.pumpWidget(localizedApp(
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: TextButton(
-              onPressed: () async {
-                result = await promptForText(
-                  context,
-                  title: 'Title',
-                  label: 'Label',
-                  initialValue: 'seed',
-                  maxLines: maxLines,
-                  confirmLabel: 'OK',
-                  cancelLabel: 'Cancel',
-                );
-                returned = true;
-              },
-              child: const Text('open'),
+      await tester.pumpWidget(
+        localizedApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () async {
+                  result = await promptForText(
+                    context,
+                    title: 'Title',
+                    label: 'Label',
+                    initialValue: 'seed',
+                    maxLines: maxLines,
+                    confirmLabel: 'OK',
+                    cancelLabel: 'Cancel',
+                  );
+                  returned = true;
+                },
+                child: const Text('open'),
+              ),
             ),
           ),
         ),
-      ));
+      );
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
       expect(returned, isFalse);
@@ -275,35 +289,38 @@ void main() {
       PromptLayout layout = PromptLayout.column,
     }) async {
       Map<String, String>? result;
-      await tester.pumpWidget(localizedApp(
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: TextButton(
-              onPressed: () async => result = await promptForFields(
-                context,
-                title: 'Title',
-                confirmLabel: 'OK',
-                cancelLabel: 'Cancel',
-                footer: 'Either is enough',
-                validate: validate,
-                layout: layout,
-                fields: const [
-                  PromptField(key: 'from', label: 'From', initialValue: '2'),
-                  PromptField(key: 'to', label: 'To', initialValue: '10'),
-                ],
+      await tester.pumpWidget(
+        localizedApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () async => result = await promptForFields(
+                  context,
+                  title: 'Title',
+                  confirmLabel: 'OK',
+                  cancelLabel: 'Cancel',
+                  footer: 'Either is enough',
+                  validate: validate,
+                  layout: layout,
+                  fields: const [
+                    PromptField(key: 'from', label: 'From', initialValue: '2'),
+                    PromptField(key: 'to', label: 'To', initialValue: '10'),
+                  ],
+                ),
+                child: const Text('open'),
               ),
-              child: const Text('open'),
             ),
           ),
         ),
-      ));
+      );
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
       return result;
     }
 
-    testWidgets('returns every field, keyed, and seeds each one',
-        (tester) async {
+    testWidgets('returns every field, keyed, and seeds each one', (
+      tester,
+    ) async {
       await show(tester);
       expect(find.text('2'), findsOneWidget);
       expect(find.text('10'), findsOneWidget);
@@ -315,24 +332,29 @@ void main() {
       expectNoFrameworkError();
     });
 
-    testWidgets('only the last single-line field submits on Enter',
-        (tester) async {
+    testWidgets('only the last single-line field submits on Enter', (
+      tester,
+    ) async {
       await show(tester);
       final fields = tester.widgetList<TextField>(find.byType(TextField));
       expect(fields.first.onSubmitted, isNull);
       expect(fields.last.onSubmitted, isNotNull);
     });
 
-    testWidgets('a rejected value keeps the dialog open with the typing in it',
-        (tester) async {
+    testWidgets('a rejected value keeps the dialog open with the typing in it', (
+      tester,
+    ) async {
       // The whole reason the range dialog owned its own state. Closing and
       // then complaining throws away two numbers, which on a keypad phone is a
       // dozen key presses to re-enter.
       var calls = 0;
-      await show(tester, validate: (v) {
-        calls++;
-        return v['from'] == '99' ? 'Out of range' : null;
-      });
+      await show(
+        tester,
+        validate: (v) {
+          calls++;
+          return v['from'] == '99' ? 'Out of range' : null;
+        },
+      );
 
       await tester.enterText(find.widgetWithText(TextField, '2'), '99');
       await tester.tap(find.widgetWithText(FilledButton, 'OK'));
@@ -352,10 +374,13 @@ void main() {
 
     testWidgets('cancelling never runs the validator', (tester) async {
       var calls = 0;
-      await show(tester, validate: (_) {
-        calls++;
-        return 'no';
-      });
+      await show(
+        tester,
+        validate: (_) {
+          calls++;
+          return 'no';
+        },
+      );
       await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
       await tester.pumpAndSettle();
 
@@ -369,14 +394,15 @@ void main() {
   group('the two that hand-rolled it', () {
     /// The unit grid, which is where both of these are reached from.
     Widget grid(ProgressRepository repo) => ProviderScope(
-          overrides: [
-            catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-            progressRepositoryProvider.overrideWithValue(repo),
-            crashLogProvider.overrideWithValue(RecordingCrashLog()),
-          ],
-          child: localizedApp(
-              home: const UnitGridScreen(nodeId: 'shas.moed.shabbos')),
-        );
+      overrides: [
+        catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+        progressRepositoryProvider.overrideWithValue(repo),
+        crashLogProvider.overrideWithValue(RecordingCrashLog()),
+      ],
+      child: localizedApp(
+        home: const UnitGridScreen(nodeId: 'shas.moed.shabbos'),
+      ),
+    );
 
     testWidgets('adding a meforish still takes both names', (tester) async {
       final repo = memoryRepository();
@@ -410,8 +436,9 @@ void main() {
       expect(layers.single.nameHebrew, 'מהר״ם');
     });
 
-    testWidgets('an out-of-range finish stays open and says why',
-        (tester) async {
+    testWidgets('an out-of-range finish stays open and says why', (
+      tester,
+    ) async {
       await tester.pumpWidget(grid(memoryRepository()));
       await tester.pumpAndSettle();
 
@@ -426,8 +453,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Units run from 2 to 157.'), findsOneWidget);
-      expect(find.text('500'), findsOneWidget,
-          reason: 'a rejected range must not throw away what was typed');
+      expect(
+        find.text('500'),
+        findsOneWidget,
+        reason: 'a rejected range must not throw away what was typed',
+      );
 
       // And a good one goes through to the confirmation, which counts units.
       await tester.enterText(find.widgetWithText(TextField, '500'), '5');

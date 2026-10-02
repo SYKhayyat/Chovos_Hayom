@@ -22,16 +22,16 @@ import '../support/localized_app.dart';
 /// details* were unreachable without a pointing device.
 void main() {
   Widget grid() => ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider
-              .overrideWithValue(memoryRepository()),
-          appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
-        ],
-        child: localizedApp(
-            home: const UnitGridScreen(nodeId: 'shas.moed.shabbos')),
-      );
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(memoryRepository()),
+      appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+      clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+    ],
+    child: localizedApp(
+      home: const UnitGridScreen(nodeId: 'shas.moed.shabbos'),
+    ),
+  );
 
   /// Tabs until a grid cell holds focus, then returns its border.
   Future<BoxBorder?> tabToFirstCell(WidgetTester tester) async {
@@ -53,19 +53,29 @@ void main() {
     return null;
   }
 
-  testWidgets('a focused cell is visible, not merely focusable', (tester) async {
+  testWidgets('a focused cell is visible, not merely focusable', (
+    tester,
+  ) async {
     await tester.pumpWidget(grid());
     await tester.pumpAndSettle();
 
-    expect(await tabToFirstCell(tester), isNotNull,
-        reason: 'Tab reaches the cells and Enter marks them, so a keyboard user '
-            'who cannot see which cell is focused is marking blind');
+    expect(
+      await tabToFirstCell(tester),
+      isNotNull,
+      reason:
+          'Tab reaches the cells and Enter marks them, so a keyboard user '
+          'who cannot see which cell is focused is marking blind',
+    );
   });
 
   testWidgets('the cell menu opens from the keyboard', (tester) async {
     await tester.pumpWidget(grid());
     await tester.pumpAndSettle();
-    expect(await tabToFirstCell(tester), isNotNull, reason: 'need a focused cell');
+    expect(
+      await tabToFirstCell(tester),
+      isNotNull,
+      reason: 'need a focused cell',
+    );
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.shift);
     await tester.sendKeyEvent(LogicalKeyboardKey.f10);
@@ -84,7 +94,11 @@ void main() {
     // asserted — a binding nobody tests is a binding that quietly stops working.
     await tester.pumpWidget(grid());
     await tester.pumpAndSettle();
-    expect(await tabToFirstCell(tester), isNotNull, reason: 'need a focused cell');
+    expect(
+      await tabToFirstCell(tester),
+      isNotNull,
+      reason: 'need a focused cell',
+    );
 
     await tester.sendKeyEvent(LogicalKeyboardKey.contextMenu);
     await tester.pumpAndSettle();
@@ -97,16 +111,25 @@ void main() {
     // InkWell must not swallow activation.
     await tester.pumpWidget(grid());
     await tester.pumpAndSettle();
-    expect(await tabToFirstCell(tester), isNotNull, reason: 'need a focused cell');
+    expect(
+      await tabToFirstCell(tester),
+      isNotNull,
+      reason: 'need a focused cell',
+    );
 
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
 
     final container = ProviderScope.containerOf(
-        tester.element(find.byType(UnitGridScreen)));
-    final events = await container.read(progressRepositoryProvider)
+      tester.element(find.byType(UnitGridScreen)),
+    );
+    final events = await container
+        .read(progressRepositoryProvider)
         .getEvents(container.read(activeProfileProvider));
-    expect(events, hasLength(1),
-        reason: 'Enter on a focused cell marks it learned');
+    expect(
+      events,
+      hasLength(1),
+      reason: 'Enter on a focused cell marks it learned',
+    );
   });
 }

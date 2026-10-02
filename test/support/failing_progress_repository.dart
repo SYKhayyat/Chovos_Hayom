@@ -23,8 +23,10 @@ import 'memory_database.dart';
 /// subclass here, and it is why the delegation below is written out rather
 /// than routed through `noSuchMethod`.
 class FailingProgressRepository implements ProgressRepository {
-  FailingProgressRepository({this.failWrites = true, this.failEventReads = false})
-      : _inner = memoryRepository();
+  FailingProgressRepository({
+    this.failWrites = true,
+    this.failEventReads = false,
+  }) : _inner = memoryRepository();
 
   final ProgressRepository _inner;
 
@@ -95,7 +97,8 @@ class FailingProgressRepository implements ProgressRepository {
       _inner.renameProfile(profileId, name);
 
   @override
-  Future<void> deleteProfile(String profileId) => _inner.deleteProfile(profileId);
+  Future<void> deleteProfile(String profileId) =>
+      _inner.deleteProfile(profileId);
 
   @override
   Stream<List<CatalogNode>> watchCustomNodes(String profileId) =>

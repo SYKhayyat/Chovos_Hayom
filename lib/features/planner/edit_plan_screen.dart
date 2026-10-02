@@ -35,10 +35,7 @@ class EditPlanScreen extends ConsumerWidget {
         ? null
         : config.plans.where((p) => p.id == planId).firstOrNull;
 
-    return _PlanForm(
-      key: ValueKey(planId ?? 'new'),
-      existing: existing,
-    );
+    return _PlanForm(key: ValueKey(planId ?? 'new'), existing: existing);
   }
 }
 
@@ -117,13 +114,13 @@ class _PlanFormState extends ConsumerState<_PlanForm> {
   int? _amount(TextEditingController c) => nonNegativeInt(c.text);
 
   RecurrenceRule? _buildRule() => switch (_kind) {
-        _RuleKind.daily => const DailyRule(),
-        _RuleKind.weekdays =>
-          _weekdays.isEmpty ? null : WeekdayRule(weekdays: _weekdays),
-        _RuleKind.dayOfMonth =>
-          _daysOfMonth.isEmpty ? null : DayOfMonthRule(days: _daysOfMonth),
-        _RuleKind.hebrewDay => HebrewDayRule(day: _hebrewDay, month: _hebrewMonth),
-      };
+    _RuleKind.daily => const DailyRule(),
+    _RuleKind.weekdays =>
+      _weekdays.isEmpty ? null : WeekdayRule(weekdays: _weekdays),
+    _RuleKind.dayOfMonth =>
+      _daysOfMonth.isEmpty ? null : DayOfMonthRule(days: _daysOfMonth),
+    _RuleKind.hebrewDay => HebrewDayRule(day: _hebrewDay, month: _hebrewMonth),
+  };
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context);
@@ -245,15 +242,16 @@ class _PlanFormState extends ConsumerState<_PlanForm> {
             onChanged: () => setState(() => _error = null),
           ),
           const Divider(height: 32),
-          Text(l10n.plansWhen,
-              style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.plansWhen, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           _ruleKindPicker(l10n),
           const SizedBox(height: 8),
           _ruleInputs(l10n, mode),
           const Divider(height: 32),
-          Text(l10n.plansSpillover,
-              style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            l10n.plansSpillover,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           RadioGroup<SpilloverMode>(
             groupValue: _spillover,
             onChanged: (v) => setState(() => _spillover = v ?? _spillover),
@@ -277,9 +275,9 @@ class _PlanFormState extends ConsumerState<_PlanForm> {
               title: Text(l10n.plansAdvanced),
               subtitle: Text(l10n.plansAdvancedTitle),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).pushNamed(
-                Routes.editPlanAdvanced(widget.existing!.id),
-              ),
+              onTap: () => Navigator.of(
+                context,
+              ).pushNamed(Routes.editPlanAdvanced(widget.existing!.id)),
             ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
@@ -308,37 +306,44 @@ class _PlanFormState extends ConsumerState<_PlanForm> {
   }
 
   Widget _ruleKindPicker(AppLocalizations l10n) => RadioGroup<_RuleKind>(
-        groupValue: _kind,
-        onChanged: (v) => setState(() => _kind = v ?? _kind),
-        child: Column(
-          children: [
-            for (final kind in _RuleKind.values)
-              RadioListTile<_RuleKind>(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                value: kind,
-                title: Text(_ruleKindLabel(l10n, kind)),
-              ),
-          ],
-        ),
-      );
+    groupValue: _kind,
+    onChanged: (v) => setState(() => _kind = v ?? _kind),
+    child: Column(
+      children: [
+        for (final kind in _RuleKind.values)
+          RadioListTile<_RuleKind>(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            value: kind,
+            title: Text(_ruleKindLabel(l10n, kind)),
+          ),
+      ],
+    ),
+  );
 
-  Widget _ruleInputs(AppLocalizations l10n, CalendarMode mode) => switch (_kind) {
+  Widget _ruleInputs(AppLocalizations l10n, CalendarMode mode) =>
+      switch (_kind) {
         _RuleKind.daily => const SizedBox.shrink(),
         _RuleKind.weekdays => _numberToggles(
-            l10n, weekdays: _weekdays, onToggle: _toggleWeekday),
+          l10n,
+          weekdays: _weekdays,
+          onToggle: _toggleWeekday,
+        ),
         _RuleKind.dayOfMonth => _numberToggles(
-            l10n, days: _daysOfMonth, onToggle: _toggleDayOfMonth),
+          l10n,
+          days: _daysOfMonth,
+          onToggle: _toggleDayOfMonth,
+        ),
         _RuleKind.hebrewDay => _hebrewDayInputs(l10n),
       };
 
   void _toggleWeekday(int n) => setState(() {
-        if (!_weekdays.remove(n)) _weekdays.add(n);
-      });
+    if (!_weekdays.remove(n)) _weekdays.add(n);
+  });
 
   void _toggleDayOfMonth(int n) => setState(() {
-        if (!_daysOfMonth.remove(n)) _daysOfMonth.add(n);
-      });
+    if (!_daysOfMonth.remove(n)) _daysOfMonth.add(n);
+  });
 
   /// A row of tappable numbers. A `Wrap` rather than a fixed grid so a 240dp
   /// screen wraps instead of overflowing, and every number is a real `TextButton`
@@ -365,8 +370,9 @@ class _PlanFormState extends ConsumerState<_PlanForm> {
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(40, 40),
                 padding: EdgeInsets.zero,
-                backgroundColor:
-                    selected.contains(v) ? Theme.of(context).colorScheme.primaryContainer : null,
+                backgroundColor: selected.contains(v)
+                    ? Theme.of(context).colorScheme.primaryContainer
+                    : null,
               ),
               child: Text('$v'),
             ),
@@ -376,31 +382,33 @@ class _PlanFormState extends ConsumerState<_PlanForm> {
   }
 
   Widget _hebrewDayInputs(AppLocalizations l10n) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          DropdownButtonFormField<int>(
-            initialValue: _hebrewDay,
-            decoration: InputDecoration(labelText: l10n.plansHebrewDay),
-            items: [
-              for (var d = 1; d <= 30; d++)
-                DropdownMenuItem(value: d, child: Text('$d')),
-            ],
-            onChanged: (v) => setState(() => _hebrewDay = v ?? _hebrewDay),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<int?>(
-            initialValue: _hebrewMonth,
-            decoration: InputDecoration(labelText: l10n.plansHebrewMonth),
-            items: [
-              DropdownMenuItem(
-                  value: null, child: Text(l10n.plansHebrewEveryMonth)),
-              for (final m in _hebrewMonths)
-                DropdownMenuItem(value: m.value, child: Text(m.label)),
-            ],
-            onChanged: (v) => setState(() => _hebrewMonth = v),
-          ),
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      DropdownButtonFormField<int>(
+        initialValue: _hebrewDay,
+        decoration: InputDecoration(labelText: l10n.plansHebrewDay),
+        items: [
+          for (var d = 1; d <= 30; d++)
+            DropdownMenuItem(value: d, child: Text('$d')),
         ],
-      );
+        onChanged: (v) => setState(() => _hebrewDay = v ?? _hebrewDay),
+      ),
+      const SizedBox(height: 8),
+      DropdownButtonFormField<int?>(
+        initialValue: _hebrewMonth,
+        decoration: InputDecoration(labelText: l10n.plansHebrewMonth),
+        items: [
+          DropdownMenuItem(
+            value: null,
+            child: Text(l10n.plansHebrewEveryMonth),
+          ),
+          for (final m in _hebrewMonths)
+            DropdownMenuItem(value: m.value, child: Text(m.label)),
+        ],
+        onChanged: (v) => setState(() => _hebrewMonth = v),
+      ),
+    ],
+  );
 
   static String _ruleKindLabel(AppLocalizations l10n, _RuleKind kind) =>
       switch (kind) {
@@ -453,9 +461,9 @@ class _AmountField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextField(
-        controller: controller,
-        keyboardType: TextInputType.number,
-        onChanged: (_) => onChanged?.call(),
-        decoration: InputDecoration(labelText: label, helperText: helper),
-      );
+    controller: controller,
+    keyboardType: TextInputType.number,
+    onChanged: (_) => onChanged?.call(),
+    decoration: InputDecoration(labelText: label, helperText: helper),
+  );
 }

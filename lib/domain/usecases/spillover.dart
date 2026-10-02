@@ -43,7 +43,8 @@ class ScheduledDay {
   int get hashCode => Object.hash(day, base, amount, owedEntering, owedLeaving);
 
   @override
-  String toString() => 'ScheduledDay($day, base: $base, amount: $amount, '
+  String toString() =>
+      'ScheduledDay($day, base: $base, amount: $amount, '
       'owed: $owedEntering -> $owedLeaving)';
 }
 
@@ -73,11 +74,10 @@ class PlanSchedule {
     required SpilloverMode mode,
     required int base,
     required int owed,
-  }) =>
-      switch (mode) {
-        SpilloverMode.catchUp => base + owed,
-        SpilloverMode.ignore || SpilloverMode.slide => base,
-      };
+  }) => switch (mode) {
+    SpilloverMode.catchUp => base + owed,
+    SpilloverMode.ignore || SpilloverMode.slide => base,
+  };
 
   /// How many days behind schedule [owed] units leaves the plan.
   ///
@@ -113,11 +113,7 @@ class PlanSchedule {
     var owed = owedAtStart < 0 ? 0 : owedAtStart;
     for (var day = from; day <= to; day += 1) {
       final base = DayAmount.of(plan, info(day));
-      final amount = amountFor(
-        mode: plan.spillover,
-        base: base,
-        owed: owed,
-      );
+      final amount = amountFor(mode: plan.spillover, base: base, owed: owed);
       final done = doneOn(day);
       // **Which of these two is right depends on the mode, and getting it wrong
       // is not a rounding error — it compounds.** In `catchUp` the day already
@@ -131,13 +127,15 @@ class PlanSchedule {
           ? amount - done
           : owed + amount - done;
       final leaving = shortfall.clamp(0, 1 << 62);
-      out.add(ScheduledDay(
-        day: day,
-        base: base,
-        amount: amount,
-        owedEntering: owed,
-        owedLeaving: leaving,
-      ));
+      out.add(
+        ScheduledDay(
+          day: day,
+          base: base,
+          amount: amount,
+          owedEntering: owed,
+          owedLeaving: leaving,
+        ),
+      );
       owed = leaving;
     }
     return out;

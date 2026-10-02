@@ -23,7 +23,9 @@ class MefarshimSection extends ConsumerWidget {
       return ReportEmpty(message: l10n.mefarshimProgressEmpty);
     }
 
-    final max = stats.map((s) => s.learnedUnits).reduce((a, b) => a > b ? a : b);
+    final max = stats
+        .map((s) => s.learnedUnits)
+        .reduce((a, b) => a > b ? a : b);
 
     // Rows of bars and figures, none of them focusable, so a D-pad had
     // nothing to move focus to and this list never scrolled a pixel on a
@@ -57,8 +59,10 @@ class MefarshimSection extends ConsumerWidget {
                 ),
               ],
             ),
-            trailing:
-                Text('${stat.learnedUnits}', style: theme.textTheme.titleMedium),
+            trailing: Text(
+              '${stat.learnedUnits}',
+              style: theme.textTheme.titleMedium,
+            ),
           );
         },
       ),

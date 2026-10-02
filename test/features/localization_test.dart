@@ -27,26 +27,27 @@ import '../support/localized_app.dart';
 /// choosing Hebrew changes the words, not just the direction.
 void main() {
   Widget stats(ProgressRepository repo, Locale locale) => ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider.overrideWithValue(repo),
-          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10, 12)),
-        ],
-        child: localizedApp(home: const ReportScreen(), locale: locale),
-      );
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(repo),
+      clockProvider.overrideWithValue(() => DateTime(2026, 1, 10, 12)),
+    ],
+    child: localizedApp(home: const ReportScreen(), locale: locale),
+  );
 
   LearningEvent done(int unit, DateTime day) => LearningEvent(
-        id: 'e$unit',
-        profileId: 'default',
-        nodeId: 'shas.moed.shabbos',
-        unitIndex: unit,
-        action: EventAction.done,
-        occurredAt: day,
-        loggedAt: day,
-      );
+    id: 'e$unit',
+    profileId: 'default',
+    nodeId: 'shas.moed.shabbos',
+    unitIndex: unit,
+    action: EventAction.done,
+    occurredAt: day,
+    loggedAt: day,
+  );
 
-  testWidgets('a Hebrew locale translates the words, not just the direction',
-      (tester) async {
+  testWidgets('a Hebrew locale translates the words, not just the direction', (
+    tester,
+  ) async {
     final repo = memoryRepository();
     await repo.addEvent(done(2, DateTime(2026, 1, 10)));
 
@@ -61,13 +62,17 @@ void main() {
     expect(find.text('Streak'), findsNothing);
   });
 
-  testWidgets('the Hebrew locale lays the app out right-to-left', (tester) async {
+  testWidgets('the Hebrew locale lays the app out right-to-left', (
+    tester,
+  ) async {
     final repo = memoryRepository();
     await tester.pumpWidget(stats(repo, const Locale('he')));
     await tester.pumpAndSettle();
 
-    expect(Directionality.of(tester.element(find.byType(ReportScreen))),
-        TextDirection.rtl);
+    expect(
+      Directionality.of(tester.element(find.byType(ReportScreen))),
+      TextDirection.rtl,
+    );
   });
 
   testWidgets('English is still English', (tester) async {
@@ -76,12 +81,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Reports'), findsOneWidget);
-    expect(Directionality.of(tester.element(find.byType(ReportScreen))),
-        TextDirection.ltr);
+    expect(
+      Directionality.of(tester.element(find.byType(ReportScreen))),
+      TextDirection.ltr,
+    );
   });
 
-  testWidgets('a node with a Hebrew name is shown by it under a Hebrew locale',
-      (tester) async {
+  testWidgets('a node with a Hebrew name is shown by it under a Hebrew locale', (
+    tester,
+  ) async {
     // `nameHebrew` has been stored and searched since the first version and
     // never displayed. This is the assertion that it is now the name a Hebrew
     // reader sees.
@@ -105,9 +113,10 @@ void main() {
     expect(find.text('Shabbos'), findsOneWidget);
 
     // Give it one, and the Hebrew locale reads it instead.
-    final node = (await FakeCatalogRepository().load()).byId('shas.moed.shabbos')!;
-    await repo.addCustomNode(
-        'default', node.copyWith(nameHebrew: 'שבת'));
+    final node = (await FakeCatalogRepository().load()).byId(
+      'shas.moed.shabbos',
+    )!;
+    await repo.addCustomNode('default', node.copyWith(nameHebrew: 'שבת'));
     await tester.pumpAndSettle();
     expect(find.text('שבת'), findsOneWidget);
     expect(find.text('Shabbos'), findsNothing);
@@ -126,10 +135,16 @@ void main() {
     final en = arb('app_en.arb').keys.where(isMessage).toSet();
     final he = arb('app_he.arb').keys.where(isMessage).toSet();
 
-    expect(en.difference(he), isEmpty,
-        reason: 'these keys have no Hebrew translation');
-    expect(he.difference(en), isEmpty,
-        reason: 'these Hebrew keys no longer exist in the English template');
+    expect(
+      en.difference(he),
+      isEmpty,
+      reason: 'these keys have no Hebrew translation',
+    );
+    expect(
+      he.difference(en),
+      isEmpty,
+      reason: 'these Hebrew keys no longer exist in the English template',
+    );
   });
 
   test('both locales resolve without a widget tree', () {

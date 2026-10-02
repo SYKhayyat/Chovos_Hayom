@@ -45,7 +45,10 @@ void main() {
           // it the interesting choice for `+`.
           unitsPerDay: 4,
           assignments: [
-            PlanAssignment(id: 'a', rule: WeekdayRule(weekdays: {DateTime.monday})),
+            PlanAssignment(
+              id: 'a',
+              rule: WeekdayRule(weekdays: {DateTime.monday}),
+            ),
           ],
           items: [PlanItem(id: 'i1', nodeId: shabbos)],
         ),
@@ -59,7 +62,9 @@ void main() {
     bool secondPlan = false,
   }) async {
     final prefs = InMemoryPreferences({
-      PrefKeys.scoped('default', PrefKeys.plans): plansJson(secondPlan: secondPlan),
+      PrefKeys.scoped('default', PrefKeys.plans): plansJson(
+        secondPlan: secondPlan,
+      ),
     });
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = const Size(900, 1600);
@@ -82,16 +87,19 @@ void main() {
   }
 
   LearningPlan storedPlan(InMemoryPreferences prefs, String id) =>
-      PlansConfig.fromJson((jsonDecode(prefs.getString(
-                PrefKeys.scoped('default', PrefKeys.plans)) ??
-              '{}') as Map)
-              .cast<String, dynamic>())
-          .plans
-          .firstWhere((p) => p.id == id);
+      PlansConfig.fromJson(
+        (jsonDecode(
+                  prefs.getString(PrefKeys.scoped('default', PrefKeys.plans)) ??
+                      '{}',
+                )
+                as Map)
+            .cast<String, dynamic>(),
+      ).plans.firstWhere((p) => p.id == id);
 
   group('add', () {
-    testWidgets('raises the day on the chosen plan, and writes no event',
-        (tester) async {
+    testWidgets('raises the day on the chosen plan, and writes no event', (
+      tester,
+    ) async {
       final repo = memoryRepository();
       final prefs = await openSheet(tester, repo: repo);
 
@@ -100,48 +108,61 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('add-to-daf-yomi')));
       await tester.pumpAndSettle();
 
-      expect(storedPlan(prefs, 'daf-yomi').dateAmounts[Day.of(theDay)], 3,
-          reason: 'base 2 plus one');
-      expect(await repo.getEvents('default'), isEmpty,
-          reason: 'a planning command claims nothing was learned');
+      expect(
+        storedPlan(prefs, 'daf-yomi').dateAmounts[Day.of(theDay)],
+        3,
+        reason: 'base 2 plus one',
+      );
+      expect(
+        await repo.getEvents('default'),
+        isEmpty,
+        reason: 'a planning command claims nothing was learned',
+      );
     });
 
-    testWidgets('offers a plan whose rule would not have fired that day',
-        (tester) async {
+    testWidgets('offers a plan whose rule would not have fired that day', (
+      tester,
+    ) async {
       // This is the case the issue calls out: a plan row only exists on a day
       // if a rule put it there, so someone doing extra on a quiet day has
       // nothing to press. Offering every plan is what makes the command useful.
       final repo = memoryRepository();
-      final prefs =
-          await openSheet(tester, repo: repo, secondPlan: true);
+      final prefs = await openSheet(tester, repo: repo, secondPlan: true);
 
       await tester.tap(find.byKey(const ValueKey('day-add')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('add-to-other')));
       await tester.pumpAndSettle();
 
-      expect(storedPlan(prefs, 'other').dateAmounts[Day.of(theDay)], 5,
-          reason: 'the date override is what makes it fire on a day its rule '
-              'skips; the rule itself is untouched');
-      expect(storedPlan(prefs, 'other')
-          .assignments
-          .single
-          .rule, const WeekdayRule(weekdays: {DateTime.monday}));
+      expect(
+        storedPlan(prefs, 'other').dateAmounts[Day.of(theDay)],
+        5,
+        reason:
+            'the date override is what makes it fire on a day its rule '
+            'skips; the rule itself is untouched',
+      );
+      expect(
+        storedPlan(prefs, 'other').assignments.single.rule,
+        const WeekdayRule(weekdays: {DateTime.monday}),
+      );
     });
 
     testWidgets('leaves the other plans alone', (tester) async {
       final repo = memoryRepository();
-      final prefs =
-          await openSheet(tester, repo: repo, secondPlan: true);
+      final prefs = await openSheet(tester, repo: repo, secondPlan: true);
 
       await tester.tap(find.byKey(const ValueKey('day-add')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('add-to-other')));
       await tester.pumpAndSettle();
 
-      expect(storedPlan(prefs, 'daf-yomi').dateAmounts, isEmpty,
-          reason: 'recomputing one plan must not disturb another — the same '
-              'rule #44 has to keep');
+      expect(
+        storedPlan(prefs, 'daf-yomi').dateAmounts,
+        isEmpty,
+        reason:
+            'recomputing one plan must not disturb another — the same '
+            'rule #44 has to keep',
+      );
     });
   });
 
@@ -159,8 +180,9 @@ void main() {
       expect(await repo.getEvents('default'), isEmpty);
     });
 
-    testWidgets('and skipping the plan leaves no answer for the day at all',
-        (tester) async {
+    testWidgets('and skipping the plan leaves no answer for the day at all', (
+      tester,
+    ) async {
       // **Distinct from an amount of 0.** A zero says the plan was scheduled
       // and asked for nothing; skipping says it had nothing to do there, which
       // is "taking Thursday off". Collapsing the two loses a statement the user
@@ -174,14 +196,21 @@ void main() {
       await tester.pumpAndSettle();
 
       final plan = storedPlan(prefs, 'daf-yomi');
-      expect(plan.dateAmounts.containsKey(Day.of(theDay)), isFalse,
-          reason: 'no answer for the day at all');
-      expect(plan.unitsPerDay, 2,
-          reason: 'and the plan itself is untouched — only that day changed');
+      expect(
+        plan.dateAmounts.containsKey(Day.of(theDay)),
+        isFalse,
+        reason: 'no answer for the day at all',
+      );
+      expect(
+        plan.unitsPerDay,
+        2,
+        reason: 'and the plan itself is untouched — only that day changed',
+      );
     });
 
-    testWidgets('an amount of zero is offered and is a different edit',
-        (tester) async {
+    testWidgets('an amount of zero is offered and is a different edit', (
+      tester,
+    ) async {
       // The two are distinguishable in storage, which is the whole reason both
       // are reachable: one leaves an entry saying "nothing", the other removes it.
       final repo = memoryRepository();
@@ -195,9 +224,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(storedPlan(prefs, 'daf-yomi').dateAmounts[Day.of(theDay)], 0);
-      expect(storedPlan(prefs, 'daf-yomi').dateAmounts.containsKey(Day.of(theDay)),
-          isTrue,
-          reason: 'the day is still answered — the plan was on it');
+      expect(
+        storedPlan(prefs, 'daf-yomi').dateAmounts.containsKey(Day.of(theDay)),
+        isTrue,
+        reason: 'the day is still answered — the plan was on it',
+      );
     });
   });
 
@@ -212,11 +243,16 @@ void main() {
       await tester.pumpAndSettle();
 
       final plan = storedPlan(prefs, 'daf-yomi');
-      expect(plan.dateAmounts.keys, [Day.of(theDay)],
-          reason: 'one day got an answer, and it is this one');
-      expect(await repo.getEvents('default'), isEmpty,
-          reason: 'reflow is #44 and is asked for explicitly; a command that '
-              'quietly reflowed would be a second unasked-for decision');
+      expect(plan.dateAmounts.keys, [
+        Day.of(theDay),
+      ], reason: 'one day got an answer, and it is this one');
+      expect(
+        await repo.getEvents('default'),
+        isEmpty,
+        reason:
+            'reflow is #44 and is asked for explicitly; a command that '
+            'quietly reflowed would be a second unasked-for decision',
+      );
     });
   });
 }

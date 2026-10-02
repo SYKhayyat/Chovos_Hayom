@@ -53,34 +53,46 @@ import '../support/memory_database.dart';
 void main() {
   /// Ten leaves, because the claim being tested is about N.
   const leafIds = [
-    'shabbos', 'berachos', 'eruvin', 'pesachim', 'yoma',
-    'sukkah', 'beitzah', 'rosh_hashanah', 'taanis', 'megillah',
+    'shabbos',
+    'berachos',
+    'eruvin',
+    'pesachim',
+    'yoma',
+    'sukkah',
+    'beitzah',
+    'rosh_hashanah',
+    'taanis',
+    'megillah',
   ];
 
   Catalog catalog() => Catalog([
-        const CatalogNode(
-            id: 'root', parentId: null, name: 'Root', kind: NodeKind.category),
-        for (final id in leafIds)
-          CatalogNode(
-            id: id,
-            parentId: 'root',
-            name: id,
-            kind: NodeKind.leaf,
-            unitLabel: UnitLabel.daf,
-            unitCount: 63,
-            unitOffset: 2,
-          ),
-      ]);
+    const CatalogNode(
+      id: 'root',
+      parentId: null,
+      name: 'Root',
+      kind: NodeKind.category,
+    ),
+    for (final id in leafIds)
+      CatalogNode(
+        id: id,
+        parentId: 'root',
+        name: id,
+        kind: NodeKind.leaf,
+        unitLabel: UnitLabel.daf,
+        unitCount: 63,
+        unitOffset: 2,
+      ),
+  ]);
 
   LearningEvent done(int unit, {String node = 'shabbos'}) => LearningEvent(
-        id: '$node#$unit',
-        profileId: 'default',
-        nodeId: node,
-        unitIndex: unit,
-        action: EventAction.done,
-        occurredAt: DateTime(2026, 1, 5).add(Duration(hours: 24 * (unit % 20))),
-        loggedAt: DateTime(2026, 1, 5).add(Duration(hours: 24 * (unit % 20))),
-      );
+    id: '$node#$unit',
+    profileId: 'default',
+    nodeId: node,
+    unitIndex: unit,
+    action: EventAction.done,
+    occurredAt: DateTime(2026, 1, 5).add(Duration(hours: 24 * (unit % 20))),
+    loggedAt: DateTime(2026, 1, 5).add(Duration(hours: 24 * (unit % 20))),
+  );
 
   late CountingLog log;
   late StreamController<List<LearningEvent>> events;
@@ -91,23 +103,29 @@ void main() {
     events = StreamController<List<LearningEvent>>.broadcast();
     addTearDown(events.close);
 
-    container = ProviderContainer(overrides: [
-      catalogRepositoryProvider
-          .overrideWithValue(_FixedCatalogRepository(catalog())),
-      // Custom nodes, layers and layer configs still come from a real (empty)
-      // repository — the merged catalog and the layer roles both watch it.
-      progressRepositoryProvider.overrideWithValue(memoryRepository()),
-      appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-      // A builder rather than `overrideWithValue`, so the clock can be
-      // *invalidated* — which is what a midnight tick and an app resume both do
-      // to it, and the only way to make one happen to a provider without
-      // disposing that provider's own element.
-      clockProvider.overrideWith((ref) => () => DateTime(2026, 1, 20)),
-      // The log is injected rather than written through a repository, so that
-      // the thing under measurement is the only implementation detail in play.
-      // A second `ProgressRepository` is banned, and rightly.
-      eventsProvider.overrideWith((ref) => events.stream),
-    ]);
+    container = ProviderContainer(
+      overrides: [
+        catalogRepositoryProvider.overrideWithValue(
+          _FixedCatalogRepository(catalog()),
+        ),
+        // Custom nodes, layers and layer configs still come from a real (empty)
+        // repository — the merged catalog and the layer roles both watch it.
+        progressRepositoryProvider.overrideWithValue(memoryRepository()),
+        appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+        // A builder rather than `overrideWithValue`, so the clock can be
+        // *invalidated* — which is what a midnight tick and an app resume both do
+        // to it, and the only way to make one happen to a provider without
+        // disposing that provider's own element.
+        clockProvider.overrideWith(
+          (ref) =>
+              () => DateTime(2026, 1, 20),
+        ),
+        // The log is injected rather than written through a repository, so that
+        // the thing under measurement is the only implementation detail in play.
+        // A second `ProgressRepository` is banned, and rightly.
+        eventsProvider.overrideWith((ref) => events.stream),
+      ],
+    );
     addTearDown(container.dispose);
 
     await container.read(catalogProvider.future);
@@ -137,17 +155,24 @@ void main() {
     });
   });
 
-  test('deriving the whole stats surface costs two passes, not seven', () async {
-    final fresh = CountingLog([...log.inner, done(81)]);
-    events.add(fresh);
-    await pumpEventQueue();
-    container.read(statsProvider);
+  test(
+    'deriving the whole stats surface costs two passes, not seven',
+    () async {
+      final fresh = CountingLog([...log.inner, done(81)]);
+      events.add(fresh);
+      await pumpEventQueue();
+      container.read(statsProvider);
 
-    expect(fresh.passes, 2,
-        reason: 'the fold and the day index, once each. Every extra pass here '
+      expect(
+        fresh.passes,
+        2,
+        reason:
+            'the fold and the day index, once each. Every extra pass here '
             'is a scalar being recomputed from the raw log — which is what '
-            'statsProvider did five times over the fold it was already holding');
-  });
+            'statsProvider did five times over the fold it was already holding',
+      );
+    },
+  );
 
   test('ten goal rows cost no passes at all', () async {
     // Ten goals is not a stress test; it is a user with a target date on ten
@@ -155,7 +180,9 @@ void main() {
     final controller = container.read(goalsProvider.notifier);
     for (var i = 0; i < leafIds.length; i++) {
       await controller.setGoal(
-          leafIds[i], DateTime(2026, 6, 1).add(Duration(hours: 24 * i)));
+        leafIds[i],
+        DateTime(2026, 6, 1).add(Duration(hours: 24 * i)),
+      );
     }
     await pumpEventQueue();
 
@@ -165,11 +192,15 @@ void main() {
     }
     await pumpEventQueue();
 
-    expect(log.passes, 0,
-        reason: 'each goal used to run PaceEngine.averagePerDay over the whole '
-            'log itself, so ten of them cost ten identical thirty-day scans on '
-            'every rebuild. The pace is one number for the profile, so it is '
-            'derived once, in paceProvider');
+    expect(
+      log.passes,
+      0,
+      reason:
+          'each goal used to run PaceEngine.averagePerDay over the whole '
+          'log itself, so ten of them cost ten identical thirty-day scans on '
+          'every rebuild. The pace is one number for the profile, so it is '
+          'derived once, in paceProvider',
+    );
   });
 
   test('a midnight tick re-derives everything and re-reads nothing', () async {
@@ -192,10 +223,14 @@ void main() {
     container.read(goalStatusProvider('shabbos'));
     await pumpEventQueue();
 
-    expect(log.passes, 0,
-        reason: 'neither index depends on the clock, so a date change re-reads '
-            'no events. This used to cost five passes for stats plus one per '
-            'goal, every midnight and every app resume');
+    expect(
+      log.passes,
+      0,
+      reason:
+          'neither index depends on the clock, so a date change re-reads '
+          'no events. This used to cost five passes for stats plus one per '
+          'goal, every midnight and every app resume',
+    );
   });
 
   /// The backup reminder is the third axis over the log — distinct units
@@ -231,10 +266,14 @@ void main() {
       container.read(backupStatusProvider);
       await pumpEventQueue();
 
-      expect(log.passes, 0,
-          reason: 'the units recorded since the last export cannot change '
-              'because the date did. Only `daysSinceBackup` moves at midnight, '
-              'and that is a subtraction');
+      expect(
+        log.passes,
+        0,
+        reason:
+            'the units recorded since the last export cannot change '
+            'because the date did. Only `daysSinceBackup` moves at midnight, '
+            'and that is a subtraction',
+      );
     });
 
     test('changing an unrelated setting costs it nothing', () async {
@@ -242,13 +281,19 @@ void main() {
       await pumpEventQueue();
 
       log.reset();
-      await container.read(settingsProvider.notifier).setThemeMode(ThemeMode.dark);
+      await container
+          .read(settingsProvider.notifier)
+          .setThemeMode(ThemeMode.dark);
       await pumpEventQueue();
 
-      expect(log.passes, 0,
-          reason: 'it needs two scalars out of the settings object and watched '
-              'the whole of it, so switching to dark mode walked every event '
-              'ever recorded');
+      expect(
+        log.passes,
+        0,
+        reason:
+            'it needs two scalars out of the settings object and watched '
+            'the whole of it, so switching to dark mode walked every event '
+            'ever recorded',
+      );
     });
 
     test('a log change costs it exactly one pass', () async {
@@ -261,10 +306,14 @@ void main() {
       container.read(statsProvider);
       container.read(backupStatusProvider);
 
-      expect(fresh.passes, 3,
-          reason: 'the fold, the day index, and the backup axis once each. This '
-              'is the number that is allowed to be non-zero — a new event '
-              'genuinely can change what is unsaved');
+      expect(
+        fresh.passes,
+        3,
+        reason:
+            'the fold, the day index, and the backup axis once each. This '
+            'is the number that is allowed to be non-zero — a new event '
+            'genuinely can change what is unsaved',
+      );
     });
   });
 

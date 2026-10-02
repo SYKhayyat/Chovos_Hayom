@@ -24,29 +24,35 @@ void main() {
         child: localizedApp(home: UnitGridScreen(nodeId: id)),
       );
 
-  testWidgets('the title follows a rename made while the grid is open',
-      (tester) async {
+  testWidgets('the title follows a rename made while the grid is open', (
+    tester,
+  ) async {
     final repo = memoryRepository();
     await tester.pumpWidget(grid(repo));
     await tester.pumpAndSettle();
     expect(find.text('Shabbos'), findsOneWidget);
 
     await repo.addCustomNode(
-        'default', fakeCatalog().byId('shas.moed.shabbos')!.copyWith(name: 'Shabbos ב'));
+      'default',
+      fakeCatalog().byId('shas.moed.shabbos')!.copyWith(name: 'Shabbos ב'),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Shabbos ב'), findsOneWidget);
     expect(find.text('Shabbos'), findsNothing);
   });
 
-  testWidgets('a unit count raised while the grid is open grows the grid',
-      (tester) async {
+  testWidgets('a unit count raised while the grid is open grows the grid', (
+    tester,
+  ) async {
     final repo = memoryRepository();
     await tester.pumpWidget(grid(repo));
     await tester.pumpAndSettle();
 
-    await repo.addCustomNode('default',
-        fakeCatalog().byId('shas.moed.shabbos')!.copyWith(unitCount: 3));
+    await repo.addCustomNode(
+      'default',
+      fakeCatalog().byId('shas.moed.shabbos')!.copyWith(unitCount: 3),
+    );
     await tester.pumpAndSettle();
 
     // Offset 2, three units: 2, 3, 4 — and nothing beyond.
@@ -54,12 +60,14 @@ void main() {
     expect(find.text('5'), findsNothing);
   });
 
-  testWidgets('an id that does not resolve says so instead of spinning forever',
-      (tester) async {
-    await tester.pumpWidget(grid(memoryRepository(), id: 'gone'));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'an id that does not resolve says so instead of spinning forever',
+    (tester) async {
+      await tester.pumpWidget(grid(memoryRepository(), id: 'gone'));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.textContaining('no longer exists'), findsOneWidget);
-  });
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.textContaining('no longer exists'), findsOneWidget);
+    },
+  );
 }

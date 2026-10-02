@@ -138,7 +138,8 @@ class TapAny extends Act {
   final String? note;
 
   @override
-  String get intent => 'tap any of ${candidates.join(', ')}'
+  String get intent =>
+      'tap any of ${candidates.join(', ')}'
       '${note == null ? '' : ' — $note'}';
 
   @override
@@ -178,7 +179,8 @@ class OpenDrawer extends Act {
   final String? note;
 
   @override
-  String get intent => 'open the navigation drawer'
+  String get intent =>
+      'open the navigation drawer'
       '${note == null ? '' : ' — $note'}';
 
   @override
@@ -212,8 +214,8 @@ class OpenDrawer extends Act {
 /// two facts, and the whole bug was the difference.
 bool _canPress(HarnessContext c, Finder finder) =>
     c.input == HarnessInput.pointer
-        ? finder.hitTestable().evaluate().isNotEmpty
-        : _hasFocus(c, finder);
+    ? finder.hitTestable().evaluate().isNotEmpty
+    : _hasFocus(c, finder);
 
 /// Puts the app back where a person would start from.
 ///
@@ -266,7 +268,9 @@ class GoHome extends Act {
     // And home through the drawer, like a person, which is the navigation under
     // test as well as the reset.
     await const OpenDrawer().run(c);
-    await const TapAny(['Learning tree'], note: 'the first drawer entry').run(c);
+    await const TapAny([
+      'Learning tree',
+    ], note: 'the first drawer entry').run(c);
   }
 
   /// Pumps, and does not let a frame that will not settle end the run.
@@ -284,12 +288,13 @@ class GoHome extends Act {
 
   /// A cheap fingerprint of what is on screen, for "did that do anything".
   static String _screenSignature(WidgetTester tester) {
-    final texts = tester
-        .widgetList<Text>(find.byType(Text))
-        .map((t) => t.data)
-        .whereType<String>()
-        .toList()
-      ..sort();
+    final texts =
+        tester
+            .widgetList<Text>(find.byType(Text))
+            .map((t) => t.data)
+            .whereType<String>()
+            .toList()
+          ..sort();
     return texts.take(12).join('|');
   }
 }
@@ -301,7 +306,8 @@ class TapTooltip extends Act {
   final String? note;
 
   @override
-  String get intent => 'tap the "$tooltip" control${note == null ? '' : ' — $note'}';
+  String get intent =>
+      'tap the "$tooltip" control${note == null ? '' : ' — $note'}';
 
   @override
   Future<void> run(HarnessContext c) async {
@@ -326,17 +332,20 @@ class TapRow extends Act {
   final String? note;
 
   @override
-  String get intent => 'tap the row saying "$text"${note == null ? '' : ' — $note'}';
+  String get intent =>
+      'tap the row saying "$text"${note == null ? '' : ' — $note'}';
 
   @override
   Future<void> run(HarnessContext c) async {
     final finder = _reach(
       c,
-      find.ancestor(
-        of: find.text(text),
-        matching: find.byType(InkWell),
-        matchRoot: true,
-      ).first,
+      find
+          .ancestor(
+            of: find.text(text),
+            matching: find.byType(InkWell),
+            matchRoot: true,
+          )
+          .first,
     );
     if (c.input == HarnessInput.pointer) {
       await c.tester.tap(finder, warnIfMissed: false);
@@ -385,7 +394,8 @@ class Type extends Act {
   final String? note;
 
   @override
-  String get intent => 'type "$text"${into == null ? '' : ' into $into'}'
+  String get intent =>
+      'type "$text"${into == null ? '' : ' into $into'}'
       '${note == null ? '' : ' — $note'}';
 
   @override
@@ -418,7 +428,8 @@ class Press extends Act {
   final String? note;
 
   @override
-  String get intent => 'press ${key.keyLabel}'
+  String get intent =>
+      'press ${key.keyLabel}'
       '${times == 1 ? '' : ' $times times'}'
       '${note == null ? '' : ' — $note'}';
 
@@ -470,10 +481,7 @@ class ScrollTo extends Act {
         await Settle('after revealing "$text"').run(c);
         return;
       }
-      await c.tester.drag(
-        find.byType(Scrollable).last,
-        const Offset(0, -120),
-      );
+      await c.tester.drag(find.byType(Scrollable).last, const Offset(0, -120));
       await Settle('while scrolling to "$text"').run(c);
     }
     if (target.evaluate().isEmpty) {
@@ -539,7 +547,8 @@ class SeeAnyOf extends Act {
   final String? note;
 
   @override
-  String get intent => 'see one of ${candidates.join(', ')}'
+  String get intent =>
+      'see one of ${candidates.join(', ')}'
       '${note == null ? '' : ' — $note'}';
 
   @override
@@ -673,7 +682,8 @@ class SomethingIsShown extends Act {
   final String? note;
 
   @override
-  String get intent => 'the screen has content on it'
+  String get intent =>
+      'the screen has content on it'
       '${note == null ? '' : ' — $note'}';
 
   @override

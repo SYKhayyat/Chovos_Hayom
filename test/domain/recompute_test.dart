@@ -25,25 +25,31 @@ import 'package:flutter_test/flutter_test.dart';
 ///   the plan's own constraint would not be a reflow.
 var _seq = 0;
 LearningEvent done(String node, int unit, DateTime day) => LearningEvent(
-      id: 'e${_seq++}',
-      profileId: 'p',
-      nodeId: node,
-      unitIndex: unit,
-      action: EventAction.done,
-      occurredAt: day,
-      loggedAt: day,
-    );
+  id: 'e${_seq++}',
+  profileId: 'p',
+  nodeId: node,
+  unitIndex: unit,
+  action: EventAction.done,
+  occurredAt: day,
+  loggedAt: day,
+);
 
 final catalog = Catalog([
-  const CatalogNode(id: 'root', parentId: null, name: 'Root', kind: NodeKind.category),
   const CatalogNode(
-      id: 'n',
-      parentId: 'root',
-      name: 'Sefer',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.daf,
-      unitCount: 100,
-      unitOffset: 2),
+    id: 'root',
+    parentId: null,
+    name: 'Root',
+    kind: NodeKind.category,
+  ),
+  const CatalogNode(
+    id: 'n',
+    parentId: 'root',
+    name: 'Sefer',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.daf,
+    unitCount: 100,
+    unitOffset: 2,
+  ),
 ]);
 
 /// 2026-03-01 is a Sunday, and `weekdayAmounts` is how a rest day is expressed:
@@ -57,20 +63,17 @@ LearningPlan plan({
   Day? finishBy,
   Map<Day, int> dates = const {},
   Day? startDay,
-}) =>
-    LearningPlan(
-      id: 'p',
-      name: 'P',
-      unitsPerDay: unitsPerDay,
-      weekdayAmounts: weekdays,
-      dateAmounts: dates,
-      assignments: const [PlanAssignment(id: 'a', rule: DailyRule())],
-      items: const [PlanItem(id: 'i1', nodeId: 'n')],
-      startDay: startDay,
-      pacing: finishBy == null
-          ? AmountPerDay(unitsPerDay)
-          : FinishBy(finishBy),
-    );
+}) => LearningPlan(
+  id: 'p',
+  name: 'P',
+  unitsPerDay: unitsPerDay,
+  weekdayAmounts: weekdays,
+  dateAmounts: dates,
+  assignments: const [PlanAssignment(id: 'a', rule: DailyRule())],
+  items: const [PlanItem(id: 'i1', nodeId: 'n')],
+  startDay: startDay,
+  pacing: finishBy == null ? AmountPerDay(unitsPerDay) : FinishBy(finishBy),
+);
 
 /// What [plan] asks for on [day].
 int asks(LearningPlan p, Day day) => DayAmount.of(p, dayInfoFor(day));
@@ -92,7 +95,12 @@ void main() {
   group('keep the same amounts', () {
     test('changes nothing at all', () {
       final before = plan();
-      final result = Recompute.keepAsIs(before, catalog, FoldLog.fold([]), start);
+      final result = Recompute.keepAsIs(
+        before,
+        catalog,
+        FoldLog.fold([]),
+        start,
+      );
       expect(result.plan, before, reason: 'mode 1 is a no-op, and says so');
       expect(result.spreadOver, 0);
     });
@@ -120,8 +128,11 @@ void main() {
       );
       expect(result.shortfall, 4);
       for (final d in days) {
-        expect(asks(result.plan, d), 6,
-            reason: 'base 5 plus one, and evenly — nobody carries the day alone');
+        expect(
+          asks(result.plan, d),
+          6,
+          reason: 'base 5 plus one, and evenly — nobody carries the day alone',
+        );
       }
     });
 
@@ -144,9 +155,11 @@ void main() {
       expect(result.shortfall, 3);
       expect(asks(result.plan, days[0]), 7, reason: '5 base + 2');
       expect(asks(result.plan, days[1]), 6, reason: '5 base + 1');
-      expect(asks(result.plan, days[0]) + asks(result.plan, days[1]),
-          5 + 5 + 3,
-          reason: 'base for both days, plus the whole shortfall');
+      expect(
+        asks(result.plan, days[0]) + asks(result.plan, days[1]),
+        5 + 5 + 3,
+        reason: 'base for both days, plus the whole shortfall',
+      );
     });
 
     test('a shortfall of zero is not a reflow', () {
@@ -160,9 +173,13 @@ void main() {
         spread: const ReflowSpread.days(3),
       );
       expect(result.shortfall, 0);
-      expect(result.spreadOver, 0,
-          reason: 'nothing owed means nothing to spread, and the plan is left '
-              'alone rather than given 0-day overrides it would never have had');
+      expect(
+        result.spreadOver,
+        0,
+        reason:
+            'nothing owed means nothing to spread, and the plan is left '
+            'alone rather than given 0-day overrides it would never have had',
+      );
     });
   });
 
@@ -200,8 +217,11 @@ void main() {
         start,
         spread: ReflowSpread.untilEnd,
       );
-      expect(result.spreadOver, 7,
-          reason: 'the end is 6 days out, so 7 days including the day itself');
+      expect(
+        result.spreadOver,
+        7,
+        reason: 'the end is 6 days out, so 7 days including the day itself',
+      );
     });
 
     test('and "until the end" with no end is the same as all', () {
@@ -248,8 +268,11 @@ void main() {
         spread: const ReflowSpread.days(3),
       );
       expect(result.plan.id, 'p');
-      expect(result.plan.unitsPerDay, 3,
-          reason: 'the base is untouched; only days changed');
+      expect(
+        result.plan.unitsPerDay,
+        3,
+        reason: 'the base is untouched; only days changed',
+      );
     });
 
     test('it does not change the plan’s base or its rule', () {
@@ -262,8 +285,11 @@ void main() {
       );
       expect(result.plan.unitsPerDay, 5);
       expect(result.plan.assignments.single.rule, const DailyRule());
-      expect(result.plan.items, hasLength(1),
-          reason: 'the chain is not reflowed — only days move');
+      expect(
+        result.plan.items,
+        hasLength(1),
+        reason: 'the chain is not reflowed — only days move',
+      );
     });
 
     test('a day before the chosen one is untouched', () {
@@ -275,9 +301,13 @@ void main() {
         start,
         spread: ReflowSpread.all,
       );
-      expect(asks(result.plan, before), 5,
-          reason: 'reflow runs forward from the chosen day, and a day already '
-              'past is not a day it can change');
+      expect(
+        asks(result.plan, before),
+        5,
+        reason:
+            'reflow runs forward from the chosen day, and a day already '
+            'past is not a day it can change',
+      );
     });
   });
 
@@ -300,8 +330,11 @@ void main() {
       );
       expect(result.finishDayMoved, isTrue);
       expect(result.newFinishDay, isNotNull);
-      expect(result.newFinishDay! > start + 2, isTrue,
-          reason: 'and it moved later, because the work now lands later');
+      expect(
+        result.newFinishDay! > start + 2,
+        isTrue,
+        reason: 'and it moved later, because the work now lands later',
+      );
     });
 
     test('does not move when the spread fits inside it', () {
@@ -314,9 +347,13 @@ void main() {
         spread: const ReflowSpread.days(3),
       );
       expect(result.finishDayMoved, isFalse);
-      expect(result.newFinishDay, start + 20,
-          reason: 'the old date stands, reported so the screen can say '
-              '"unchanged" rather than guessing');
+      expect(
+        result.newFinishDay,
+        start + 20,
+        reason:
+            'the old date stands, reported so the screen can say '
+            '"unchanged" rather than guessing',
+      );
     });
 
     test('and a per-day plan has no finish date to move at all', () {
@@ -339,10 +376,18 @@ void main() {
       // is the one that keeps the shortfall intact.
       final p = plan(weekdays: {DateTime.saturday: 0});
       final fold = FoldLog.fold([done('n', 2, startDate)]);
-      final result =
-          Recompute.spread(p, catalog, fold, start, spread: const ReflowSpread.days(2));
-      expect(asks(result.plan, Day.of(DateTime.utc(2026, 3, 7))), 0,
-          reason: 'Shabbat, and it stays a rest day');
+      final result = Recompute.spread(
+        p,
+        catalog,
+        fold,
+        start,
+        spread: const ReflowSpread.days(2),
+      );
+      expect(
+        asks(result.plan, Day.of(DateTime.utc(2026, 3, 7))),
+        0,
+        reason: 'Shabbat, and it stays a rest day',
+      );
       expect(result.spreadOver, 2, reason: 'two *active* days absorbed it');
     });
   });

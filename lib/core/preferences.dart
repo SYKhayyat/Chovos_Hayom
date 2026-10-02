@@ -38,6 +38,7 @@ class PrefKeys {
   static const sortMetric = 'sortMetric';
   static const sortDescending = 'sortDescending';
   static const sortLevel = 'sortLevel';
+
   /// Comma-separated layer ids whose per-meforish coverage line is hidden in the
   /// tree. Absent/empty means every enabled meforish shows its bar.
   static const hiddenMeforishBars = 'hiddenMeforishBars';
@@ -147,8 +148,8 @@ class PrefKeys {
   /// list, so a key that is neither app-wide nor device-wide nor here fails the
   /// build rather than the user.
   static List<String> ownedBy(String profileId) => [
-        for (final key in perProfile) scoped(profileId, key),
-        for (final key in perProfileState) scoped(profileId, key),
-        goalsFor(profileId),
-      ];
+    for (final key in perProfile) scoped(profileId, key),
+    for (final key in perProfileState) scoped(profileId, key),
+    goalsFor(profileId),
+  ];
 }

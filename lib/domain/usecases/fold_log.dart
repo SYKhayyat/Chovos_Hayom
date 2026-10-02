@@ -258,7 +258,8 @@ class FoldLog {
           // A later `done` supersedes the earlier one's date and annotations —
           // the same rule UnitHistoryFinder shows the user.
           (doneAt[e.nodeId] ??= <int, DateTime>{})[e.unitIndex] = e.occurredAt;
-          (touchedAt[e.nodeId] ??= <int, DateTime>{})[e.unitIndex] = e.occurredAt;
+          (touchedAt[e.nodeId] ??= <int, DateTime>{})[e.unitIndex] =
+              e.occurredAt;
           // **Counted, not overwritten.** The date above is still "the last time",
           // which is a different question; this is "how many times", and it is
           // keyed by the day the user gave the tick — so a tick made on Friday

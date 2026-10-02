@@ -47,9 +47,9 @@ bool ringWouldSayAnything(Rect rect, Size screen) =>
 /// sends, so the bindings the desktop build already had reach the phone's menu
 /// key unchanged. Shift+F10 is kept for keyboards that have no menu key.
 Map<ShortcutActivator, VoidCallback> contextMenuBindings(VoidCallback open) => {
-      const SingleActivator(LogicalKeyboardKey.f10, shift: true): open,
-      const SingleActivator(LogicalKeyboardKey.contextMenu): open,
-    };
+  const SingleActivator(LogicalKeyboardKey.f10, shift: true): open,
+  const SingleActivator(LogicalKeyboardKey.contextMenu): open,
+};
 
 /// Makes a scroll view reachable with a D-pad when nothing inside it can focus.
 ///
@@ -79,7 +79,7 @@ class DpadScroll extends StatefulWidget {
   /// the lifetime here, so a `ConsumerWidget` screen can use this without
   /// growing a [State] of its own purely to own a controller.
   final Widget Function(BuildContext context, ScrollController controller)
-      builder;
+  builder;
 
   /// Whether to claim focus on arrival. True is right for a screen with nothing
   /// else to focus; false where something more useful should start focused.
@@ -138,8 +138,10 @@ class _DpadScrollState extends State<DpadScroll> {
     if (delta == null) return KeyEventResult.ignored;
 
     final position = _controller.position;
-    final target = (position.pixels + delta)
-        .clamp(position.minScrollExtent, position.maxScrollExtent);
+    final target = (position.pixels + delta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
     // At either end the key is deliberately *not* claimed, so focus can still
     // leave the screen — otherwise the app bar becomes unreachable from a
     // screen like this one.
@@ -267,7 +269,9 @@ class _FocusRingOverlayState extends State<FocusRingOverlay> {
     final context = focused.context;
     if (context == null) return null;
     final object = context.findRenderObject();
-    if (object is! RenderBox || !object.hasSize || !object.attached) return null;
+    if (object is! RenderBox || !object.hasSize || !object.attached) {
+      return null;
+    }
     final origin = object.localToGlobal(Offset.zero);
     if (!origin.dx.isFinite || !origin.dy.isFinite) return null;
     final rect = origin & object.size;
@@ -300,28 +304,30 @@ class _FocusRingOverlayState extends State<FocusRingOverlay> {
       child: Stack(
         children: [
           widget.child,
-          Builder(builder: (context) {
-            if (!_ringsVisible(context)) return const SizedBox.shrink();
-            final rect = _focusRect();
-            if (rect == null) return const SizedBox.shrink();
-            return Positioned.fromRect(
-              // Sitting just outside the widget, so it frames rather than
-              // covers — a 64dp grid cell has no room to give up to a border.
-              rect: rect.inflate(2),
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  key: focusRingKey,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: scheme.primary, width: 2),
-                    // A wash inside the ring as well: on a screen this small the
-                    // outline alone is easy to lose against dense text.
-                    color: scheme.primary.withValues(alpha: 0.12),
+          Builder(
+            builder: (context) {
+              if (!_ringsVisible(context)) return const SizedBox.shrink();
+              final rect = _focusRect();
+              if (rect == null) return const SizedBox.shrink();
+              return Positioned.fromRect(
+                // Sitting just outside the widget, so it frames rather than
+                // covers — a 64dp grid cell has no room to give up to a border.
+                rect: rect.inflate(2),
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    key: focusRingKey,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: scheme.primary, width: 2),
+                      // A wash inside the ring as well: on a screen this small the
+                      // outline alone is easy to lose against dense text.
+                      color: scheme.primary.withValues(alpha: 0.12),
+                    ),
                   ),
                 ),
-              ),
-            );
-          }),
+              );
+            },
+          ),
         ],
       ),
     );

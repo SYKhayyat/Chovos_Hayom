@@ -32,8 +32,10 @@ class EditCycleScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (cycleId == null) return const _CycleForm();
 
-    final matches =
-        ref.watch(cyclesConfigProvider).custom.where((c) => c.id == cycleId);
+    final matches = ref
+        .watch(cyclesConfigProvider)
+        .custom
+        .where((c) => c.id == cycleId);
     if (matches.isEmpty) {
       return MissingItemScreen(
         loading: false,
@@ -92,7 +94,8 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
 
     return Scaffold(
       appBar: AppBar(
-          title: Text(_isEdit ? l10n.editCycleTitle : l10n.newCycleTitle)),
+        title: Text(_isEdit ? l10n.editCycleTitle : l10n.newCycleTitle),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -132,11 +135,15 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
           Row(
             children: [
               Expanded(
-                child: Text(l10n.editCycleSefarimInOrder,
-                    style: Theme.of(context).textTheme.titleMedium),
+                child: Text(
+                  l10n.editCycleSefarimInOrder,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               ),
-              Text(l10n.editCycleTotalUnits(total),
-                  style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                l10n.editCycleTotalUnits(total),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           ),
           const SizedBox(height: 4),
@@ -152,8 +159,8 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
             physics: const NeverScrollableScrollPhysics(),
             // onReorderItem, not onReorder: it already accounts for the removed
             // item, so no index fix-up is needed.
-            onReorderItem: (from, to) => setState(
-                () => _segments.insert(to, _segments.removeAt(from))),
+            onReorderItem: (from, to) =>
+                setState(() => _segments.insert(to, _segments.removeAt(from))),
             children: [
               for (var i = 0; i < _segments.length; i++) _segmentTile(i),
             ],
@@ -166,9 +173,9 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
           const SizedBox(height: 24),
           FilledButton(
             onPressed: _save,
-            child: Text(_isEdit
-                ? l10n.editCycleSaveExisting
-                : l10n.editCycleCreate),
+            child: Text(
+              _isEdit ? l10n.editCycleSaveExisting : l10n.editCycleCreate,
+            ),
           ),
         ],
       ),
@@ -183,10 +190,13 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
       key: ValueKey('${segment.nodeId}#$i'),
       contentPadding: EdgeInsets.zero,
       leading: ReorderableDragStartListener(
-          index: i, child: const Icon(Icons.drag_handle)),
+        index: i,
+        child: const Icon(Icons.drag_handle),
+      ),
       title: Text(node == null ? segment.nodeId : nodeName(l10n, node)),
-      subtitle: Text(l10n.editCycleSegmentSubtitle(
-          segment.unitCount, segment.unitOffset)),
+      subtitle: Text(
+        l10n.editCycleSegmentSubtitle(segment.unitCount, segment.unitOffset),
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -195,16 +205,18 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
             tooltip: l10n.tooltipMoveUp,
             onPressed: i == 0
                 ? null
-                : () => setState(() =>
-                    _segments.insert(i - 1, _segments.removeAt(i))),
+                : () => setState(
+                    () => _segments.insert(i - 1, _segments.removeAt(i)),
+                  ),
           ),
           IconButton(
             icon: const Icon(Icons.arrow_downward, size: 18),
             tooltip: l10n.tooltipMoveDown,
             onPressed: i == _segments.length - 1
                 ? null
-                : () => setState(() =>
-                    _segments.insert(i + 1, _segments.removeAt(i))),
+                : () => setState(
+                    () => _segments.insert(i + 1, _segments.removeAt(i)),
+                  ),
           ),
           IconButton(
             icon: const Icon(Icons.close, size: 18),
@@ -252,11 +264,13 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
     setState(() {
       for (final leaf in catalog.leavesUnder(chosen.id)) {
         if (leaf.unitCount <= 0) continue;
-        _segments.add(CycleSegment(
-          nodeId: leaf.id,
-          unitCount: leaf.unitCount,
-          unitOffset: leaf.unitOffset,
-        ));
+        _segments.add(
+          CycleSegment(
+            nodeId: leaf.id,
+            unitCount: leaf.unitCount,
+            unitOffset: leaf.unitOffset,
+          ),
+        );
       }
     });
   }
@@ -285,14 +299,16 @@ class _CycleFormState extends ConsumerState<_CycleForm> {
 
     final cycles = ref.read(cyclesConfigProvider.notifier);
     final saved = await guard.run(
-      () => cycles.save(SequentialCycle(
-        id: widget.existing?.id ?? const Uuid().v4(),
-        name: name,
-        startDate: _startDate,
-        unitsPerDay: perDay,
-        repeats: _repeats,
-        segments: _segments,
-      )),
+      () => cycles.save(
+        SequentialCycle(
+          id: widget.existing?.id ?? const Uuid().v4(),
+          name: name,
+          startDate: _startDate,
+          unitsPerDay: perDay,
+          repeats: _repeats,
+          segments: _segments,
+        ),
+      ),
       what: l10n.whatSavingCycle(name),
     );
     if (saved) navigator.pop();

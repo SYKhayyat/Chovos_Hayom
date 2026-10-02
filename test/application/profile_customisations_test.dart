@@ -70,25 +70,26 @@ void main() {
     expect(made.layers, isEmpty);
   });
 
-  test('the export carries what the profile has, with nothing to pass in',
-      () async {
-    // The whole point of the parameters going away. There is no list to hand
-    // over, so there is no empty one to hand over by accident.
-    final repo = memoryRepository();
-    await repo.addCustomNode(profile, sefer);
-    await repo.addCustomLayer(profile, meforish);
-    await repo.setLayerConfig(profile, config);
+  test(
+    'the export carries what the profile has, with nothing to pass in',
+    () async {
+      // The whole point of the parameters going away. There is no list to hand
+      // over, so there is no empty one to hand over by accident.
+      final repo = memoryRepository();
+      await repo.addCustomNode(profile, sefer);
+      await repo.addCustomLayer(profile, meforish);
+      await repo.setLayerConfig(profile, config);
 
-    final json =
-        jsonDecode(await BackupService(repo).export(profile)) as Map;
+      final json = jsonDecode(await BackupService(repo).export(profile)) as Map;
 
-    List<Map<String, dynamic>> rows(String field) =>
-        (json[field] as List).cast<Map<String, dynamic>>();
+      List<Map<String, dynamic>> rows(String field) =>
+          (json[field] as List).cast<Map<String, dynamic>>();
 
-    expect(rows('customNodes').single['id'], 'custom.mine');
-    expect(rows('customLayers').single['id'], 'my-meforish');
-    expect(rows('layerConfigs').single['nodeId'], 'custom.mine');
-  });
+      expect(rows('customNodes').single['id'], 'custom.mine');
+      expect(rows('customLayers').single['id'], 'my-meforish');
+      expect(rows('layerConfigs').single['nodeId'], 'custom.mine');
+    },
+  );
 
   /// And the rule, rather than the three sites that currently obey it.
   test('nothing reads the three collections as a hand-written triple', () {
@@ -106,16 +107,20 @@ void main() {
     ];
 
     for (final g in getters) {
-      expect(RegExp(g).hasMatch('await repo.${g.replaceAll(r'\(', '(')}p)'),
-          isTrue,
-          reason: 'the pattern for $g no longer matches its own sample');
+      expect(
+        RegExp(g).hasMatch('await repo.${g.replaceAll(r'\(', '(')}p)'),
+        isTrue,
+        reason: 'the pattern for $g no longer matches its own sample',
+      );
     }
 
     final violations = <String>[];
     for (final path in dartSourcesUnder()) {
       if (path == home || definitions.contains(path)) continue;
-      final lines =
-          codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch);
+      final lines = codeLines(
+        File(path).readAsStringSync(),
+        escapeHatch: escapeHatch,
+      );
       final source = lines.map((l) => l.text).join('\n');
       final used = getters.where((g) => RegExp(g).hasMatch(source)).toList();
       // One or two of them is a different question — the meforish delete asks
@@ -125,9 +130,13 @@ void main() {
       if (used.length == getters.length) violations.add(path);
     }
 
-    expect(violations, isEmpty,
-        reason: 'read them through ProfileCustomisations.of, which goes to the '
-            'repository rather than to whatever happens to be cached:\n'
-            '${violations.join('\n')}');
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'read them through ProfileCustomisations.of, which goes to the '
+          'repository rather than to whatever happens to be cached:\n'
+          '${violations.join('\n')}',
+    );
   });
 }

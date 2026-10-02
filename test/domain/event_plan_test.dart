@@ -24,17 +24,16 @@ void main() {
     String? planId,
     DateTime? occurredAt,
     EventAction action = EventAction.done,
-  }) =>
-      LearningEvent(
-        id: 'e1',
-        profileId: 'p',
-        nodeId: 'shabbos',
-        unitIndex: 2,
-        action: action,
-        occurredAt: occurredAt ?? DateTime.utc(2026, 3, 1),
-        loggedAt: DateTime.utc(2026, 3, 1),
-        planId: planId,
-      );
+  }) => LearningEvent(
+    id: 'e1',
+    profileId: 'p',
+    nodeId: 'shabbos',
+    unitIndex: 2,
+    action: action,
+    occurredAt: occurredAt ?? DateTime.utc(2026, 3, 1),
+    loggedAt: DateTime.utc(2026, 3, 1),
+    planId: planId,
+  );
 
   group('a tick knows which plan asked for it', () {
     test('an off-plan tick — from the unit grid — carries no plan', () {
@@ -50,23 +49,26 @@ void main() {
     test('the two are distinguishable, which is the whole point', () {
       // Without this the app cannot answer "what did I do today?" without
       // mixing a grid tick in with what the plan asked for.
-      expect(ev().toJson().containsKey('planId'), isFalse,
-          reason: 'absent when null, so an off-plan tick stays the same bytes '
-              'an old backup has');
+      expect(
+        ev().toJson().containsKey('planId'),
+        isFalse,
+        reason:
+            'absent when null, so an off-plan tick stays the same bytes '
+            'an old backup has',
+      );
       expect(ev(planId: 'p1').toJson()['planId'], 'p1');
     });
 
     test('a tick for a day carries that day, not the day it was recorded', () {
       // Marking already accepts an earlier date; a plan tick for Thursday made
       // on Friday must land on Thursday or the day's ledger is wrong.
-      final e = ev(
-        planId: 'daf-yomi',
-        occurredAt: DateTime.utc(2026, 2, 26),
-      );
+      final e = ev(planId: 'daf-yomi', occurredAt: DateTime.utc(2026, 2, 26));
       expect(e.occurredAt, DateTime.utc(2026, 2, 26));
       expect(e.loggedAt, DateTime.utc(2026, 3, 1));
-      expect(LearningEvent.fromJson(e.toJson()).occurredAt,
-          DateTime.utc(2026, 2, 26));
+      expect(
+        LearningEvent.fromJson(e.toJson()).occurredAt,
+        DateTime.utc(2026, 2, 26),
+      );
     });
   });
 
@@ -80,8 +82,9 @@ void main() {
       // An old file has no `planId` key at all, and must read as an off-plan
       // tick rather than failing — the user did do that work, just without a
       // plan attached.
-      final legacy = jsonDecode(jsonEncode(ev(planId: 'p1').toJson()))
-          as Map<String, dynamic>;
+      final legacy =
+          jsonDecode(jsonEncode(ev(planId: 'p1').toJson()))
+              as Map<String, dynamic>;
       legacy.remove('planId');
       expect(LearningEvent.fromJson(legacy).planId, isNull);
     });
@@ -109,16 +112,20 @@ void main() {
     test('LearningEvent gained exactly one field, and it is planId', () {
       // The guard reads the constructor out of the source rather than assuming
       // it, so this is a change in the *number* that needs a reason.
-      final source =
-          File('lib/domain/entities/learning_event.dart').readAsStringSync();
-      final ctor = RegExp(r'const LearningEvent\(\{([\s\S]*?)\}\);')
-          .firstMatch(source)!
-          .group(1)!;
+      final source = File(
+        'lib/domain/entities/learning_event.dart',
+      ).readAsStringSync();
+      final ctor = RegExp(
+        r'const LearningEvent\(\{([\s\S]*?)\}\);',
+      ).firstMatch(source)!.group(1)!;
       final fields = [
         for (final m in RegExp(r'this\.(\w+)').allMatches(ctor)) m.group(1)!,
       ];
-      expect(fields, hasLength(12),
-          reason: 'was 11; a twelfth field needs a reason in the same commit');
+      expect(
+        fields,
+        hasLength(12),
+        reason: 'was 11; a twelfth field needs a reason in the same commit',
+      );
       expect(fields, contains('planId'));
     });
   });

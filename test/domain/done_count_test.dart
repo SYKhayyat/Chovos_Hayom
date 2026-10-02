@@ -70,8 +70,11 @@ void main() {
       // is what "when did I last do this" wants — but the count keeps both.
       final fold = FoldLog.fold([done('n', 2, y2019), done('n', 2, y2026)]);
       expect(fold.doneCount('n', 2), 2);
-      expect(fold.doneAt('n', 2), y2026,
-          reason: 'the latest date is still what "last did" means');
+      expect(
+        fold.doneAt('n', 2),
+        y2026,
+        reason: 'the latest date is still what "last did" means',
+      );
     });
 
     test('a unit never ticked is zero, not an error', () {
@@ -81,10 +84,7 @@ void main() {
 
   group('per day, so history is answerable', () {
     test('each day holds its own count', () {
-      final fold = FoldLog.fold([
-        done('n', 2, y2019),
-        done('n', 2, y2026),
-      ]);
+      final fold = FoldLog.fold([done('n', 2, y2019), done('n', 2, y2026)]);
       expect(fold.doneCountOn('n', 2, Day.of(y2019)), 1);
       expect(fold.doneCountOn('n', 2, Day.of(y2026)), 1);
     });
@@ -102,8 +102,7 @@ void main() {
       expect(fold.doneCountAsOf('n', 2, Day.of(DateTime.utc(2030, 1, 1))), 2);
     });
 
-    test('"as of" is exclusive, so a unit learned that day is still owed',
-        () {
+    test('"as of" is exclusive, so a unit learned that day is still owed', () {
       // The rule the whole planner already depends on: a plan must not report
       // itself finished on the day it finishes.
       final fold = FoldLog.fold([done('n', 2, y2026)]);
@@ -128,9 +127,13 @@ void main() {
         done('n', 2, y2026),
         done('n', 2, y2026, planId: 'daf-yomi'),
       ]);
-      expect(fold.doneCountForPlan('daf-yomi'), 1,
-          reason: 'the day ledger reads this: what this plan asked, and what was '
-              'ticked for it, separately from the grid');
+      expect(
+        fold.doneCountForPlan('daf-yomi'),
+        1,
+        reason:
+            'the day ledger reads this: what this plan asked, and what was '
+            'ticked for it, separately from the grid',
+      );
     });
 
     test('a plan with no ticks has none', () {
@@ -148,9 +151,13 @@ void main() {
         undone('n', 2, y2019),
       ]);
       expect(fold.doneCountOn('n', 2, Day.of(y2019)), 0);
-      expect(fold.doneCountOn('n', 2, Day.of(y2026)), 1,
-          reason: 'the 2026 tick is untouched; an un-tick takes back what it '
-              'names and nothing else');
+      expect(
+        fold.doneCountOn('n', 2, Day.of(y2026)),
+        1,
+        reason:
+            'the 2026 tick is untouched; an un-tick takes back what it '
+            'names and nothing else',
+      );
       expect(fold.doneCount('n', 2), 1);
     });
 
@@ -182,8 +189,11 @@ void main() {
         done('n', 2, y2026),
         undone('n', 2, y2019),
       ]);
-      expect(fold.completedLayers('n', 2), isNotEmpty,
-          reason: 'still done this month, so the progress bar must not drop it');
+      expect(
+        fold.completedLayers('n', 2),
+        isNotEmpty,
+        reason: 'still done this month, so the progress bar must not drop it',
+      );
       expect(fold.doneAt('n', 2), y2026);
     });
 

@@ -12,33 +12,40 @@ import 'package:flutter_test/flutter_test.dart';
 
 var _seq = 0;
 LearningEvent done(String node, int unit, DateTime day) => LearningEvent(
-      id: 'e${_seq++}',
-      profileId: 'p',
-      nodeId: node,
-      unitIndex: unit,
-      action: EventAction.done,
-      occurredAt: day,
-      loggedAt: day,
-    );
+  id: 'e${_seq++}',
+  profileId: 'p',
+  nodeId: node,
+  unitIndex: unit,
+  action: EventAction.done,
+  occurredAt: day,
+  loggedAt: day,
+);
 
 final catalog = Catalog([
-  const CatalogNode(id: 'root', parentId: null, name: 'Root', kind: NodeKind.category),
   const CatalogNode(
-      id: 'small',
-      parentId: 'root',
-      name: 'Small',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.perek,
-      unitCount: 3,
-      unitOffset: 1),
+    id: 'root',
+    parentId: null,
+    name: 'Root',
+    kind: NodeKind.category,
+  ),
   const CatalogNode(
-      id: 'big',
-      parentId: 'root',
-      name: 'Big',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.daf,
-      unitCount: 5,
-      unitOffset: 2),
+    id: 'small',
+    parentId: 'root',
+    name: 'Small',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.perek,
+    unitCount: 3,
+    unitOffset: 1,
+  ),
+  const CatalogNode(
+    id: 'big',
+    parentId: 'root',
+    name: 'Big',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.daf,
+    unitCount: 5,
+    unitOffset: 2,
+  ),
 ]);
 
 final today = Day.of(DateTime(2026, 1, 1));
@@ -50,12 +57,11 @@ List<ScheduledSiyum> projectedFor(
   List<LearningEvent> events, {
   double perDay = 1,
   Day? from,
-}) =>
-    SiyumSchedule.projected(
-      forest: forestFor(events),
-      perDay: perDay,
-      today: from ?? today,
-    );
+}) => SiyumSchedule.projected(
+  forest: forestFor(events),
+  perDay: perDay,
+  today: from ?? today,
+);
 
 void main() {
   setUp(() => _seq = 0);
@@ -67,23 +73,26 @@ void main() {
       // leads with the leaves, ending on the whole-catalog siyum.
       final scheduled = projectedFor([], perDay: 1);
       expect(scheduled.map((s) => s.node.id), ['small', 'big', 'root']);
-      expect(scheduled.map((s) => s.day),
-          [today + 2, today + 4, today + 7]);
+      expect(scheduled.map((s) => s.day), [today + 2, today + 4, today + 7]);
       expect(scheduled.map((s) => s.remaining), [3, 5, 8]);
       expect(scheduled.first.isCategory, isFalse);
       expect(scheduled.last.isCategory, isTrue, reason: 'root is a category');
     });
 
-    test('the projection reads remaining, so progress pulls the day nearer', () {
-      // Small is 3 units; with 1 of 3 done it owes 2, so at 1/day it lands a
-      // day sooner than an untouched Small would.
-      final before = projectedFor([]).firstWhere((s) => s.node.id == 'small');
-      final after = projectedFor([done('small', 1, DateTime(2026, 1, 1))])
-          .firstWhere((s) => s.node.id == 'small');
-      expect(before.remaining, 3);
-      expect(after.remaining, 2);
-      expect(after.day, today + 1);
-    });
+    test(
+      'the projection reads remaining, so progress pulls the day nearer',
+      () {
+        // Small is 3 units; with 1 of 3 done it owes 2, so at 1/day it lands a
+        // day sooner than an untouched Small would.
+        final before = projectedFor([]).firstWhere((s) => s.node.id == 'small');
+        final after = projectedFor([
+          done('small', 1, DateTime(2026, 1, 1)),
+        ]).firstWhere((s) => s.node.id == 'small');
+        expect(before.remaining, 3);
+        expect(after.remaining, 2);
+        expect(after.day, today + 1);
+      },
+    );
 
     test('a completed node drops out of the schedule entirely', () {
       // Marking the last unit of Small does not "confirm" a stored siyum — the
@@ -96,13 +105,18 @@ void main() {
       final forest = RollUp.buildForest(catalog, fold);
 
       final scheduled = SiyumSchedule.projected(
-          forest: forest, perDay: 1, today: today);
+        forest: forest,
+        perDay: 1,
+        today: today,
+      );
       expect(scheduled.map((s) => s.node.id), isNot(contains('small')));
 
       // The two halves agree: small is no longer scheduled, and the real siyum
       // has taken over from the log's own finder.
-      expect(SiyumFinder.completed(forest, fold).map((s) => s.node.id),
-          contains('small'));
+      expect(
+        SiyumFinder.completed(forest, fold).map((s) => s.node.id),
+        contains('small'),
+      );
     });
 
     test('the scheduled and completed views partition the nodes', () {
@@ -115,11 +129,14 @@ void main() {
       final forest = RollUp.buildForest(catalog, fold);
 
       final scheduledIds = SiyumSchedule.projected(
-              forest: forest, perDay: 1, today: today)
-          .map((s) => s.node.id)
-          .toSet();
-      final completedIds =
-          SiyumFinder.completed(forest, fold).map((s) => s.node.id).toSet();
+        forest: forest,
+        perDay: 1,
+        today: today,
+      ).map((s) => s.node.id).toSet();
+      final completedIds = SiyumFinder.completed(
+        forest,
+        fold,
+      ).map((s) => s.node.id).toSet();
 
       // Small is complete; root and Big are still owed. No overlap.
       expect(completedIds, contains('small'));
@@ -152,10 +169,14 @@ void main() {
 
     test('a faster pace schedules every siyum sooner', () {
       final events = [done('small', 1, DateTime(2026, 1, 1))];
-      final slow = projectedFor(events, perDay: 1)
-          .firstWhere((s) => s.node.id == 'small');
-      final fast = projectedFor(events, perDay: 2)
-          .firstWhere((s) => s.node.id == 'small');
+      final slow = projectedFor(
+        events,
+        perDay: 1,
+      ).firstWhere((s) => s.node.id == 'small');
+      final fast = projectedFor(
+        events,
+        perDay: 2,
+      ).firstWhere((s) => s.node.id == 'small');
       expect(fast.day, today);
       expect(slow.day, today + 1);
     });
@@ -188,20 +209,28 @@ void main() {
   group('ScheduledSiyum', () {
     test('is a value type', () {
       final forest = forestFor([]);
-      List<ScheduledSiyum> project() => SiyumSchedule.projected(
-          forest: forest, perDay: 1, today: today);
+      List<ScheduledSiyum> project() =>
+          SiyumSchedule.projected(forest: forest, perDay: 1, today: today);
       expect(project().first, project().first);
       // Different remaining (progress) is a different siyum.
       final progressed = SiyumSchedule.projected(
-        forest: RollUp.buildForest(catalog, FoldLog.fold([
-          done('small', 1, DateTime(2026, 1, 1)),
-        ])),
+        forest: RollUp.buildForest(
+          catalog,
+          FoldLog.fold([done('small', 1, DateTime(2026, 1, 1))]),
+        ),
         perDay: 1,
         today: today,
       );
-      expect(project().first, isNot(progressed.firstWhere(
-            (s) => s.node.id == 'small' && s.remaining != project().first.remaining,
-          )));
+      expect(
+        project().first,
+        isNot(
+          progressed.firstWhere(
+            (s) =>
+                s.node.id == 'small' &&
+                s.remaining != project().first.remaining,
+          ),
+        ),
+      );
     });
   });
 }

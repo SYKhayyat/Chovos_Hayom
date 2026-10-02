@@ -10,10 +10,12 @@ import '../support/fake_catalog.dart';
 import '../support/memory_database.dart';
 
 ProviderContainer makeContainer(ProgressRepository repo) {
-  final c = ProviderContainer(overrides: [
-    catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-    progressRepositoryProvider.overrideWithValue(repo),
-  ]);
+  final c = ProviderContainer(
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(repo),
+    ],
+  );
   return c;
 }
 

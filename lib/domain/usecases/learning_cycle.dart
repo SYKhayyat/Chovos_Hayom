@@ -29,20 +29,27 @@ class CycleDay {
 /// One segment of a user-defined cycle: a catalog node and how many of its units
 /// the cycle covers. Stored by id so the cycle survives the node being renamed.
 class CycleSegment {
-  const CycleSegment({required this.nodeId, required this.unitCount, this.unitOffset = 0});
+  const CycleSegment({
+    required this.nodeId,
+    required this.unitCount,
+    this.unitOffset = 0,
+  });
 
   final String nodeId;
   final int unitCount;
   final int unitOffset;
 
-  Map<String, dynamic> toJson() =>
-      {'nodeId': nodeId, 'unitCount': unitCount, 'unitOffset': unitOffset};
+  Map<String, dynamic> toJson() => {
+    'nodeId': nodeId,
+    'unitCount': unitCount,
+    'unitOffset': unitOffset,
+  };
 
   factory CycleSegment.fromJson(Map<String, dynamic> json) => CycleSegment(
-        nodeId: json['nodeId'] as String,
-        unitCount: (json['unitCount'] as num).toInt(),
-        unitOffset: (json['unitOffset'] as num?)?.toInt() ?? 0,
-      );
+    nodeId: json['nodeId'] as String,
+    unitCount: (json['unitCount'] as num).toInt(),
+    unitOffset: (json['unitOffset'] as num?)?.toInt() ?? 0,
+  );
 }
 
 /// A user-defined cycle: walk these sefarim, in this order, this many units a
@@ -133,15 +140,16 @@ class SequentialCycle {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'startDate': startDate.toIso8601String(),
-        'unitsPerDay': unitsPerDay,
-        'repeats': repeats,
-        'segments': [for (final s in segments) s.toJson()],
-      };
+    'id': id,
+    'name': name,
+    'startDate': startDate.toIso8601String(),
+    'unitsPerDay': unitsPerDay,
+    'repeats': repeats,
+    'segments': [for (final s in segments) s.toJson()],
+  };
 
-  factory SequentialCycle.fromJson(Map<String, dynamic> json) => SequentialCycle(
+  factory SequentialCycle.fromJson(Map<String, dynamic> json) =>
+      SequentialCycle(
         id: json['id'] as String,
         name: json['name'] as String,
         startDate: DateTime.parse(json['startDate'] as String),

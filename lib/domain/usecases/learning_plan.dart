@@ -31,12 +31,12 @@ class PlanAssignment {
   final String? label;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'rule': rule.toJson(),
-        if (targetNodeId != null) 'targetNodeId': targetNodeId,
-        'unitsPerFiring': unitsPerFiring,
-        if (label != null) 'label': label,
-      };
+    'id': id,
+    'rule': rule.toJson(),
+    if (targetNodeId != null) 'targetNodeId': targetNodeId,
+    'unitsPerFiring': unitsPerFiring,
+    if (label != null) 'label': label,
+  };
 
   factory PlanAssignment.fromJson(Map<String, dynamic> json) {
     final units = (json['unitsPerFiring'] as num?)?.toInt() ?? 1;
@@ -46,7 +46,8 @@ class PlanAssignment {
     return PlanAssignment(
       id: json['id'] as String,
       rule: RecurrenceRule.fromJson(
-          (json['rule'] as Map<dynamic, dynamic>).cast<String, dynamic>()),
+        (json['rule'] as Map<dynamic, dynamic>).cast<String, dynamic>(),
+      ),
       targetNodeId: json['targetNodeId'] as String?,
       unitsPerFiring: units,
       label: json['label'] as String?,
@@ -63,7 +64,8 @@ class PlanAssignment {
       other.label == label;
 
   @override
-  int get hashCode => Object.hash(id, rule, targetNodeId, unitsPerFiring, label);
+  int get hashCode =>
+      Object.hash(id, rule, targetNodeId, unitsPerFiring, label);
 }
 
 class PlanOverride {
@@ -78,16 +80,16 @@ class PlanOverride {
   final Day to;
 
   Map<String, dynamic> toJson() => {
-        'assignmentId': assignmentId,
-        'from': from.toString(),
-        'to': to.toString(),
-      };
+    'assignmentId': assignmentId,
+    'from': from.toString(),
+    'to': to.toString(),
+  };
 
   factory PlanOverride.fromJson(Map<String, dynamic> json) => PlanOverride(
-        assignmentId: json['assignmentId'] as String,
-        from: Day.of(DateTime.parse(json['from'] as String)),
-        to: Day.of(DateTime.parse(json['to'] as String)),
-      );
+    assignmentId: json['assignmentId'] as String,
+    from: Day.of(DateTime.parse(json['from'] as String)),
+    to: Day.of(DateTime.parse(json['to'] as String)),
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -155,13 +157,13 @@ class PlanItem {
   bool get isOpenEnded => endUnit == null;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'nodeId': nodeId,
-        if (label != null) 'label': label,
-        if (startUnit != null) 'startUnit': startUnit,
-        if (endUnit != null) 'endUnit': endUnit,
-        if (wrapsRange) 'wrapsRange': true,
-      };
+    'id': id,
+    'nodeId': nodeId,
+    if (label != null) 'label': label,
+    if (startUnit != null) 'startUnit': startUnit,
+    if (endUnit != null) 'endUnit': endUnit,
+    if (wrapsRange) 'wrapsRange': true,
+  };
 
   factory PlanItem.fromJson(Map<String, dynamic> json) {
     final start = _unit(json['startUnit'], 'startUnit');
@@ -241,10 +243,12 @@ sealed class PlanPacing {
       switch (json['mode']) {
         'amountPerDay' => AmountPerDay(_amount(json)),
         'finishBy' => FinishBy(
-            Day.of(DateTime.parse(json['finishDay'] as String))),
+          Day.of(DateTime.parse(json['finishDay'] as String)),
+        ),
         _ => throw FormatException(
-            'unknown pacing mode: ${json['mode']} — expected '
-            '"amountPerDay" or "finishBy"'),
+          'unknown pacing mode: ${json['mode']} — expected '
+          '"amountPerDay" or "finishBy"',
+        ),
       };
 
   /// Refuses a negative amount, as the planner does everywhere else.
@@ -256,8 +260,7 @@ sealed class PlanPacing {
   static int _amount(Map<String, dynamic> json) {
     final value = (json['unitsPerDay'] as num?)?.toInt();
     if (value == null) {
-      throw const FormatException(
-          'amountPerDay pacing needs a unitsPerDay');
+      throw const FormatException('amountPerDay pacing needs a unitsPerDay');
     }
     if (value < 0) {
       throw FormatException('unitsPerDay must not be negative, got $value');
@@ -284,15 +287,16 @@ class AmountPerDay extends PlanPacing {
 
   @override
   Map<String, dynamic> toJson() => {
-        'mode': 'amountPerDay',
-        'unitsPerDay': unitsPerDay,
-      };
+    'mode': 'amountPerDay',
+    'unitsPerDay': unitsPerDay,
+  };
 
   factory AmountPerDay.fromJson(Map<String, dynamic> json) =>
       AmountPerDay(PlanPacing.fromJson(json).unitsPerDay!);
 
   @override
-  bool _same(PlanPacing other) => other is AmountPerDay && other.unitsPerDay == unitsPerDay;
+  bool _same(PlanPacing other) =>
+      other is AmountPerDay && other.unitsPerDay == unitsPerDay;
 
   @override
   String toString() => 'AmountPerDay($unitsPerDay)';
@@ -307,15 +311,16 @@ class FinishBy extends PlanPacing {
 
   @override
   Map<String, dynamic> toJson() => {
-        'mode': 'finishBy',
-        'finishDay': finishDay.toString(),
-      };
+    'mode': 'finishBy',
+    'finishDay': finishDay.toString(),
+  };
 
   factory FinishBy.fromJson(Map<String, dynamic> json) =>
       FinishBy(PlanPacing.fromJson(json).finishDay!);
 
   @override
-  bool _same(PlanPacing other) => other is FinishBy && other.finishDay == finishDay;
+  bool _same(PlanPacing other) =>
+      other is FinishBy && other.finishDay == finishDay;
 
   @override
   String toString() => 'FinishBy($finishDay)';
@@ -437,29 +442,29 @@ class LearningPlan {
       assignments.any((a) => a.rule.calendar == RuleCalendar.hebrew);
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'displayCalendar': displayCalendar.name,
-        'assignments': [for (final a in assignments) a.toJson()],
-        'overrides': [for (final o in overrides) o.toJson()],
-        'unitsPerDay': unitsPerDay,
-        'spillover': spillover.name,
-        if (items.isNotEmpty) 'items': [for (final i in items) i.toJson()],
-        'flowsToNextItem': flowsToNextItem,
-        // Omitted when null, which is "today". See [startDay].
-        if (startDay != null) 'startDay': startDay.toString(),
-        'pacing': pacing.toJson(),
-        if (weekdayAmounts.isNotEmpty)
-          'weekdayAmounts': {
-            for (final e in weekdayAmounts.entries) '${e.key}': e.value,
-          },
-        if (dateAmounts.isNotEmpty)
-          'dateAmounts': {
-            // Keyed by ISO `YYYY-MM-DD`, the same shape `PlanOverride` uses and
-            // the only string form of a day that survives a round trip.
-            for (final e in dateAmounts.entries) e.key.toString(): e.value,
-          },
-      };
+    'id': id,
+    'name': name,
+    'displayCalendar': displayCalendar.name,
+    'assignments': [for (final a in assignments) a.toJson()],
+    'overrides': [for (final o in overrides) o.toJson()],
+    'unitsPerDay': unitsPerDay,
+    'spillover': spillover.name,
+    if (items.isNotEmpty) 'items': [for (final i in items) i.toJson()],
+    'flowsToNextItem': flowsToNextItem,
+    // Omitted when null, which is "today". See [startDay].
+    if (startDay != null) 'startDay': startDay.toString(),
+    'pacing': pacing.toJson(),
+    if (weekdayAmounts.isNotEmpty)
+      'weekdayAmounts': {
+        for (final e in weekdayAmounts.entries) '${e.key}': e.value,
+      },
+    if (dateAmounts.isNotEmpty)
+      'dateAmounts': {
+        // Keyed by ISO `YYYY-MM-DD`, the same shape `PlanOverride` uses and
+        // the only string form of a day that survives a round trip.
+        for (final e in dateAmounts.entries) e.key.toString(): e.value,
+      },
+  };
 
   factory LearningPlan.fromJson(Map<String, dynamic> json) {
     final unitsPerDay = (json['unitsPerDay'] as num?)?.toInt() ?? 1;
@@ -476,12 +481,14 @@ class LearningPlan {
       assignments: [
         for (final a in (json['assignments'] as List<dynamic>? ?? const []))
           PlanAssignment.fromJson(
-              (a as Map<dynamic, dynamic>).cast<String, dynamic>()),
+            (a as Map<dynamic, dynamic>).cast<String, dynamic>(),
+          ),
       ],
       overrides: [
         for (final o in (json['overrides'] as List<dynamic>? ?? const []))
           PlanOverride.fromJson(
-              (o as Map<dynamic, dynamic>).cast<String, dynamic>()),
+            (o as Map<dynamic, dynamic>).cast<String, dynamic>(),
+          ),
       ],
       unitsPerDay: unitsPerDay,
       // An unknown name falls back to `ignore` rather than throwing: a plan
@@ -494,7 +501,9 @@ class LearningPlan {
       ),
       items: [
         for (final i in (json['items'] as List<dynamic>? ?? const []))
-          PlanItem.fromJson((i as Map<dynamic, dynamic>).cast<String, dynamic>()),
+          PlanItem.fromJson(
+            (i as Map<dynamic, dynamic>).cast<String, dynamic>(),
+          ),
       ],
       flowsToNextItem: json['flowsToNextItem'] == true,
       startDay: json['startDay'] == null
@@ -506,7 +515,8 @@ class LearningPlan {
       pacing: json['pacing'] == null
           ? AmountPerDay(unitsPerDay)
           : PlanPacing.fromJson(
-              (json['pacing'] as Map<dynamic, dynamic>).cast<String, dynamic>()),
+              (json['pacing'] as Map<dynamic, dynamic>).cast<String, dynamic>(),
+            ),
       weekdayAmounts: _weekdayAmountsFrom(json['weekdayAmounts']),
       dateAmounts: _dateAmountsFrom(json['dateAmounts']),
     );
@@ -533,8 +543,10 @@ class LearningPlan {
     if (raw == null) return const {};
     final out = <Day, int>{};
     for (final entry in (raw as Map<dynamic, dynamic>).entries) {
-      out[Day.of(DateTime.parse(entry.key as String))] =
-          _amount(entry.value, 'date amount');
+      out[Day.of(DateTime.parse(entry.key as String))] = _amount(
+        entry.value,
+        'date amount',
+      );
     }
     return out;
   }
@@ -564,22 +576,22 @@ class LearningPlan {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        name,
-        displayCalendar,
-        unitsPerDay,
-        spillover,
-        startDay,
-        pacing,
-        Object.hashAllUnordered(
-          weekdayAmounts.entries.map((e) => Object.hash(e.key, e.value)),
-        ),
-        Object.hashAllUnordered(
-          dateAmounts.entries.map((e) => Object.hash(e.key, e.value)),
-        ),
-        Object.hashAll(assignments),
-        Object.hashAll(overrides),
-      );
+    id,
+    name,
+    displayCalendar,
+    unitsPerDay,
+    spillover,
+    startDay,
+    pacing,
+    Object.hashAllUnordered(
+      weekdayAmounts.entries.map((e) => Object.hash(e.key, e.value)),
+    ),
+    Object.hashAllUnordered(
+      dateAmounts.entries.map((e) => Object.hash(e.key, e.value)),
+    ),
+    Object.hashAll(assignments),
+    Object.hashAll(overrides),
+  );
 
   static bool _sameAssignments(List<PlanAssignment> a, List<PlanAssignment> b) {
     if (a.length != b.length) return false;
@@ -595,20 +607,20 @@ class LearningPlan {
   /// rebuilding a plan from a handful of visible fields is how the rest of it
   /// gets dropped — the override maps, the item sequence, the rule.
   LearningPlan copyWithDateAmounts(Map<Day, int> amounts) => LearningPlan(
-        id: id,
-        name: name,
-        assignments: assignments,
-        overrides: overrides,
-        displayCalendar: displayCalendar,
-        unitsPerDay: unitsPerDay,
-        weekdayAmounts: weekdayAmounts,
-        dateAmounts: amounts,
-        spillover: spillover,
-        items: items,
-        flowsToNextItem: flowsToNextItem,
-        startDay: startDay,
-        pacing: pacing,
-      );
+    id: id,
+    name: name,
+    assignments: assignments,
+    overrides: overrides,
+    displayCalendar: displayCalendar,
+    unitsPerDay: unitsPerDay,
+    weekdayAmounts: weekdayAmounts,
+    dateAmounts: amounts,
+    spillover: spillover,
+    items: items,
+    flowsToNextItem: flowsToNextItem,
+    startDay: startDay,
+    pacing: pacing,
+  );
 
   static bool _sameItems(List<PlanItem> a, List<PlanItem> b) {
     if (a.length != b.length) return false;
@@ -650,8 +662,9 @@ class PlannerSchedule {
     return [
       ...active,
       for (final a in plan.assignments)
-        if (plan.overrides.any((o) =>
-            o.assignmentId == a.id && o.to == info.day) &&
+        if (plan.overrides.any(
+              (o) => o.assignmentId == a.id && o.to == info.day,
+            ) &&
             !present.contains(a.id))
           a,
     ];
@@ -663,18 +676,18 @@ class PlannerSchedule {
     required String assignmentId,
     required Day from,
     required Day to,
-  }) =>
-      LearningPlan(
-        id: plan.id,
-        name: plan.name,
-        assignments: plan.assignments,
-        displayCalendar: plan.displayCalendar,
-        overrides: [
-          ...plan.overrides.where((o) =>
-              o.assignmentId != assignmentId || o.from != from),
-          PlanOverride(assignmentId: assignmentId, from: from, to: to),
-        ],
-      );
+  }) => LearningPlan(
+    id: plan.id,
+    name: plan.name,
+    assignments: plan.assignments,
+    displayCalendar: plan.displayCalendar,
+    overrides: [
+      ...plan.overrides.where(
+        (o) => o.assignmentId != assignmentId || o.from != from,
+      ),
+      PlanOverride(assignmentId: assignmentId, from: from, to: to),
+    ],
+  );
 
   /// Move every occurrence from [from] through [through] by [days].
   static LearningPlan shiftAfter(

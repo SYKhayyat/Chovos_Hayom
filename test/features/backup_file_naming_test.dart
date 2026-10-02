@@ -7,22 +7,30 @@ import 'package:flutter_test/flutter_test.dart';
 /// import is not a backup.
 void main() {
   test('a path without the suffix gets one', () {
-    expect(SettingsScreen.withJsonExtension(r'C:\Users\me\Documents\backup'),
-        r'C:\Users\me\Documents\backup.json');
+    expect(
+      SettingsScreen.withJsonExtension(r'C:\Users\me\Documents\backup'),
+      r'C:\Users\me\Documents\backup.json',
+    );
   });
 
   test('a path that already has it is left alone', () {
-    expect(SettingsScreen.withJsonExtension(r'C:\Users\me\backup.json'),
-        r'C:\Users\me\backup.json');
+    expect(
+      SettingsScreen.withJsonExtension(r'C:\Users\me\backup.json'),
+      r'C:\Users\me\backup.json',
+    );
   });
 
   test('the check is case-insensitive, so .JSON is not doubled up', () {
-    expect(SettingsScreen.withJsonExtension('/home/me/backup.JSON'),
-        '/home/me/backup.JSON');
+    expect(
+      SettingsScreen.withJsonExtension('/home/me/backup.JSON'),
+      '/home/me/backup.JSON',
+    );
   });
 
   test('a name containing "json" earlier still gets the suffix', () {
-    expect(SettingsScreen.withJsonExtension('/home/me/json-backup'),
-        '/home/me/json-backup.json');
+    expect(
+      SettingsScreen.withJsonExtension('/home/me/json-backup'),
+      '/home/me/json-backup.json',
+    );
   });
 }

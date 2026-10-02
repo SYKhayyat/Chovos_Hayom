@@ -33,25 +33,31 @@ final thursday = DateTime.utc(2026, 3, 5);
 final monday = DateTime.utc(2026, 3, 2);
 
 final catalog = Catalog([
-  const CatalogNode(id: 'root', parentId: null, name: 'Root', kind: NodeKind.category),
   const CatalogNode(
-      id: 'shabbos',
-      parentId: 'root',
-      name: 'Shabbos',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.daf,
-      unitCount: 10,
-      unitOffset: 2),
+    id: 'root',
+    parentId: null,
+    name: 'Root',
+    kind: NodeKind.category,
+  ),
+  const CatalogNode(
+    id: 'shabbos',
+    parentId: 'root',
+    name: 'Shabbos',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.daf,
+    unitCount: 10,
+    unitOffset: 2,
+  ),
 ]);
 
 LearningPlan plan({int unitsPerDay = 3, PlanPacing? pacing}) => LearningPlan(
-      id: 'daf-yomi',
-      name: 'Daf Yomi',
-      unitsPerDay: unitsPerDay,
-      assignments: const [PlanAssignment(id: 'a', rule: DailyRule())],
-      items: const [PlanItem(id: 'i1', nodeId: 'shabbos')],
-      pacing: pacing ?? AmountPerDay(unitsPerDay),
-    );
+  id: 'daf-yomi',
+  name: 'Daf Yomi',
+  unitsPerDay: unitsPerDay,
+  assignments: const [PlanAssignment(id: 'a', rule: DailyRule())],
+  items: const [PlanItem(id: 'i1', nodeId: 'shabbos')],
+  pacing: pacing ?? AmountPerDay(unitsPerDay),
+);
 
 void main() {
   setUp(() => _seq = 0);
@@ -60,8 +66,7 @@ void main() {
 
   group('a day owes what the plan asks', () {
     test('with nothing done, the first units are all owed', () {
-      final units =
-          DayLedger.unitsFor(plan(), catalog, FoldLog.fold([]), day);
+      final units = DayLedger.unitsFor(plan(), catalog, FoldLog.fold([]), day);
       expect(units, hasLength(3));
       expect(units.map((u) => u.unitIndex), [2, 3, 4]);
       expect(DayLedger.owed(units), 3);
@@ -70,30 +75,45 @@ void main() {
 
     test('the amount decides how many', () {
       expect(
-        DayLedger.unitsFor(plan(unitsPerDay: 5), catalog, FoldLog.fold([]), day),
+        DayLedger.unitsFor(
+          plan(unitsPerDay: 5),
+          catalog,
+          FoldLog.fold([]),
+          day,
+        ),
         hasLength(5),
       );
     });
 
-    test('a day asking for nothing has no ledger, rather than an empty one', () {
-      // A deliberate zero is a day off, and a day off is not a day of six
-      // outstanding units — the distinction the whole planner keeps.
-      const off = LearningPlan(
-        id: 'off',
-        name: 'Off',
-        unitsPerDay: 0,
-        assignments: [PlanAssignment(id: 'a', rule: DailyRule())],
-        items: [PlanItem(id: 'i1', nodeId: 'shabbos')],
-      );
-      expect(DayLedger.unitsFor(off, catalog, FoldLog.fold([]), day), isEmpty);
-    });
+    test(
+      'a day asking for nothing has no ledger, rather than an empty one',
+      () {
+        // A deliberate zero is a day off, and a day off is not a day of six
+        // outstanding units — the distinction the whole planner keeps.
+        const off = LearningPlan(
+          id: 'off',
+          name: 'Off',
+          unitsPerDay: 0,
+          assignments: [PlanAssignment(id: 'a', rule: DailyRule())],
+          items: [PlanItem(id: 'i1', nodeId: 'shabbos')],
+        );
+        expect(
+          DayLedger.unitsFor(off, catalog, FoldLog.fold([]), day),
+          isEmpty,
+        );
+      },
+    );
 
     test('a plan asking for more than its sefer has is short, not padded', () {
       // Shabbos here holds 10 units, so a plan asking 30 gets 10 — and the
       // shortfall is visible as a short list rather than as the same unit
       // offered three times, which the log has no events for.
-      final units =
-          DayLedger.unitsFor(plan(unitsPerDay: 30), catalog, FoldLog.fold([]), day);
+      final units = DayLedger.unitsFor(
+        plan(unitsPerDay: 30),
+        catalog,
+        FoldLog.fold([]),
+        day,
+      );
       expect(units, hasLength(10));
       expect(units.map((u) => u.unitIndex).toSet(), hasLength(10));
     });
@@ -115,10 +135,16 @@ void main() {
       // would drop it and the calendar would stop showing what is outstanding.
       final fold = FoldLog.fold([done('shabbos', 2, thursday)]);
       final units = DayLedger.unitsFor(plan(), catalog, fold, day);
-      expect(units, hasLength(3),
-          reason: 'the plan asks for three, so three rows are shown');
-      expect(units.map((u) => u.unitIndex), contains(2),
-          reason: 'and the one already done is one of them, ticked');
+      expect(
+        units,
+        hasLength(3),
+        reason: 'the plan asks for three, so three rows are shown',
+      );
+      expect(
+        units.map((u) => u.unitIndex),
+        contains(2),
+        reason: 'and the one already done is one of them, ticked',
+      );
     });
 
     test('a unit done on ANOTHER day is neither done here nor outstanding', () {
@@ -175,7 +201,11 @@ void main() {
       ]);
       final units = DayLedger.unitsFor(plan(), catalog, fold, day);
       expect(units.first.doneCount, 2);
-      expect(units.first.doneOn, day, reason: 'the latest day is what "when" means');
+      expect(
+        units.first.doneOn,
+        day,
+        reason: 'the latest day is what "when" means',
+      );
     });
   });
 

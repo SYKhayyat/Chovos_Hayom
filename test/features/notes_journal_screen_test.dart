@@ -18,17 +18,16 @@ void main() {
       String text, {
       required int occurredHour,
       required int loggedHour,
-    }) =>
-        LearningEvent(
-          id: id,
-          profileId: 'default',
-          nodeId: 'shas.moed.shabbos',
-          unitIndex: 2,
-          action: EventAction.done,
-          occurredAt: DateTime(2026, 1, 10, occurredHour),
-          loggedAt: DateTime(2026, 1, 10, loggedHour),
-          note: text,
-        );
+    }) => LearningEvent(
+      id: id,
+      profileId: 'default',
+      nodeId: 'shas.moed.shabbos',
+      unitIndex: 2,
+      action: EventAction.done,
+      occurredAt: DateTime(2026, 1, 10, occurredHour),
+      loggedAt: DateTime(2026, 1, 10, loggedHour),
+      note: text,
+    );
 
     await repo.addEvents([
       note('a', 'same time a', occurredHour: 10, loggedHour: 10),

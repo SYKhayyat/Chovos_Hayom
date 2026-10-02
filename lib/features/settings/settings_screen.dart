@@ -92,9 +92,12 @@ class SettingsScreen extends ConsumerWidget {
           _SectionHeader(l10n.settingsSectionCalendar),
           RadioGroup<CalendarMode>(
             groupValue: settings.calendar,
-            onChanged: (v) => guarded(context, ref,
-                () => notifier.setCalendar(v ?? CalendarMode.gregorian),
-                what: l10n.whatChangingCalendar),
+            onChanged: (v) => guarded(
+              context,
+              ref,
+              () => notifier.setCalendar(v ?? CalendarMode.gregorian),
+              what: l10n.whatChangingCalendar,
+            ),
             child: Column(
               children: [
                 RadioListTile(
@@ -102,8 +105,9 @@ class SettingsScreen extends ConsumerWidget {
                   title: Text(l10n.settingsCalendarGregorian),
                 ),
                 RadioListTile(
-                    value: CalendarMode.hebrew,
-                    title: Text(l10n.settingsCalendarHebrew)),
+                  value: CalendarMode.hebrew,
+                  title: Text(l10n.settingsCalendarHebrew),
+                ),
               ],
             ),
           ),
@@ -111,19 +115,26 @@ class SettingsScreen extends ConsumerWidget {
           _SectionHeader(l10n.settingsSectionAppearance),
           RadioGroup<ThemeMode>(
             groupValue: settings.themeMode,
-            onChanged: (v) => guarded(context, ref,
-                () => notifier.setThemeMode(v ?? ThemeMode.system),
-                what: l10n.whatChangingTheme),
+            onChanged: (v) => guarded(
+              context,
+              ref,
+              () => notifier.setThemeMode(v ?? ThemeMode.system),
+              what: l10n.whatChangingTheme,
+            ),
             child: Column(
               children: [
                 RadioListTile(
-                    value: ThemeMode.system,
-                    title: Text(l10n.settingsThemeSystem)),
+                  value: ThemeMode.system,
+                  title: Text(l10n.settingsThemeSystem),
+                ),
                 RadioListTile(
-                    value: ThemeMode.light,
-                    title: Text(l10n.settingsThemeLight)),
+                  value: ThemeMode.light,
+                  title: Text(l10n.settingsThemeLight),
+                ),
                 RadioListTile(
-                    value: ThemeMode.dark, title: Text(l10n.settingsThemeDark)),
+                  value: ThemeMode.dark,
+                  title: Text(l10n.settingsThemeDark),
+                ),
               ],
             ),
           ),
@@ -136,8 +147,11 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text(l10n.settingsLanguageSubtitle),
             value: settings.hebrewLayout,
             onChanged: (v) => guarded(
-                context, ref, () => notifier.setHebrewLayout(v),
-                what: l10n.whatChangingLanguage),
+              context,
+              ref,
+              () => notifier.setHebrewLayout(v),
+              what: l10n.whatChangingLanguage,
+            ),
           ),
           const Divider(),
           _SectionHeader(l10n.settingsSectionReminders),
@@ -146,8 +160,11 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text(l10n.settingsDailyNudgeSubtitle),
             value: settings.reminderEnabled,
             onChanged: (v) => guarded(
-                context, ref, () => notifier.setReminderEnabled(v),
-                what: l10n.whatChangingNudge),
+              context,
+              ref,
+              () => notifier.setReminderEnabled(v),
+              what: l10n.whatChangingNudge,
+            ),
           ),
           const Divider(),
           _SectionHeader(l10n.settingsSectionMeforishBars),
@@ -156,8 +173,7 @@ class SettingsScreen extends ConsumerWidget {
             child: Text(l10n.settingsMeforishBarsExplainer),
           ),
           for (final layer in ref.watch(allLayersProvider))
-            if (layer.id != mainLayerId)
-              _MeforishBarSwitch(layer: layer),
+            if (layer.id != mainLayerId) _MeforishBarSwitch(layer: layer),
           const Divider(),
           _SectionHeader(l10n.settingsSectionProfiles),
           ListTile(
@@ -174,8 +190,7 @@ class SettingsScreen extends ConsumerWidget {
               // The count, not the list: `batchHistoryProvider` rebuilds the
               // whole batch list on every mark and returns a fresh `List`,
               // which no `==` can match. This subtitle wants one number.
-              final n =
-                  ref.watch(batchHistoryProvider.select((b) => b.length));
+              final n = ref.watch(batchHistoryProvider.select((b) => b.length));
               return n == 0
                   ? l10n.settingsBulkHistoryEmpty
                   : l10n.settingsBulkHistoryCount(n);
@@ -193,17 +208,26 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text(l10n.settingsBackupReminderSubtitle),
             value: settings.backupReminderEnabled,
             onChanged: (v) => guarded(
-                context, ref, () => notifier.setBackupReminderEnabled(v),
-                what: l10n.whatChangingBackupReminder),
+              context,
+              ref,
+              () => notifier.setBackupReminderEnabled(v),
+              what: l10n.whatChangingBackupReminder,
+            ),
           ),
           if (settings.backupReminderEnabled)
             ListTile(
               leading: const Icon(Icons.schedule),
               title: Text(l10n.settingsBackupInterval),
               subtitle: Text(
-                  l10n.settingsBackupIntervalSubtitle(settings.backupIntervalDays)),
-              onTap: () =>
-                  _editBackupInterval(context, ref, settings.backupIntervalDays),
+                l10n.settingsBackupIntervalSubtitle(
+                  settings.backupIntervalDays,
+                ),
+              ),
+              onTap: () => _editBackupInterval(
+                context,
+                ref,
+                settings.backupIntervalDays,
+              ),
             ),
           ListTile(
             leading: const Icon(Icons.save_alt),
@@ -221,20 +245,25 @@ class SettingsScreen extends ConsumerWidget {
             leading: const Icon(Icons.settings_backup_restore),
             title: Text(l10n.settingsRestoreFile),
             subtitle: Text(l10n.settingsRestoreFileSubtitle),
-            onTap: () => _importFromFile(context, ref,
-                mode: ImportMode.restoreLog),
+            onTap: () =>
+                _importFromFile(context, ref, mode: ImportMode.restoreLog),
           ),
           // The wider one, kept separate rather than folded into the tile above.
           // "Undo my learning back to this backup" and "throw away everything
           // this profile has become since this backup" are different intentions,
           // and the second one deletes sefarim the first one keeps.
           ListTile(
-            leading: Icon(Icons.restore_page_outlined,
-                color: Theme.of(context).colorScheme.error),
+            leading: Icon(
+              Icons.restore_page_outlined,
+              color: Theme.of(context).colorScheme.error,
+            ),
             title: Text(l10n.settingsRestoreEverything),
             subtitle: Text(l10n.settingsRestoreEverythingSubtitle),
-            onTap: () => _importFromFile(context, ref,
-                mode: ImportMode.restoreEverything),
+            onTap: () => _importFromFile(
+              context,
+              ref,
+              mode: ImportMode.restoreEverything,
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.upload),
@@ -257,8 +286,10 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
           _SectionHeader(l10n.settingsSectionReset),
           ListTile(
-            leading: Icon(Icons.restart_alt,
-                color: Theme.of(context).colorScheme.error),
+            leading: Icon(
+              Icons.restart_alt,
+              color: Theme.of(context).colorScheme.error,
+            ),
             title: Text(l10n.settingsClearSettings),
             subtitle: Text(l10n.settingsClearSettingsSubtitle),
             onTap: () => _clearSettings(context, ref),
@@ -278,11 +309,13 @@ class SettingsScreen extends ConsumerWidget {
         content: Text(l10n.settingsClearBody),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(l10n.actionCancel)),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.actionCancel),
+          ),
           FilledButton.tonal(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(l10n.actionClear)),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.actionClear),
+          ),
         ],
       ),
     );
@@ -332,7 +365,10 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _editBackupInterval(
-      BuildContext context, WidgetRef ref, int current) async {
+    BuildContext context,
+    WidgetRef ref,
+    int current,
+  ) async {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
     final text = await promptForText(
@@ -351,10 +387,11 @@ class SettingsScreen extends ConsumerWidget {
     );
     if (text == null) return;
     await guard.run(
-        () => ref
-            .read(settingsProvider.notifier)
-            .setBackupIntervalDays(positiveInt(text)!),
-        what: l10n.whatSavingBackupInterval);
+      () => ref
+          .read(settingsProvider.notifier)
+          .setBackupIntervalDays(positiveInt(text)!),
+      what: l10n.whatSavingBackupInterval,
+    );
   }
 
   /// Everything the backup carries.
@@ -388,15 +425,17 @@ class SettingsScreen extends ConsumerWidget {
   /// "Imported 0 new events" makes look like a failure. So the message says
   /// which of the two it was.
   Future<String> _applyImport(
-      WidgetRef ref, AppLocalizations l10n, BackupData backup,
-      {ImportMode mode = ImportMode.merge, RestoreDiff? diff}) async {
+    WidgetRef ref,
+    AppLocalizations l10n,
+    BackupData backup, {
+    ImportMode mode = ImportMode.merge,
+    RestoreDiff? diff,
+  }) async {
     final repo = ref.read(progressRepositoryProvider);
     final profileId = ref.read(activeProfileProvider);
-    final data = await BackupService(repo).importInto(
-      profileId,
-      backup,
-      mode: mode,
-    );
+    final data = await BackupService(
+      repo,
+    ).importInto(profileId, backup, mode: mode);
     // The two stores that live in preferences rather than in the repository, and
     // so are applied here instead of inside `importInto`. They take the mode for
     // the same reason everything inside it does: for a long time they did not,
@@ -427,15 +466,16 @@ class SettingsScreen extends ConsumerWidget {
       // The customisation count comes from what the import actually deleted, not
       // from the preview, so the sentence is a report rather than a repetition.
       return restoreSummary(
-          l10n,
-          diff ??
-              RestoreDiff(
-                restored: 0,
-                removed: 0,
-                staleEvents: data.removedEvents,
-              ),
-          deletedCustomisations: data.removedCustomisations,
-          deletedGoals: deletedGoals);
+        l10n,
+        diff ??
+            RestoreDiff(
+              restored: 0,
+              removed: 0,
+              staleEvents: data.removedEvents,
+            ),
+        deletedCustomisations: data.removedCustomisations,
+        deletedGoals: deletedGoals,
+      );
     }
     final added = data.events.length;
     if (added > 0) return l10n.backupImported(added);
@@ -463,12 +503,12 @@ class SettingsScreen extends ConsumerWidget {
   /// thing it is describing. A failure that is ours says so, and the *Details*
   /// action on the same snackbar carries the stack.
   static String importError(AppLocalizations l10n, Object e) => switch (e) {
-        BackupFormatException() => l10n.backupImportFailed(e.message),
-        // The bytes were not text at all — the one failure the file really is
-        // to blame for, raised by the decode in [_importFromFile].
-        FormatException() => l10n.backupImportUnreadable,
-        _ => l10n.backupImportAppFailure,
-      };
+    BackupFormatException() => l10n.backupImportFailed(e.message),
+    // The bytes were not text at all — the one failure the file really is
+    // to blame for, raised by the decode in [_importFromFile].
+    FormatException() => l10n.backupImportUnreadable,
+    _ => l10n.backupImportAppFailure,
+  };
 
   /// Backup and restore report through the same guard as every other write.
   /// They keep their own *success* wording only because "cancelled" is neither a
@@ -494,30 +534,27 @@ class SettingsScreen extends ConsumerWidget {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
     var cancelled = false;
-    final ok = await guard.run(
-      () async {
-        final json = await _buildExport(ref);
-        final bytes = utf8.encode(json);
-        final path = await FilePicker.platform.saveFile(
-          dialogTitle: l10n.backupSaveDialogTitle,
-          fileName: 'chovos_hayom_backup.json',
-          // Constrain the dialog to .json, so what gets written is what the
-          // import dialog can see.
-          type: FileType.custom,
-          allowedExtensions: ['json'],
-          // Required on Android/iOS; ignored on desktop — see above.
-          bytes: bytes,
-        );
-        if (path == null) {
-          cancelled = true;
-          return;
-        }
-        if (!_pickerWritesTheFile) {
-          await File(withJsonExtension(path)).writeAsBytes(bytes, flush: true);
-        }
-      },
-      what: l10n.whatExportingBackup,
-    );
+    final ok = await guard.run(() async {
+      final json = await _buildExport(ref);
+      final bytes = utf8.encode(json);
+      final path = await FilePicker.platform.saveFile(
+        dialogTitle: l10n.backupSaveDialogTitle,
+        fileName: 'chovos_hayom_backup.json',
+        // Constrain the dialog to .json, so what gets written is what the
+        // import dialog can see.
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        // Required on Android/iOS; ignored on desktop — see above.
+        bytes: bytes,
+      );
+      if (path == null) {
+        cancelled = true;
+        return;
+      }
+      if (!_pickerWritesTheFile) {
+        await File(withJsonExtension(path)).writeAsBytes(bytes, flush: true);
+      }
+    }, what: l10n.whatExportingBackup);
     if (!ok) return;
     // Recorded only here: after the write returned, and only when the user
     // actually chose a destination. Stamping it before the dialog — or on a
@@ -537,29 +574,32 @@ class SettingsScreen extends ConsumerWidget {
   /// It also ran outside any `try`, so a failure escaped as an unhandled error
   /// rather than reaching the crash log.
   Future<void> _recordBackup(WriteGuard guard, WidgetRef ref) => guard.run(
-        () => ref
-            .read(lastBackupProvider.notifier)
-            .record(ref.read(clockProvider)()),
-        what: AppLocalizations.of(ref.context).whatRecordingBackup,
-      );
+    () =>
+        ref.read(lastBackupProvider.notifier).record(ref.read(clockProvider)()),
+    what: AppLocalizations.of(ref.context).whatRecordingBackup,
+  );
 
-  Future<void> _importFromFile(BuildContext context, WidgetRef ref,
-      {ImportMode mode = ImportMode.merge}) async {
+  Future<void> _importFromFile(
+    BuildContext context,
+    WidgetRef ref, {
+    ImportMode mode = ImportMode.merge,
+  }) async {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
     final replace = mode.replacesLog;
     final result = await FilePicker.platform.pickFiles(
-      dialogTitle:
-          replace ? l10n.backupChooseRestoreFile : l10n.backupChooseFile,
+      dialogTitle: replace
+          ? l10n.backupChooseRestoreFile
+          : l10n.backupChooseFile,
       type: FileType.custom,
       allowedExtensions: ['json'],
       withData: true,
     );
     final bytes = result?.files.single.bytes;
     if (bytes == null) {
-      guard.report(replace
-          ? l10n.backupRestoreCancelled
-          : l10n.backupImportCancelled);
+      guard.report(
+        replace ? l10n.backupRestoreCancelled : l10n.backupImportCancelled,
+      );
       return;
     }
     // Decoding is the only step where "the file could not be read" is a true
@@ -603,8 +643,13 @@ class SettingsScreen extends ConsumerWidget {
 
     String? outcome;
     await guard.run(
-      () async => outcome =
-          await _applyImport(ref, l10n, backup, mode: mode, diff: diff),
+      () async => outcome = await _applyImport(
+        ref,
+        l10n,
+        backup,
+        mode: mode,
+        diff: diff,
+      ),
       what: replace ? l10n.whatRestoringBackup : l10n.whatImportingBackup,
       describe: (e) => importError(l10n, e),
     );
@@ -626,18 +671,19 @@ class SettingsScreen extends ConsumerWidget {
   /// today's for today, and for the outcome the settings the chosen [mode] will
   /// leave behind (the backup's alone for a full restore; the backup's overlaid
   /// on what is here for the narrower one, which upserts rather than replaces).
-  Future<RestoreDiff> _restoreDiff(WidgetRef ref, BackupData backup,
-          {required ImportMode mode}) =>
-      restoreDiff(
-        repo: ref.read(progressRepositoryProvider),
-        profileId: ref.read(activeProfileProvider),
-        currentRoles: ref.read(layerRolesProvider),
-        catalogParents:
-            parentsOf(ref.read(mergedCatalogProvider).asData?.value),
-        currentGoals: ref.read(goalsProvider),
-        backup: backup,
-        mode: mode,
-      );
+  Future<RestoreDiff> _restoreDiff(
+    WidgetRef ref,
+    BackupData backup, {
+    required ImportMode mode,
+  }) => restoreDiff(
+    repo: ref.read(progressRepositoryProvider),
+    profileId: ref.read(activeProfileProvider),
+    currentRoles: ref.read(layerRolesProvider),
+    catalogParents: parentsOf(ref.read(mergedCatalogProvider).asData?.value),
+    currentGoals: ref.read(goalsProvider),
+    backup: backup,
+    mode: mode,
+  );
 
   /// The same calculation with its inputs passed in rather than read off a
   /// `WidgetRef` — so the arithmetic that decides what a destructive action
@@ -667,14 +713,18 @@ class SettingsScreen extends ConsumerWidget {
         for (final e in await repo.getLayerConfigs(profileId)) e.nodeId: e,
       for (final e in backup.layerConfigs) e.nodeId: e,
     };
-    final restoredRoles =
-        LayerRoles.fromEntries(byNode.values, parentOf: parentOf);
+    final restoredRoles = LayerRoles.fromEntries(
+      byNode.values,
+      parentOf: parentOf,
+    );
 
     // A one-shot preview of two *different* logs — what is on disk and what is
     // in the file the user just picked — run once, off any rebuild path.
     // Neither is the active profile's live log, and no index covers the second.
-    Set<String> marked(Iterable<LearningEvent> events, // log-pass: ok — see above
-        LayerRoles roles) {
+    Set<String> marked(
+      Iterable<LearningEvent> events, // log-pass: ok — see above
+      LayerRoles roles,
+    ) {
       final fold = FoldLog.fold(events);
       return {
         for (final nodeId in fold.completedByNode.keys)
@@ -694,8 +744,11 @@ class SettingsScreen extends ConsumerWidget {
       customisations: mode.replacesCustomisation
           ? await BackupService(repo).customisationsAtRisk(profileId, backup)
           : 0,
-      goals:
-          GoalsController.goalsRemovedBy(currentGoals, backup.goals, mode).length,
+      goals: GoalsController.goalsRemovedBy(
+        currentGoals,
+        backup.goals,
+        mode,
+      ).length,
     );
   }
 
@@ -704,8 +757,12 @@ class SettingsScreen extends ConsumerWidget {
   /// [deletedCustomisations] is what the import *did* delete, which is why it is
   /// a separate argument rather than read off [diff]: the diff is a prediction,
   /// and a report that echoes the prediction cannot notice when they differ.
-  static String restoreSummary(AppLocalizations l10n, RestoreDiff diff,
-      {int deletedCustomisations = 0, int deletedGoals = 0}) {
+  static String restoreSummary(
+    AppLocalizations l10n,
+    RestoreDiff diff, {
+    int deletedCustomisations = 0,
+    int deletedGoals = 0,
+  }) {
     if (diff.changesNothing &&
         deletedCustomisations == 0 &&
         deletedGoals == 0) {
@@ -728,7 +785,10 @@ class SettingsScreen extends ConsumerWidget {
   /// Confirms a restore, describing what it will change. Returns false if the
   /// file is unreadable (the error is shown) or the user backs out.
   Future<bool> _confirmRestore(
-      BuildContext context, RestoreDiff diff, ImportMode mode) async {
+    BuildContext context,
+    RestoreDiff diff,
+    ImportMode mode,
+  ) async {
     final l10n = AppLocalizations.of(context);
     // What this restore is about to destroy — marked units, and for the wide one
     // the customisations and goals too. All three feed the red button: a dialog
@@ -736,37 +796,42 @@ class SettingsScreen extends ConsumerWidget {
     // sefer, and one that counts sefarim alone would look harmless while
     // deleting every target date the learner has set.
     final losing = diff.removed;
-    final destructive =
-        losing > 0 || diff.customisations > 0 || diff.goals > 0;
+    final destructive = losing > 0 || diff.customisations > 0 || diff.goals > 0;
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.restoreConfirmTitle),
-        content: Text(diff.changesNothing
-            ? l10n.restoreConfirmNoChange
-            : [
-                mode.replacesCustomisation
-                    ? l10n.restoreConfirmIntroEverything
-                    : l10n.restoreConfirmIntro,
-                if (losing > 0) l10n.restoreConfirmLosing(losing),
-                if (diff.customisations > 0)
-                  l10n.restoreConfirmLosingCustom(diff.customisations),
-                if (diff.goals > 0) l10n.restoreConfirmLosingGoals(diff.goals),
-                if (diff.restored > 0)
-                  l10n.restoreConfirmGaining(diff.restored),
-                l10n.restoreConfirmBackupFirst,
-              ].join('\n\n')),
+        content: Text(
+          diff.changesNothing
+              ? l10n.restoreConfirmNoChange
+              : [
+                  mode.replacesCustomisation
+                      ? l10n.restoreConfirmIntroEverything
+                      : l10n.restoreConfirmIntro,
+                  if (losing > 0) l10n.restoreConfirmLosing(losing),
+                  if (diff.customisations > 0)
+                    l10n.restoreConfirmLosingCustom(diff.customisations),
+                  if (diff.goals > 0)
+                    l10n.restoreConfirmLosingGoals(diff.goals),
+                  if (diff.restored > 0)
+                    l10n.restoreConfirmGaining(diff.restored),
+                  l10n.restoreConfirmBackupFirst,
+                ].join('\n\n'),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(l10n.actionCancel)),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.actionCancel),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: !destructive
                 ? null
                 : FilledButton.styleFrom(
                     backgroundColor: Theme.of(dialogContext).colorScheme.error,
-                    foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+                    foregroundColor: Theme.of(
+                      dialogContext,
+                    ).colorScheme.onError,
                   ),
             child: Text(l10n.actionRestore),
           ),
@@ -780,7 +845,8 @@ class SettingsScreen extends ConsumerWidget {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
     final ok = await guard.run(
-      () async => Clipboard.setData(ClipboardData(text: await _buildExport(ref))),
+      () async =>
+          Clipboard.setData(ClipboardData(text: await _buildExport(ref))),
       what: l10n.whatExportingClipboard,
       success: l10n.backupExportedClipboard,
     );
@@ -850,18 +916,23 @@ class _BackupStandingTile extends ConsumerWidget {
         color: safe
             ? Colors.green
             : atRisk
-                ? scheme.error
-                : scheme.onSurfaceVariant,
+            ? scheme.error
+            : scheme.onSurfaceVariant,
       ),
-      title: Text(status.neverBackedUp
-          ? l10n.backupNeverExported
-          : l10n.backupLastExported(
-              DateDisplay.format(status.lastBackupAt!, mode))),
-      subtitle: Text(atRisk
-          ? l10n.backupUnsavedUnits(status.unsavedUnits)
-          : status.neverBackedUp
-              ? l10n.backupNothingToSaveYet
-              : l10n.backupNothingUnsaved),
+      title: Text(
+        status.neverBackedUp
+            ? l10n.backupNeverExported
+            : l10n.backupLastExported(
+                DateDisplay.format(status.lastBackupAt!, mode),
+              ),
+      ),
+      subtitle: Text(
+        atRisk
+            ? l10n.backupUnsavedUnits(status.unsavedUnits)
+            : status.neverBackedUp
+            ? l10n.backupNothingToSaveYet
+            : l10n.backupNothingUnsaved,
+      ),
     );
   }
 }
@@ -906,11 +977,12 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Text(title,
-          style: Theme.of(context)
-              .textTheme
-              .titleSmall
-              ?.copyWith(color: Theme.of(context).colorScheme.primary)),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
     );
   }
 }

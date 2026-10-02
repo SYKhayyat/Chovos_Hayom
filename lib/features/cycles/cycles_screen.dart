@@ -38,28 +38,24 @@ class CyclesScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.cyclesTitle),
-        actions: barActions(
-          context,
-          [
+        actions: barActions(context, [
+          BarAction(
+            icon: Icons.tune,
+            label: l10n.cyclesWhichToShow,
+            onPressed: () => _showBuiltInPicker(context, ref),
+          ),
+          // On a keypad phone "New cycle" moves up here from the floating
+          // button below, which on a 324dp screen sat squarely on top of the
+          // first cycle's card. Unlike the dashboard's, this action has no
+          // drawer entry to fall back on, so it has to land somewhere rather
+          // than simply go.
+          if (isCompact(context))
             BarAction(
-              icon: Icons.tune,
-              label: l10n.cyclesWhichToShow,
-              onPressed: () => _showBuiltInPicker(context, ref),
+              icon: Icons.add,
+              label: l10n.cyclesNew,
+              onPressed: () => Navigator.pushNamed(context, Routes.newCycle),
             ),
-            // On a keypad phone "New cycle" moves up here from the floating
-            // button below, which on a 324dp screen sat squarely on top of the
-            // first cycle's card. Unlike the dashboard's, this action has no
-            // drawer entry to fall back on, so it has to land somewhere rather
-            // than simply go.
-            if (isCompact(context))
-              BarAction(
-                icon: Icons.add,
-                label: l10n.cyclesNew,
-                onPressed: () => Navigator.pushNamed(context, Routes.newCycle),
-              ),
-          ],
-          moreTooltip: l10n.tooltipMore,
-        ),
+        ], moreTooltip: l10n.tooltipMore),
       ),
       floatingActionButton: isCompact(context)
           ? null
@@ -71,8 +67,10 @@ class CyclesScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
         children: [
-          Text(l10n.cyclesToday(DateDisplay.format(now, mode)),
-              style: Theme.of(context).textTheme.labelMedium),
+          Text(
+            l10n.cyclesToday(DateDisplay.format(now, mode)),
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
           const SizedBox(height: 8),
           if (cycles.isEmpty)
             Card(
@@ -140,8 +138,7 @@ class _CycleCard extends ConsumerWidget {
     // Built-in cycles carry English names in `core/`; a user's own cycle is
     // named by the user, so it stays exactly as typed in either language.
     final name = cycleNameById(l10n, cycle.id, cycle.name);
-    final description =
-        cycleDescriptionById(l10n, cycle.id, cycle.description);
+    final description = cycleDescriptionById(l10n, cycle.id, cycle.description);
     return Card(
       color: theme.colorScheme.primaryContainer,
       margin: const EdgeInsets.only(bottom: 12),
@@ -172,9 +169,14 @@ class _CycleCard extends ConsumerWidget {
                     tooltip: l10n.tooltipEditCycle,
                     onSelected: (v) => _onMenu(context, ref, v),
                     itemBuilder: (_) => [
-                      PopupMenuItem(value: 'edit', child: Text(l10n.actionEdit)),
                       PopupMenuItem(
-                          value: 'delete', child: Text(l10n.actionDelete)),
+                        value: 'edit',
+                        child: Text(l10n.actionEdit),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text(l10n.actionDelete),
+                      ),
                     ],
                   ),
               ],
@@ -190,7 +192,11 @@ class _CycleCard extends ConsumerWidget {
     );
   }
 
-  Future<void> _onMenu(BuildContext context, WidgetRef ref, String action) async {
+  Future<void> _onMenu(
+    BuildContext context,
+    WidgetRef ref,
+    String action,
+  ) async {
     final notifier = ref.read(cyclesConfigProvider.notifier);
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
@@ -205,17 +211,21 @@ class _CycleCard extends ConsumerWidget {
             content: Text(l10n.cycleDeleteBody),
             actions: [
               TextButton(
-                  onPressed: () => Navigator.pop(dialogContext, false),
-                  child: Text(l10n.actionCancel)),
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.actionCancel),
+              ),
               FilledButton(
-                  onPressed: () => Navigator.pop(dialogContext, true),
-                  child: Text(l10n.actionDelete)),
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(l10n.actionDelete),
+              ),
             ],
           ),
         );
         if (ok == true) {
-          await guard.run(() => notifier.remove(cycle.id),
-              what: l10n.whatDeletingCycle(cycle.name));
+          await guard.run(
+            () => notifier.remove(cycle.id),
+            what: l10n.whatDeletingCycle(cycle.name),
+          );
         }
     }
   }
@@ -245,7 +255,8 @@ class _UnitRow extends ConsumerWidget {
     // showing to an English reader, and to a Hebrew one whose sefer has not been
     // linked to a node yet, where the heading is a transliteration.
     final headingIsHebrew = node != null && nameIsHebrew(l10n, node);
-    final isDone = unit.isLoggable &&
+    final isDone =
+        unit.isLoggable &&
         (fold?.doneUnits(node!.id, layers).contains(day.unit) ?? false);
     final learnedOn = isDone ? fold?.doneAt(node!.id, day.unit) : null;
 
@@ -256,8 +267,10 @@ class _UnitRow extends ConsumerWidget {
         children: [
           Text(title, style: theme.textTheme.headlineSmall),
           if (day.seferHebrew != null && !headingIsHebrew)
-            Text(hebrewDafLine(day.seferHebrew!, day.unit),
-                style: theme.textTheme.titleMedium),
+            Text(
+              hebrewDafLine(day.seferHebrew!, day.unit),
+              style: theme.textTheme.titleMedium,
+            ),
           const SizedBox(height: 12),
           if (node == null)
             _LinkPrompt(seferName: day.sefer)
@@ -267,23 +280,29 @@ class _UnitRow extends ConsumerWidget {
               style: theme.textTheme.bodySmall,
             )
           else if (isDone)
-            Row(children: [
-              const Icon(Icons.check_circle, color: Colors.green),
-              const SizedBox(width: 8),
-              // Not "logged for today" — it means this unit is done, whenever
-              // that happened, and saying so was simply wrong.
-              Expanded(
-                child: Text(learnedOn == null
-                    ? l10n.cycleAlreadyLearned
-                    : l10n.cycleLearnedOn(
-                        DateDisplay.format(learnedOn, mode))),
-              ),
-            ])
+            Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green),
+                const SizedBox(width: 8),
+                // Not "logged for today" — it means this unit is done, whenever
+                // that happened, and saying so was simply wrong.
+                Expanded(
+                  child: Text(
+                    learnedOn == null
+                        ? l10n.cycleAlreadyLearned
+                        : l10n.cycleLearnedOn(
+                            DateDisplay.format(learnedOn, mode),
+                          ),
+                  ),
+                ),
+              ],
+            )
           else
             FilledButton.icon(
               icon: const Icon(Icons.check),
-              label:
-                  Text(l10n.cycleLogButton(unitHeading(l10n, node, day.unit))),
+              label: Text(
+                l10n.cycleLogButton(unitHeading(l10n, node, day.unit)),
+              ),
               // This button used to fire the write off unawaited and then say
               // "Logged ✓" whatever happened — the one place in the app where a
               // failed write was reported to the user as a success. The guard
@@ -292,7 +311,9 @@ class _UnitRow extends ConsumerWidget {
               onPressed: () => guarded(
                 context,
                 ref,
-                () => ref.read(loggingServiceProvider).markDone(node.id, day.unit),
+                () => ref
+                    .read(loggingServiceProvider)
+                    .markDone(node.id, day.unit),
                 what: l10n.whatLogging(title),
                 success: l10n.cycleLogged(title),
               ),
@@ -315,8 +336,10 @@ class _LinkPrompt extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(l10n.cycleSeferNotInCatalog(seferName),
-            style: Theme.of(context).textTheme.bodySmall),
+        Text(
+          l10n.cycleSeferNotInCatalog(seferName),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
         const SizedBox(height: 4),
         FilledButton.tonalIcon(
           icon: const Icon(Icons.link, size: 18),

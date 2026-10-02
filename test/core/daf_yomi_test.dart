@@ -26,34 +26,42 @@ void main() {
 
       expect(day.sefer, 'Berachos');
       expect(day.unit, 2);
-      expect(day.seferHebrew, isNotEmpty,
-          reason: 'the Hebrew name is what a Hebrew reader sees; a cycle that '
-              'only had the transliteration would render the mesechta in '
-              'English inside a Hebrew line');
+      expect(
+        day.seferHebrew,
+        isNotEmpty,
+        reason:
+            'the Hebrew name is what a Hebrew reader sees; a cycle that '
+            'only had the transliteration would render the mesechta in '
+            'English inside a Hebrew line',
+      );
     });
 
     test('the day after is the next daf', () {
       expect(bavli.unitsOn(DateTime(2020, 1, 6)).single.unit, 3);
     });
 
-    test('it rolls over to the next mesechta rather than running off the end',
-        () {
-      // Berachos ends at daf 64, so day 63 of the cycle is the last one and the
-      // day after starts Shabbos.
-      final last = bavli.unitsOn(DateTime(2020, 3, 7)).single;
-      final next = bavli.unitsOn(DateTime(2020, 3, 8)).single;
+    test(
+      'it rolls over to the next mesechta rather than running off the end',
+      () {
+        // Berachos ends at daf 64, so day 63 of the cycle is the last one and the
+        // day after starts Shabbos.
+        final last = bavli.unitsOn(DateTime(2020, 3, 7)).single;
+        final next = bavli.unitsOn(DateTime(2020, 3, 8)).single;
 
-      expect((last.sefer, last.unit), ('Berachos', 64));
-      expect((next.sefer, next.unit), ('Shabbos', 2));
-    });
+        expect((last.sefer, last.unit), ('Berachos', 64));
+        expect((next.sefer, next.unit), ('Shabbos', 2));
+      },
+    );
 
-    test('a date before the cycle began answers nothing, rather than throwing',
-        () {
-      // The cycle starts in 1923. `unitsOn` is called straight from a build
-      // method, so the out-of-range case has to be an empty list and not an
-      // exception — this is what the bare `catch (_)` is for.
-      expect(bavli.unitsOn(DateTime(1900, 1, 1)), isEmpty);
-    });
+    test(
+      'a date before the cycle began answers nothing, rather than throwing',
+      () {
+        // The cycle starts in 1923. `unitsOn` is called straight from a build
+        // method, so the out-of-range case has to be an empty list and not an
+        // exception — this is what the bare `catch (_)` is for.
+        expect(bavli.unitsOn(DateTime(1900, 1, 1)), isEmpty);
+      },
+    );
 
     test('every day of a year has exactly one daf', () {
       // The Bavli cycle skips nothing — not Yom Kippur, not Tisha B'Av. A gap
@@ -81,10 +89,16 @@ void main() {
     test('Yom Kippur and Tisha B\'Av are skipped, not reported as daf 0', () {
       // The calculator returns daf 0 on those two days. Passing that through
       // would put "daf 0" on the dashboard; the cycle has no unit that day.
-      expect(yerushalmi.unitsOn(DateTime(2026, 9, 21)), isEmpty,
-          reason: 'Yom Kippur 5787');
-      expect(yerushalmi.unitsOn(DateTime(2026, 7, 23)), isEmpty,
-          reason: "Tisha B'Av 5786");
+      expect(
+        yerushalmi.unitsOn(DateTime(2026, 9, 21)),
+        isEmpty,
+        reason: 'Yom Kippur 5787',
+      );
+      expect(
+        yerushalmi.unitsOn(DateTime(2026, 7, 23)),
+        isEmpty,
+        reason: "Tisha B'Av 5786",
+      );
     });
 
     test('the day either side of a skip still has its daf', () {
@@ -94,8 +108,10 @@ void main() {
   });
 
   test('both cycles are listed, with distinct ids', () {
-    expect(CalendarCycle.all.map((c) => c.id).toSet(),
-        {CalendarCycle.bavliId, CalendarCycle.yerushalmiId});
+    expect(CalendarCycle.all.map((c) => c.id).toSet(), {
+      CalendarCycle.bavliId,
+      CalendarCycle.yerushalmiId,
+    });
     for (final c in CalendarCycle.all) {
       expect(c.name, isNotEmpty);
       expect(c.description, isNotEmpty);

@@ -20,10 +20,10 @@ void main() {
   /// thirteen Hebrew months and in both Adars of a leap year, without being so
   /// dense that a failure names no year.
   List<Day> spread() => [
-        for (var year = 2023; year <= 2030; year++)
-          for (var month = 1; month <= 12; month++)
-            Day.of(DateTime(year, month, 15)),
-      ];
+    for (var year = 2023; year <= 2030; year++)
+      for (var month = 1; month <= 12; month++)
+        Day.of(DateTime(year, month, 15)),
+  ];
 
   group('the round trip', () {
     test('parse(format(day)) is the day, in Gregorian', () {
@@ -36,8 +36,7 @@ void main() {
     test('parse(format(day)) is the day, in Hebrew', () {
       for (final day in spread()) {
         final text = formatDateForParsing(day, CalendarMode.hebrew);
-        expect(parseDateText(text).dayOrNull, day,
-            reason: 'read back "$text"');
+        expect(parseDateText(text).dayOrNull, day, reason: 'read back "$text"');
       }
     });
 
@@ -50,10 +49,20 @@ void main() {
           final last = DateTime(year, month + 1, 0).day;
           for (final day in [1, last]) {
             final g = Day.of(DateTime(year, month, day));
-            expect(parseDateText(formatDateForParsing(g, CalendarMode.gregorian)).dayOrNull,
-                g, reason: '$g');
-            expect(parseDateText(formatDateForParsing(g, CalendarMode.hebrew)).dayOrNull,
-                g, reason: '$g in Hebrew');
+            expect(
+              parseDateText(
+                formatDateForParsing(g, CalendarMode.gregorian),
+              ).dayOrNull,
+              g,
+              reason: '$g',
+            );
+            expect(
+              parseDateText(
+                formatDateForParsing(g, CalendarMode.hebrew),
+              ).dayOrNull,
+              g,
+              reason: '$g in Hebrew',
+            );
           }
         }
       }
@@ -82,10 +91,14 @@ void main() {
     test('a bare day and month takes the year it was given', () {
       // The one place this parser fills something in, and it is filled from a
       // day the caller passed and shows back — never from the clock.
-      expect(parseDateText('Jan 4', reference: d(2026, 1, 10)).dayOrNull,
-          d(2026, 1, 4));
-      expect(parseDateText('Jan 4', reference: d(2029, 6, 6)).dayOrNull,
-          d(2029, 1, 4));
+      expect(
+        parseDateText('Jan 4', reference: d(2026, 1, 10)).dayOrNull,
+        d(2026, 1, 4),
+      );
+      expect(
+        parseDateText('Jan 4', reference: d(2029, 6, 6)).dayOrNull,
+        d(2029, 1, 4),
+      );
     });
 
     test('without a reference a yearless date is refused, not dated', () {
@@ -121,8 +134,10 @@ void main() {
       // The app does not know which of its readers is which.
       final parsed = parseDateText('4/1/2026');
       expect(parsed, isA<DateParseAmbiguous>());
-      expect((parsed as DateParseAmbiguous).days,
-          [d(2026, 1, 4), d(2026, 4, 1)]);
+      expect((parsed as DateParseAmbiguous).days, [
+        d(2026, 1, 4),
+        d(2026, 4, 1),
+      ]);
     });
 
     test('but a triple only one way round is a date', () {
@@ -147,8 +162,11 @@ void main() {
 
     test('and a named Adar II is not ambiguous', () {
       expect(parseDateText('1 Adar II 5787').dayOrNull, d(2027, 3, 10));
-      expect(parseDateText('1 אדר ב 5787'.replaceAll(RegExp(r'\d'), '7')).isValid,
-          isTrue, reason: 'digits are transliterated, not Hebrew numerals');
+      expect(
+        parseDateText('1 אדר ב 5787'.replaceAll(RegExp(r'\d'), '7')).isValid,
+        isTrue,
+        reason: 'digits are transliterated, not Hebrew numerals',
+      );
     });
 
     test('a bare Adar in an ordinary year is one month', () {
@@ -158,10 +176,12 @@ void main() {
       expect(parseDateText('1 Adar 5786').dayOrNull, d(2026, 2, 18));
     });
 
-    test('an ISO date is never ambiguous, which is most of why it is the format',
-        () {
-      expect(parseDateText('2026-01-04'), isA<DateParseExact>());
-    });
+    test(
+      'an ISO date is never ambiguous, which is most of why it is the format',
+      () {
+        expect(parseDateText('2026-01-04'), isA<DateParseExact>());
+      },
+    );
   });
 
   group('Hebrew dates', () {
@@ -197,8 +217,11 @@ void main() {
       expect(parseHebrewNumber('תש״ן'), 750, reason: 'final nun');
       expect(parseHebrewNumber('תש״ך'), 720, reason: 'final kaf');
       expect(parseHebrewNumber('תש״ף'), 780, reason: 'final pe');
-      expect(parseHebrewYear('תש״ץ'), 5790,
-          reason: 'and the year adds its thousands');
+      expect(
+        parseHebrewYear('תש״ץ'),
+        5790,
+        reason: 'and the year adds its thousands',
+      );
       // The non-final spellings of the same numbers are the same numbers.
       expect(parseHebrewNumber('תשצ'), 790);
       expect(parseHebrewYear('תשצ'), 5790);
@@ -215,18 +238,23 @@ void main() {
           jewishMonth: HebrewMonth.teves,
           jewishDayOfMonth: 15,
         );
-        final text = (HebrewDateFormatter()
-              ..hebrewFormat = true
-              ..useGershGershayim = true
-              ..useFinalFormLetters = true)
-            .format(jd);
-        expect(parseDateText(text).dayOrNull,
-            Day.of(DateTime(
+        final text =
+            (HebrewDateFormatter()
+                  ..hebrewFormat = true
+                  ..useGershGershayim = true
+                  ..useFinalFormLetters = true)
+                .format(jd);
+        expect(
+          parseDateText(text).dayOrNull,
+          Day.of(
+            DateTime(
               jd.getGregorianYear(),
               jd.getGregorianMonth(),
               jd.getGregorianDayOfMonth(),
-            )),
-            reason: 'read back "$text"');
+            ),
+          ),
+          reason: 'read back "$text"',
+        );
       }
     });
 
@@ -237,14 +265,17 @@ void main() {
       expect(parseHebrewNumber('ט״ז'), 16);
     });
 
-    test('transliterated months, which is how people who do not read the script say it', () {
-      expect(parseDateText('15 Teves 5786').dayOrNull, d(2026, 1, 4));
-      expect(parseDateText('4 Tevat 5786').dayOrNull, d(2025, 12, 24));
-      // 1 Tishrei 5787 is Rosh Hashanah, pinned as 12 September 2026 in
-      // planner_dates_test.
-      expect(parseDateText('1 Tishrei 5787').dayOrNull, d(2026, 9, 12));
-      expect(parseDateText('15 Tishri 5786').dayOrNull, d(2025, 10, 7));
-    });
+    test(
+      'transliterated months, which is how people who do not read the script say it',
+      () {
+        expect(parseDateText('15 Teves 5786').dayOrNull, d(2026, 1, 4));
+        expect(parseDateText('4 Tevat 5786').dayOrNull, d(2025, 12, 24));
+        // 1 Tishrei 5787 is Rosh Hashanah, pinned as 12 September 2026 in
+        // planner_dates_test.
+        expect(parseDateText('1 Tishrei 5787').dayOrNull, d(2026, 9, 12));
+        expect(parseDateText('15 Tishri 5786').dayOrNull, d(2025, 10, 7));
+      },
+    );
 
     test('and the spellings other people use for the same months', () {
       // Transliteration has no standard: the same month is Teves, Tevet and
@@ -267,14 +298,18 @@ void main() {
     });
 
     test('a yearless Hebrew date takes the year it was given', () {
-      expect(parseDateText('ט״ו טבת', reference: d(2026, 1, 10)).dayOrNull,
-          d(2026, 1, 4));
+      expect(
+        parseDateText('ט״ו טבת', reference: d(2026, 1, 10)).dayOrNull,
+        d(2026, 1, 4),
+      );
       // And the year it takes is the **Hebrew** year of the reference, not its
       // Gregorian one — which is the whole reason it cannot just copy the year
       // across. 1 March 2026 is Hebrew year 5786, not 5785, so 1 Tishrei lands
       // in the previous Gregorian year entirely.
-      expect(parseDateText('א׳ תשרי', reference: d(2026, 3, 1)).dayOrNull,
-          d(2025, 9, 23));
+      expect(
+        parseDateText('א׳ תשרי', reference: d(2026, 3, 1)).dayOrNull,
+        d(2025, 9, 23),
+      );
     });
 
     test('a 30th of a 29-day month is refused, not pulled back a day', () {
@@ -288,11 +323,17 @@ void main() {
       // complete year and 5786 a short one, so the difference is the calendar's
       // and not the spelling's. (Checked against kosher_dart directly, because
       // which years are complete is not something to assert from memory.)
-      expect(parseDateText('30 Kislev 5784').isValid, isFalse,
-          reason: '5784 is a complete year: Kislev has 29 days');
+      expect(
+        parseDateText('30 Kislev 5784').isValid,
+        isFalse,
+        reason: '5784 is a complete year: Kislev has 29 days',
+      );
       expect(parseDateText('29 Kislev 5784').isValid, isTrue);
-      expect(parseDateText('30 Kislev 5786').isValid, isTrue,
-          reason: '5786 is a short year: Kislev has 30');
+      expect(
+        parseDateText('30 Kislev 5786').isValid,
+        isTrue,
+        reason: '5786 is a short year: Kislev has 30',
+      );
       // Cheshvan moves the other way, which is why both months are named here.
       expect(parseDateText('30 Cheshvan 5786').isValid, isFalse);
       expect(parseDateText('30 Cheshvan 5785').isValid, isTrue);
@@ -302,8 +343,16 @@ void main() {
       // A month that never has a 30th is the cheapest way to see that the check
       // is about the calendar rather than about a hard-coded list.
       for (final year in [5784, 5785, 5786, 5787, 5788]) {
-        expect(parseDateText('30 Teves $year').isValid, isFalse, reason: '$year');
-        expect(parseDateText('29 Teves $year').isValid, isTrue, reason: '$year');
+        expect(
+          parseDateText('30 Teves $year').isValid,
+          isFalse,
+          reason: '$year',
+        );
+        expect(
+          parseDateText('29 Teves $year').isValid,
+          isTrue,
+          reason: '$year',
+        );
       }
     });
 
@@ -326,8 +375,7 @@ void main() {
       }
     });
 
-    test('a year the calendar cannot represent is refused, not thrown',
-        () {
+    test('a year the calendar cannot represent is refused, not thrown', () {
       // Found by probing the ends rather than by reasoning about them:
       // `JewishDate.initDate` documents an `ArgumentError` for a year below 1,
       // and for `1 Tishrei 1` it throws a **StateError** from a lookup inside the
@@ -345,16 +393,18 @@ void main() {
       }
     });
 
-    test('a Gregorian year is not a Hebrew one, even next to a Hebrew month',
-        () {
-      // `4 Av 2026` is a Hebrew month and a Gregorian year in the same string.
-      // Read as Hebrew it would be the 4th of Av in Hebrew year 2026 — five
-      // centuries off. The day check catches it: that date does not exist in
-      // that year, so it is refused rather than resolved to something absurd.
-      for (final text in ['4 Av 2026', '1 Nissan 2026', '15 Sivan 2026']) {
-        expect(parseDateText(text).isValid, isFalse, reason: '"$text"');
-      }
-    });
+    test(
+      'a Gregorian year is not a Hebrew one, even next to a Hebrew month',
+      () {
+        // `4 Av 2026` is a Hebrew month and a Gregorian year in the same string.
+        // Read as Hebrew it would be the 4th of Av in Hebrew year 2026 — five
+        // centuries off. The day check catches it: that date does not exist in
+        // that year, so it is refused rather than resolved to something absurd.
+        for (final text in ['4 Av 2026', '1 Nissan 2026', '15 Sivan 2026']) {
+          expect(parseDateText(text).isValid, isFalse, reason: '"$text"');
+        }
+      },
+    );
 
     test('a year this far back is a real date, and is read as one', () {
       // Recorded because it looked like a bug while writing the test above:
@@ -367,12 +417,15 @@ void main() {
   });
 
   group('which calendar, and why that is not a guess', () {
-    test('Hebrew letters mean a Hebrew date, everything else a Gregorian one', () {
-      // Stated once, and there is no overlap to arbitrate: no Gregorian month is
-      // written in Hebrew script, so this rule cannot be the wrong one.
-      expect(parseDateText('4 Jan 2026').dayOrNull, d(2026, 1, 4));
-      expect(parseDateText('4 Teves 5786').dayOrNull, d(2025, 12, 24));
-    });
+    test(
+      'Hebrew letters mean a Hebrew date, everything else a Gregorian one',
+      () {
+        // Stated once, and there is no overlap to arbitrate: no Gregorian month is
+        // written in Hebrew script, so this rule cannot be the wrong one.
+        expect(parseDateText('4 Jan 2026').dayOrNull, d(2026, 1, 4));
+        expect(parseDateText('4 Teves 5786').dayOrNull, d(2025, 12, 24));
+      },
+    );
 
     test('a year alone is not a date', () {
       // Otherwise a Hebrew year with no month and day would be a plausible

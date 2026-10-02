@@ -20,32 +20,34 @@ void main() {
   );
 
   LogFold fold(Map<int, DateTime> doneAt) => LogFold(
-        completedByNode: {
-          leaf: {for (final u in doneAt.keys) u: {mainLayerId}},
-        },
-        reviewsByNode: const {},
-        doneAtByNode: {leaf: doneAt},
-        touchedAtByNode: const {},
-        annotatedByNode: const {},
-        doneCountByNode: {
-          // A hand-built fold says which units are done *and when*, so the
-          // per-day tally has to agree or the two would describe different
-          // histories. One tick on the given day, per unit.
-          leaf: {
-            for (final u in doneAt.keys) u: {Day.of(doneAt[u]!): 1},
-          },
-        },
-        planDoneCountById: const {},
-      );
+    completedByNode: {
+      leaf: {
+        for (final u in doneAt.keys) u: {mainLayerId},
+      },
+    },
+    reviewsByNode: const {},
+    doneAtByNode: {leaf: doneAt},
+    touchedAtByNode: const {},
+    annotatedByNode: const {},
+    doneCountByNode: {
+      // A hand-built fold says which units are done *and when*, so the
+      // per-day tally has to agree or the two would describe different
+      // histories. One tick on the given day, per unit.
+      leaf: {
+        for (final u in doneAt.keys) u: {Day.of(doneAt[u]!): 1},
+      },
+    },
+    planDoneCountById: const {},
+  );
 
   List<PlannedDay> days(LogFold log) => PlannerCalendar.between(
-        plans: [plan],
-        catalog: catalog,
-        fold: log,
-        from: Day.of(DateTime(2026, 1, 8)),
-        to: Day.of(DateTime(2026, 1, 12)),
-        today: Day.of(DateTime(2026, 1, 10)),
-      );
+    plans: [plan],
+    catalog: catalog,
+    fold: log,
+    from: Day.of(DateTime(2026, 1, 8)),
+    to: Day.of(DateTime(2026, 1, 12)),
+    today: Day.of(DateTime(2026, 1, 10)),
+  );
 
   test('classifies past and future planned days from the log', () {
     final result = days(fold(const {}));

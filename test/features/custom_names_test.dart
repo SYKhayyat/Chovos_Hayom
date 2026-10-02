@@ -49,54 +49,63 @@ void main() {
   }
 
   Future<void> enterInto(
-      WidgetTester tester, String label, String value) async {
+    WidgetTester tester,
+    String label,
+    String value,
+  ) async {
     final finder = find.widgetWithText(TextField, label);
     await reveal(tester, finder);
     await tester.enterText(finder, value);
     await tester.pumpAndSettle();
   }
 
-  Widget nodeForm(ProgressRepository repo,
-          {Locale locale = const Locale('en')}) =>
-      ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider.overrideWithValue(repo),
-        ],
-        child: localizedApp(
-            home: const AddCustomNodeScreen(), locale: locale),
-      );
+  Widget nodeForm(
+    ProgressRepository repo, {
+    Locale locale = const Locale('en'),
+  }) => ProviderScope(
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(repo),
+    ],
+    child: localizedApp(home: const AddCustomNodeScreen(), locale: locale),
+  );
 
-  Widget mefarshimSheet(ProgressRepository repo,
-          {Locale locale = const Locale('en')}) =>
-      ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider.overrideWithValue(repo),
-        ],
-        child: localizedApp(
-          home: Builder(
-            builder: (context) => Scaffold(
-              body: Consumer(
-                builder: (context, ref, _) => TextButton(
-                  onPressed: () => showMefarshimConfigSheet(context, ref,
-                      node: const CatalogNode(
-                          id: 'shas',
-                          parentId: 'root',
-                          name: 'Shas',
-                          kind: NodeKind.category)),
-                  child: const Text('open'),
+  Widget mefarshimSheet(
+    ProgressRepository repo, {
+    Locale locale = const Locale('en'),
+  }) => ProviderScope(
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(repo),
+    ],
+    child: localizedApp(
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Consumer(
+            builder: (context, ref, _) => TextButton(
+              onPressed: () => showMefarshimConfigSheet(
+                context,
+                ref,
+                node: const CatalogNode(
+                  id: 'shas',
+                  parentId: 'root',
+                  name: 'Shas',
+                  kind: NodeKind.category,
                 ),
               ),
+              child: const Text('open'),
             ),
           ),
-          locale: locale,
         ),
-      );
+      ),
+      locale: locale,
+    ),
+  );
 
   group('custom sefer', () {
-    testWidgets('offers both names, labelled so the pairing is obvious',
-        (tester) async {
+    testWidgets('offers both names, labelled so the pairing is obvious', (
+      tester,
+    ) async {
       await tester.pumpWidget(nodeForm(memoryRepository()));
       await tester.pumpAndSettle();
 
@@ -147,11 +156,14 @@ void main() {
   });
 
   group('custom meforish', () {
-    testWidgets('can be given a Hebrew name after it was created',
-        (tester) async {
+    testWidgets('can be given a Hebrew name after it was created', (
+      tester,
+    ) async {
       final repo = memoryRepository();
       await repo.addCustomLayer(
-          'default', const Layer(id: 'ml', name: 'Maharal'));
+        'default',
+        const Layer(id: 'ml', name: 'Maharal'),
+      );
 
       await tester.pumpWidget(mefarshimSheet(repo));
       await tester.pumpAndSettle();
@@ -165,13 +177,18 @@ void main() {
 
       // Scoped to the dialog: the sheet behind it has a Save button of its own.
       await tester.enterText(
-          find.descendant(
-              of: find.byType(AlertDialog),
-              matching: find.widgetWithText(TextField, 'Name (Hebrew)')),
-          'מהר״ל');
-      await tester.tap(find.descendant(
+        find.descendant(
           of: find.byType(AlertDialog),
-          matching: find.widgetWithText(FilledButton, 'Save')));
+          matching: find.widgetWithText(TextField, 'Name (Hebrew)'),
+        ),
+        'מהר״ל',
+      );
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.widgetWithText(FilledButton, 'Save'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       final saved = (await repo.getCustomLayers('default')).single;
@@ -182,8 +199,9 @@ void main() {
       expect(saved.name, 'Maharal');
     });
 
-    testWidgets('built-in mefarshim are not the user\'s to rename',
-        (tester) async {
+    testWidgets('built-in mefarshim are not the user\'s to rename', (
+      tester,
+    ) async {
       final repo = memoryRepository();
       await tester.pumpWidget(mefarshimSheet(repo));
       await tester.pumpAndSettle();
@@ -206,13 +224,18 @@ void main() {
       await tester.tap(find.text('Add a meforish'));
       await tester.pumpAndSettle();
       await tester.enterText(
-          find.descendant(
-              of: find.byType(AlertDialog),
-              matching: find.widgetWithText(TextField, 'Name (Hebrew)')),
-          'פני יהושע');
-      await tester.tap(find.descendant(
+        find.descendant(
           of: find.byType(AlertDialog),
-          matching: find.widgetWithText(FilledButton, 'Add')));
+          matching: find.widgetWithText(TextField, 'Name (Hebrew)'),
+        ),
+        'פני יהושע',
+      );
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.widgetWithText(FilledButton, 'Add'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       final saved = (await repo.getCustomLayers('default')).single;

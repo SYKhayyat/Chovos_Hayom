@@ -26,12 +26,12 @@ void main() {
   const deleted = 'a-meforish-since-deleted';
 
   Widget grid(ProgressRepository repo) => ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider.overrideWithValue(repo),
-        ],
-        child: localizedApp(home: const UnitGridScreen(nodeId: node)),
-      );
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(repo),
+    ],
+    child: localizedApp(home: const UnitGridScreen(nodeId: node)),
+  );
 
   /// A profile where daf 2 was finished with the text and one meforish, and
   /// that meforish has since been deleted — its rows are gone from the layer
@@ -61,8 +61,9 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('the per-unit checklist names it rather than printing its uuid',
-      (tester) async {
+  testWidgets('the per-unit checklist names it rather than printing its uuid', (
+    tester,
+  ) async {
     await tester.pumpWidget(grid(await profileWithADeletedMeforish()));
     await tester.pumpAndSettle();
 
@@ -73,8 +74,9 @@ void main() {
     expect(find.textContaining(deleted), findsNothing);
   });
 
-  testWidgets('a chazara can be recorded on it — and can be unticked',
-      (tester) async {
+  testWidgets('a chazara can be recorded on it — and can be unticked', (
+    tester,
+  ) async {
     await tester.pumpWidget(grid(await profileWithADeletedMeforish()));
     await tester.pumpAndSettle();
     await cellMenu(tester, 'Add chazara (review)');
@@ -114,14 +116,19 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(
-        find.widgetWithText(TextField, 'How long it took (minutes, optional)'), '-45');
+      find.widgetWithText(TextField, 'How long it took (minutes, optional)'),
+      '-45',
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Mark learned'));
     await tester.pumpAndSettle();
 
     final events = await repo.getEvents('default');
     expect(events, hasLength(1));
-    expect(events.single.durationMin, isNull,
-        reason: 'the same answer an empty box gives — not recorded');
+    expect(
+      events.single.durationMin,
+      isNull,
+      reason: 'the same answer an empty box gives — not recorded',
+    );
   });
 
   testWidgets('but a fresh log does not offer it, because the unit does not '

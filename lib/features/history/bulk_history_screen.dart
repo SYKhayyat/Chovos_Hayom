@@ -33,10 +33,7 @@ class BulkHistoryScreen extends ConsumerWidget {
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
-                child: Text(
-                  l10n.bulkHistoryEmpty,
-                  textAlign: TextAlign.center,
-                ),
+                child: Text(l10n.bulkHistoryEmpty, textAlign: TextAlign.center),
               ),
             )
           : ListView.separated(
@@ -74,9 +71,11 @@ class _BatchTile extends ConsumerWidget {
         batch.isFinish ? Icons.done_all : Icons.delete_sweep_outlined,
         color: batch.isFinish ? scheme.primary : scheme.error,
       ),
-      title: Text(batch.isFinish
-          ? l10n.bulkHistoryFinishedEntry(units, where)
-          : l10n.bulkHistoryClearedEntry(units, where)),
+      title: Text(
+        batch.isFinish
+            ? l10n.bulkHistoryFinishedEntry(units, where)
+            : l10n.bulkHistoryClearedEntry(units, where),
+      ),
       subtitle: Text(DateDisplay.formatWithTime(batch.appliedAt, calendar)),
       trailing: TextButton.icon(
         icon: const Icon(Icons.undo, size: 18),
@@ -102,7 +101,9 @@ class _BatchTile extends ConsumerWidget {
     }
     final node = c.byId(common);
     return l10n.bulkHistoryWhereWithCount(
-        node == null ? common : nodeName(l10n, node), batch.nodeIds.length);
+      node == null ? common : nodeName(l10n, node),
+      batch.nodeIds.length,
+    );
   }
 
   /// Deepest id that is an ancestor-or-self of every node in [ids]. Walks each
@@ -149,11 +150,13 @@ class _BatchTile extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(l10n.actionCancel)),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.actionCancel),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(l10n.actionUndo)),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.actionUndo),
+          ),
         ],
       ),
     );

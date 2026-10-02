@@ -11,24 +11,20 @@ import 'package:flutter_test/flutter_test.dart';
 /// disagree.
 void main() {
   /// Day(0) is 1970-01-01, a Thursday. Real weekday, no Hebrew fields.
-  DayInfo info(Day day) => DayInfo(
-        day: day,
-        weekday: day.weekday,
-        dayOfMonth: day.midnight.day,
-      );
+  DayInfo info(Day day) =>
+      DayInfo(day: day, weekday: day.weekday, dayOfMonth: day.midnight.day);
 
   LearningPlan plan({
     int unitsPerDay = 10,
     Map<int, int> weekdayAmounts = const {},
     Map<Day, int> dateAmounts = const {},
-  }) =>
-      LearningPlan(
-        id: 'p',
-        name: 'P',
-        unitsPerDay: unitsPerDay,
-        weekdayAmounts: weekdayAmounts,
-        dateAmounts: dateAmounts,
-      );
+  }) => LearningPlan(
+    id: 'p',
+    name: 'P',
+    unitsPerDay: unitsPerDay,
+    weekdayAmounts: weekdayAmounts,
+    dateAmounts: dateAmounts,
+  );
 
   // Ordinals for the weekdays we care about, computed rather than hard-coded so
   // a mistake in the calendar maths cannot quietly move the fixtures.
@@ -44,7 +40,11 @@ void main() {
     test('a weekday override beats the base', () {
       final p = plan(weekdayAmounts: {DateTime.tuesday: 5});
       expect(DayAmount.of(p, info(tuesday)), 5);
-      expect(DayAmount.of(p, info(monday)), 10, reason: 'other days unaffected');
+      expect(
+        DayAmount.of(p, info(monday)),
+        10,
+        reason: 'other days unaffected',
+      );
     });
 
     test('a date override beats a weekday override', () {
@@ -70,7 +70,11 @@ void main() {
       expect(DayAmount.of(p, info(monday)), 1);
       expect(DayAmount.of(p, info(tuesday)), 5);
       expect(DayAmount.of(p, info(thursday)), 0, reason: 'date beats weekday');
-      expect(DayAmount.of(p, info(const Day(6))), 10, reason: 'Wednesday, unsaid');
+      expect(
+        DayAmount.of(p, info(const Day(6))),
+        10,
+        reason: 'Wednesday, unsaid',
+      );
     });
   });
 
@@ -84,7 +88,9 @@ void main() {
     test('two weekdays, each with its own amount', () {
       // "Tuesday and Thursday different" — a two-way Shabbos/weekday split
       // cannot say this.
-      final p = plan(weekdayAmounts: {DateTime.tuesday: 5, DateTime.thursday: 15});
+      final p = plan(
+        weekdayAmounts: {DateTime.tuesday: 5, DateTime.thursday: 15},
+      );
       expect(DayAmount.of(p, info(tuesday)), 5);
       expect(DayAmount.of(p, info(thursday)), 15);
       expect(DayAmount.of(p, info(monday)), 10);
@@ -119,8 +125,11 @@ void main() {
         weekdayAmounts: {DateTime.tuesday: 5},
         dateAmounts: {tuesday: 0},
       );
-      expect(DayAmount.of(p, info(tuesday)), 0,
-          reason: 'the most specific statement wins, even when it is zero');
+      expect(
+        DayAmount.of(p, info(tuesday)),
+        0,
+        reason: 'the most specific statement wins, even when it is zero',
+      );
     });
 
     test('a base of 0 rests the whole plan', () {
@@ -154,8 +163,8 @@ void main() {
 
     test('a negative base is refused', () {
       expect(
-        () => LearningPlan.fromJson(
-            {'id': 'p', 'name': 'P', 'unitsPerDay': -1}),
+        () =>
+            LearningPlan.fromJson({'id': 'p', 'name': 'P', 'unitsPerDay': -1}),
         throwsFormatException,
       );
     });
@@ -200,10 +209,7 @@ void main() {
     test('a changed amount makes plans unequal', () {
       expect(plan(), plan());
       expect(plan(), isNot(plan(unitsPerDay: 11)));
-      expect(
-        plan(),
-        isNot(plan(weekdayAmounts: {DateTime.tuesday: 5})),
-      );
+      expect(plan(), isNot(plan(weekdayAmounts: {DateTime.tuesday: 5})));
       expect(plan(), isNot(plan(dateAmounts: {monday: 5})));
     });
 
@@ -217,8 +223,12 @@ void main() {
 
     test('equal maps have equal hashes', () {
       expect(
-        plan(weekdayAmounts: {DateTime.tuesday: 5, DateTime.sunday: 1}).hashCode,
-        plan(weekdayAmounts: {DateTime.sunday: 1, DateTime.tuesday: 5}).hashCode,
+        plan(
+          weekdayAmounts: {DateTime.tuesday: 5, DateTime.sunday: 1},
+        ).hashCode,
+        plan(
+          weekdayAmounts: {DateTime.sunday: 1, DateTime.tuesday: 5},
+        ).hashCode,
       );
     });
   });

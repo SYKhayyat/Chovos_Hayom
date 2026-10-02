@@ -63,10 +63,10 @@ class PlannerCalendar {
       final status = allDone
           ? PlannedDayStatus.done
           : day < today
-              ? anyProgress
-                  ? PlannedDayStatus.partlyDone
-                  : PlannedDayStatus.missed
-              : PlannedDayStatus.planned;
+          ? anyProgress
+                ? PlannedDayStatus.partlyDone
+                : PlannedDayStatus.missed
+          : PlannedDayStatus.planned;
       out.add(PlannedDay(day: day, plans: firing, status: status));
     }
     return out;

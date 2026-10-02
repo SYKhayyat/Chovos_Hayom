@@ -35,23 +35,34 @@ void main() {
   const controller = r'\bTextEditingController\(';
 
   test('the regexes actually match the shapes they ban', () {
-    expect(RegExp(dialog).hasMatch('      builder: (_) => AlertDialog('), isTrue);
     expect(
-        RegExp(controller).hasMatch(
-            '  late final TextEditingController _name = '
-            'TextEditingController(text: x);'),
-        isTrue);
+      RegExp(dialog).hasMatch('      builder: (_) => AlertDialog('),
+      isTrue,
+    );
+    expect(
+      RegExp(controller).hasMatch(
+        '  late final TextEditingController _name = '
+        'TextEditingController(text: x);',
+      ),
+      isTrue,
+    );
     // And do not fire on the ordinary form, which is a screen with fields on it
     // rather than a dialog.
-    expect(RegExp(dialog).hasMatch('  final _name = TextEditingController();'),
-        isFalse);
+    expect(
+      RegExp(dialog).hasMatch('  final _name = TextEditingController();'),
+      isFalse,
+    );
   });
 
   test('the prompt still exists to be the exception', () {
     final source = File(home).readAsStringSync();
-    expect(source.contains('TextEditingController('), isTrue,
-        reason: '$home is excused because it is where the controllers live; if '
-            'it stopped holding any, this guard is excusing nothing');
+    expect(
+      source.contains('TextEditingController('),
+      isTrue,
+      reason:
+          '$home is excused because it is where the controllers live; if '
+          'it stopped holding any, this guard is excusing nothing',
+    );
   });
 
   test('no dialog under lib/ owns its own text state', () {
@@ -59,8 +70,10 @@ void main() {
 
     for (final path in dartSourcesUnder()) {
       if (path == home) continue;
-      final lines =
-          codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch);
+      final lines = codeLines(
+        File(path).readAsStringSync(),
+        escapeHatch: escapeHatch,
+      );
       final source = lines.map((l) => l.text).join('\n');
       if (!RegExp(dialog).hasMatch(source)) continue;
       for (final line in lines) {
@@ -72,7 +85,8 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason: 'this file builds an AlertDialog and constructs a '
+      reason:
+          'this file builds an AlertDialog and constructs a '
           'TextEditingController, which is the shape that throws "used after '
           'being disposed" one frame after the dialog closes. Use '
           'promptForFields — it takes as many fields as you have and a '

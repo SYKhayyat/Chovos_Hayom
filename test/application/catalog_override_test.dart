@@ -8,11 +8,12 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/fake_catalog.dart';
 import '../support/memory_database.dart';
 
-ProviderContainer makeContainer(ProgressRepository repo) =>
-    ProviderContainer(overrides: [
-      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-      progressRepositoryProvider.overrideWithValue(repo),
-    ]);
+ProviderContainer makeContainer(ProgressRepository repo) => ProviderContainer(
+  overrides: [
+    catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+    progressRepositoryProvider.overrideWithValue(repo),
+  ],
+);
 
 void main() {
   test('a same-id custom row overrides a built-in node in place', () async {
@@ -38,12 +39,19 @@ void main() {
     );
     await pumpEventQueue();
 
-    final node = c.read(mergedCatalogProvider).value!.byId('shas.moed.shabbos')!;
+    final node = c
+        .read(mergedCatalogProvider)
+        .value!
+        .byId('shas.moed.shabbos')!;
     expect(node.name, 'Shabbos (renamed)');
     expect(node.unitCount, 200);
     // Not duplicated.
     expect(
-      c.read(mergedCatalogProvider).value!.all.where((n) => n.id == 'shas.moed.shabbos'),
+      c
+          .read(mergedCatalogProvider)
+          .value!
+          .all
+          .where((n) => n.id == 'shas.moed.shabbos'),
       hasLength(1),
     );
   });
@@ -70,7 +78,12 @@ void main() {
     );
     await pumpEventQueue();
 
-    final ids = c.read(mergedCatalogProvider).value!.all.map((n) => n.id).toSet();
+    final ids = c
+        .read(mergedCatalogProvider)
+        .value!
+        .all
+        .map((n) => n.id)
+        .toSet();
     expect(ids.contains('shas'), isFalse);
     expect(ids.contains('shas.moed'), isFalse); // cascaded
     expect(ids.contains('shas.moed.shabbos'), isFalse); // cascaded

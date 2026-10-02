@@ -79,7 +79,9 @@ class _UnitLayersSheet extends ConsumerWidget {
                     ? l10n.layersComplete
                     : l10n.layersRemaining(missing, requiredSet.length),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: missing == 0 ? Colors.green : theme.colorScheme.primary,
+                  color: missing == 0
+                      ? Colors.green
+                      : theme.colorScheme.primary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -137,8 +139,11 @@ class _UnitLayersSheet extends ConsumerWidget {
                     onPressed: () {
                       Navigator.pop(context);
                       guard.run(
-                        () => logger.markUndone(node.id, unit,
-                            layers: completed.toList()),
+                        () => logger.markUndone(
+                          node.id,
+                          unit,
+                          layers: completed.toList(),
+                        ),
                         what: l10n.whatClearingUnit(heading),
                       );
                     },

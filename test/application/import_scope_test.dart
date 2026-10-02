@@ -56,8 +56,8 @@ void main() {
   /// A backup that names every per-profile key, which is what a real one is —
   /// see `SettingsNotifier.toBackup`.
   Map<String, dynamic> backupNaming(String value) => {
-        for (final key in PrefKeys.perProfile) key: value,
-      };
+    for (final key in PrefKeys.perProfile) key: value,
+  };
 
   group('the settings contract, over every key that exists', () {
     // Enumerated rather than spelled out per key, so a preference added to
@@ -74,8 +74,11 @@ void main() {
       await settings().applyBackup(backupNaming('theirs'), ImportMode.merge);
 
       for (final key in PrefKeys.perProfile) {
-        expect(stored(key), 'mine',
-            reason: '$key was set on this profile, and a merge removes nothing');
+        expect(
+          stored(key),
+          'mine',
+          reason: '$key was set on this profile, and a merge removes nothing',
+        );
       }
     });
 
@@ -83,10 +86,14 @@ void main() {
       await settings().applyBackup(backupNaming('theirs'), ImportMode.merge);
 
       for (final key in PrefKeys.perProfile) {
-        expect(stored(key), 'theirs',
-            reason: '$key is unset here, so there is nothing to protect — a '
-                'fresh profile on a new phone must still get the file’s '
-                'settings, which is the whole reason import applies them');
+        expect(
+          stored(key),
+          'theirs',
+          reason:
+              '$key is unset here, so there is nothing to protect — a '
+              'fresh profile on a new phone must still get the file’s '
+              'settings, which is the whole reason import applies them',
+        );
       }
     });
 
@@ -97,8 +104,10 @@ void main() {
         await prefs.setString(PrefKeys.scoped('default', key), 'mine');
       }
 
-      await settings()
-          .applyBackup(backupNaming('theirs'), ImportMode.restoreLog);
+      await settings().applyBackup(
+        backupNaming('theirs'),
+        ImportMode.restoreLog,
+      );
 
       for (final key in PrefKeys.perProfile) {
         expect(stored(key), 'mine', reason: '$key survives a restoreLog');
@@ -110,8 +119,10 @@ void main() {
         await prefs.setString(PrefKeys.scoped('default', key), 'mine');
       }
 
-      await settings()
-          .applyBackup(backupNaming('theirs'), ImportMode.restoreEverything);
+      await settings().applyBackup(
+        backupNaming('theirs'),
+        ImportMode.restoreEverything,
+      );
 
       for (final key in PrefKeys.perProfile) {
         expect(stored(key), 'theirs', reason: '$key now matches the backup');
@@ -130,9 +141,13 @@ void main() {
       await settings().applyBackup(const {}, ImportMode.restoreEverything);
 
       for (final key in PrefKeys.perProfile) {
-        expect(stored(key), isNull,
-            reason: '$key is back to its default, which is stored as *absent* '
-                'rather than as the default value — see clearAll');
+        expect(
+          stored(key),
+          isNull,
+          reason:
+              '$key is back to its default, which is stored as *absent* '
+              'rather than as the default value — see clearAll',
+        );
       }
     });
 
@@ -143,9 +158,9 @@ void main() {
       // changing the language of a phone it was carried to.
       await settings().setHebrewLayout(true);
 
-      await settings().applyBackup(
-          {for (final key in PrefKeys.deviceWide) key: 'theirs'},
-          ImportMode.restoreEverything);
+      await settings().applyBackup({
+        for (final key in PrefKeys.deviceWide) key: 'theirs',
+      }, ImportMode.restoreEverything);
 
       expect(container.read(settingsProvider).hebrewLayout, isTrue);
       for (final key in PrefKeys.deviceWide) {
@@ -162,25 +177,29 @@ void main() {
       await goals().setGoal('mine', june);
       await goals().setGoal('shared', june);
 
-      final deleted = await goals()
-          .applyBackup({'shared': march, 'theirs': march}, ImportMode.merge);
-
-      expect(container.read(goalsProvider), {
-        'mine': june,
+      final deleted = await goals().applyBackup({
         'shared': march,
         'theirs': march,
-      },
-          reason: 'unlike the settings map, a node is only named here because '
-              'somebody picked a date for it — so naming it is the intent, and '
-              'honouring it is the right merge');
+      }, ImportMode.merge);
+
+      expect(
+        container.read(goalsProvider),
+        {'mine': june, 'shared': march, 'theirs': march},
+        reason:
+            'unlike the settings map, a node is only named here because '
+            'somebody picked a date for it — so naming it is the intent, and '
+            'honouring it is the right merge',
+      );
       expect(deleted, 0);
     });
 
     test('the narrow restore leaves goals alone', () async {
       await goals().setGoal('mine', june);
 
-      final deleted =
-          await goals().applyBackup(const {}, ImportMode.restoreLog);
+      final deleted = await goals().applyBackup(
+        const {},
+        ImportMode.restoreLog,
+      );
 
       expect(container.read(goalsProvider), {'mine': june});
       expect(deleted, 0);
@@ -190,13 +209,22 @@ void main() {
       await goals().setGoal('mine', june);
       await goals().setGoal('shared', june);
 
-      final deleted = await goals()
-          .applyBackup({'shared': march}, ImportMode.restoreEverything);
+      final deleted = await goals().applyBackup({
+        'shared': march,
+      }, ImportMode.restoreEverything);
 
-      expect(container.read(goalsProvider), {'shared': march},
-          reason: 'a target date set since the backup is exactly the kind of '
-              'thing "make this profile match the file" is for undoing');
-      expect(deleted, 1, reason: 'reported, so the summary can say what it did');
+      expect(
+        container.read(goalsProvider),
+        {'shared': march},
+        reason:
+            'a target date set since the backup is exactly the kind of '
+            'thing "make this profile match the file" is for undoing',
+      );
+      expect(
+        deleted,
+        1,
+        reason: 'reported, so the summary can say what it did',
+      );
     });
 
     test('what the confirmation counts is what the import deletes', () async {
@@ -210,11 +238,14 @@ void main() {
       final backup = {'a': march};
 
       final predicted = GoalsController.goalsRemovedBy(
-              container.read(goalsProvider), backup,
-              ImportMode.restoreEverything)
-          .length;
-      final actual =
-          await goals().applyBackup(backup, ImportMode.restoreEverything);
+        container.read(goalsProvider),
+        backup,
+        ImportMode.restoreEverything,
+      ).length;
+      final actual = await goals().applyBackup(
+        backup,
+        ImportMode.restoreEverything,
+      );
 
       expect(predicted, 2);
       expect(actual, predicted);
@@ -245,18 +276,24 @@ void main() {
           final params = match.group(1)!;
           // Call sites pass `mode`; declarations name the type. Either spelling
           // proves the scope reached this store.
-          if (params.contains('ImportMode') || params.contains('mode')) continue;
+          if (params.contains('ImportMode') || params.contains('mode')) {
+            continue;
+          }
           violations.add('$path: ${match.group(0)}');
         }
       }
 
-      expect(violations, isEmpty,
-          reason: 'a store that a backup writes into has to know how much of '
-              'itself the chosen mode is allowed to replace. Add the ImportMode '
-              'parameter and give it a branch — and if the answer is genuinely '
-              '"this one is the same in all three modes", say so in the '
-              'signature by taking the mode and ignoring it, so the next reader '
-              'can tell that was decided rather than missed');
+      expect(
+        violations,
+        isEmpty,
+        reason:
+            'a store that a backup writes into has to know how much of '
+            'itself the chosen mode is allowed to replace. Add the ImportMode '
+            'parameter and give it a branch — and if the answer is genuinely '
+            '"this one is the same in all three modes", say so in the '
+            'signature by taking the mode and ignoring it, so the next reader '
+            'can tell that was decided rather than missed',
+      );
     });
   });
 }

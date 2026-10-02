@@ -96,8 +96,7 @@ void main() {
     final verbs = <String>{};
     void take(String path, {bool skipReads = false}) {
       final source = blanked(File(path).readAsStringSync());
-      for (final m
-          in RegExp(r'Future<[^>]*>\s+(\w+)\(').allMatches(source)) {
+      for (final m in RegExp(r'Future<[^>]*>\s+(\w+)\(').allMatches(source)) {
         final name = m.group(1)!;
         if (name.startsWith('_') || name == 'build') continue;
         if (skipReads &&
@@ -126,8 +125,17 @@ void main() {
     final verbs = writeVerbs();
     // A handful of specific ones, so the derivation cannot quietly start
     // returning an empty set and pass.
-    expect(verbs, containsAll(<String>['markDone', 'addEvent', 'setGoal',
-      'setLayerConfig', 'removeBatch', 'setBackupIntervalDays']));
+    expect(
+      verbs,
+      containsAll(<String>[
+        'markDone',
+        'addEvent',
+        'setGoal',
+        'setLayerConfig',
+        'removeBatch',
+        'setBackupIntervalDays',
+      ]),
+    );
     expect(verbs, isNot(contains('getEvents')));
     expect(verbs, isNot(contains('watchEvents')));
     expect(verbs.length, greaterThan(20));
@@ -138,8 +146,10 @@ void main() {
     final violations = <String>[];
 
     /// A read that yields something writes come out of.
-    final writerRead = RegExp(r'(?:ref|container|_container)\s*\.\s*read\(\s*'
-        r'(?:\w+\.notifier|progressRepositoryProvider|loggingServiceProvider)');
+    final writerRead = RegExp(
+      r'(?:ref|container|_container)\s*\.\s*read\(\s*'
+      r'(?:\w+\.notifier|progressRepositoryProvider|loggingServiceProvider)',
+    );
 
     for (final path in dartSourcesUnder('lib/features')) {
       final raw = File(path).readAsStringSync();
@@ -155,13 +165,14 @@ void main() {
       // the correct shape: capture before the await, then write inside the
       // guard.
       final writers = <String>{
-        for (final m
-            in RegExp(r'(?:final|var)\s+(\w+)\s*=\s*(?:await\s+)?([^;]+);',
-                    dotAll: true)
-                .allMatches(code))
+        for (final m in RegExp(
+          r'(?:final|var)\s+(\w+)\s*=\s*(?:await\s+)?([^;]+);',
+          dotAll: true,
+        ).allMatches(code))
           if (writerRead.hasMatch(m.group(2)!)) m.group(1)!,
-        for (final m in RegExp(r'(?:final|var)\s+(\w+)\s*=\s*BackupService\(')
-            .allMatches(code))
+        for (final m in RegExp(
+          r'(?:final|var)\s+(\w+)\s*=\s*BackupService\(',
+        ).allMatches(code))
           m.group(1)!,
       };
 
@@ -186,10 +197,12 @@ void main() {
             r'loggingServiceProvider)[^)]*\)',
         r'BackupService\([^)]*\)',
       ].join('|');
-      final call = RegExp('(?:$receiver)'
-          r'\s*\.\s*('
-          '${verbs.join('|')}'
-          r')\(');
+      final call = RegExp(
+        '(?:$receiver)'
+        r'\s*\.\s*('
+        '${verbs.join('|')}'
+        r')\(',
+      );
 
       final depth = <int>[];
       for (var i = 0; i < code.length; i++) {
@@ -220,7 +233,8 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason: 'a write the user started must be awaited, reported and — on '
+      reason:
+          'a write the user started must be awaited, reported and — on '
           'failure — recorded, and the lint does not catch these: '
           '`onPressed: () => write()` is a sync arrow closure and '
           '`unawaited_futures` only fires inside async bodies.\n\n'

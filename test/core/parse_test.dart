@@ -26,9 +26,13 @@ void main() {
       expect(positiveInt('x'), isNull, reason: 'not a number');
       expect(positiveInt('3.5'), isNull, reason: 'not an integer');
       expect(positiveInt('-4'), isNull, reason: 'not positive');
-      expect(positiveInt('0'), isNull,
-          reason: 'every quantity this parses is a count of days or units, and '
-              'none of them means anything at zero');
+      expect(
+        positiveInt('0'),
+        isNull,
+        reason:
+            'every quantity this parses is a count of days or units, and '
+            'none of them means anything at zero',
+      );
     });
   });
 
@@ -45,8 +49,14 @@ void main() {
 
   group('positiveIntList', () {
     test('reads the list', () {
-      expect(positiveIntList('1, 3, 7, 16, 35, 70').values,
-          [1, 3, 7, 16, 35, 70]);
+      expect(positiveIntList('1, 3, 7, 16, 35, 70').values, [
+        1,
+        3,
+        7,
+        16,
+        35,
+        70,
+      ]);
       expect(positiveIntList('1,3,7').values, [1, 3, 7]);
     });
 
@@ -89,23 +99,32 @@ void main() {
     };
     final banned = RegExp(r'int\.tryParse\(');
 
-    expect(banned.hasMatch('final n = int.tryParse(text.trim()) ?? 0;'), isTrue);
+    expect(
+      banned.hasMatch('final n = int.tryParse(text.trim()) ?? 0;'),
+      isTrue,
+    );
 
     final violations = <String>[];
     for (final path in dartSourcesUnder()) {
       if (path == home || allowed.contains(path)) continue;
-      for (final line
-          in codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch)) {
+      for (final line in codeLines(
+        File(path).readAsStringSync(),
+        escapeHatch: escapeHatch,
+      )) {
         if (!banned.hasMatch(line.text)) continue;
         violations.add('$path:${line.line}\n    ${line.text.trim()}');
       }
     }
 
-    expect(violations, isEmpty,
-        reason: 'use positiveInt / nonNegativeInt / positiveIntList — the '
-            'hand-written versions of this disagreed about what happens to '
-            'input none of them could use.\n\n${violations.join('\n')}\n\n'
-            'If a line genuinely needs the raw form, mark it '
-            '`// $escapeHatch — <reason>`.');
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'use positiveInt / nonNegativeInt / positiveIntList — the '
+          'hand-written versions of this disagreed about what happens to '
+          'input none of them could use.\n\n${violations.join('\n')}\n\n'
+          'If a line genuinely needs the raw form, mark it '
+          '`// $escapeHatch — <reason>`.',
+    );
   });
 }

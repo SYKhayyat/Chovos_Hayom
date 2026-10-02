@@ -32,15 +32,20 @@ void main() {
   });
 
   test('the context says where it came from', () async {
-    await logFor().record(Exception('x'), StackTrace.current,
-        context: 'Flutter framework');
+    await logFor().record(
+      Exception('x'),
+      StackTrace.current,
+      context: 'Flutter framework',
+    );
     expect(await logFor().read(), contains('Flutter framework'));
   });
 
-  test('reading before anything has crashed gives empty, not an error',
-      () async {
-    expect(await logFor().read(), isEmpty);
-  });
+  test(
+    'reading before anything has crashed gives empty, not an error',
+    () async {
+      expect(await logFor().read(), isEmpty);
+    },
+  );
 
   test('appends rather than overwriting', () async {
     final log = logFor();
@@ -50,8 +55,11 @@ void main() {
     final text = await log.read();
     expect(text, contains('first'));
     expect(text, contains('second'));
-    expect(text.indexOf('first'), lessThan(text.indexOf('second')),
-        reason: 'newest last');
+    expect(
+      text.indexOf('first'),
+      lessThan(text.indexOf('second')),
+      reason: 'newest last',
+    );
   });
 
   test('a crash loop cannot grow the log without bound', () async {
@@ -93,8 +101,10 @@ void main() {
   test('an unwritable directory is survived silently', () async {
     // Recording a crash must never become a second crash.
     final log = CrashLog(directory: Directory('/definitely/not/a/real/path'));
-    await expectLater(log.record(Exception('x'), StackTrace.current),
-        completes);
+    await expectLater(
+      log.record(Exception('x'), StackTrace.current),
+      completes,
+    );
     expect(await log.read(), isEmpty);
   });
 }

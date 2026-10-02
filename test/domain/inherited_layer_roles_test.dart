@@ -14,23 +14,31 @@ const _parents = <String, String?>{
 InheritedLayerRoles setWith({
   Map<String, Map<String, LayerRole>> nodeConfig = const {},
   Map<String, String?> parentOf = _parents,
-}) =>
-    InheritedLayerRoles(nodeConfig: nodeConfig, parentOf: parentOf);
+}) => InheritedLayerRoles(nodeConfig: nodeConfig, parentOf: parentOf);
 
 void main() {
   test('a config pinned high applies all the way down', () {
     // The point of the whole engine: "require Rashi across Shas" is one setting.
-    final s = setWith(nodeConfig: {'shas': roles(required: ['main', 'rashi'])});
+    final s = setWith(
+      nodeConfig: {
+        'shas': roles(required: ['main', 'rashi']),
+      },
+    );
     expect(s.forNode('shas.moed.shabbos'), roles(required: ['main', 'rashi']));
-    expect(s.forNode('shas.moed'), roles(required: ['main', 'rashi']),
-        reason: 'every node on the way down, not only the leaf');
+    expect(
+      s.forNode('shas.moed'),
+      roles(required: ['main', 'rashi']),
+      reason: 'every node on the way down, not only the leaf',
+    );
   });
 
   test('a nearer node overrides an ancestor', () {
-    final s = setWith(nodeConfig: {
-      'shas': roles(required: ['main', 'rashi']),
-      'shas.moed': roles(required: ['main']),
-    });
+    final s = setWith(
+      nodeConfig: {
+        'shas': roles(required: ['main', 'rashi']),
+        'shas.moed': roles(required: ['main']),
+      },
+    );
     expect(s.forNode('shas.moed.shabbos'), roles(required: ['main']));
   });
 
@@ -39,10 +47,12 @@ void main() {
     // beats its node", over a `unitConfig` map nothing ever put a key in. What
     // is left is the property the app actually relies on — one pin, one answer,
     // for the whole node.
-    final s = setWith(nodeConfig: {
-      'shas': roles(required: ['main', 'rashi']),
-      'shas.moed.shabbos': roles(required: ['main']),
-    });
+    final s = setWith(
+      nodeConfig: {
+        'shas': roles(required: ['main', 'rashi']),
+        'shas.moed.shabbos': roles(required: ['main']),
+      },
+    );
     expect(s.forNode('shas.moed.shabbos'), roles(required: ['main']));
     expect(s.forNode('shas.moed'), roles(required: ['main', 'rashi']));
   });
@@ -52,19 +62,23 @@ void main() {
     // *requires* Rashi and a child that merely *offers* it are different
     // answers, and two set-resolvers could only express the difference by being
     // pinned at different depths — which is what they used to do.
-    final s = setWith(nodeConfig: {
-      'shas': roles(required: ['main', 'rashi']),
-      'shas.moed': roles(required: ['main'], optional: ['rashi']),
-    });
+    final s = setWith(
+      nodeConfig: {
+        'shas': roles(required: ['main', 'rashi']),
+        'shas.moed': roles(required: ['main'], optional: ['rashi']),
+      },
+    );
     expect(s.forNode('shas')['rashi'], LayerRole.required);
     expect(s.forNode('shas.moed.shabbos')['rashi'], LayerRole.optional);
   });
 
   test('an explicitly-empty pin means "back to the default here"', () {
-    final s = setWith(nodeConfig: {
-      'shas': roles(required: ['main', 'rashi']),
-      'shas.moed': const <String, LayerRole>{},
-    });
+    final s = setWith(
+      nodeConfig: {
+        'shas': roles(required: ['main', 'rashi']),
+        'shas.moed': const <String, LayerRole>{},
+      },
+    );
     expect(s.forNode('shas.moed.shabbos'), defaultLayerRoles);
   });
 
@@ -92,13 +106,17 @@ void main() {
     });
 
     test('a node that is its own parent resolves to the default', () {
-      expect(setWith(parentOf: const {'a': 'a'}).forNode('a'),
-          defaultLayerRoles);
+      expect(
+        setWith(parentOf: const {'a': 'a'}).forNode('a'),
+        defaultLayerRoles,
+      );
     });
 
     test('a config inside a cycle is still honoured', () {
       final s = setWith(
-        nodeConfig: {'b': roles(required: ['main', 'rashi'])},
+        nodeConfig: {
+          'b': roles(required: ['main', 'rashi']),
+        },
         parentOf: const {'a': 'b', 'b': 'a'},
       );
       expect(s.forNode('a'), roles(required: ['main', 'rashi']));
@@ -110,27 +128,36 @@ void main() {
     });
   });
 
-  group('pinnedSource distinguishes "set here" from "inherited" from "default"',
-      () {
-    test('names the nearest configured ancestor, or the node itself', () {
-      final s =
-          setWith(nodeConfig: {'shas': roles(required: ['main', 'rashi'])});
-      expect(s.pinnedSource('shas.moed.shabbos'), 'shas');
-      expect(s.pinnedSource('shas'), 'shas');
-    });
+  group(
+    'pinnedSource distinguishes "set here" from "inherited" from "default"',
+    () {
+      test('names the nearest configured ancestor, or the node itself', () {
+        final s = setWith(
+          nodeConfig: {
+            'shas': roles(required: ['main', 'rashi']),
+          },
+        );
+        expect(s.pinnedSource('shas.moed.shabbos'), 'shas');
+        expect(s.pinnedSource('shas'), 'shas');
+      });
 
-    test('is null when nothing is configured up the chain', () {
-      expect(setWith().pinnedSource('shas.moed.shabbos'), isNull);
-    });
+      test('is null when nothing is configured up the chain', () {
+        expect(setWith().pinnedSource('shas.moed.shabbos'), isNull);
+      });
 
-    test('terminates on a parent cycle rather than hanging', () {
-      final s = setWith(parentOf: const {'a': 'b', 'b': 'a'});
-      expect(s.pinnedSource('a'), isNull);
-    });
-  });
+      test('terminates on a parent cycle rather than hanging', () {
+        final s = setWith(parentOf: const {'a': 'b', 'b': 'a'});
+        expect(s.pinnedSource('a'), isNull);
+      });
+    },
+  );
 
   test('repeated lookups memoize the whole chain', () {
-    final s = setWith(nodeConfig: {'shas': roles(required: ['main', 'rashi'])});
+    final s = setWith(
+      nodeConfig: {
+        'shas': roles(required: ['main', 'rashi']),
+      },
+    );
     final first = s.forNode('shas.moed.shabbos');
     // Same identity, not merely equal — the chain was cached on the way down.
     expect(identical(s.forNode('shas.moed.shabbos'), first), isTrue);

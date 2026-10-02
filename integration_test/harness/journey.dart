@@ -85,8 +85,8 @@ class JourneyResult {
   String get line => ok
       ? '  ok    ${journey.id} (${seconds.toStringAsFixed(1)}s)'
       : '  FAIL  ${journey.id}\n'
-          '          at: $failedStep\n'
-          '          ${error.toString().split('\n').join('\n          ')}';
+            '          at: $failedStep\n'
+            '          ${error.toString().split('\n').join('\n          ')}';
 }
 
 /// Runs journeys and keeps going.
@@ -203,7 +203,9 @@ class HarnessRunner {
         byArea.putIfAbsent(result.journey.area, () => []).add(result);
       }
       for (final entry in byArea.entries) {
-        buffer.writeln('  ${entry.key}: ${entry.value.map((r) => r.journey.id).join(', ')}');
+        buffer.writeln(
+          '  ${entry.key}: ${entry.value.map((r) => r.journey.id).join(', ')}',
+        );
       }
     }
     return buffer.toString();
@@ -226,8 +228,10 @@ class HarnessRunner {
     for (final area in areas) {
       final inArea = byArea[area]!;
       final good = inArea.where((r) => r.ok).length;
-      buffer.writeln('  ${area.padRight(14)} $good/${inArea.length} passed'
-          '  ${inArea.map((r) => r.journey.id.split('/').last).join(', ')}');
+      buffer.writeln(
+        '  ${area.padRight(14)} $good/${inArea.length} passed'
+        '  ${inArea.map((r) => r.journey.id.split('/').last).join(', ')}',
+      );
     }
     return buffer.toString();
   }

@@ -7,14 +7,14 @@ import 'support/fake_catalog.dart';
 import 'support/memory_database.dart';
 
 void main() {
-  testWidgets('drill into a leaf, mark a daf in the grid, see it roll up',
-      (tester) async {
+  testWidgets('drill into a leaf, mark a daf in the grid, see it roll up', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider
-              .overrideWithValue(memoryRepository()),
+          progressRepositoryProvider.overrideWithValue(memoryRepository()),
         ],
         child: const ChovosHayomApp(),
       ),

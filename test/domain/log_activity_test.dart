@@ -11,18 +11,18 @@ LearningEvent ev(
   EventAction action = EventAction.done,
   int? mins,
   DateTime? logged,
-}) =>
-    LearningEvent(
-      id: '$node-$unit-${action.name}-${day.toIso8601String()}'
-          '-${logged?.toIso8601String() ?? ''}-$mins',
-      profileId: 'p',
-      nodeId: node,
-      unitIndex: unit,
-      action: action,
-      occurredAt: day,
-      loggedAt: logged ?? day,
-      durationMin: mins,
-    );
+}) => LearningEvent(
+  id:
+      '$node-$unit-${action.name}-${day.toIso8601String()}'
+      '-${logged?.toIso8601String() ?? ''}-$mins',
+  profileId: 'p',
+  nodeId: node,
+  unitIndex: unit,
+  action: action,
+  occurredAt: day,
+  loggedAt: logged ?? day,
+  durationMin: mins,
+);
 
 // ---------------------------------------------------------------------------
 // The definitions, written out the long way.
@@ -37,8 +37,11 @@ LearningEvent ev(
 // rather than against a hand-written expected number.
 // ---------------------------------------------------------------------------
 
-double naiveAveragePerDay(List<LearningEvent> events,
-    {required DateTime now, int windowDays = 30}) {
+double naiveAveragePerDay(
+  List<LearningEvent> events, {
+  required DateTime now,
+  int windowDays = 30,
+}) {
   if (windowDays <= 0) return 0;
   final today = Day.of(now);
   final windowStart = today - (windowDays - 1);
@@ -80,8 +83,9 @@ Map<Day, int> naiveDailyDone(List<LearningEvent> events) {
   final byDay = <Day, Set<String>>{};
   for (final e in events) {
     if (e.action != EventAction.done) continue;
-    (byDay[Day.of(e.occurredAt)] ??= <String>{})
-        .add('${e.nodeId} ${e.unitIndex}');
+    (byDay[Day.of(e.occurredAt)] ??= <String>{}).add(
+      '${e.nodeId} ${e.unitIndex}',
+    );
   }
   return {for (final e in byDay.entries) e.key: e.value.length};
 }
@@ -117,23 +121,23 @@ int naiveRecordedOn(List<LearningEvent> events, DateTime day) {
 /// day, one unit on two days, an un-mark, a `reviewed` pass carrying a
 /// duration, a backdated recording, a zero duration, and a gap.
 List<LearningEvent> get messyLog => [
-      ev(DateTime(2026, 1, 8, 12), unit: 5, mins: 30),
-      ev(DateTime(2026, 1, 9, 12), unit: 4),
-      ev(DateTime(2026, 1, 10, 9), unit: 2, mins: 45),
-      ev(DateTime(2026, 1, 10, 21), unit: 3),
-      // Same unit, a second day — one unit of pace, two days of heatmap.
-      ev(DateTime(2026, 1, 12, 8), unit: 2),
-      // A re-mark on a day it was already marked — collapses to one.
-      ev(DateTime(2026, 1, 12, 22), unit: 2, node: 'a'),
-      ev(DateTime(2026, 1, 13), unit: 4, action: EventAction.undone),
-      // A chazara that took twenty minutes: time spent, not a unit learned.
-      ev(DateTime(2026, 1, 13), unit: 5, action: EventAction.reviewed, mins: 20),
-      // Learned on the 14th, written down on the 20th.
-      ev(DateTime(2026, 1, 14), unit: 9, logged: DateTime(2026, 1, 20)),
-      // A duration of zero is not a session.
-      ev(DateTime(2026, 1, 15), unit: 11, mins: 0),
-      ev(DateTime(2026, 2, 2), unit: 12, node: 'b', mins: 20),
-    ];
+  ev(DateTime(2026, 1, 8, 12), unit: 5, mins: 30),
+  ev(DateTime(2026, 1, 9, 12), unit: 4),
+  ev(DateTime(2026, 1, 10, 9), unit: 2, mins: 45),
+  ev(DateTime(2026, 1, 10, 21), unit: 3),
+  // Same unit, a second day — one unit of pace, two days of heatmap.
+  ev(DateTime(2026, 1, 12, 8), unit: 2),
+  // A re-mark on a day it was already marked — collapses to one.
+  ev(DateTime(2026, 1, 12, 22), unit: 2, node: 'a'),
+  ev(DateTime(2026, 1, 13), unit: 4, action: EventAction.undone),
+  // A chazara that took twenty minutes: time spent, not a unit learned.
+  ev(DateTime(2026, 1, 13), unit: 5, action: EventAction.reviewed, mins: 20),
+  // Learned on the 14th, written down on the 20th.
+  ev(DateTime(2026, 1, 14), unit: 9, logged: DateTime(2026, 1, 20)),
+  // A duration of zero is not a session.
+  ev(DateTime(2026, 1, 15), unit: 11, mins: 0),
+  ev(DateTime(2026, 2, 2), unit: 12, node: 'b', mins: 20),
+];
 
 void main() {
   group('one pass answers what the five passes did', () {
@@ -160,8 +164,11 @@ void main() {
     test('the streak matches a direct scan, at every window end', () {
       for (var d = 0; d <= 40; d++) {
         final now = DateTime(2026, 1, 5).add(Duration(hours: 24 * d));
-        expect(activity.streakEndingAt(Day.of(now)), naiveStreak(events, now: now),
-            reason: 'streak disagrees at $now');
+        expect(
+          activity.streakEndingAt(Day.of(now)),
+          naiveStreak(events, now: now),
+          reason: 'streak disagrees at $now',
+        );
       }
     });
 
@@ -169,17 +176,22 @@ void main() {
       expect(activity.totalMinutes, naiveTotalMinutes(events));
       for (var d = 0; d <= 40; d++) {
         final start = DateTime(2026, 1, 5).add(Duration(hours: 24 * d));
-        expect(activity.minutesSince(Day.of(start)),
-            naiveMinutesSince(events, start),
-            reason: 'minutes disagree from $start');
+        expect(
+          activity.minutesSince(Day.of(start)),
+          naiveMinutesSince(events, start),
+          reason: 'minutes disagree from $start',
+        );
       }
     });
 
     test('what was recorded on a day matches a direct scan', () {
       for (var d = 0; d <= 40; d++) {
         final day = DateTime(2026, 1, 5).add(Duration(hours: 24 * d));
-        expect(activity.recordedOn(Day.of(day)), naiveRecordedOn(events, day),
-            reason: 'recorded count disagrees on $day');
+        expect(
+          activity.recordedOn(Day.of(day)),
+          naiveRecordedOn(events, day),
+          reason: 'recorded count disagrees on $day',
+        );
       }
     });
   });
@@ -210,18 +222,21 @@ void main() {
       expect(activity.unitsOn(Day.of(DateTime(2026, 1, 12))), 1);
     });
 
-    test('a unit marked on two days is one unit of pace and two of heatmap', () {
-      expect(activity.unitsOn(Day.of(DateTime(2026, 1, 10))), 2);
-      expect(activity.unitsOn(Day.of(DateTime(2026, 1, 12))), 1);
-      // Jan 10 and Jan 12 together hold units 2, 3 and 2 again — three marks,
-      // two distinct units.
-      final pace = LogActivity.of([
-        ev(DateTime(2026, 1, 10), unit: 2),
-        ev(DateTime(2026, 1, 11), unit: 3),
-        ev(DateTime(2026, 1, 12), unit: 2),
-      ]).averagePerDay(Day.of(DateTime(2026, 1, 12)), windowDays: 30);
-      expect(pace, closeTo(2 / 3, 1e-12));
-    });
+    test(
+      'a unit marked on two days is one unit of pace and two of heatmap',
+      () {
+        expect(activity.unitsOn(Day.of(DateTime(2026, 1, 10))), 2);
+        expect(activity.unitsOn(Day.of(DateTime(2026, 1, 12))), 1);
+        // Jan 10 and Jan 12 together hold units 2, 3 and 2 again — three marks,
+        // two distinct units.
+        final pace = LogActivity.of([
+          ev(DateTime(2026, 1, 10), unit: 2),
+          ev(DateTime(2026, 1, 11), unit: 3),
+          ev(DateTime(2026, 1, 12), unit: 2),
+        ]).averagePerDay(Day.of(DateTime(2026, 1, 12)), windowDays: 30);
+        expect(pace, closeTo(2 / 3, 1e-12));
+      },
+    );
   });
 
   group('pace', () {
@@ -256,15 +271,23 @@ void main() {
       // It lies outside the window, so it is the one part of the answer the
       // window walk cannot see and the index has to carry.
       final older = [ev(DateTime(2025, 11, 1), unit: 99), ...events];
-      expect(LogActivity.of(older).firstDayLearned,
-          Day.of(DateTime(2025, 11, 1)));
-      expect(LogActivity.of(events).firstDayLearned,
-          Day.of(DateTime(2026, 1, 8)));
+      expect(
+        LogActivity.of(older).firstDayLearned,
+        Day.of(DateTime(2025, 11, 1)),
+      );
+      expect(
+        LogActivity.of(events).firstDayLearned,
+        Day.of(DateTime(2026, 1, 8)),
+      );
     });
 
     test('a non-positive window is zero, not a division by zero', () {
-      expect(LogActivity.of(events)
-          .averagePerDay(Day.of(DateTime(2026, 1, 10)), windowDays: 0), 0);
+      expect(
+        LogActivity.of(
+          events,
+        ).averagePerDay(Day.of(DateTime(2026, 1, 10)), windowDays: 0),
+        0,
+      );
     });
   });
 
@@ -277,20 +300,23 @@ void main() {
 
     test('counts consecutive days back from today', () {
       expect(
-          LogActivity.of(events).streakEndingAt(Day.of(DateTime(2026, 1, 10))),
-          3);
+        LogActivity.of(events).streakEndingAt(Day.of(DateTime(2026, 1, 10))),
+        3,
+      );
     });
 
     test('stays alive when today is empty but yesterday learned', () {
       expect(
-          LogActivity.of(events).streakEndingAt(Day.of(DateTime(2026, 1, 11))),
-          3);
+        LogActivity.of(events).streakEndingAt(Day.of(DateTime(2026, 1, 11))),
+        3,
+      );
     });
 
     test('is zero after a two-day gap', () {
       expect(
-          LogActivity.of(events).streakEndingAt(Day.of(DateTime(2026, 1, 12))),
-          0);
+        LogActivity.of(events).streakEndingAt(Day.of(DateTime(2026, 1, 12))),
+        0,
+      );
     });
   });
 
@@ -313,14 +339,19 @@ void main() {
 
     test('minutesSince counts only on/after the given day', () {
       expect(
-          LogActivity.of(events).minutesSince(Day.of(DateTime(2026, 2, 1))), 20);
+        LogActivity.of(events).minutesSince(Day.of(DateTime(2026, 2, 1))),
+        20,
+      );
     });
 
     test('minutesSince is day-inclusive from the first moment of the day', () {
       // A session at 08:00 counts for a window starting "on" that day, however
       // late in it the boundary instant was built.
       final e = [ev(DateTime(2026, 2, 1, 8), mins: 15)];
-      expect(LogActivity.of(e).minutesSince(Day.of(DateTime(2026, 2, 1, 23))), 15);
+      expect(
+        LogActivity.of(e).minutesSince(Day.of(DateTime(2026, 2, 1, 23))),
+        15,
+      );
     });
   });
 
@@ -375,8 +406,12 @@ void main() {
     // this passes in any host timezone.
     final activity = LogActivity.of([
       for (var d = 0; d < 5; d++)
-        ev(Day(Day.of(DateTime(2026, 3, 7)).ordinal + d).midnight
-            .add(const Duration(hours: 10)), unit: d),
+        ev(
+          Day(
+            Day.of(DateTime(2026, 3, 7)).ordinal + d,
+          ).midnight.add(const Duration(hours: 10)),
+          unit: d,
+        ),
     ]);
     expect(activity.streakEndingAt(Day.of(DateTime(2026, 3, 11))), 5);
   });

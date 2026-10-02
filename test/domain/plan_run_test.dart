@@ -23,24 +23,24 @@ import 'package:flutter_test/flutter_test.dart';
 /// that has no end to be a fraction of.
 var _seq = 0;
 LearningEvent done(String node, int unit, DateTime day) => LearningEvent(
-      id: 'e${_seq++}',
-      profileId: 'p',
-      nodeId: node,
-      unitIndex: unit,
-      action: EventAction.done,
-      occurredAt: day,
-      loggedAt: day,
-    );
+  id: 'e${_seq++}',
+  profileId: 'p',
+  nodeId: node,
+  unitIndex: unit,
+  action: EventAction.done,
+  occurredAt: day,
+  loggedAt: day,
+);
 
 LearningEvent undone(String node, int unit, DateTime day) => LearningEvent(
-      id: 'e${_seq++}',
-      profileId: 'p',
-      nodeId: node,
-      unitIndex: unit,
-      action: EventAction.undone,
-      occurredAt: day,
-      loggedAt: day,
-    );
+  id: 'e${_seq++}',
+  profileId: 'p',
+  nodeId: node,
+  unitIndex: unit,
+  action: EventAction.undone,
+  occurredAt: day,
+  loggedAt: day,
+);
 
 /// The day the plan is asked about, and the day everything in these tests was
 /// learned.
@@ -57,23 +57,30 @@ final asOf = Day.of(DateTime.utc(2026, 3, 1));
 /// A leaf with 30 units numbered from 2, so a range is easy to state and a
 /// wrap is easy to reach: `2..25` leaves 2 at the bottom and 25 at the top.
 final catalog = Catalog([
-  const CatalogNode(id: 'root', parentId: null, name: 'Root', kind: NodeKind.category),
   const CatalogNode(
-      id: 'yoma',
-      parentId: 'root',
-      name: 'Yoma',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.daf,
-      unitCount: 30,
-      unitOffset: 2),
+    id: 'root',
+    parentId: null,
+    name: 'Root',
+    kind: NodeKind.category,
+  ),
   const CatalogNode(
-      id: 'sukkah',
-      parentId: 'root',
-      name: 'Sukkah',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.daf,
-      unitCount: 8,
-      unitOffset: 2),
+    id: 'yoma',
+    parentId: 'root',
+    name: 'Yoma',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.daf,
+    unitCount: 30,
+    unitOffset: 2,
+  ),
+  const CatalogNode(
+    id: 'sukkah',
+    parentId: 'root',
+    name: 'Sukkah',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.daf,
+    unitCount: 8,
+    unitOffset: 2,
+  ),
 ]);
 
 /// A one-sefer plan over the whole of Yoma, wrapping.
@@ -82,31 +89,21 @@ final catalog = Catalog([
 /// named parameter cannot share a name with the field it is assigned to and
 /// still default to a value — `startDay: startDay` in a default-valued
 /// signature does not compile.
-LearningPlan Function({
-  int? startUnit,
-  int? endUnit,
-  bool wrapRange,
-  Day? from,
-}) plan = ({
-  startUnit,
-  endUnit,
-  wrapRange = false,
-  from,
-}) =>
-    LearningPlan(
-      id: 'p',
-      name: 'P',
-      items: [
-        PlanItem(
-          id: 'i1',
-          nodeId: 'yoma',
-          startUnit: startUnit,
-          endUnit: endUnit,
-          wrapsRange: wrapRange,
-        ),
-      ],
-      startDay: from,
-    );
+LearningPlan Function({int? startUnit, int? endUnit, bool wrapRange, Day? from})
+plan = ({startUnit, endUnit, wrapRange = false, from}) => LearningPlan(
+  id: 'p',
+  name: 'P',
+  items: [
+    PlanItem(
+      id: 'i1',
+      nodeId: 'yoma',
+      startUnit: startUnit,
+      endUnit: endUnit,
+      wrapsRange: wrapRange,
+    ),
+  ],
+  startDay: from,
+);
 
 void main() {
   setUp(() => _seq = 0);
@@ -155,8 +152,11 @@ void main() {
     });
 
     test('a supplied range is honoured as given', () {
-      final range =
-          PlanRange.resolve(plan(startUnit: 2, endUnit: 25), catalog, 0)!;
+      final range = PlanRange.resolve(
+        plan(startUnit: 2, endUnit: 25),
+        catalog,
+        0,
+      )!;
       expect(range.first, 2);
       expect(range.last, 25);
       expect(range.length, 24);
@@ -192,12 +192,7 @@ void main() {
           'id': 'p',
           'name': 'P',
           'items': [
-            {
-              'id': 'a',
-              'nodeId': 'yoma',
-              'startUnit': 20,
-              'endUnit': 10,
-            }
+            {'id': 'a', 'nodeId': 'yoma', 'startUnit': 20, 'endUnit': 10},
           ],
         }),
         throwsFormatException,
@@ -217,18 +212,25 @@ void main() {
         name: 'P',
         items: [PlanItem(id: 'a', nodeId: 'deleted-node')],
       );
-      expect(PlanRange.resolve(gone, catalog, 0), isNull,
-          reason: 'a node deleted out from under a plan must not be fatal');
+      expect(
+        PlanRange.resolve(gone, catalog, 0),
+        isNull,
+        reason: 'a node deleted out from under a plan must not be fatal',
+      );
     });
   });
 
   group('the two wraps are independent settings', () {
     test('wrapping the range is about the units, not the chain', () {
       final single = plan(wrapRange: true);
-      expect(single.items.single.wrapsRange, isTrue,
-          reason: 'a single-sefer plan has no chain to continue, and can still '
-              'wrap its own range — which is the case that proves the two are '
-              'separate mechanisms');
+      expect(
+        single.items.single.wrapsRange,
+        isTrue,
+        reason:
+            'a single-sefer plan has no chain to continue, and can still '
+            'wrap its own range — which is the case that proves the two are '
+            'separate mechanisms',
+      );
       expect(single.flowsToNextItem, isFalse);
     });
 
@@ -249,10 +251,16 @@ void main() {
 
   group('the start date', () {
     test('defaults to today when the plan does not name one', () {
-      const p = LearningPlan(id: 'p', name: 'P', items: [
-        PlanItem(id: 'a', nodeId: 'yoma'),
-      ]);
-      expect(p.startDay, isNull, reason: 'null means "today", and is not stored');
+      const p = LearningPlan(
+        id: 'p',
+        name: 'P',
+        items: [PlanItem(id: 'a', nodeId: 'yoma')],
+      );
+      expect(
+        p.startDay,
+        isNull,
+        reason: 'null means "today", and is not stored',
+      );
       expect(p.startsOn(asOf), isTrue);
     });
 
@@ -294,10 +302,14 @@ void main() {
         pacing: FinishBy(Day.of(DateTime.utc(2026, 4, 1))),
       );
       expect(p.pacing.finishDay, isNotNull);
-      expect(p.pacing.unitsPerDay, isNull,
-          reason: 'the two answer the same question; a plan holding both can '
-              'contradict itself, which is why they are mutually exclusive by '
-              'construction rather than by convention');
+      expect(
+        p.pacing.unitsPerDay,
+        isNull,
+        reason:
+            'the two answer the same question; a plan holding both can '
+            'contradict itself, which is why they are mutually exclusive by '
+            'construction rather than by convention',
+      );
     });
 
     test('both round-trip, and are distinct values', () {
@@ -329,16 +341,19 @@ void main() {
       );
     });
 
-    test('an unknown pacing mode is refused rather than silently defaulted', () {
-      expect(
-        () => LearningPlan.fromJson({
-          'id': 'p',
-          'name': 'P',
-          'pacing': {'mode': 'whenever'},
-        }),
-        throwsFormatException,
-      );
-    });
+    test(
+      'an unknown pacing mode is refused rather than silently defaulted',
+      () {
+        expect(
+          () => LearningPlan.fromJson({
+            'id': 'p',
+            'name': 'P',
+            'pacing': {'mode': 'whenever'},
+          }),
+          throwsFormatException,
+        );
+      },
+    );
   });
 
   group('a wrapping plan is infinite', () {
@@ -347,9 +362,13 @@ void main() {
 
     test('a wrapping range has no total, so nothing can divide by it', () {
       final p = plan(startUnit: 2, endUnit: 25, wrapRange: true);
-      expect(PlanRunProgress.totalUnits(p, catalog), isNull,
-          reason: 'null is not "zero units" — it is "there is no total to count '
-              'to", which is the honest answer for an endless range');
+      expect(
+        PlanRunProgress.totalUnits(p, catalog),
+        isNull,
+        reason:
+            'null is not "zero units" — it is "there is no total to count '
+            'to", which is the honest answer for an endless range',
+      );
     });
 
     test('a wrapping range over a whole sefer has no total either', () {
@@ -358,9 +377,7 @@ void main() {
       const open = LearningPlan(
         id: 'p',
         name: 'P',
-        items: [
-          PlanItem(id: 'a', nodeId: 'yoma', wrapsRange: true),
-        ],
+        items: [PlanItem(id: 'a', nodeId: 'yoma', wrapsRange: true)],
       );
       expect(PlanRunProgress.totalUnits(open, catalog), isNull);
     });
@@ -391,8 +408,11 @@ void main() {
       ]);
       final p = plan(startUnit: 2, endUnit: 25, wrapRange: true);
       expect(PlanRunProgress.doneUnits(p, catalog, fold, asOf), 2);
-      expect(PlanRunProgress.totalUnits(p, catalog), isNull,
-          reason: 'so there is nothing to divide by, and nothing to invent');
+      expect(
+        PlanRunProgress.totalUnits(p, catalog),
+        isNull,
+        reason: 'so there is nothing to divide by, and nothing to invent',
+      );
     });
   });
 
@@ -423,20 +443,37 @@ void main() {
         done('yoma', 5, today),
         done('yoma', 6, today),
       ]);
-      expect(PlanRunProgress.unitOn(plan(startUnit: 2, endUnit: 25), catalog, fold, asOf),
-          7);
+      expect(
+        PlanRunProgress.unitOn(
+          plan(startUnit: 2, endUnit: 25),
+          catalog,
+          fold,
+          asOf,
+        ),
+        7,
+      );
     });
 
-    test('an un-ticked unit becomes not-done again and pulls the pointer back', () {
-      final fold = FoldLog.fold([
-        done('yoma', 2, today),
-        done('yoma', 3, today),
-        done('yoma', 4, today),
-        undone('yoma', 3, today),
-      ]);
-      expect(PlanRunProgress.unitOn(plan(startUnit: 2, endUnit: 25), catalog, fold, asOf),
-          3);
-    });
+    test(
+      'an un-ticked unit becomes not-done again and pulls the pointer back',
+      () {
+        final fold = FoldLog.fold([
+          done('yoma', 2, today),
+          done('yoma', 3, today),
+          done('yoma', 4, today),
+          undone('yoma', 3, today),
+        ]);
+        expect(
+          PlanRunProgress.unitOn(
+            plan(startUnit: 2, endUnit: 25),
+            catalog,
+            fold,
+            asOf,
+          ),
+          3,
+        );
+      },
+    );
 
     group('wrapping', () {
       test('a non-wrapping range that is finished has no next unit', () {
@@ -444,23 +481,36 @@ void main() {
           for (var u = 2; u <= 25; u++) done('yoma', u, today),
         ]);
         expect(
-          PlanRunProgress.unitOn(plan(startUnit: 2, endUnit: 25), catalog, fold, asOf),
+          PlanRunProgress.unitOn(
+            plan(startUnit: 2, endUnit: 25),
+            catalog,
+            fold,
+            asOf,
+          ),
           isNull,
-          reason: 'no wrap and no end: the range is finished, and saying so is '
+          reason:
+              'no wrap and no end: the range is finished, and saying so is '
               'the answer rather than starting it over',
         );
       });
 
-      test('a wrapping range that is finished starts again at its first unit', () {
-        final fold = FoldLog.fold([
-          for (var u = 2; u <= 25; u++) done('yoma', u, today),
-        ]);
-        expect(
-          PlanRunProgress.unitOn(
-              plan(startUnit: 2, endUnit: 25, wrapRange: true), catalog, fold, asOf),
-          2,
-        );
-      });
+      test(
+        'a wrapping range that is finished starts again at its first unit',
+        () {
+          final fold = FoldLog.fold([
+            for (var u = 2; u <= 25; u++) done('yoma', u, today),
+          ]);
+          expect(
+            PlanRunProgress.unitOn(
+              plan(startUnit: 2, endUnit: 25, wrapRange: true),
+              catalog,
+              fold,
+              asOf,
+            ),
+            2,
+          );
+        },
+      );
 
       test('a second lap of the same units does not advance the pointer', () {
         // **This is the case the whole no-lap-counter design turns on.** All 24
@@ -483,9 +533,13 @@ void main() {
         ]);
         final p = plan(startUnit: 2, endUnit: 25, wrapRange: true);
         expect(PlanRunProgress.unitOn(p, catalog, fold, asOf), 2);
-        expect(PlanRunProgress.doneUnits(p, catalog, fold, asOf), 24,
-            reason: '24 units are done; the 6 relearned do not inflate a count '
-                'of units');
+        expect(
+          PlanRunProgress.doneUnits(p, catalog, fold, asOf),
+          24,
+          reason:
+              '24 units are done; the 6 relearned do not inflate a count '
+              'of units',
+        );
       });
 
       test('un-ticking in a later lap pulls the pointer back to that unit', () {
@@ -498,7 +552,11 @@ void main() {
         ]);
         expect(
           PlanRunProgress.unitOn(
-              plan(startUnit: 2, endUnit: 25, wrapRange: true), catalog, fold, asOf),
+            plan(startUnit: 2, endUnit: 25, wrapRange: true),
+            catalog,
+            fold,
+            asOf,
+          ),
           9,
         );
       });
@@ -520,32 +578,46 @@ void main() {
 
   group('through the chain', () {
     LearningPlan chain({required bool flows, int? endUnit}) => LearningPlan(
-          id: 'p',
-          name: 'P',
-          items: [
-            PlanItem(id: 'a', nodeId: 'yoma', endUnit: endUnit),
-            const PlanItem(id: 'b', nodeId: 'sukkah'),
-          ],
-          flowsToNextItem: flows,
-        );
+      id: 'p',
+      name: 'P',
+      items: [
+        PlanItem(id: 'a', nodeId: 'yoma', endUnit: endUnit),
+        const PlanItem(id: 'b', nodeId: 'sukkah'),
+      ],
+      flowsToNextItem: flows,
+    );
 
     test('a plan that does not flow stops at the end of the first sefer', () {
       // The whole of Yoma is units 2..31, so "finished" means all thirty.
       final fold = FoldLog.fold([
         for (var u = 2; u <= 31; u++) done('yoma', u, today),
       ]);
-      final pos = PlanProgress.positionOn(chain(flows: false), catalog, fold, asOf);
+      final pos = PlanProgress.positionOn(
+        chain(flows: false),
+        catalog,
+        fold,
+        asOf,
+      );
       expect(pos.itemIndex, 0);
-      expect(pos.isComplete, isTrue,
-          reason: 'listing four seferim and stopping at the first is an '
-              'intention, not a bug');
+      expect(
+        pos.isComplete,
+        isTrue,
+        reason:
+            'listing four seferim and stopping at the first is an '
+            'intention, not a bug',
+      );
     });
 
     test('a plan that flows moves to the next sefer', () {
       final fold = FoldLog.fold([
         for (var u = 2; u <= 31; u++) done('yoma', u, today),
       ]);
-      final pos = PlanProgress.positionOn(chain(flows: true), catalog, fold, asOf);
+      final pos = PlanProgress.positionOn(
+        chain(flows: true),
+        catalog,
+        fold,
+        asOf,
+      );
       expect(pos.itemIndex, 1);
       expect(pos.nodeId, 'sukkah');
     });
@@ -560,7 +632,12 @@ void main() {
         ],
         flowsToNextItem: true,
       );
-      final pos = PlanProgress.positionOn(gone, catalog, FoldLog.fold([]), asOf);
+      final pos = PlanProgress.positionOn(
+        gone,
+        catalog,
+        FoldLog.fold([]),
+        asOf,
+      );
       expect(pos.itemIndex, 1);
     });
 
@@ -568,20 +645,25 @@ void main() {
       // The day a plan finishes, it is not yet finished: this is what stops a
       // plan reporting itself complete on the day it completes. Dated on [asOf]
       // deliberately, which is the only date that exercises the rule.
-      final learnedOnAsOf =
-          FoldLog.fold([done('yoma', 2, asOf.midnight)]);
+      final learnedOnAsOf = FoldLog.fold([done('yoma', 2, asOf.midnight)]);
       expect(
         PlanProgress.positionOn(
-                chain(flows: true), catalog, learnedOnAsOf, asOf)
-            .unitIndex,
+          chain(flows: true),
+          catalog,
+          learnedOnAsOf,
+          asOf,
+        ).unitIndex,
         2,
         reason: 'learned on this day, so still owed on this day',
       );
       // A day later it is counted, and the pointer moves on.
       expect(
         PlanProgress.positionOn(
-                chain(flows: true), catalog, learnedOnAsOf, asOf + 1)
-            .unitIndex,
+          chain(flows: true),
+          catalog,
+          learnedOnAsOf,
+          asOf + 1,
+        ).unitIndex,
         3,
       );
     });

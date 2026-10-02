@@ -12,8 +12,11 @@ void main() {
     test('hebrew produces a string containing Hebrew letters', () {
       final s = DateDisplay.format(date, CalendarMode.hebrew);
       expect(s, isNotEmpty);
-      expect(RegExp(r'[א-ת]').hasMatch(s), isTrue,
-          reason: 'expected Hebrew letters in "$s"');
+      expect(
+        RegExp(r'[א-ת]').hasMatch(s),
+        isTrue,
+        reason: 'expected Hebrew letters in "$s"',
+      );
     });
   });
 }

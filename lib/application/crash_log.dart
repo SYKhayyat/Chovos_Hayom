@@ -21,11 +21,11 @@ class CrashRecord {
   final String? context;
 
   String format() => [
-        '--- ${at.toIso8601String()}${context == null ? '' : ' · $context'}',
-        error,
-        stack.trimRight(),
-        '',
-      ].join('\n');
+    '--- ${at.toIso8601String()}${context == null ? '' : ' · $context'}',
+    error,
+    stack.trimRight(),
+    '',
+  ].join('\n');
 }
 
 /// An on-device crash log.
@@ -41,7 +41,7 @@ class CrashRecord {
 /// grow without bound on a device that crashes in a loop.
 class CrashLog {
   CrashLog({this.directory, DateTime Function()? now})
-      : _now = now ?? DateTime.now;
+    : _now = now ?? DateTime.now;
 
   /// Where the log is written. Null means the platform's app-support directory;
   /// tests pass a temp dir, which also keeps them off platform channels.
@@ -137,8 +137,11 @@ class CrashLog {
   Future<void> guard(FutureOr<void> Function() body) async {
     final previous = FlutterError.onError;
     FlutterError.onError = (details) {
-      record(details.exception, details.stack ?? StackTrace.current,
-          context: 'Flutter framework');
+      record(
+        details.exception,
+        details.stack ?? StackTrace.current,
+        context: 'Flutter framework',
+      );
       previous?.call(details);
     };
     PlatformDispatcher.instance.onError = (error, stack) {

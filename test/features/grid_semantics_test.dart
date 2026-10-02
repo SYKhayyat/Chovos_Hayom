@@ -33,29 +33,28 @@ void main() {
       );
 
   LearningEvent reviewed(int unit, String id) => LearningEvent(
-        id: id,
-        profileId: 'default',
-        nodeId: 'shas.moed.shabbos',
-        unitIndex: unit,
-        action: EventAction.reviewed,
-        occurredAt: DateTime(2026, 1, 5),
-        loggedAt: DateTime(2026, 1, 5),
-      );
+    id: id,
+    profileId: 'default',
+    nodeId: 'shas.moed.shabbos',
+    unitIndex: unit,
+    action: EventAction.reviewed,
+    occurredAt: DateTime(2026, 1, 5),
+    loggedAt: DateTime(2026, 1, 5),
+  );
 
   /// The digits in a cell's trailing-top corner, in order.
   ///
   /// A cell's own label is also a bare number, so looking for `2` finds the label
   /// of daf 2 as well as any corner count — this asks the corner specifically.
   List<String> cornerNumbers(WidgetTester tester) => [
-        for (final text in tester.widgetList<Text>(find.byType(Text)))
-          if (text.data != null &&
-              text.style?.fontSize == 9 &&
-              RegExp(r'^\d+$').hasMatch(text.data!))
-            text.data!,
-      ];
+    for (final text in tester.widgetList<Text>(find.byType(Text)))
+      if (text.data != null &&
+          text.style?.fontSize == 9 &&
+          RegExp(r'^\d+$').hasMatch(text.data!))
+        text.data!,
+  ];
 
-  Widget grid(ProgressRepository repo,
-          {Locale locale = const Locale('en')}) =>
+  Widget grid(ProgressRepository repo, {Locale locale = const Locale('en')}) =>
       ProviderScope(
         overrides: [
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
@@ -67,8 +66,9 @@ void main() {
         ),
       );
 
-  testWidgets('a cell says whether it is learned, not only shows it',
-      (tester) async {
+  testWidgets('a cell says whether it is learned, not only shows it', (
+    tester,
+  ) async {
     final handle = tester.ensureSemantics();
     final repo = memoryRepository();
     await repo.addEvent(done(2));
@@ -81,20 +81,23 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('a chazara count and recorded details are announced too',
-      (tester) async {
+  testWidgets('a chazara count and recorded details are announced too', (
+    tester,
+  ) async {
     final handle = tester.ensureSemantics();
     final repo = memoryRepository();
     await repo.addEvent(done(4));
-    await repo.addEvent(LearningEvent(
-      id: 'r4',
-      profileId: 'default',
-      nodeId: 'shas.moed.shabbos',
-      unitIndex: 4,
-      action: EventAction.reviewed,
-      occurredAt: DateTime(2026, 1, 5),
-      loggedAt: DateTime(2026, 1, 5),
-    ));
+    await repo.addEvent(
+      LearningEvent(
+        id: 'r4',
+        profileId: 'default',
+        nodeId: 'shas.moed.shabbos',
+        unitIndex: 4,
+        action: EventAction.reviewed,
+        occurredAt: DateTime(2026, 1, 5),
+        loggedAt: DateTime(2026, 1, 5),
+      ),
+    );
 
     await tester.pumpWidget(grid(repo));
     await tester.pumpAndSettle();
@@ -149,8 +152,9 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('it is announced as chazara too, not left to the corner',
-        (tester) async {
+    testWidgets('it is announced as chazara too, not left to the corner', (
+      tester,
+    ) async {
       final handle = tester.ensureSemantics();
       final repo = memoryRepository();
       await repo.addEvents([done(2), reviewed(2, 'r2')]);
@@ -163,8 +167,9 @@ void main() {
     });
   });
 
-  testWidgets('the cell announces as a button, checked, and reachable',
-      (tester) async {
+  testWidgets('the cell announces as a button, checked, and reachable', (
+    tester,
+  ) async {
     final handle = tester.ensureSemantics();
     final repo = memoryRepository();
     await repo.addEvent(done(2));
@@ -194,8 +199,9 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('the announcement is translated with everything else',
-      (tester) async {
+  testWidgets('the announcement is translated with everything else', (
+    tester,
+  ) async {
     final handle = tester.ensureSemantics();
     final repo = memoryRepository();
     await repo.addEvent(done(2));

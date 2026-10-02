@@ -32,14 +32,20 @@ class _GuardedButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => Scaffold(
-        body: Center(
-          child: ElevatedButton(
-            onPressed: () => guarded(context, ref, write,
-                what: 'Marking this daf learned', success: 'Marked', undo: undo),
-            child: const Text('go'),
-          ),
+    body: Center(
+      child: ElevatedButton(
+        onPressed: () => guarded(
+          context,
+          ref,
+          write,
+          what: 'Marking this daf learned',
+          success: 'Marked',
+          undo: undo,
         ),
-      );
+        child: const Text('go'),
+      ),
+    ),
+  );
 }
 
 void main() {
@@ -54,33 +60,34 @@ void main() {
     ProgressRepository? repo,
     AppPreferences? prefs,
     DateTime Function()? clock,
-  }) =>
-      ProviderScope(
-        overrides: [
-          crashLogProvider.overrideWithValue(crashLog),
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          if (repo != null) progressRepositoryProvider.overrideWithValue(repo),
-          if (prefs != null) appPreferencesProvider.overrideWithValue(prefs),
-          if (clock != null) clockProvider.overrideWithValue(clock),
-        ],
-        // The router is wired because the guard's *Details* action pushes a
-        // named route — the app always has it, so a harness without it would be
-        // testing something the app never does. Likewise the localizations: the
-        // guard now resolves its failure sentence and its *Details* label from
-        // them, so a harness without them tests a guard the app never builds.
-        child: localizedApp(
-          home: child,
-          onGenerateRoute: AppRouter.onGenerateRoute,
-          onUnknownRoute: AppRouter.onUnknownRoute,
-        ),
-      );
+  }) => ProviderScope(
+    overrides: [
+      crashLogProvider.overrideWithValue(crashLog),
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      if (repo != null) progressRepositoryProvider.overrideWithValue(repo),
+      if (prefs != null) appPreferencesProvider.overrideWithValue(prefs),
+      if (clock != null) clockProvider.overrideWithValue(clock),
+    ],
+    // The router is wired because the guard's *Details* action pushes a
+    // named route — the app always has it, so a harness without it would be
+    // testing something the app never does. Likewise the localizations: the
+    // guard now resolves its failure sentence and its *Details* label from
+    // them, so a harness without them tests a guard the app never builds.
+    child: localizedApp(
+      home: child,
+      onGenerateRoute: AppRouter.onGenerateRoute,
+      onUnknownRoute: AppRouter.onUnknownRoute,
+    ),
+  );
 
   group('WriteGuard', () {
-    testWidgets('reports success only after the write actually succeeded',
-        (tester) async {
+    testWidgets('reports success only after the write actually succeeded', (
+      tester,
+    ) async {
       var wrote = false;
       await tester.pumpWidget(
-          wrap(_GuardedButton(write: () async => wrote = true)));
+        wrap(_GuardedButton(write: () async => wrote = true)),
+      );
       await tester.tap(find.text('go'));
       await tester.pumpAndSettle();
 
@@ -89,10 +96,12 @@ void main() {
       expect(crashLog.entries, isEmpty);
     });
 
-    testWidgets('a failed write says so, and never claims success',
-        (tester) async {
-      await tester.pumpWidget(wrap(
-          _GuardedButton(write: () async => throw StateError('no disk'))));
+    testWidgets('a failed write says so, and never claims success', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(_GuardedButton(write: () async => throw StateError('no disk'))),
+      );
       await tester.tap(find.text('go'));
       await tester.pump();
 
@@ -100,10 +109,12 @@ void main() {
       expect(find.text('Marked'), findsNothing);
     });
 
-    testWidgets('a failed write lands in the crash log, named by what it was',
-        (tester) async {
-      await tester.pumpWidget(wrap(
-          _GuardedButton(write: () async => throw StateError('no disk'))));
+    testWidgets('a failed write lands in the crash log, named by what it was', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(_GuardedButton(write: () async => throw StateError('no disk'))),
+      );
       await tester.tap(find.text('go'));
       await tester.pump();
 
@@ -112,10 +123,12 @@ void main() {
       expect(crashLog.entries.single, contains('no disk'));
     });
 
-    testWidgets('the failure offers the crash log, and gets there',
-        (tester) async {
-      await tester.pumpWidget(wrap(
-          _GuardedButton(write: () async => throw StateError('no disk'))));
+    testWidgets('the failure offers the crash log, and gets there', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(_GuardedButton(write: () async => throw StateError('no disk'))),
+      );
       await tester.tap(find.text('go'));
       // Long enough for the snackbar to finish sliding in, short enough that it
       // has not yet timed out — the action is only tappable in between.
@@ -140,12 +153,17 @@ void main() {
     /// key on the device that would remove it. The user's report — that the
     /// warning could not be dismissed — was exactly right: dismissing it
     /// produced something permanent.
-    testWidgets('a message carrying an action still goes away by itself',
-        (tester) async {
-      await tester.pumpWidget(wrap(_GuardedButton(
-        write: () async {},
-        undo: SnackBarAction(label: 'Undo', onPressed: () {}),
-      )));
+    testWidgets('a message carrying an action still goes away by itself', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          _GuardedButton(
+            write: () async {},
+            undo: SnackBarAction(label: 'Undo', onPressed: () {}),
+          ),
+        ),
+      );
       await tester.tap(find.text('go'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 750));
@@ -153,8 +171,11 @@ void main() {
 
       // Long enough to walk a D-pad over to Undo...
       await tester.pump(const Duration(seconds: 5));
-      expect(find.text('Marked'), findsOneWidget,
-          reason: 'an Undo nobody can reach in time is not an Undo');
+      expect(
+        find.text('Marked'),
+        findsOneWidget,
+        reason: 'an Undo nobody can reach in time is not an Undo',
+      );
 
       // ...and then it leaves on its own, which on that phone is the only way
       // it can leave at all.
@@ -173,28 +194,35 @@ void main() {
       name: 'My seder',
       startDate: today,
       segments: const [
-        CycleSegment(nodeId: 'shas.moed.shabbos', unitCount: 156, unitOffset: 2),
+        CycleSegment(
+          nodeId: 'shas.moed.shabbos',
+          unitCount: 156,
+          unitOffset: 2,
+        ),
       ],
     );
     final prefs = <String, String>{
-      PrefKeys.scoped('default', PrefKeys.cycles): jsonEncode(CyclesConfig(
-        hiddenBuiltIns: const {
-          CalendarCycle.bavliId,
-          CalendarCycle.yerushalmiId,
-        },
-        custom: [cycle],
-      ).toJson()),
+      PrefKeys.scoped('default', PrefKeys.cycles): jsonEncode(
+        CyclesConfig(
+          hiddenBuiltIns: const {
+            CalendarCycle.bavliId,
+            CalendarCycle.yerushalmiId,
+          },
+          custom: [cycle],
+        ).toJson(),
+      ),
     };
 
     Widget cyclesScreen(ProgressRepository repo) => wrap(
-          const CyclesScreen(),
-          repo: repo,
-          prefs: InMemoryPreferences(prefs),
-          clock: () => today,
-        );
+      const CyclesScreen(),
+      repo: repo,
+      prefs: InMemoryPreferences(prefs),
+      clock: () => today,
+    );
 
-    testWidgets('a write that fails is not reported as "Logged"',
-        (tester) async {
+    testWidgets('a write that fails is not reported as "Logged"', (
+      tester,
+    ) async {
       await tester.pumpWidget(cyclesScreen(FailingProgressRepository()));
       await tester.pumpAndSettle();
 
@@ -204,13 +232,16 @@ void main() {
       // The bug this replaces: fire-and-forget, then "Logged ✓" regardless.
       expect(find.textContaining('Logged'), findsNothing);
       expect(find.textContaining('failed.'), findsOneWidget);
-      expect(crashLog.entries.single,
-          contains(FailingProgressRepository.message));
+      expect(
+        crashLog.entries.single,
+        contains(FailingProgressRepository.message),
+      );
     });
 
     testWidgets('a write that succeeds says so, once it has', (tester) async {
       await tester.pumpWidget(
-          cyclesScreen(FailingProgressRepository(failWrites: false)));
+        cyclesScreen(FailingProgressRepository(failWrites: false)),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Log daf 2'));

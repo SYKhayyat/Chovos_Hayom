@@ -38,8 +38,9 @@ void main() {
   List<SequentialCycle> saved(InMemoryPreferences prefs) {
     final raw = prefs.getString(key);
     if (raw == null) return const [];
-    return CyclesConfig.fromJson((jsonDecode(raw) as Map).cast<String, dynamic>())
-        .custom;
+    return CyclesConfig.fromJson(
+      (jsonDecode(raw) as Map).cast<String, dynamic>(),
+    ).custom;
   }
 
   /// Two more leaves under Shas, so "add a category" has something to be about,
@@ -72,10 +73,8 @@ void main() {
     );
   }
 
-  ({Widget widget, InMemoryPreferences prefs, ProgressRepository repo}) harness({
-    String? cycleId,
-    Map<String, String>? seed,
-  }) {
+  ({Widget widget, InMemoryPreferences prefs, ProgressRepository repo})
+  harness({String? cycleId, Map<String, String>? seed}) {
     final prefs = InMemoryPreferences(seed);
     final repo = memoryRepository();
     return (
@@ -101,10 +100,10 @@ void main() {
   /// frames is far more than any animation here needs, and when it is exceeded
   /// the failure names the line that spun.
   Future<void> settle(WidgetTester tester) => tester.pumpAndSettle(
-        const Duration(milliseconds: 100),
-        EnginePhase.sendSemanticsUpdate,
-        const Duration(seconds: 15),
-      );
+    const Duration(milliseconds: 100),
+    EnginePhase.sendSemanticsUpdate,
+    const Duration(seconds: 15),
+  );
 
   /// Pump [widget] on a screen tall enough to hold the whole form.
   ///
@@ -139,7 +138,10 @@ void main() {
   /// that timer is still pending fails in teardown, several tests away from the
   /// one that armed it, so the last pump lets the bar leave of its own accord.
   Future<void> expectRefusal(
-      WidgetTester tester, String button, String message) async {
+    WidgetTester tester,
+    String button,
+    String message,
+  ) async {
     await tester.tap(find.text(button));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 750));
@@ -152,17 +154,23 @@ void main() {
     await settle(tester);
   }
 
-  Future<void> fillIn(WidgetTester tester,
-      {required String name, String perDay = '1'}) async {
+  Future<void> fillIn(
+    WidgetTester tester, {
+    required String name,
+    String perDay = '1',
+  }) async {
     await tester.enterText(find.widgetWithText(TextField, 'Name'), name);
     await tester.enterText(
-        find.widgetWithText(TextField, 'Units per day'), perDay);
+      find.widgetWithText(TextField, 'Units per day'),
+      perDay,
+    );
     await settle(tester);
   }
 
   group('the form controls', () {
-    testWidgets('the start date opens a picker and repeat can be turned off',
-        (tester) async {
+    testWidgets('the start date opens a picker and repeat can be turned off', (
+      tester,
+    ) async {
       final h = harness();
       await pump(tester, h.widget);
       await fillIn(tester, name: 'One-time cycle');
@@ -184,8 +192,9 @@ void main() {
   });
 
   group('creating one', () {
-    testWidgets('a named cycle with a sefer in it is saved and persists',
-        (tester) async {
+    testWidgets('a named cycle with a sefer in it is saved and persists', (
+      tester,
+    ) async {
       final h = harness();
       await pump(tester, h.widget);
 
@@ -200,13 +209,18 @@ void main() {
       expect(cycle.repeats, isTrue, reason: 'the default the switch shows');
       expect(cycle.segments.single.nodeId, 'shas.moed.shabbos');
       expect(cycle.segments.single.unitCount, 156);
-      expect(cycle.segments.single.unitOffset, 2,
-          reason: 'Shabbos starts at daf 2, and a cycle that walks it from 1 '
-              'is a cycle whose every day is off by one');
+      expect(
+        cycle.segments.single.unitOffset,
+        2,
+        reason:
+            'Shabbos starts at daf 2, and a cycle that walks it from 1 '
+            'is a cycle whose every day is off by one',
+      );
     });
 
-    testWidgets('picking a category takes every sefer under it, in order',
-        (tester) async {
+    testWidgets('picking a category takes every sefer under it, in order', (
+      tester,
+    ) async {
       // "All of Shas, in order" is one action rather than thirty-seven — the
       // reason the picker offers categories at all.
       final h = harness();
@@ -219,15 +233,22 @@ void main() {
       await settle(tester);
 
       final segments = saved(h.prefs).single.segments;
-      expect(segments.map((s) => s.nodeId),
-          ['shas.moed.eruvin', 'shas.moed.shabbos'],
-          reason: 'the order the tree shows them in — sortOrder, then name, '
-              'which is what "in order" has to mean here: the cycle walks the '
-              'sefarim in the order the user is looking at, not the order the '
-              'rows happen to be stored in');
-      expect(segments.map((s) => s.nodeId), isNot(contains('shas.moed.empty')),
-          reason: 'a sefer with no units would be a day the cycle spends on '
-              'nothing');
+      expect(
+        segments.map((s) => s.nodeId),
+        ['shas.moed.eruvin', 'shas.moed.shabbos'],
+        reason:
+            'the order the tree shows them in — sortOrder, then name, '
+            'which is what "in order" has to mean here: the cycle walks the '
+            'sefarim in the order the user is looking at, not the order the '
+            'rows happen to be stored in',
+      );
+      expect(
+        segments.map((s) => s.nodeId),
+        isNot(contains('shas.moed.empty')),
+        reason:
+            'a sefer with no units would be a day the cycle spends on '
+            'nothing',
+      );
     });
   });
 
@@ -244,8 +265,9 @@ void main() {
       expect(saved(h.prefs), isEmpty);
     });
 
-    testWidgets('paced at something that is not a positive number',
-        (tester) async {
+    testWidgets('paced at something that is not a positive number', (
+      tester,
+    ) async {
       // Through `positiveInt`, like every other "is this a positive integer" in
       // the app. A cycle at 0 a day never advances; one at "a few" is a parse
       // this screen must not invent an answer for.
@@ -255,7 +277,10 @@ void main() {
       await fillIn(tester, name: 'Mishna Yomi', perDay: '0');
       await addSefer(tester, 'Shabbos — Shas · Moed');
       await expectRefusal(
-          tester, 'Create cycle', 'Units per day must be at least 1.');
+        tester,
+        'Create cycle',
+        'Units per day must be at least 1.',
+      );
 
       expect(saved(h.prefs), isEmpty);
     });
@@ -265,17 +290,21 @@ void main() {
       await pump(tester, h.widget);
 
       await fillIn(tester, name: 'Nothing at all');
-      await expectRefusal(tester, 'Create cycle',
-          'Add at least one sefer for the cycle to walk.');
+      await expectRefusal(
+        tester,
+        'Create cycle',
+        'Add at least one sefer for the cycle to walk.',
+      );
 
       expect(saved(h.prefs), isEmpty);
     });
   });
 
   group('the order is the cycle', () {
-    Future<void> withTwo(WidgetTester tester,
-        ({Widget widget, InMemoryPreferences prefs, ProgressRepository repo})
-            h) async {
+    Future<void> withTwo(
+      WidgetTester tester,
+      ({Widget widget, InMemoryPreferences prefs, ProgressRepository repo}) h,
+    ) async {
       await addSefarim(h.repo);
       await pump(tester, h.widget);
       await fillIn(tester, name: 'Two sefarim');
@@ -283,20 +312,25 @@ void main() {
       await addSefer(tester, 'Eruvin — Shas · Moed');
     }
 
-    testWidgets('move down swaps a sefer with the one after it',
-        (tester) async {
+    testWidgets('move down swaps a sefer with the one after it', (
+      tester,
+    ) async {
       final h = harness();
       await withTwo(tester, h);
 
       // The first row's *Move down* — the mouse-and-keyboard path, since the
       // drag handle beside it needs a pointer this device may not have.
-      await tester.tap(find.widgetWithIcon(IconButton, Icons.arrow_downward).first);
+      await tester.tap(
+        find.widgetWithIcon(IconButton, Icons.arrow_downward).first,
+      );
       await settle(tester);
       await tester.tap(find.text('Create cycle'));
       await settle(tester);
 
-      expect(saved(h.prefs).single.segments.map((s) => s.nodeId),
-          ['shas.moed.eruvin', 'shas.moed.shabbos']);
+      expect(saved(h.prefs).single.segments.map((s) => s.nodeId), [
+        'shas.moed.eruvin',
+        'shas.moed.shabbos',
+      ]);
     });
 
     testWidgets('the ends of the list cannot be moved off it', (tester) async {
@@ -304,9 +338,11 @@ void main() {
       await withTwo(tester, h);
 
       final up = tester.widgetList<IconButton>(
-          find.widgetWithIcon(IconButton, Icons.arrow_upward));
+        find.widgetWithIcon(IconButton, Icons.arrow_upward),
+      );
       final down = tester.widgetList<IconButton>(
-          find.widgetWithIcon(IconButton, Icons.arrow_downward));
+        find.widgetWithIcon(IconButton, Icons.arrow_downward),
+      );
 
       expect(up.first.onPressed, isNull, reason: 'the first has nowhere up');
       expect(down.last.onPressed, isNull, reason: 'the last has nowhere down');
@@ -314,8 +350,9 @@ void main() {
       expect(down.first.onPressed, isNotNull);
     });
 
-    testWidgets('removing a sefer leaves the rest of the order alone',
-        (tester) async {
+    testWidgets('removing a sefer leaves the rest of the order alone', (
+      tester,
+    ) async {
       final h = harness();
       await withTwo(tester, h);
 
@@ -324,8 +361,9 @@ void main() {
       await tester.tap(find.text('Create cycle'));
       await settle(tester);
 
-      expect(saved(h.prefs).single.segments.map((s) => s.nodeId),
-          ['shas.moed.eruvin']);
+      expect(saved(h.prefs).single.segments.map((s) => s.nodeId), [
+        'shas.moed.eruvin',
+      ]);
     });
   });
 
@@ -337,17 +375,23 @@ void main() {
       unitsPerDay: 2,
       repeats: false,
       segments: const [
-        CycleSegment(nodeId: 'shas.moed.shabbos', unitCount: 156, unitOffset: 2),
+        CycleSegment(
+          nodeId: 'shas.moed.shabbos',
+          unitCount: 156,
+          unitOffset: 2,
+        ),
       ],
     );
 
     Map<String, String> seedWith(SequentialCycle cycle) => {
-          PrefKeys.scoped(profile, PrefKeys.cycles):
-              jsonEncode(CyclesConfig(custom: [cycle]).toJson()),
-        };
+      PrefKeys.scoped(profile, PrefKeys.cycles): jsonEncode(
+        CyclesConfig(custom: [cycle]).toJson(),
+      ),
+    };
 
-    testWidgets('arrives filled in, rather than as a blank form',
-        (tester) async {
+    testWidgets('arrives filled in, rather than as a blank form', (
+      tester,
+    ) async {
       final h = harness(cycleId: 'cycle-1', seed: seedWith(existing));
       await pump(tester, h.widget);
 
@@ -356,14 +400,18 @@ void main() {
       expect(find.widgetWithText(TextField, '2'), findsOneWidget);
       expect(find.text('Shabbos'), findsOneWidget);
       expect(find.text('156 units from 2'), findsOneWidget);
-      expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-          isFalse,
-          reason: 'a cycle that does not repeat must not come back saying it '
-              'does');
+      expect(
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isFalse,
+        reason:
+            'a cycle that does not repeat must not come back saying it '
+            'does',
+      );
     });
 
-    testWidgets('saves over the cycle rather than adding a second',
-        (tester) async {
+    testWidgets('saves over the cycle rather than adding a second', (
+      tester,
+    ) async {
       // `widget.existing?.id ?? Uuid().v4()` is one `??` away from turning every
       // edit into a duplicate — and a duplicated cycle is not obviously wrong on
       // screen, it just quietly doubles what today asks for.
@@ -371,7 +419,9 @@ void main() {
       await pump(tester, h.widget);
 
       await tester.enterText(
-          find.widgetWithText(TextField, 'Mishna Yomi'), 'Mishna Yomi (2 a day)');
+        find.widgetWithText(TextField, 'Mishna Yomi'),
+        'Mishna Yomi (2 a day)',
+      );
       await tester.tap(find.text('Save cycle'));
       await settle(tester);
 
@@ -379,8 +429,11 @@ void main() {
       expect(cycles, hasLength(1));
       expect(cycles.single.id, 'cycle-1');
       expect(cycles.single.name, 'Mishna Yomi (2 a day)');
-      expect(cycles.single.startDate, DateTime(2026, 1, 1),
-          reason: 'the day it started is not a thing an edit invents anew');
+      expect(
+        cycles.single.startDate,
+        DateTime(2026, 1, 1),
+        reason: 'the day it started is not a thing an edit invents anew',
+      );
     });
 
     testWidgets('a cycle that no longer exists says so', (tester) async {

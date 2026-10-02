@@ -73,7 +73,8 @@ void main() {
     expect(
       missing,
       isEmpty,
-      reason: 'these routes exist and no journey claims them, so nothing on a '
+      reason:
+          'these routes exist and no journey claims them, so nothing on a '
           'real phone ever opens the screen behind one. Add it to '
           '`harnessCovers` with the journey that covers it, or say there why '
           'one is not needed.\n${missing.join('\n')}',
@@ -88,7 +89,8 @@ void main() {
     final bad = <String>[
       for (final entry in harnessCovers.entries)
         for (final id in entry.value)
-          if (!ids.contains(id)) '${entry.key} claims "$id", which is not a journey',
+          if (!ids.contains(id))
+            '${entry.key} claims "$id", which is not a journey',
     ];
     expect(bad, isEmpty, reason: bad.join('\n'));
   });
@@ -107,12 +109,16 @@ void main() {
     expect(
       ids.toSet().length,
       ids.length,
-      reason: 'two journeys share an id, so the report and the screenshots '
+      reason:
+          'two journeys share an id, so the report and the screenshots '
           'would collide: ${ids.where((id) => ids.where((x) => x == id).length > 1).toSet()}',
     );
     for (final id in ids) {
-      expect(id, contains('/'),
-          reason: '"$id" has no area, so the coverage table cannot group it');
+      expect(
+        id,
+        contains('/'),
+        reason: '"$id" has no area, so the coverage table cannot group it',
+      );
     }
   });
 
@@ -137,9 +143,15 @@ void main() {
     // Pointer-only is a suite that tested the Moto and skipped the phone. This
     // is the assertion that says so out loud, in a file that is run by CI.
     final harness = harnessSource();
-    expect(harness, contains('HARNESS_INPUT'),
-        reason: 'the harness must be able to run itself through the D-pad');
-    expect(harness, contains('keys'),
-        reason: 'and the keys path must actually be reachable');
+    expect(
+      harness,
+      contains('HARNESS_INPUT'),
+      reason: 'the harness must be able to run itself through the D-pad',
+    );
+    expect(
+      harness,
+      contains('keys'),
+      reason: 'and the keys path must actually be reachable',
+    );
   });
 }

@@ -60,8 +60,8 @@ class BatchHistory {
 
 class _Accumulator {
   _Accumulator(this.id, LearningEvent first)
-      : appliedAt = first.loggedAt,
-        action = first.action;
+    : appliedAt = first.loggedAt,
+      action = first.action;
 
   final String id;
   final DateTime appliedAt;
@@ -76,10 +76,10 @@ class _Accumulator {
   }
 
   BulkBatch build() => BulkBatch(
-        id: id,
-        appliedAt: appliedAt,
-        action: action,
-        unitsAffected: units,
-        nodeIds: nodeIds,
-      );
+    id: id,
+    appliedAt: appliedAt,
+    action: action,
+    unitsAffected: units,
+    nodeIds: nodeIds,
+  );
 }

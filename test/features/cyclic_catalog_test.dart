@@ -54,11 +54,12 @@ void main() {
     ],
   });
 
-  ProviderContainer container(ProgressRepository repo) =>
-      ProviderContainer(overrides: [
-        catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-        progressRepositoryProvider.overrideWithValue(repo),
-      ]);
+  ProviderContainer container(ProgressRepository repo) => ProviderContainer(
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(repo),
+    ],
+  );
 
   Future<ProviderContainer> withLoopImported(ProgressRepository repo) async {
     await BackupService(repo).importInto(profile, BackupService.parse(loop));
@@ -84,22 +85,21 @@ void main() {
     // it keeps its place — nothing the user had is missing from the tree.
     expect(catalog.byId('shas')!.parentId, isNull);
     expect(catalog.childrenOf('shas').map((n) => n.id), ['shas.moed']);
-    expect(catalog.childrenOf('shas.moed').map((n) => n.id),
-        ['shas.moed.shabbos']);
+    expect(catalog.childrenOf('shas.moed').map((n) => n.id), [
+      'shas.moed.shabbos',
+    ]);
     expect(catalog.leavesUnder('shas').map((n) => n.id), ['shas.moed.shabbos']);
   });
 
-  testWidgets('the bulk history screen returns on a looped catalog',
-      (tester) async {
+  testWidgets('the bulk history screen returns on a looped catalog', (
+    tester,
+  ) async {
     final repo = memoryRepository();
     // Two nodes in one batch, because `_where` names a single-node batch
     // straight off `byId` and only walks ancestors when it has to reconcile
     // several — which is what a "finish all" on a category produces.
     await repo.addEvents([
-      for (final (id, node) in [
-        ('a', 'shas.moed.shabbos'),
-        ('b', 'shas.moed'),
-      ])
+      for (final (id, node) in [('a', 'shas.moed.shabbos'), ('b', 'shas.moed')])
         LearningEvent(
           id: id,
           profileId: profile,
@@ -113,15 +113,17 @@ void main() {
     ]);
     await BackupService(repo).importInto(profile, BackupService.parse(loop));
 
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-        progressRepositoryProvider.overrideWithValue(repo),
-        appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-        clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
-      ],
-      child: localizedApp(home: const BulkHistoryScreen()),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+          progressRepositoryProvider.overrideWithValue(repo),
+          appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+        ],
+        child: localizedApp(home: const BulkHistoryScreen()),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Reaching this line at all is the assertion; the caption is the proof that
@@ -137,18 +139,22 @@ void main() {
     await BackupService(repo).importInto(profile, BackupService.parse(loop));
 
     late WidgetRef captured;
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-        progressRepositoryProvider.overrideWithValue(repo),
-      ],
-      child: Consumer(builder: (context, ref, _) {
-        captured = ref;
-        // Watched so the merged catalog is built and kept alive for the editor.
-        ref.watch(mergedCatalogProvider);
-        return const SizedBox();
-      }),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+          progressRepositoryProvider.overrideWithValue(repo),
+        ],
+        child: Consumer(
+          builder: (context, ref, _) {
+            captured = ref;
+            // Watched so the merged catalog is built and kept alive for the editor.
+            ref.watch(mergedCatalogProvider);
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     final catalog = captured.read(mergedCatalogProvider).value!;
@@ -158,8 +164,9 @@ void main() {
     await CatalogEditor(captured).cloneStructure(catalog.byId('shas')!);
     await tester.pumpAndSettle();
 
-    final copies = (await repo.getCustomNodes(profile))
-        .where((n) => n.name.endsWith('(copy)'));
+    final copies = (await repo.getCustomNodes(
+      profile,
+    )).where((n) => n.name.endsWith('(copy)'));
     expect(copies, hasLength(1), reason: 'the clone finished, once');
     // Four nodes cloned (shas, moed, shabbos) plus the override row itself.
     expect((await repo.getCustomNodes(profile)).length, 4);

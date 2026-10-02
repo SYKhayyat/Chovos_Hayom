@@ -133,8 +133,9 @@ class _DateEntryScreenState extends State<DateEntryScreen> {
         // Both readings, by name. Not a nudge to try again: the field is
         // ambiguous because the *text* is, and the only way out is to say which
         // — so the two dates are offered and the reader picks.
-        AppLocalizations.of(context)
-            .dateEntryAmbiguous([for (final d in days) _echoed(d)].join('  ·  ')),
+        AppLocalizations.of(
+          context,
+        ).dateEntryAmbiguous([for (final d in days) _echoed(d)].join('  ·  ')),
       DateParseExact() => null,
     };
     if (refused != null) return refused;
@@ -197,10 +198,7 @@ class _DateEntryScreenState extends State<DateEntryScreen> {
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
-          TextButton(
-            onPressed: _submit,
-            child: Text(widget.confirmLabel),
-          ),
+          TextButton(onPressed: _submit, child: Text(widget.confirmLabel)),
         ],
       ),
       body: SafeArea(
@@ -210,42 +208,44 @@ class _DateEntryScreenState extends State<DateEntryScreen> {
             TextField(
               controller: _field,
               autofocus: true,
-            // Both scripts, so a Hebrew date is not reflowed by an LTR
-            // keyboard's assumptions and an ISO date is not reversed.
-            textDirection: _isHebrew(_field.text)
-                ? TextDirection.rtl
-                : TextDirection.ltr,
-            decoration: InputDecoration(
-              labelText: l10n.dateEntryField,
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.event),
-                tooltip: l10n.dateEntryPick,
-                onPressed: _pick,
+              // Both scripts, so a Hebrew date is not reflowed by an LTR
+              // keyboard's assumptions and an ISO date is not reversed.
+              textDirection: _isHebrew(_field.text)
+                  ? TextDirection.rtl
+                  : TextDirection.ltr,
+              decoration: InputDecoration(
+                labelText: l10n.dateEntryField,
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.event),
+                  tooltip: l10n.dateEntryPick,
+                  onPressed: _pick,
+                ),
               ),
+              // Re-echoing needs a rebuild on every keystroke, which is the one
+              // thing a prompt with a `validate` callback cannot do: it is only
+              // asked at submit time.
+              onChanged: (_) => setState(() => _error = null),
+              onSubmitted: (_) => _submit(),
             ),
-            // Re-echoing needs a rebuild on every keystroke, which is the one
-            // thing a prompt with a `validate` callback cannot do: it is only
-            // asked at submit time.
-            onChanged: (_) => setState(() => _error = null),
-            onSubmitted: (_) => _submit(),
-          ),
-          const SizedBox(height: 8),
-          Text(widget.help, style: Theme.of(context).textTheme.bodySmall),
-          if (echoed != null) ...[
             const SizedBox(height: 8),
-            // What it understood, not what was typed. The difference matters
-            // most for a date with no year in it, where the year came from
-            // the reference and the reader has to be told which.
-            Text(
-              l10n.dateEntryMeans(_echoed(echoed)),
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-          if (_error != null) ...[
-            const SizedBox(height: 8),
-            Text(_error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          ],
+            Text(widget.help, style: Theme.of(context).textTheme.bodySmall),
+            if (echoed != null) ...[
+              const SizedBox(height: 8),
+              // What it understood, not what was typed. The difference matters
+              // most for a date with no year in it, where the year came from
+              // the reference and the reader has to be told which.
+              Text(
+                l10n.dateEntryMeans(_echoed(echoed)),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ],
           ],
         ),
       ),
@@ -263,7 +263,10 @@ class _DateEntryScreenState extends State<DateEntryScreen> {
                 child: Text(widget.cancelLabel),
               ),
               const SizedBox(width: 8),
-              FilledButton(onPressed: _submit, child: Text(widget.confirmLabel)),
+              FilledButton(
+                onPressed: _submit,
+                child: Text(widget.confirmLabel),
+              ),
             ],
           ),
         ),

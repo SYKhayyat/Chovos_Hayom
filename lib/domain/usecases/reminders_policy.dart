@@ -34,6 +34,5 @@ class RemindersPolicy {
     required bool enabled,
     required LogActivity activity,
     required Day today,
-  }) =>
-      enabled && !learnedToday(activity, today);
+  }) => enabled && !learnedToday(activity, today);
 }

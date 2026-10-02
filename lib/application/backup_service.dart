@@ -185,21 +185,29 @@ class BackupService {
       final decoded = jsonDecode(jsonStr);
       if (decoded is! Map<String, dynamic>) {
         throw const BackupFormatException(
-            'That is not a backup — the file must contain a JSON object.');
+          'That is not a backup — the file must contain a JSON object.',
+        );
       }
       map = decoded;
     } on FormatException {
       throw const BackupFormatException(
-          'That is not valid JSON. The file may be truncated or partly copied.');
+        'That is not valid JSON. The file may be truncated or partly copied.',
+      );
     }
 
     return BackupData(
       version: (map['version'] as num?)?.toInt() ?? 1,
       events: _parseList(map['events'], 'events', LearningEvent.fromJson),
-      customNodes:
-          _parseList(map['customNodes'], 'customNodes', CatalogNode.fromJson),
-      customLayers:
-          _parseList(map['customLayers'], 'customLayers', Layer.fromJson),
+      customNodes: _parseList(
+        map['customNodes'],
+        'customNodes',
+        CatalogNode.fromJson,
+      ),
+      customLayers: _parseList(
+        map['customLayers'],
+        'customLayers',
+        Layer.fromJson,
+      ),
       layerConfigs: _parseLayerConfigs(map),
       settings: (map['settings'] as Map?)?.cast<String, dynamic>() ?? const {},
       goals: _parseGoals(map['goals']),
@@ -228,13 +236,19 @@ class BackupService {
   /// import half of the same argument v2 of the schema makes.
   static List<LayerConfigEntry> _parseLayerConfigs(Map<String, dynamic> map) {
     if (map.containsKey('layerConfigs')) {
-      return _parseList(_nodeScopedOnly(map['layerConfigs']), 'layerConfigs',
-          LayerConfigEntry.fromJson);
+      return _parseList(
+        _nodeScopedOnly(map['layerConfigs']),
+        'layerConfigs',
+        LayerConfigEntry.fromJson,
+      );
     }
     final merged = <String, Map<String, LayerRole>>{};
     void take(String field, LayerRole role) {
-      for (final e in _parseList(_nodeScopedOnly(map[field]), field,
-          (j) => LayerConfigEntry.fromJson(j, legacyRole: role))) {
+      for (final e in _parseList(
+        _nodeScopedOnly(map[field]),
+        field,
+        (j) => LayerConfigEntry.fromJson(j, legacyRole: role),
+      )) {
         (merged[e.nodeId] ??= {}).addAll(e.roles);
       }
     }
@@ -261,7 +275,10 @@ class BackupService {
   }
 
   static List<T> _parseList<T>(
-      Object? raw, String field, T Function(Map<String, dynamic>) fromJson) {
+    Object? raw,
+    String field,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
     if (raw == null) return const [];
     if (raw is! List) {
       throw BackupFormatException('“$field” must be a list.');
@@ -270,13 +287,16 @@ class BackupService {
     for (var i = 0; i < raw.length; i++) {
       final item = raw[i];
       if (item is! Map) {
-        throw BackupFormatException('“$field” entry ${i + 1} is not an object.');
+        throw BackupFormatException(
+          '“$field” entry ${i + 1} is not an object.',
+        );
       }
       try {
         out.add(fromJson(item.cast<String, dynamic>()));
       } catch (e) {
         throw BackupFormatException(
-            '“$field” entry ${i + 1} is malformed ($e).');
+          '“$field” entry ${i + 1} is malformed ($e).',
+        );
       }
     }
     return out;
@@ -284,7 +304,9 @@ class BackupService {
 
   static Map<String, DateTime> _parseGoals(Object? raw) {
     if (raw == null) return const {};
-    if (raw is! Map) throw const BackupFormatException('“goals” must be an object.');
+    if (raw is! Map) {
+      throw const BackupFormatException('“goals” must be an object.');
+    }
     final out = <String, DateTime>{};
     raw.forEach((key, value) {
       final parsed = DateTime.tryParse('$value');
@@ -406,7 +428,9 @@ class BackupService {
   /// destroy without performing it. Two computations of one answer is how a
   /// preview comes to disagree with the outcome.
   Future<_Teardown> _customisationsToRemove(
-      String profileId, BackupData data) async {
+    String profileId,
+    BackupData data,
+  ) async {
     final made = await ProfileCustomisations.of(_repo, profileId);
     final nodes = made.nodes;
     final layers = made.layers;
@@ -437,7 +461,6 @@ class BackupService {
   /// by the same code that will do the deleting.
   Future<int> customisationsAtRisk(String profileId, BackupData data) async =>
       (await _customisationsToRemove(profileId, data)).count;
-
 }
 
 /// The rows a [ImportMode.restoreEverything] has to delete, by kind.
@@ -452,9 +475,9 @@ class _Teardown {
   });
 
   const _Teardown.empty()
-      : nodeIds = const [],
-        layerIds = const [],
-        layerConfigs = const [];
+    : nodeIds = const [],
+      layerIds = const [],
+      layerConfigs = const [];
 
   final List<String> nodeIds;
   final List<String> layerIds;
@@ -527,16 +550,19 @@ class BackupValidator {
     for (final n in nodes) {
       if (!seen.add(n.id)) {
         throw BackupFormatException(
-            'Custom sefer “${n.name}” appears twice (id ${n.id}).');
+          'Custom sefer “${n.name}” appears twice (id ${n.id}).',
+        );
       }
       if (n.unitCount < 0) {
         throw BackupFormatException(
-            '“${n.name}” has a negative unit count (${n.unitCount}).');
+          '“${n.name}” has a negative unit count (${n.unitCount}).',
+        );
       }
       if (n.unitCount > maxUnitCount) {
         throw BackupFormatException(
-            '“${n.name}” claims ${n.unitCount} units, which is not a real '
-            'sefer — the file is corrupt.');
+          '“${n.name}” claims ${n.unitCount} units, which is not a real '
+          'sefer — the file is corrupt.',
+        );
       }
     }
   }
@@ -549,7 +575,8 @@ class BackupValidator {
       }
       if (e.durationMin != null && e.durationMin! < 0) {
         throw BackupFormatException(
-            'Event ${e.id} has a negative duration (${e.durationMin} min).');
+          'Event ${e.id} has a negative duration (${e.durationMin} min).',
+        );
       }
     }
   }

@@ -28,26 +28,32 @@ void main() {
     /// the failure mode of every source-scanning check ever written.
     const bans = <({String why, String pattern, String sample})>[
       (
-        why: 'a second resolver over the same tree — one existed, and two '
+        why:
+            'a second resolver over the same tree — one existed, and two '
             'resolvers pinned at different depths is how a node came to '
             'require a meforish it did not offer',
-        pattern: r'class\s+OfferedLayers|class\s+LayerRequirements|'
+        pattern:
+            r'class\s+OfferedLayers|class\s+LayerRequirements|'
             r'class\s+UnitLayerView',
         sample: 'class OfferedLayers {',
       ),
       (
-        why: 'a second stream/table of layer settings — one entry carries a '
+        why:
+            'a second stream/table of layer settings — one entry carries a '
             'scope whole answer, so there is nothing to pair a write with',
-        pattern: r'watchOfferedLayers|setOfferedLayers|clearOfferedLayers|'
+        pattern:
+            r'watchOfferedLayers|setOfferedLayers|clearOfferedLayers|'
             r'watchLayerRequirements|setLayerRequirement|clearLayerRequirement|'
             r'offered_layer_configs|required_layer_configs',
         sample: 'Stream<List<LayerConfigEntry>> watchOfferedLayers(String p);',
       ),
       (
-        why: 'reconciles two sets at a call site — LayerRoles.checkableFor '
+        why:
+            'reconciles two sets at a call site — LayerRoles.checkableFor '
             'answers this, and the copies that did it by hand are exactly the '
             'ones that disagreed',
-        pattern: r'\.\.\.offered[^,]*,\s*\.\.\.required|'
+        pattern:
+            r'\.\.\.offered[^,]*,\s*\.\.\.required|'
             r'offered\.forNode|offered\.forUnit',
         sample: 'final show = {...offered.forNode(id), ...required};',
       ),
@@ -70,9 +76,13 @@ void main() {
 
     test('the regexes actually match the shapes they ban', () {
       for (final ban in bans) {
-        expect(RegExp(ban.pattern).hasMatch(ban.sample), isTrue,
-            reason: 'the pattern for "${ban.why}" no longer matches its own '
-                'sample, so it is guarding nothing');
+        expect(
+          RegExp(ban.pattern).hasMatch(ban.sample),
+          isTrue,
+          reason:
+              'the pattern for "${ban.why}" no longer matches its own '
+              'sample, so it is guarding nothing',
+        );
       }
     });
 
@@ -82,20 +92,31 @@ void main() {
       for (final rel in dartSourcesUnder()) {
         if (exempt.contains(rel)) continue;
         scanned++;
-        for (final line in codeLines(File(rel).readAsStringSync(),
-            escapeHatch: escapeHatch)) {
+        for (final line in codeLines(
+          File(rel).readAsStringSync(),
+          escapeHatch: escapeHatch,
+        )) {
           for (final ban in bans) {
             if (RegExp(ban.pattern).hasMatch(line.text)) {
-              offences.add('$rel:${line.line} — ${ban.why}\n    ${line.text.trim()}');
+              offences.add(
+                '$rel:${line.line} — ${ban.why}\n    ${line.text.trim()}',
+              );
             }
           }
         }
       }
-      expect(scanned, greaterThan(50),
-          reason: 'the scan found almost nothing to read, so it is not '
-              'guarding the tree it thinks it is');
-      expect(offences, isEmpty,
-          reason: 'these rebuild the two-set model:\n${offences.join('\n')}');
+      expect(
+        scanned,
+        greaterThan(50),
+        reason:
+            'the scan found almost nothing to read, so it is not '
+            'guarding the tree it thinks it is',
+      );
+      expect(
+        offences,
+        isEmpty,
+        reason: 'these rebuild the two-set model:\n${offences.join('\n')}',
+      );
     });
   });
 
@@ -120,7 +141,8 @@ void main() {
 
     const bans = <({String why, String pattern, String sample})>[
       (
-        why: 'reads the log\'s per-unit layers inside features/ — that is one '
+        why:
+            'reads the log\'s per-unit layers inside features/ — that is one '
             'half of the question UnitMefarshim answers, and every screen that '
             'took just this half got the deleted-meforish case wrong',
         pattern: r'\.completedLayers\(',
@@ -143,9 +165,13 @@ void main() {
 
     test('the regexes actually match the shapes they ban', () {
       for (final ban in bans) {
-        expect(RegExp(ban.pattern).hasMatch(ban.sample), isTrue,
-            reason: 'the pattern for "${ban.why}" no longer matches its own '
-                'sample, so it is guarding nothing');
+        expect(
+          RegExp(ban.pattern).hasMatch(ban.sample),
+          isTrue,
+          reason:
+              'the pattern for "${ban.why}" no longer matches its own '
+              'sample, so it is guarding nothing',
+        );
       }
     });
 
@@ -158,23 +184,35 @@ void main() {
       var scanned = 0;
       for (final rel in dartSourcesUnder('lib/features')) {
         scanned++;
-        for (final line in codeLines(File(rel).readAsStringSync(),
-            escapeHatch: escapeHatch)) {
+        for (final line in codeLines(
+          File(rel).readAsStringSync(),
+          escapeHatch: escapeHatch,
+        )) {
           for (final ban in bans) {
             if (!RegExp(ban.pattern).hasMatch(line.text)) continue;
-            offences.add('$rel:${line.line} — ${ban.why}\n'
-                '    ${line.text.trim()}');
+            offences.add(
+              '$rel:${line.line} — ${ban.why}\n'
+              '    ${line.text.trim()}',
+            );
           }
         }
       }
 
-      expect(scanned, greaterThan(20),
-          reason: 'the scan found almost nothing to read, so it is not '
-              'guarding the tree it thinks it is');
-      expect(offences, isEmpty,
-          reason: 'ask UnitMefarshim.of(...) and take the slice you want — '
-              '`checkable` to log, `reviewable` for a chazara, `all` for the '
-              'checklist:\n${offences.join('\n')}');
+      expect(
+        scanned,
+        greaterThan(20),
+        reason:
+            'the scan found almost nothing to read, so it is not '
+            'guarding the tree it thinks it is',
+      );
+      expect(
+        offences,
+        isEmpty,
+        reason:
+            'ask UnitMefarshim.of(...) and take the slice you want — '
+            '`checkable` to log, `reviewable` for a chazara, `all` for the '
+            'checklist:\n${offences.join('\n')}',
+      );
     });
   });
 
@@ -187,8 +225,11 @@ void main() {
 
     test('every role survives LayerRole.fromName', () {
       for (final role in LayerRole.values) {
-        expect(LayerRole.fromName(role.name), role,
-            reason: '${role.name} does not read back as itself');
+        expect(
+          LayerRole.fromName(role.name),
+          role,
+          reason: '${role.name} does not read back as itself',
+        );
       }
     });
 
@@ -200,7 +241,8 @@ void main() {
         },
       );
       final back = LayerConfigEntry.fromJson(
-          jsonDecode(jsonEncode(entry.toJson())) as Map<String, dynamic>);
+        jsonDecode(jsonEncode(entry.toJson())) as Map<String, dynamic>,
+      );
       expect(back.roles, entry.roles);
       expect(back.nodeId, entry.nodeId);
     });
@@ -223,12 +265,16 @@ void main() {
       // `unitIndex` they carry is read by nothing and harms nothing here; the
       // entries that name a real unit are dropped a level up, in
       // `BackupService.parse`.
-      final req = LayerConfigEntry.fromJson(
-          const {'nodeId': 'shas', 'unitIndex': -1, 'layers': ['main']},
-          legacyRole: LayerRole.required);
-      final off = LayerConfigEntry.fromJson(
-          const {'nodeId': 'shas', 'unitIndex': -1, 'layers': ['maharsha']},
-          legacyRole: LayerRole.optional);
+      final req = LayerConfigEntry.fromJson(const {
+        'nodeId': 'shas',
+        'unitIndex': -1,
+        'layers': ['main'],
+      }, legacyRole: LayerRole.required);
+      final off = LayerConfigEntry.fromJson(const {
+        'nodeId': 'shas',
+        'unitIndex': -1,
+        'layers': ['maharsha'],
+      }, legacyRole: LayerRole.optional);
       expect(req.roles, {'main': LayerRole.required});
       expect(off.roles, {'maharsha': LayerRole.optional});
     });
@@ -238,9 +284,11 @@ void main() {
     // The invariant the two-boolean model could break and had to repair. It is
     // not enforced here — it is unrepresentable, because there is one entry per
     // layer. This asserts that the type still has that property.
-    final r = LayerRoles(nodeConfig: {
-      'shas': roles(required: ['main', 'rashi'], optional: ['maharsha'])
-    });
+    final r = LayerRoles(
+      nodeConfig: {
+        'shas': roles(required: ['main', 'rashi'], optional: ['maharsha']),
+      },
+    );
     for (final id in r.requiredFor('shas')) {
       expect(r.forNode('shas').keys, contains(id));
     }

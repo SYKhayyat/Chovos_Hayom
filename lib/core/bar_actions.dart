@@ -64,8 +64,9 @@ List<Widget> barActions(
         ),
     ];
   }
-  final tint = actions.map((a) => a.tint).firstWhere((c) => c != null,
-      orElse: () => null);
+  final tint = actions
+      .map((a) => a.tint)
+      .firstWhere((c) => c != null, orElse: () => null);
   return [
     PopupMenuButton<int>(
       icon: Icon(Icons.more_vert, color: tint),

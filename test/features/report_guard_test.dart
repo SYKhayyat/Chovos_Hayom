@@ -49,28 +49,32 @@ void main() {
 
   const bans = <({String why, String pattern, String sample, String home})>[
     (
-      why: 'a report section with a Scaffold of its own is a route again — '
+      why:
+          'a report section with a Scaffold of its own is a route again — '
           'the shell in report_screen.dart owns the only one',
       pattern: r'\bScaffold\(',
       sample: '      body: Scaffold(appBar: AppBar()),',
       home: 'Scaffold',
     ),
     (
-      why: 'wires up its own D-pad scrolling — ReportBody owns that decision '
+      why:
+          'wires up its own D-pad scrolling — ReportBody owns that decision '
           'for every section, including the ones not written yet',
       pattern: r'\bDpadScroll\(',
       sample: '    return DpadScroll(skipTraversal: false, builder: b);',
       home: 'DpadScroll',
     ),
     (
-      why: 'renders the goal sentence outside goal_status.dart — that is how '
+      why:
+          'renders the goal sentence outside goal_status.dart — that is how '
           'the banner and the row came to say the same thing two ways',
       pattern: r'l10n\.goalStatus\(|\.goalStatus\(',
       sample: 'final text = l10n.goalStatus(date, rate, status);',
       home: 'goalStatus',
     ),
     (
-      why: 'builds a second date/duration logging form — there is one, in '
+      why:
+          'builds a second date/duration logging form — there is one, in '
           'log_unit_sheet.dart, and it takes an action instead',
       pattern: r'logSheetManualDateTime',
       sample: 'title: Text(l10n.logSheetManualDateTime),',
@@ -89,17 +93,25 @@ void main() {
 
   test('the regexes actually match the shapes they ban', () {
     for (final ban in bans) {
-      expect(RegExp(ban.pattern).hasMatch(ban.sample), isTrue,
-          reason: 'the pattern for "${ban.why}" no longer matches its own '
-              'sample, so it is guarding nothing');
+      expect(
+        RegExp(ban.pattern).hasMatch(ban.sample),
+        isTrue,
+        reason:
+            'the pattern for "${ban.why}" no longer matches its own '
+            'sample, so it is guarding nothing',
+      );
     }
   });
 
   test('every home file still exists to be excused', () {
     for (final home in homes.values) {
-      expect(File(home).existsSync(), isTrue,
-          reason: '$home is where one of these rules is allowed to live; if it '
-              'moved, this guard is pointing at nothing');
+      expect(
+        File(home).existsSync(),
+        isTrue,
+        reason:
+            '$home is where one of these rules is allowed to live; if it '
+            'moved, this guard is pointing at nothing',
+      );
     }
   });
 
@@ -112,9 +124,13 @@ void main() {
       'lib/features/mefarshim',
       'lib/features/unit_grid/add_chazara_sheet.dart',
     ]) {
-      expect(File(dead).existsSync() || Directory(dead).existsSync(), isFalse,
-          reason: '$dead is a report section (or the second log form) that has '
-              'grown back into a file of its own');
+      expect(
+        File(dead).existsSync() || Directory(dead).existsSync(),
+        isFalse,
+        reason:
+            '$dead is a report section (or the second log form) that has '
+            'grown back into a file of its own',
+      );
     }
   });
 
@@ -122,16 +138,20 @@ void main() {
     final violations = <String>[];
 
     for (final path in dartSourcesUnder()) {
-      final lines =
-          codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch);
+      final lines = codeLines(
+        File(path).readAsStringSync(),
+        escapeHatch: escapeHatch,
+      );
       for (final ban in bans) {
         if (path.endsWith(homes[ban.home]!)) continue;
         final scope = scopes[ban.home];
         if (scope != null && !path.contains(scope)) continue;
         for (final line in lines) {
           if (!RegExp(ban.pattern).hasMatch(line.text)) continue;
-          violations.add('$path:${line.line} ${ban.why}\n'
-              '    ${line.text.trim()}');
+          violations.add(
+            '$path:${line.line} ${ban.why}\n'
+            '    ${line.text.trim()}',
+          );
         }
       }
     }
@@ -139,7 +159,8 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason: 'Each of these has one home, named above.\n\n'
+      reason:
+          'Each of these has one home, named above.\n\n'
           '${violations.join('\n')}\n\n'
           'If a line genuinely needs the shape, mark it '
           '`// $escapeHatch — <reason>`.',

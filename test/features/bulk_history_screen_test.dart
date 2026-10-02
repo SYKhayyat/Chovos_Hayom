@@ -30,27 +30,26 @@ void main() {
     required int unit,
     required String batch,
     EventAction action = EventAction.done,
-  }) =>
-      LearningEvent(
-        id: id,
-        profileId: profile,
-        nodeId: node,
-        unitIndex: unit,
-        action: action,
-        occurredAt: DateTime(2026, 1, 5, 14, 30),
-        loggedAt: DateTime(2026, 1, 5, 14, 30),
-        batchId: batch,
-      );
+  }) => LearningEvent(
+    id: id,
+    profileId: profile,
+    nodeId: node,
+    unitIndex: unit,
+    action: action,
+    occurredAt: DateTime(2026, 1, 5, 14, 30),
+    loggedAt: DateTime(2026, 1, 5, 14, 30),
+    batchId: batch,
+  );
 
   Widget screen(ProgressRepository repo) => ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider.overrideWithValue(repo),
-          appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
-        ],
-        child: localizedApp(home: const BulkHistoryScreen()),
-      );
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(repo),
+      appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+      clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+    ],
+    child: localizedApp(home: const BulkHistoryScreen()),
+  );
 
   testWidgets('says so when nothing has been done in bulk', (tester) async {
     await tester.pumpWidget(screen(memoryRepository()));
@@ -60,8 +59,9 @@ void main() {
     expect(find.text('Undo'), findsNothing);
   });
 
-  testWidgets('a finish batch says how many units and which sefer',
-      (tester) async {
+  testWidgets('a finish batch says how many units and which sefer', (
+    tester,
+  ) async {
     final repo = memoryRepository();
     await repo.addEvents([
       event('a', node: 'shas.moed.shabbos', unit: 2, batch: 'b1'),
@@ -73,8 +73,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Finished 3 units'), findsOneWidget);
-    expect(find.textContaining('Shabbos'), findsOneWidget,
-        reason: 'a single-node batch is named by that node, not by a count');
+    expect(
+      find.textContaining('Shabbos'),
+      findsOneWidget,
+      reason: 'a single-node batch is named by that node, not by a count',
+    );
     // Time as well as date: two bulk actions on one day are otherwise two rows
     // the user cannot tell apart, and the whole screen is about picking one.
     expect(find.textContaining('14:30'), findsOneWidget);
@@ -83,11 +86,13 @@ void main() {
   testWidgets('a clear batch is distinguished from a finish', (tester) async {
     final repo = memoryRepository();
     await repo.addEvents([
-      event('a',
-          node: 'shas.moed.shabbos',
-          unit: 2,
-          batch: 'b1',
-          action: EventAction.undone),
+      event(
+        'a',
+        node: 'shas.moed.shabbos',
+        unit: 2,
+        batch: 'b1',
+        action: EventAction.undone,
+      ),
     ]);
 
     await tester.pumpWidget(screen(repo));
@@ -97,8 +102,9 @@ void main() {
     expect(find.textContaining('Finished'), findsNothing);
   });
 
-  testWidgets('undoing asks first, and removes exactly that batch',
-      (tester) async {
+  testWidgets('undoing asks first, and removes exactly that batch', (
+    tester,
+  ) async {
     final repo = memoryRepository();
     await repo.addEvents([
       event('a', node: 'shas.moed.shabbos', unit: 2, batch: 'b1'),
@@ -128,27 +134,33 @@ void main() {
     await tester.pumpAndSettle();
 
     final left = await repo.getEvents(profile);
-    expect(left.map((e) => e.id), ['c'],
-        reason: 'the other batch is untouched — undoing one bulk action must '
-            'not take a second one with it');
+    expect(
+      left.map((e) => e.id),
+      ['c'],
+      reason:
+          'the other batch is untouched — undoing one bulk action must '
+          'not take a second one with it',
+    );
     expect(find.textContaining('2 events removed'), findsOneWidget);
   });
 
-  testWidgets('a batch spanning several sefarim is named by what contains them',
-      (tester) async {
-    // `_commonAncestor` lives in the widget file and nothing else calls it.
-    // A "finish all" is pressed on a *category*, so the row has to name the
-    // category — the ids in the batch are its leaves.
-    final repo = memoryRepository();
-    await repo.addEvents([
-      event('a', node: 'shas.moed.shabbos', unit: 2, batch: 'b1'),
-      event('b', node: 'shas.moed', unit: 0, batch: 'b1'),
-    ]);
+  testWidgets(
+    'a batch spanning several sefarim is named by what contains them',
+    (tester) async {
+      // `_commonAncestor` lives in the widget file and nothing else calls it.
+      // A "finish all" is pressed on a *category*, so the row has to name the
+      // category — the ids in the batch are its leaves.
+      final repo = memoryRepository();
+      await repo.addEvents([
+        event('a', node: 'shas.moed.shabbos', unit: 2, batch: 'b1'),
+        event('b', node: 'shas.moed', unit: 0, batch: 'b1'),
+      ]);
 
-    await tester.pumpWidget(screen(repo));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(screen(repo));
+      await tester.pumpAndSettle();
 
-    expect(find.textContaining('Moed'), findsOneWidget);
-    expect(find.textContaining('2 sefarim'), findsOneWidget);
-  });
+      expect(find.textContaining('Moed'), findsOneWidget);
+      expect(find.textContaining('2 sefarim'), findsOneWidget);
+    },
+  );
 }

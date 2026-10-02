@@ -24,71 +24,75 @@ void main() {
   /// (זבחים) files under Z in English and ז in Hebrew, Arachin (ערכין) under A
   /// and ע.
   Catalog catalog() => Catalog(const [
-        CatalogNode(
-            id: 'root',
-            parentId: null,
-            name: 'Kol HaTorah Kula',
-            nameHebrew: 'כל התורה כולה',
-            kind: NodeKind.category),
-        CatalogNode(
-            id: 'shas',
-            parentId: 'root',
-            name: 'Shas',
-            nameHebrew: 'ש״ס',
-            kind: NodeKind.category),
-        CatalogNode(
-            id: 'shas.moed',
-            parentId: 'shas',
-            name: 'Moed',
-            nameHebrew: 'מועד',
-            kind: NodeKind.category),
-        CatalogNode(
-          id: 'shas.moed.shabbos',
-          parentId: 'shas.moed',
-          name: 'Shabbos',
-          nameHebrew: 'שבת',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf,
-          unitCount: 156,
-          unitOffset: 2,
-        ),
-        CatalogNode(
-          id: 'shas.kodashim.zevachim',
-          parentId: 'shas',
-          name: 'Zevachim',
-          nameHebrew: 'זבחים',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf,
-          unitCount: 120,
-          unitOffset: 2,
-        ),
-        CatalogNode(
-          id: 'shas.kodashim.arachin',
-          parentId: 'shas',
-          name: 'Arachin',
-          nameHebrew: 'ערכין',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf,
-          unitCount: 34,
-          unitOffset: 2,
-        ),
-        CatalogNode(
-            id: 'mishnayos',
-            parentId: 'root',
-            name: 'Mishnayos',
-            nameHebrew: 'משניות',
-            kind: NodeKind.category),
-        CatalogNode(
-          id: 'mishnayos.shabbos',
-          parentId: 'mishnayos',
-          name: 'Shabbos',
-          nameHebrew: 'שבת',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.perek,
-          unitCount: 24,
-          unitOffset: 1,
-        ),
-      ]);
+    CatalogNode(
+      id: 'root',
+      parentId: null,
+      name: 'Kol HaTorah Kula',
+      nameHebrew: 'כל התורה כולה',
+      kind: NodeKind.category,
+    ),
+    CatalogNode(
+      id: 'shas',
+      parentId: 'root',
+      name: 'Shas',
+      nameHebrew: 'ש״ס',
+      kind: NodeKind.category,
+    ),
+    CatalogNode(
+      id: 'shas.moed',
+      parentId: 'shas',
+      name: 'Moed',
+      nameHebrew: 'מועד',
+      kind: NodeKind.category,
+    ),
+    CatalogNode(
+      id: 'shas.moed.shabbos',
+      parentId: 'shas.moed',
+      name: 'Shabbos',
+      nameHebrew: 'שבת',
+      kind: NodeKind.leaf,
+      unitLabel: UnitLabel.daf,
+      unitCount: 156,
+      unitOffset: 2,
+    ),
+    CatalogNode(
+      id: 'shas.kodashim.zevachim',
+      parentId: 'shas',
+      name: 'Zevachim',
+      nameHebrew: 'זבחים',
+      kind: NodeKind.leaf,
+      unitLabel: UnitLabel.daf,
+      unitCount: 120,
+      unitOffset: 2,
+    ),
+    CatalogNode(
+      id: 'shas.kodashim.arachin',
+      parentId: 'shas',
+      name: 'Arachin',
+      nameHebrew: 'ערכין',
+      kind: NodeKind.leaf,
+      unitLabel: UnitLabel.daf,
+      unitCount: 34,
+      unitOffset: 2,
+    ),
+    CatalogNode(
+      id: 'mishnayos',
+      parentId: 'root',
+      name: 'Mishnayos',
+      nameHebrew: 'משניות',
+      kind: NodeKind.category,
+    ),
+    CatalogNode(
+      id: 'mishnayos.shabbos',
+      parentId: 'mishnayos',
+      name: 'Shabbos',
+      nameHebrew: 'שבת',
+      kind: NodeKind.leaf,
+      unitLabel: UnitLabel.perek,
+      unitCount: 24,
+      unitOffset: 1,
+    ),
+  ]);
 
   group('nodeChoices', () {
     test('walks the tree in order, carrying how deep each node is', () {
@@ -126,10 +130,14 @@ void main() {
 
     test('by name, it sorts by the label the reader is looking at', () {
       List<String> order(AppLocalizations l10n) => [
-            for (final c in nodeChoices(l10n, catalog(),
-                where: (n) => n.isLeaf, order: NodeOrder.name))
-              c.node.id,
-          ];
+        for (final c in nodeChoices(
+          l10n,
+          catalog(),
+          where: (n) => n.isLeaf,
+          order: NodeOrder.name,
+        ))
+          c.node.id,
+      ];
 
       // English: Arachin, Shabbos, Shabbos, Zevachim.
       expect(order(en), [
@@ -149,12 +157,13 @@ void main() {
       ]);
     });
 
-    test('a name-ordered list carries no depth, because there is no tree left',
-        () {
-      final choices =
-          nodeChoices(en, catalog(), order: NodeOrder.name);
-      expect(choices.every((c) => c.depth == 0), isTrue);
-    });
+    test(
+      'a name-ordered list carries no depth, because there is no tree left',
+      () {
+        final choices = nodeChoices(en, catalog(), order: NodeOrder.name);
+        expect(choices.every((c) => c.depth == 0), isTrue);
+      },
+    );
 
     test('exclude drops a node and everything under it', () {
       final ids = [
@@ -167,8 +176,12 @@ void main() {
     });
 
     test('maxDepth stops the walk without dropping the shallow siblings', () {
-      final ids = [for (final c in nodeChoices(en, catalog(), maxDepth: 1)) c.id],
-          deep = [for (final c in nodeChoices(en, catalog(), maxDepth: 2)) c.id];
+      final ids = [
+            for (final c in nodeChoices(en, catalog(), maxDepth: 1)) c.id,
+          ],
+          deep = [
+            for (final c in nodeChoices(en, catalog(), maxDepth: 2)) c.id,
+          ];
 
       expect(ids, ['root', 'mishnayos', 'shas']);
       expect(deep, contains('shas.moed'));
@@ -177,8 +190,7 @@ void main() {
 
     test('the two second lines say the two things a picker needs', () {
       final sized = {
-        for (final c
-            in nodeChoices(en, catalog(), secondary: nodeSizeLine))
+        for (final c in nodeChoices(en, catalog(), secondary: nodeSizeLine))
           c.id: c.secondary,
       };
       expect(sized['shas.moed.shabbos'], '156 dapim');
@@ -192,10 +204,13 @@ void main() {
       };
       expect(other['shas.moed.shabbos'], 'שבת');
       expect(
-          nodeChoices(he, catalog(), secondary: nodeOtherName)
-              .firstWhere((c) => c.id == 'shas.moed.shabbos')
-              .secondary,
-          'Shabbos');
+        nodeChoices(
+          he,
+          catalog(),
+          secondary: nodeOtherName,
+        ).firstWhere((c) => c.id == 'shas.moed.shabbos').secondary,
+        'Shabbos',
+      );
     });
   });
 
@@ -205,52 +220,68 @@ void main() {
     /// the two old copies used.
     const sonim = Size(240, 324);
 
-    testWidgets('fits inside a 240dp screen instead of hanging off it',
-        (tester) async {
+    testWidgets('fits inside a 240dp screen instead of hanging off it', (
+      tester,
+    ) async {
       tester.view.physicalSize = sonim;
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
       final choices = nodeChoices(en, catalog(), secondary: nodeSizeLine);
-      await tester.pumpWidget(localizedApp(
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: Center(
-              child: ElevatedButton(
-                onPressed: () => showNodePicker(context,
-                    title: 'Pick one', choices: choices, showKindIcon: true),
-                child: const Text('open'),
+      await tester.pumpWidget(
+        localizedApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => showNodePicker(
+                    context,
+                    title: 'Pick one',
+                    choices: choices,
+                    showKindIcon: true,
+                  ),
+                  child: const Text('open'),
+                ),
               ),
             ),
           ),
         ),
-      ));
+      );
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
       final list = tester.getSize(find.byType(ListView));
-      expect(list.width, lessThanOrEqualTo(sonim.width),
-          reason: 'a dialog wider than the display is one whose trailing edge '
-              '— where a long qualified name ends — cannot be read at all');
+      expect(
+        list.width,
+        lessThanOrEqualTo(sonim.width),
+        reason:
+            'a dialog wider than the display is one whose trailing edge '
+            '— where a long qualified name ends — cannot be read at all',
+      );
       expect(list.height, lessThanOrEqualTo(sonim.height));
     });
 
     testWidgets('returns the node that was tapped', (tester) async {
       CatalogNode? picked;
       final choices = nodeChoices(en, catalog(), where: (n) => n.isLeaf);
-      await tester.pumpWidget(localizedApp(
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: Center(
-              child: ElevatedButton(
-                onPressed: () async => picked = await showNodePicker(context,
-                    title: 'Pick one', choices: choices),
-                child: const Text('open'),
+      await tester.pumpWidget(
+        localizedApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () async => picked = await showNodePicker(
+                    context,
+                    title: 'Pick one',
+                    choices: choices,
+                  ),
+                  child: const Text('open'),
+                ),
               ),
             ),
           ),
         ),
-      ));
+      );
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Shabbos — Mishnayos'));
@@ -261,24 +292,27 @@ void main() {
   });
 
   group('NodeDropdown', () {
-    Widget dropdown(List<NodeChoice> choices, String? value,
-            {String? noneLabel}) =>
-        localizedApp(
-          home: Scaffold(
-            body: NodeDropdown(
-              label: 'Parent',
-              choices: choices,
-              value: value,
-              noneLabel: noneLabel,
-              onChanged: (_) {},
-            ),
-          ),
-        );
+    Widget dropdown(
+      List<NodeChoice> choices,
+      String? value, {
+      String? noneLabel,
+    }) => localizedApp(
+      home: Scaffold(
+        body: NodeDropdown(
+          label: 'Parent',
+          choices: choices,
+          value: value,
+          noneLabel: noneLabel,
+          onChanged: (_) {},
+        ),
+      ),
+    );
 
     testWidgets('shows the qualified name, closed and open', (tester) async {
       final choices = nodeChoices(en, catalog());
       await tester.pumpWidget(
-          dropdown(choices, 'mishnayos.shabbos', noneLabel: 'Top level'));
+        dropdown(choices, 'mishnayos.shabbos', noneLabel: 'Top level'),
+      );
       await tester.pumpAndSettle();
 
       // The qualifier is in the label itself, which is what a *closed*
@@ -286,12 +320,13 @@ void main() {
       // nothing without the rows above it to measure against.
       expect(find.textContaining('Shabbos — Mishnayos'), findsWidgets);
       expect(
-          tester
-              .widgetList<Text>(find.textContaining('Shabbos — Mishnayos'))
-              .first
-              .data,
-          '      Shabbos — Mishnayos',
-          reason: 'and the indent is still there for when the list is open');
+        tester
+            .widgetList<Text>(find.textContaining('Shabbos — Mishnayos'))
+            .first
+            .data,
+        '      Shabbos — Mishnayos',
+        reason: 'and the indent is still there for when the list is open',
+      );
     });
 
     testWidgets('a value the list no longer contains falls back rather than '
@@ -301,15 +336,17 @@ void main() {
       // selection the list cannot offer.
       final choices = nodeChoices(en, catalog(), exclude: {'shas'});
       await tester.pumpWidget(
-          dropdown(choices, 'shas.moed', noneLabel: 'Top level'));
+        dropdown(choices, 'shas.moed', noneLabel: 'Top level'),
+      );
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
       expect(find.text('Top level'), findsOneWidget);
     });
 
-    testWidgets('with no none entry it falls back to the first row',
-        (tester) async {
+    testWidgets('with no none entry it falls back to the first row', (
+      tester,
+    ) async {
       final choices = nodeChoices(en, catalog(), maxDepth: 1);
       await tester.pumpWidget(dropdown(choices, 'nothing-like-this'));
       await tester.pumpAndSettle();

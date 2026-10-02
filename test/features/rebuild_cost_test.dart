@@ -48,24 +48,24 @@ void main() {
   tearDown(() => debugOnRebuildDirtyWidget = null);
 
   LearningEvent done(int unit) => LearningEvent(
-        id: 'e$unit',
-        profileId: 'default',
-        nodeId: 'shas.moed.shabbos',
-        unitIndex: unit,
-        action: EventAction.done,
-        occurredAt: DateTime(2026, 1, 9),
-        loggedAt: DateTime(2026, 1, 9),
-      );
+    id: 'e$unit',
+    profileId: 'default',
+    nodeId: 'shas.moed.shabbos',
+    unitIndex: unit,
+    action: EventAction.done,
+    occurredAt: DateTime(2026, 1, 9),
+    loggedAt: DateTime(2026, 1, 9),
+  );
 
   Widget scoped(Widget home, ProgressRepository repo) => ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider.overrideWithValue(repo),
-          appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10, 12)),
-        ],
-        child: localizedApp(home: home),
-      );
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(repo),
+      appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+      clockProvider.overrideWithValue(() => DateTime(2026, 1, 10, 12)),
+    ],
+    child: localizedApp(home: home),
+  );
 
   group('a settings write nobody on screen reads', () {
     /// The three screens whose only interest in Settings is the calendar mode,
@@ -83,35 +83,47 @@ void main() {
         await tester.pumpAndSettle();
 
         final ref = ProviderScope.containerOf(
-            tester.element(find.byType(MaterialApp)),
-            listen: false);
+          tester.element(find.byType(MaterialApp)),
+          listen: false,
+        );
 
         rebuilds.clear();
         await ref.read(settingsProvider.notifier).setBackupIntervalDays(21);
         await tester.pumpAndSettle();
 
-        expect(rebuilds[screen.name] ?? 0, 0,
-            reason: '${screen.name} reads s.calendar and nothing else. '
-                'A number in the backup section of Settings is not its '
-                'business.');
+        expect(
+          rebuilds[screen.name] ?? 0,
+          0,
+          reason:
+              '${screen.name} reads s.calendar and nothing else. '
+              'A number in the backup section of Settings is not its '
+              'business.',
+        );
       });
     }
 
-    testWidgets('but a change it *does* read still rebuilds it', (tester) async {
+    testWidgets('but a change it *does* read still rebuilds it', (
+      tester,
+    ) async {
       // The control. A `.select` that never fires is indistinguishable from a
       // missing subscription, and the difference only shows up as a screen that
       // has quietly stopped updating.
       final repo = memoryRepository();
       await repo.addEvent(done(2));
-      await tester.pumpWidget(scoped(reportSection(const OverviewSection()), repo));
+      await tester.pumpWidget(
+        scoped(reportSection(const OverviewSection()), repo),
+      );
       await tester.pumpAndSettle();
 
       final ref = ProviderScope.containerOf(
-          tester.element(find.byType(MaterialApp)),
-          listen: false);
+        tester.element(find.byType(MaterialApp)),
+        listen: false,
+      );
 
       rebuilds.clear();
-      await ref.read(settingsProvider.notifier).setCalendar(CalendarMode.hebrew);
+      await ref
+          .read(settingsProvider.notifier)
+          .setCalendar(CalendarMode.hebrew);
       await tester.pumpAndSettle();
 
       expect(rebuilds['OverviewSection'] ?? 0, greaterThan(0));
@@ -129,20 +141,27 @@ void main() {
         await tester.pump(const Duration(seconds: 1));
       }
 
-      expect(rebuilds['SessionBanner'] ?? 0, 0,
-          reason: 'this widget renders SizedBox.shrink() with no session, and '
-              'it used to wake up once a second for the life of the process to '
-              'redraw it — on a battery-powered keypad phone');
+      expect(
+        rebuilds['SessionBanner'] ?? 0,
+        0,
+        reason:
+            'this widget renders SizedBox.shrink() with no session, and '
+            'it used to wake up once a second for the life of the process to '
+            'redraw it — on a battery-powered keypad phone',
+      );
     });
 
-    testWidgets('does not run while a session is merely paused', (tester) async {
+    testWidgets('does not run while a session is merely paused', (
+      tester,
+    ) async {
       final repo = memoryRepository();
       await tester.pumpWidget(scoped(const SessionBanner(), repo));
       await tester.pumpAndSettle();
 
       final ref = ProviderScope.containerOf(
-          tester.element(find.byType(MaterialApp)),
-          listen: false);
+        tester.element(find.byType(MaterialApp)),
+        listen: false,
+      );
       final timer = ref.read(sessionTimerProvider.notifier);
       await timer.start(now: DateTime(2026, 1, 10, 12));
       await timer.pause(DateTime(2026, 1, 10, 12, 5));
@@ -153,9 +172,13 @@ void main() {
         await tester.pump(const Duration(seconds: 1));
       }
 
-      expect(rebuilds['SessionBanner'] ?? 0, 0,
-          reason: 'a paused session\'s elapsed time is the banked total, which '
-              'does not move until it is resumed');
+      expect(
+        rebuilds['SessionBanner'] ?? 0,
+        0,
+        reason:
+            'a paused session\'s elapsed time is the banked total, which '
+            'does not move until it is resumed',
+      );
     });
 
     testWidgets('does run while a session is running', (tester) async {
@@ -166,8 +189,9 @@ void main() {
       await tester.pumpAndSettle();
 
       final ref = ProviderScope.containerOf(
-          tester.element(find.byType(MaterialApp)),
-          listen: false);
+        tester.element(find.byType(MaterialApp)),
+        listen: false,
+      );
       await ref
           .read(sessionTimerProvider.notifier)
           .start(now: DateTime(2026, 1, 10, 12));
@@ -178,8 +202,11 @@ void main() {
         await tester.pump(const Duration(seconds: 1));
       }
 
-      expect(rebuilds['SessionBanner'] ?? 0, 3,
-          reason: 'the readout counts up once a second while it is running');
+      expect(
+        rebuilds['SessionBanner'] ?? 0,
+        3,
+        reason: 'the readout counts up once a second while it is running',
+      );
 
       // Leave nothing pending: the binding asserts on a live timer at teardown.
       await ref.read(sessionTimerProvider.notifier).reset();

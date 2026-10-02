@@ -80,8 +80,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _toggle(String id) => setState(() {
-        if (!_expanded.remove(id)) _expanded.add(id);
-      });
+    if (!_expanded.remove(id)) _expanded.add(id);
+  });
 
   void _setExpanded(bool expand) {
     final forest = ref.read(progressForestProvider).asData?.value ?? const [];
@@ -123,7 +123,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         // The sort applies only when its configured level targets this
         // generation (null = every level), matching the previous per-tile rule.
         final childDepth = depth + 1;
-        final ordered = !config.active ||
+        final ordered =
+            !config.active ||
                 (config.level != null && config.level != childDepth)
             ? n.children
             : sortChildren(n.children, config, lastActivity);
@@ -156,35 +157,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     Catalog? catalog,
   ) {
     final expanding = _expanded.isEmpty;
-    return barActions(
-      context,
-      [
-        BarAction(
-          icon: expanding ? Icons.unfold_more : Icons.unfold_less,
-          label: expanding ? l10n.expandAll : l10n.collapseAll,
-          onPressed: () => _setExpanded(expanding),
-        ),
-        BarAction(
-          icon: Icons.sort,
-          label: sort.active
-              ? l10n.tooltipSortActive(sortMetricLabel(l10n, sort.metric))
-              : l10n.tooltipSort,
-          tint: sort.active ? Theme.of(context).colorScheme.primary : null,
-          onPressed: () => showSortSheet(context, ref),
-        ),
-        BarAction(
-          icon: Icons.search,
-          label: l10n.tooltipSearch,
-          onPressed: catalog == null
-              ? null
-              : () => showSearch(
-                    context: context,
-                    delegate: CatalogSearchDelegate(catalog),
-                  ),
-        ),
-      ],
-      moreTooltip: l10n.tooltipMore,
-    );
+    return barActions(context, [
+      BarAction(
+        icon: expanding ? Icons.unfold_more : Icons.unfold_less,
+        label: expanding ? l10n.expandAll : l10n.collapseAll,
+        onPressed: () => _setExpanded(expanding),
+      ),
+      BarAction(
+        icon: Icons.sort,
+        label: sort.active
+            ? l10n.tooltipSortActive(sortMetricLabel(l10n, sort.metric))
+            : l10n.tooltipSort,
+        tint: sort.active ? Theme.of(context).colorScheme.primary : null,
+        onPressed: () => showSortSheet(context, ref),
+      ),
+      BarAction(
+        icon: Icons.search,
+        label: l10n.tooltipSearch,
+        onPressed: catalog == null
+            ? null
+            : () => showSearch(
+                context: context,
+                delegate: CatalogSearchDelegate(catalog),
+              ),
+      ),
+    ], moreTooltip: l10n.tooltipMore);
   }
 
   @override
@@ -288,8 +285,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 depth: row.depth,
                 hasChildren: row.hasChildren,
                 expanded: _expanded.contains(row.node.id),
-                onToggle:
-                    row.hasChildren ? () => _toggle(row.node.id) : null,
+                onToggle: row.hasChildren ? () => _toggle(row.node.id) : null,
               );
             },
           );
@@ -330,7 +326,9 @@ class _BackupBanner extends ConsumerWidget {
                 status.neverBackedUp
                     ? l10n.backupBannerNever(status.unsavedUnits)
                     : l10n.backupBannerStale(
-                        status.unsavedUnits, status.daysSinceBackup ?? 0),
+                        status.unsavedUnits,
+                        status.daysSinceBackup ?? 0,
+                      ),
                 style: TextStyle(color: scheme.onErrorContainer),
               ),
               // Why it matters, everywhere there is room to say it. On the
@@ -342,11 +340,12 @@ class _BackupBanner extends ConsumerWidget {
               // banner's own button leads to, under the switch that controls it.
               if (!compact) ...[
                 const SizedBox(height: 4),
-                Text(l10n.backupBannerWhy,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: scheme.onErrorContainer)),
+                Text(
+                  l10n.backupBannerWhy,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onErrorContainer,
+                  ),
+                ),
               ],
             ],
           ),
@@ -418,7 +417,11 @@ class _BackupBanner extends ConsumerWidget {
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [icon, const SizedBox(width: 12), Expanded(child: text)],
+          children: [
+            icon,
+            const SizedBox(width: 12),
+            Expanded(child: text),
+          ],
         ),
         const SizedBox(height: 8),
         // Full width rather than laid out end-to-end: "Back up" plus a named
@@ -439,7 +442,10 @@ class _BackupBanner extends ConsumerWidget {
   }
 
   Future<void> _dismiss(
-      BuildContext context, WidgetRef ref, AppLocalizations l10n) async {
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
     final notifier = ref.read(settingsProvider.notifier);
     final guard = WriteGuard.of(context, ref);
     await guard.run(
@@ -500,8 +506,8 @@ class _NudgeBanner extends ConsumerWidget {
             const Icon(Icons.notifications_active_outlined),
             const SizedBox(width: 12),
             Expanded(
-                child:
-                    Text(AppLocalizations.of(context).nudgeHaventLearnedToday)),
+              child: Text(AppLocalizations.of(context).nudgeHaventLearnedToday),
+            ),
           ],
         ),
       ),
@@ -519,7 +525,7 @@ class _AppDrawer extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final activeName =
         profiles.where((p) => p.id == active).map((p) => p.name).firstOrNull ??
-            'Default';
+        'Default';
 
     // The drawer is the app's only route to nine screens, so on the phone it
     // matters more than anywhere else that it is all reachable.
@@ -536,13 +542,16 @@ class _AppDrawer extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(l10n.appTitle,
-            style: Theme.of(context)
-                .textTheme
-                .headlineSmall
-                ?.copyWith(color: scheme.onPrimary)),
-        Text(l10n.drawerProfile(activeName),
-            style: TextStyle(color: scheme.onPrimary)),
+        Text(
+          l10n.appTitle,
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(color: scheme.onPrimary),
+        ),
+        Text(
+          l10n.drawerProfile(activeName),
+          style: TextStyle(color: scheme.onPrimary),
+        ),
       ],
     );
 
@@ -621,27 +630,30 @@ class _AppDrawer extends ConsumerWidget {
               title: Text(l10n.plannerCalendarTitle),
               onTap: () => _go(context, Routes.plannerCalendar),
             ),
-            Consumer(builder: (context, ref, _) {
-              // **How many units have been over more than once**, not how many
-              // are "due". The spaced-repetition screen this row opened is gone
-              // (#45): there is no schedule, nothing is late, and a badge of
-              // "what you have not done yet" was the wrong number to show on a
-              // drawer — it measured the app's state rather than the reader's.
-              //
-              // The count, not the list. The drawer sits in the tree whether it
-              // is open or not, and the provider re-derives on every mark and
-              // hands back a fresh value each time. All this row wants is a
-              // number, and the number rarely changes.
-              final repeated = ref.watch(chazaraRepeatedCountProvider);
-              return ListTile(
-                leading: const Icon(Icons.repeat),
-                title: Text(l10n.navChazara),
-                subtitle: Text(l10n.navChazaraSubtitle),
-                trailing:
-                    repeated == 0 ? null : Badge(label: Text('$repeated')),
-                onTap: () => _go(context, Routes.chazara),
-              );
-            }),
+            Consumer(
+              builder: (context, ref, _) {
+                // **How many units have been over more than once**, not how many
+                // are "due". The spaced-repetition screen this row opened is gone
+                // (#45): there is no schedule, nothing is late, and a badge of
+                // "what you have not done yet" was the wrong number to show on a
+                // drawer — it measured the app's state rather than the reader's.
+                //
+                // The count, not the list. The drawer sits in the tree whether it
+                // is open or not, and the provider re-derives on every mark and
+                // hands back a fresh value each time. All this row wants is a
+                // number, and the number rarely changes.
+                final repeated = ref.watch(chazaraRepeatedCountProvider);
+                return ListTile(
+                  leading: const Icon(Icons.repeat),
+                  title: Text(l10n.navChazara),
+                  subtitle: Text(l10n.navChazaraSubtitle),
+                  trailing: repeated == 0
+                      ? null
+                      : Badge(label: Text('$repeated')),
+                  onTap: () => _go(context, Routes.chazara),
+                );
+              },
+            ),
             // Five rows until this one: Statistics, Siyum calculator, Goals,
             // Siyumim and Mefarshim progress. Statistics and the calculator had
             // been app-bar icons until the bar ran out of room for the app's own

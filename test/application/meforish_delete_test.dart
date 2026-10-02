@@ -42,52 +42,73 @@ void main() {
 
   setUp(() async {
     repo = memoryRepository();
-    await repo.addCustomLayer('p', const Layer(id: 'mine', name: 'My Meforish'));
+    await repo.addCustomLayer(
+      'p',
+      const Layer(id: 'mine', name: 'My Meforish'),
+    );
   });
 
   test('deleting a meforish drops it from every required setting', () async {
     await repo.setLayerConfig(
-        'p',
-        LayerConfigEntry(
-            nodeId: 'shas',
-            roles: roles(required: ['main', 'mine'])));
+      'p',
+      LayerConfigEntry(
+        nodeId: 'shas',
+        roles: roles(required: ['main', 'mine']),
+      ),
+    );
 
     await deleteMeforish(repo, 'p', 'mine');
 
     final configs = await repo.getLayerConfigs('p');
-    expect(configs.single.required, {'main'},
-        reason: 'units gated on it must not become uncompletable');
+    expect(
+      configs.single.required,
+      {'main'},
+      reason: 'units gated on it must not become uncompletable',
+    );
     expect(await repo.getCustomLayers('p'), isEmpty);
   });
 
-  test('a setting that held only that meforish is cleared, not left empty',
-      () async {
-    // An empty pinned map would mean "requires nothing" rather than "inherits",
-    // which is a different answer.
-    await repo.setLayerConfig(
+  test(
+    'a setting that held only that meforish is cleared, not left empty',
+    () async {
+      // An empty pinned map would mean "requires nothing" rather than "inherits",
+      // which is a different answer.
+      await repo.setLayerConfig(
         'p',
         LayerConfigEntry(
-            nodeId: 'shas', roles: roles(required: ['mine'])));
+          nodeId: 'shas',
+          roles: roles(required: ['mine']),
+        ),
+      );
 
-    await deleteMeforish(repo, 'p', 'mine');
+      await deleteMeforish(repo, 'p', 'mine');
 
-    expect(await repo.getLayerConfigs('p'), isEmpty);
-  });
+      expect(await repo.getLayerConfigs('p'), isEmpty);
+    },
+  );
 
-  test('an optional role is cleaned up the same way as a required one', () async {
-    await repo.setLayerConfig(
+  test(
+    'an optional role is cleaned up the same way as a required one',
+    () async {
+      await repo.setLayerConfig(
         'p',
         LayerConfigEntry(
-            nodeId: 'shas',
-            roles: roles(required: ['main'], optional: ['rashi', 'mine'])));
+          nodeId: 'shas',
+          roles: roles(required: ['main'], optional: ['rashi', 'mine']),
+        ),
+      );
 
-    await deleteMeforish(repo, 'p', 'mine');
+      await deleteMeforish(repo, 'p', 'mine');
 
-    final configs = await repo.getLayerConfigs('p');
-    expect(configs.single.checkable, {'main', 'rashi'});
-    expect(configs.single.roles['rashi'], LayerRole.optional,
-        reason: 'the surviving roles keep their meaning, not just their ids');
-  });
+      final configs = await repo.getLayerConfigs('p');
+      expect(configs.single.checkable, {'main', 'rashi'});
+      expect(
+        configs.single.roles['rashi'],
+        LayerRole.optional,
+        reason: 'the surviving roles keep their meaning, not just their ids',
+      );
+    },
+  );
 
   test('one scope is rewritten or cleared, never half of each', () async {
     // The two-table model could clear the required row (its last id was this
@@ -95,10 +116,12 @@ void main() {
     // requirements from an ancestor and pinning its offers here. One entry has
     // one outcome.
     await repo.setLayerConfig(
-        'p',
-        LayerConfigEntry(
-            nodeId: 'shas',
-            roles: roles(required: ['mine'], optional: ['main'])));
+      'p',
+      LayerConfigEntry(
+        nodeId: 'shas',
+        roles: roles(required: ['mine'], optional: ['main']),
+      ),
+    );
 
     await deleteMeforish(repo, 'p', 'mine');
 
@@ -114,10 +137,12 @@ void main() {
     // scope is gone. What the case is really about — a pin that is not at the
     // root of the tree — is a deep node.
     await repo.setLayerConfig(
-        'p',
-        LayerConfigEntry(
-            nodeId: 'shas.moed.shabbos',
-            roles: roles(required: ['main', 'mine'])));
+      'p',
+      LayerConfigEntry(
+        nodeId: 'shas.moed.shabbos',
+        roles: roles(required: ['main', 'mine']),
+      ),
+    );
 
     await deleteMeforish(repo, 'p', 'mine');
 
@@ -128,14 +153,19 @@ void main() {
 
   test('settings naming other mefarshim are untouched', () async {
     await repo.setLayerConfig(
-        'p',
-        LayerConfigEntry(
-            nodeId: 'nach', roles: roles(required: ['main'])));
+      'p',
+      LayerConfigEntry(
+        nodeId: 'nach',
+        roles: roles(required: ['main']),
+      ),
+    );
     await repo.setLayerConfig(
-        'p',
-        LayerConfigEntry(
-            nodeId: 'shas',
-            roles: roles(required: ['main', 'mine'])));
+      'p',
+      LayerConfigEntry(
+        nodeId: 'shas',
+        roles: roles(required: ['main', 'mine']),
+      ),
+    );
 
     await deleteMeforish(repo, 'p', 'mine');
 

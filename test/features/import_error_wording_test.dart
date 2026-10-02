@@ -60,49 +60,61 @@ void main() {
   final l10n = AppLocalizationsEn();
 
   LearningEvent event(String id, String profileId) => LearningEvent(
-        id: id,
-        profileId: profileId,
-        nodeId: 'shabbosShas',
-        unitIndex: 2,
-        action: EventAction.done,
-        occurredAt: DateTime(2026, 7, 30),
-        loggedAt: DateTime(2026, 7, 30),
-        layers: const [mainLayerId],
+    id: id,
+    profileId: profileId,
+    nodeId: 'shabbosShas',
+    unitIndex: 2,
+    action: EventAction.done,
+    occurredAt: DateTime(2026, 7, 30),
+    loggedAt: DateTime(2026, 7, 30),
+    layers: const [mainLayerId],
+  );
+
+  test(
+    'a failure that is the app\'s own is not reported as an unreadable file',
+    () async {
+      // Disarmed while the fixture is built, then armed for the import — the
+      // write has to succeed once so there is something to export.
+      final repo = FailingProgressRepository(failWrites: false);
+      await repo.addProfile(
+        Profile(id: 'p1', name: 'Reuven', createdAt: DateTime(2026)),
       );
+      await repo.addProfile(
+        Profile(id: 'p2', name: 'Shimon', createdAt: DateTime(2026)),
+      );
+      await repo.addEvent(event('evt-1', 'p1'));
 
-  test('a failure that is the app\'s own is not reported as an unreadable file',
-      () async {
-    // Disarmed while the fixture is built, then armed for the import — the
-    // write has to succeed once so there is something to export.
-    final repo = FailingProgressRepository(failWrites: false);
-    await repo.addProfile(
-        Profile(id: 'p1', name: 'Reuven', createdAt: DateTime(2026)));
-    await repo.addProfile(
-        Profile(id: 'p2', name: 'Shimon', createdAt: DateTime(2026)));
-    await repo.addEvent(event('evt-1', 'p1'));
+      final service = BackupService(repo);
+      final json = await service.export('p1');
+      repo.failWrites = true;
 
-    final service = BackupService(repo);
-    final json = await service.export('p1');
-    repo.failWrites = true;
+      Object? thrown;
+      try {
+        await service.importInto('p2', BackupService.parse(json));
+      } catch (e) {
+        thrown = e;
+      }
 
-    Object? thrown;
-    try {
-      await service.importInto('p2', BackupService.parse(json));
-    } catch (e) {
-      thrown = e;
-    }
-
-    expect(thrown, isNotNull, reason: 'the injected write failure must surface');
-    expect(
-      SettingsScreen.importError(l10n, thrown!),
-      isNot(l10n.backupImportUnreadable),
-      reason: 'the file was read, parsed and validated; what failed was inside '
-          'the app. Telling the user their only backup "could not be read" '
-          'invites them to throw it away',
-    );
-    expect(SettingsScreen.importError(l10n, thrown), l10n.backupImportAppFailure,
-        reason: 'and it should say whose fault it was');
-  });
+      expect(
+        thrown,
+        isNotNull,
+        reason: 'the injected write failure must surface',
+      );
+      expect(
+        SettingsScreen.importError(l10n, thrown!),
+        isNot(l10n.backupImportUnreadable),
+        reason:
+            'the file was read, parsed and validated; what failed was inside '
+            'the app. Telling the user their only backup "could not be read" '
+            'invites them to throw it away',
+      );
+      expect(
+        SettingsScreen.importError(l10n, thrown),
+        l10n.backupImportAppFailure,
+        reason: 'and it should say whose fault it was',
+      );
+    },
+  );
 
   test('a file that really cannot be read still says so', () async {
     // The other half of the same rule: narrowing the catch-all must not cost the
@@ -117,7 +129,9 @@ void main() {
   test('a malformed backup still names the field that is wrong', () async {
     expect(
       SettingsScreen.importError(
-          l10n, const BackupFormatException('“events” must be a list.')),
+        l10n,
+        const BackupFormatException('“events” must be a list.'),
+      ),
       contains('“events” must be a list.'),
     );
   });

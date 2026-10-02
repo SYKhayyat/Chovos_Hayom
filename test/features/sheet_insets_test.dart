@@ -89,26 +89,27 @@ void main() {
     tester.view.viewInsets = FakeViewPadding.zero;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-        progressRepositoryProvider
-            .overrideWithValue(memoryRepository()),
-        appPreferencesProvider.overrideWithValue(InMemoryPreferences({})),
-      ],
-      child: localizedApp(
-        home: Consumer(
-          builder: (context, ref, _) => Scaffold(
-            body: Center(
-              child: ElevatedButton(
-                onPressed: () => open(context, ref),
-                child: const Text('open'),
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+          progressRepositoryProvider.overrideWithValue(memoryRepository()),
+          appPreferencesProvider.overrideWithValue(InMemoryPreferences({})),
+        ],
+        child: localizedApp(
+          home: Consumer(
+            builder: (context, ref, _) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => open(context, ref),
+                  child: const Text('open'),
+                ),
               ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
@@ -119,7 +120,10 @@ void main() {
     final out = <(String, Rect)>[];
     for (final type in tappable) {
       final finder = find.descendant(
-          of: sheet, matching: find.byType(type), skipOffstage: false);
+        of: sheet,
+        matching: find.byType(type),
+        skipOffstage: false,
+      );
       for (final element in finder.evaluate()) {
         final box = element.renderObject as RenderBox?;
         if (box == null || !box.hasSize) continue;
@@ -143,17 +147,24 @@ void main() {
     final top = navBarTop(tester);
     for (final (label, rect) in rects) {
       if (rect.top >= top) continue; // scrolled out of view, not under the bar
-      expect(rect.bottom, lessThanOrEqualTo(top),
-          reason: '$label extends ${rect.bottom - top} logical pixels into the '
-              'system navigation bar, where taps belong to the system');
+      expect(
+        rect.bottom,
+        lessThanOrEqualTo(top),
+        reason:
+            '$label extends ${rect.bottom - top} logical pixels into the '
+            'system navigation bar, where taps belong to the system',
+      );
     }
   }
 
   testWidgets('log unit', (tester) async {
     expectClearOfNavBar(
+      tester,
+      await openAndMeasure(
         tester,
-        await openAndMeasure(tester,
-            (context, ref) => showLogUnitSheet(context, title: 'Shabbos daf 5')));
+        (context, ref) => showLogUnitSheet(context, title: 'Shabbos daf 5'),
+      ),
+    );
   });
 
   // "Log chazara" is the same sheet as "log unit" now — same builder, same
@@ -163,53 +174,70 @@ void main() {
   // day someone gives the other its own wrapper again.
   testWidgets('add chazara', (tester) async {
     expectClearOfNavBar(
+      tester,
+      await openAndMeasure(
         tester,
-        await openAndMeasure(
-            tester,
-            (context, ref) =>
-                logChazaraWithDetails(context, ref, node: node, unit: 5)));
+        (context, ref) =>
+            logChazaraWithDetails(context, ref, node: node, unit: 5),
+      ),
+    );
   });
 
   testWidgets('bulk actions', (tester) async {
     expectClearOfNavBar(
+      tester,
+      await openAndMeasure(
         tester,
-        await openAndMeasure(tester,
-            (context, ref) => showBulkActionsSheet(context, ref, node: node)));
+        (context, ref) => showBulkActionsSheet(context, ref, node: node),
+      ),
+    );
   });
 
   testWidgets('mefarshim config', (tester) async {
     expectClearOfNavBar(
+      tester,
+      await openAndMeasure(
         tester,
-        await openAndMeasure(
-            tester,
-            (context, ref) =>
-                showMefarshimConfigSheet(context, ref, node: node)));
+        (context, ref) => showMefarshimConfigSheet(context, ref, node: node),
+      ),
+    );
   });
 
   testWidgets('unit details', (tester) async {
     expectClearOfNavBar(
+      tester,
+      await openAndMeasure(
         tester,
-        await openAndMeasure(
-            tester,
-            (context, ref) =>
-                showUnitDetailsSheet(context, ref, node: node, unit: 5)));
+        (context, ref) =>
+            showUnitDetailsSheet(context, ref, node: node, unit: 5),
+      ),
+    );
   });
 
   testWidgets('unit layers', (tester) async {
     expectClearOfNavBar(
+      tester,
+      await openAndMeasure(
         tester,
-        await openAndMeasure(
-            tester,
-            (context, ref) =>
-                showUnitLayersSheet(context, ref, node: node, unit: 5)));
+        (context, ref) =>
+            showUnitLayersSheet(context, ref, node: node, unit: 5),
+      ),
+    );
   });
 
   testWidgets('sort', (tester) async {
-    expectClearOfNavBar(tester,
-        await openAndMeasure(tester, (context, ref) => showSortSheet(context, ref)));
+    expectClearOfNavBar(
+      tester,
+      await openAndMeasure(
+        tester,
+        (context, ref) => showSortSheet(context, ref),
+      ),
+    );
   });
 
-  testWidgets('the check rejects a sheet that ignores the inset', (tester) async {
+  testWidgets('the check rejects a sheet that ignores the inset', (
+    tester,
+  ) async {
     // Doctrine: before trusting a check you wrote, feed it something it must
     // reject. This is the shape both real sheets had — bottom padding that knows
     // about the keyboard and nothing about the navigation bar.
@@ -219,7 +247,8 @@ void main() {
         context: context,
         builder: (sheetContext) => Padding(
           padding: EdgeInsets.only(
-              bottom: 16 + MediaQuery.of(sheetContext).viewInsets.bottom),
+            bottom: 16 + MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -230,7 +259,10 @@ void main() {
       ),
     );
 
-    expect(() => expectClearOfNavBar(tester, rects), throwsA(isA<TestFailure>()));
+    expect(
+      () => expectClearOfNavBar(tester, rects),
+      throwsA(isA<TestFailure>()),
+    );
   });
 }
 

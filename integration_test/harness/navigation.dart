@@ -24,15 +24,15 @@ class Nav {
   /// not available from a screen that was *pushed onto* the dashboard by a deep
   /// link, and because the drawer entry is the affordance the app offers.
   static List<Act> home() => [
-        const OpenDrawer(),
-        const TapAny(['Learning tree']),
-      ];
+    const OpenDrawer(),
+    const TapAny(['Learning tree']),
+  ];
 
   /// Opens the drawer and goes to one of its destinations.
   static List<Act> to(String label) => [
-        const OpenDrawer(),
-        TapAny([label]),
-      ];
+    const OpenDrawer(),
+    TapAny([label]),
+  ];
 
   /// Cycles.
   static List<Act> get cycles => to('Learning cycles');
@@ -63,9 +63,9 @@ class Nav {
 
   /// The report screen's other tabs, which are reached from inside Reports.
   static List<Act> reportTab(String label) => [
-        ...reports,
-        TapAny([label]),
-      ];
+    ...reports,
+    TapAny([label]),
+  ];
 }
 
 /// The steps every journey starts with, unless it is deliberately about where it

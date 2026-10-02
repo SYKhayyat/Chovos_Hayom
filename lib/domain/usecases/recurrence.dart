@@ -55,11 +55,18 @@ class DayInfo {
       other.hebrewYear == hebrewYear;
 
   @override
-  int get hashCode =>
-      Object.hash(day, weekday, dayOfMonth, hebrewDayOfMonth, hebrewMonth, hebrewYear);
+  int get hashCode => Object.hash(
+    day,
+    weekday,
+    dayOfMonth,
+    hebrewDayOfMonth,
+    hebrewMonth,
+    hebrewYear,
+  );
 
   @override
-  String toString() => 'DayInfo($day, weekday=$weekday, day=$dayOfMonth, '
+  String toString() =>
+      'DayInfo($day, weekday=$weekday, day=$dayOfMonth, '
       'hebrew=$hebrewDayOfMonth/$hebrewMonth/$hebrewYear)';
 }
 
@@ -111,10 +118,9 @@ sealed class RecurrenceRule {
       case 'weekdays':
         final weekdays = _intSet(json['weekdays']);
         _check(
-          weekdays
-              .every((w) => w >= DateTime.monday && w <= DateTime.sunday),
+          weekdays.every((w) => w >= DateTime.monday && w <= DateTime.sunday),
           'weekdays out of range 1..7: '
-              '${weekdays.where((w) => w < DateTime.monday || w > DateTime.sunday).toList()}',
+          '${weekdays.where((w) => w < DateTime.monday || w > DateTime.sunday).toList()}',
         );
         return WeekdayRule(weekdays: weekdays);
       case 'dayOfMonth':
@@ -122,16 +128,20 @@ sealed class RecurrenceRule {
         _check(
           days.every((d) => d >= 1 && d <= 31),
           'days of month out of range 1..31: '
-              '${days.where((d) => d < 1 || d > 31).toList()}',
+          '${days.where((d) => d < 1 || d > 31).toList()}',
         );
         return DayOfMonthRule(days: days);
       case 'hebrewDay':
         final day = (json['day'] as num?)?.toInt();
         final month = (json['month'] as num?)?.toInt();
-        _check(day != null && day >= 1 && day <= 30,
-            'Hebrew day of month must be 1..30, got $day');
-        _check(month == null || (month >= 1 && month <= 13),
-            'Hebrew month must be 1..13, got $month');
+        _check(
+          day != null && day >= 1 && day <= 30,
+          'Hebrew day of month must be 1..30, got $day',
+        );
+        _check(
+          month == null || (month >= 1 && month <= 13),
+          'Hebrew month must be 1..13, got $month',
+        );
         return HebrewDayRule(day: day!, month: month);
       case 'or':
         return OrRule(_ruleList(json['rules'], 'or'));
@@ -139,13 +149,17 @@ sealed class RecurrenceRule {
         return AndRule(_ruleList(json['rules'], 'and'));
       case 'not':
         final inner = json['rule'];
-        _check(inner is Map<dynamic, dynamic>,
-            'a "not" rule needs a "rule" map');
-        return NotRule(RecurrenceRule.fromJson(
-            (inner as Map<dynamic, dynamic>).cast<String, dynamic>()));
+        _check(
+          inner is Map<dynamic, dynamic>,
+          'a "not" rule needs a "rule" map',
+        );
+        return NotRule(
+          RecurrenceRule.fromJson(
+            (inner as Map<dynamic, dynamic>).cast<String, dynamic>(),
+          ),
+        );
       default:
-        throw FormatException(
-            'unknown recurrence rule type: ${json['type']}');
+        throw FormatException('unknown recurrence rule type: ${json['type']}');
     }
   }
 }
@@ -183,8 +197,10 @@ class WeekdayRule extends RecurrenceRule {
   bool matches(DayInfo day) => weekdays.contains(day.weekday);
 
   @override
-  Map<String, dynamic> toJson() =>
-      {'type': 'weekdays', 'weekdays': weekdays.toList()};
+  Map<String, dynamic> toJson() => {
+    'type': 'weekdays',
+    'weekdays': weekdays.toList(),
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -210,7 +226,10 @@ class DayOfMonthRule extends RecurrenceRule {
   bool matches(DayInfo day) => days.contains(day.dayOfMonth);
 
   @override
-  Map<String, dynamic> toJson() => {'type': 'dayOfMonth', 'days': days.toList()};
+  Map<String, dynamic> toJson() => {
+    'type': 'dayOfMonth',
+    'days': days.toList(),
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -243,18 +262,19 @@ class HebrewDayRule extends RecurrenceRule {
     final hd = info.hebrewDayOfMonth;
     if (hd == null) {
       throw StateError(
-          'A Hebrew recurrence rule needs a Hebrew-aware DayInfo reader; '
-          'the reader for ${info.day} supplied no Hebrew fields.');
+        'A Hebrew recurrence rule needs a Hebrew-aware DayInfo reader; '
+        'the reader for ${info.day} supplied no Hebrew fields.',
+      );
     }
     return hd == day && (month == null || info.hebrewMonth == month);
   }
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'hebrewDay',
-        'day': day,
-        if (month != null) 'month': month,
-      };
+    'type': 'hebrewDay',
+    'day': day,
+    if (month != null) 'month': month,
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -271,7 +291,8 @@ class OrRule extends RecurrenceRule {
   final List<RecurrenceRule> rules;
 
   @override
-  RuleCalendar get calendar => rules.any((r) => r.calendar == RuleCalendar.hebrew)
+  RuleCalendar get calendar =>
+      rules.any((r) => r.calendar == RuleCalendar.hebrew)
       ? RuleCalendar.hebrew
       : RuleCalendar.gregorian;
 
@@ -279,8 +300,10 @@ class OrRule extends RecurrenceRule {
   bool matches(DayInfo day) => rules.any((r) => r.matches(day));
 
   @override
-  Map<String, dynamic> toJson() =>
-      {'type': 'or', 'rules': [for (final r in rules) r.toJson()]};
+  Map<String, dynamic> toJson() => {
+    'type': 'or',
+    'rules': [for (final r in rules) r.toJson()],
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -297,7 +320,8 @@ class AndRule extends RecurrenceRule {
   final List<RecurrenceRule> rules;
 
   @override
-  RuleCalendar get calendar => rules.any((r) => r.calendar == RuleCalendar.hebrew)
+  RuleCalendar get calendar =>
+      rules.any((r) => r.calendar == RuleCalendar.hebrew)
       ? RuleCalendar.hebrew
       : RuleCalendar.gregorian;
 
@@ -305,8 +329,10 @@ class AndRule extends RecurrenceRule {
   bool matches(DayInfo day) => rules.every((r) => r.matches(day));
 
   @override
-  Map<String, dynamic> toJson() =>
-      {'type': 'and', 'rules': [for (final r in rules) r.toJson()]};
+  Map<String, dynamic> toJson() => {
+    'type': 'and',
+    'rules': [for (final r in rules) r.toJson()],
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -353,7 +379,9 @@ List<RecurrenceRule> _ruleList(Object? raw, String type) {
   _check(list != null, 'an "$type" rule needs a "rules" list');
   return [
     for (final r in list!)
-      RecurrenceRule.fromJson((r as Map<dynamic, dynamic>).cast<String, dynamic>()),
+      RecurrenceRule.fromJson(
+        (r as Map<dynamic, dynamic>).cast<String, dynamic>(),
+      ),
   ];
 }
 

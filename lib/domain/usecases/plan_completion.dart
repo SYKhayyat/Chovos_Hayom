@@ -20,9 +20,11 @@ class PlanCompletion {
     if (leaves.isEmpty) return false;
     for (final leaf in leaves) {
       final required = layers?.requiredFor(leaf.id) ?? {mainLayerId};
-      for (var unit = leaf.unitOffset;
-          unit < leaf.unitOffset + leaf.unitCount;
-          unit++) {
+      for (
+        var unit = leaf.unitOffset;
+        unit < leaf.unitOffset + leaf.unitCount;
+        unit++
+      ) {
         final completed = fold.completedLayers(leaf.id, unit);
         if (!required.every(completed.contains)) return false;
         final doneAt = fold.doneAt(leaf.id, unit);
@@ -46,9 +48,11 @@ class PlanCompletion {
       if (target == null) continue;
       for (final leaf in catalog.leavesUnder(target.id)) {
         final required = layers?.requiredFor(leaf.id) ?? {mainLayerId};
-        for (var unit = leaf.unitOffset;
-            unit < leaf.unitOffset + leaf.unitCount;
-            unit++) {
+        for (
+          var unit = leaf.unitOffset;
+          unit < leaf.unitOffset + leaf.unitCount;
+          unit++
+        ) {
           final doneAt = fold.doneAt(leaf.id, unit);
           if (doneAt != null &&
               Day.of(doneAt) < day &&

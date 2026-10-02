@@ -49,12 +49,12 @@ class SessionTimerState {
   }
 
   Map<String, dynamic> toJson() => {
-        if (runningSince != null) 'runningSince': runningSince!.toIso8601String(),
-        'accumulatedSeconds': accumulated.inSeconds,
-        if (label != null) 'label': label,
-        if (nodeId != null) 'nodeId': nodeId,
-        if (unitIndex != null) 'unitIndex': unitIndex,
-      };
+    if (runningSince != null) 'runningSince': runningSince!.toIso8601String(),
+    'accumulatedSeconds': accumulated.inSeconds,
+    if (label != null) 'label': label,
+    if (nodeId != null) 'nodeId': nodeId,
+    if (unitIndex != null) 'unitIndex': unitIndex,
+  };
 
   /// The banner and the log sheet both watch this, and both are mounted while
   /// a session runs. `build()` re-reads and re-parses the persisted JSON on a
@@ -78,8 +78,9 @@ class SessionTimerState {
         runningSince: json['runningSince'] == null
             ? null
             : DateTime.tryParse(json['runningSince'] as String),
-        accumulated:
-            Duration(seconds: (json['accumulatedSeconds'] as num?)?.toInt() ?? 0),
+        accumulated: Duration(
+          seconds: (json['accumulatedSeconds'] as num?)?.toInt() ?? 0,
+        ),
         label: json['label'] as String?,
         nodeId: json['nodeId'] as String?,
         unitIndex: (json['unitIndex'] as num?)?.toInt(),
@@ -109,7 +110,8 @@ class SessionTimerController extends Notifier<SessionTimerState> {
     if (raw == null || raw.isEmpty) return const SessionTimerState();
     try {
       return SessionTimerState.fromJson(
-          (jsonDecode(raw) as Map).cast<String, dynamic>());
+        (jsonDecode(raw) as Map).cast<String, dynamic>(),
+      );
     } catch (_) {
       // A corrupt value must not stop the app from opening; a lost timer is a
       // far smaller loss than a launch failure.
@@ -136,28 +138,36 @@ class SessionTimerController extends Notifier<SessionTimerState> {
     int? unitIndex,
   }) async {
     final sameTarget = state.nodeId == nodeId && state.unitIndex == unitIndex;
-    await _write(SessionTimerState(
-      runningSince: now,
-      accumulated: sameTarget ? state.accumulated : Duration.zero,
-      label: label ?? (sameTarget ? state.label : null),
-      nodeId: nodeId,
-      unitIndex: unitIndex,
-    ));
+    await _write(
+      SessionTimerState(
+        runningSince: now,
+        accumulated: sameTarget ? state.accumulated : Duration.zero,
+        label: label ?? (sameTarget ? state.label : null),
+        nodeId: nodeId,
+        unitIndex: unitIndex,
+      ),
+    );
   }
 
   /// Pause, banking the time run so far.
   Future<void> pause(DateTime now) async {
     if (!state.isRunning) return;
-    await _write(SessionTimerState(
-      accumulated: state.elapsedAt(now),
-      label: state.label,
-      nodeId: state.nodeId,
-      unitIndex: state.unitIndex,
-    ));
+    await _write(
+      SessionTimerState(
+        accumulated: state.elapsedAt(now),
+        label: state.label,
+        nodeId: state.nodeId,
+        unitIndex: state.unitIndex,
+      ),
+    );
   }
 
-  Future<void> toggle(DateTime now,
-      {String? label, String? nodeId, int? unitIndex}) async {
+  Future<void> toggle(
+    DateTime now, {
+    String? label,
+    String? nodeId,
+    int? unitIndex,
+  }) async {
     if (state.isRunning) return pause(now);
     return start(now: now, label: label, nodeId: nodeId, unitIndex: unitIndex);
   }
@@ -168,4 +178,5 @@ class SessionTimerController extends Notifier<SessionTimerState> {
 
 final sessionTimerProvider =
     NotifierProvider<SessionTimerController, SessionTimerState>(
-        SessionTimerController.new);
+      SessionTimerController.new,
+    );

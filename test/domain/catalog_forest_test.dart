@@ -22,11 +22,17 @@ void expectForest(Catalog catalog) {
     var steps = 0;
     while (current.parentId != null) {
       final parent = catalog.byId(current.parentId!);
-      expect(parent, isNotNull,
-          reason: '${current.id} points at a parent that is not here');
+      expect(
+        parent,
+        isNotNull,
+        reason: '${current.id} points at a parent that is not here',
+      );
       current = parent!;
-      expect(++steps, lessThanOrEqualTo(all.length),
-          reason: 'the chain above ${start.id} does not terminate');
+      expect(
+        ++steps,
+        lessThanOrEqualTo(all.length),
+        reason: 'the chain above ${start.id} does not terminate',
+      );
     }
   }
   // Every node is reachable downward from some root, too — the same promise
@@ -45,9 +51,13 @@ void expectForest(Catalog catalog) {
   for (final root in catalog.roots) {
     descend(root.id);
   }
-  expect(reached.length, all.length,
-      reason: 'orphaned from every root: '
-          '${all.map((x) => x.id).where((x) => !reached.contains(x)).toList()}');
+  expect(
+    reached.length,
+    all.length,
+    reason:
+        'orphaned from every root: '
+        '${all.map((x) => x.id).where((x) => !reached.contains(x)).toList()}',
+  );
 }
 
 void main() {
@@ -154,15 +164,17 @@ void main() {
       expectForest(Catalog(const []));
     });
 
-    test('leavesUnder terminates and finds the leaves through a repaired loop',
-        () {
-      final catalog = Catalog([
-        n('a', 'b'),
-        n('b', 'a'),
-        n('leaf', 'b', kind: NodeKind.leaf),
-      ]);
-      expectForest(catalog);
-      expect(catalog.leavesUnder('a').map((x) => x.id), ['leaf']);
-    });
+    test(
+      'leavesUnder terminates and finds the leaves through a repaired loop',
+      () {
+        final catalog = Catalog([
+          n('a', 'b'),
+          n('b', 'a'),
+          n('leaf', 'b', kind: NodeKind.leaf),
+        ]);
+        expectForest(catalog);
+        expect(catalog.leavesUnder('a').map((x) => x.id), ['leaf']);
+      },
+    );
   });
 }

@@ -33,26 +33,30 @@ class CatalogSearchDelegate extends SearchDelegate<void> {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return const [];
     return nodes
-        .where((n) =>
-            n.name.toLowerCase().contains(q) ||
-            (n.nameHebrew?.contains(query.trim()) ?? false))
+        .where(
+          (n) =>
+              n.name.toLowerCase().contains(q) ||
+              (n.nameHebrew?.contains(query.trim()) ?? false),
+        )
         .toList();
   }
 
   @override
   List<Widget> buildActions(BuildContext context) => [
-        if (query.isNotEmpty)
-          IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
-      ];
+    if (query.isNotEmpty)
+      IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
+  ];
 
   @override
   Widget buildLeading(BuildContext context) => IconButton(
-        // "Back" is whichever way the text came from.
-        icon: Icon(Directionality.of(context) == TextDirection.rtl
-            ? Icons.arrow_forward
-            : Icons.arrow_back),
-        onPressed: () => close(context, null),
-      );
+    // "Back" is whichever way the text came from.
+    icon: Icon(
+      Directionality.of(context) == TextDirection.rtl
+          ? Icons.arrow_forward
+          : Icons.arrow_back,
+    ),
+    onPressed: () => close(context, null),
+  );
 
   @override
   Widget buildResults(BuildContext context) => _list(context);

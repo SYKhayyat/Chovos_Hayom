@@ -104,15 +104,14 @@ void main() {
 /// and a journey that trips a never-settling animation would otherwise hold the
 /// whole run for the length of a coffee.
 Future<void> _settle(WidgetTester tester, String why) => tester.pumpAndSettle(
-      const Duration(milliseconds: 100),
-      EnginePhase.sendSemanticsUpdate,
-      const Duration(seconds: 8),
-    );
+  const Duration(milliseconds: 100),
+  EnginePhase.sendSemanticsUpdate,
+  const Duration(seconds: 8),
+);
 
-HarnessInput _input() =>
-    const String.fromEnvironment('HARNESS_INPUT') == 'keys'
-        ? HarnessInput.keys
-        : HarnessInput.pointer;
+HarnessInput _input() => const String.fromEnvironment('HARNESS_INPUT') == 'keys'
+    ? HarnessInput.keys
+    : HarnessInput.pointer;
 
 /// Every journey, in the order a person would meet them.
 ///

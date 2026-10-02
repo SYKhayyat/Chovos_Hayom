@@ -55,7 +55,8 @@ class LedgerUnit {
       Object.hash(nodeId, unitIndex, doneHere, doneCount, doneOn);
 
   @override
-  String toString() => 'LedgerUnit($nodeId $unitIndex, here: $doneHere, '
+  String toString() =>
+      'LedgerUnit($nodeId $unitIndex, here: $doneHere, '
       'count: $doneCount, on: $doneOn)';
 }
 
@@ -110,15 +111,14 @@ class DayLedger {
     LogFold fold,
     Day day, {
     LayerRoles? layers,
-  }) =>
-      [
-        for (final plan in plans)
-          if (PlannerSchedule.assignmentsOn(plan, dayInfoFor(day)).isNotEmpty)
-            () {
-              final units = unitsFor(plan, catalog, fold, day, layers: layers);
-              return (plan: plan, units: units);
-            }(),
-      ].where((e) => e.units.isNotEmpty).toList();
+  }) => [
+    for (final plan in plans)
+      if (PlannerSchedule.assignmentsOn(plan, dayInfoFor(day)).isNotEmpty)
+        () {
+          final units = unitsFor(plan, catalog, fold, day, layers: layers);
+          return (plan: plan, units: units);
+        }(),
+  ].where((e) => e.units.isNotEmpty).toList();
 
   /// One unit's row.
   static LedgerUnit _unit(

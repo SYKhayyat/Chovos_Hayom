@@ -7,18 +7,22 @@ CatalogNode cat(String id, String? parent) =>
     CatalogNode(id: id, parentId: parent, name: id, kind: NodeKind.category);
 
 CatalogNode leaf(String id, String? parent, {int units = 3}) => CatalogNode(
-      id: id,
-      parentId: parent,
-      name: id,
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.daf,
-      unitCount: units,
-      unitOffset: 1,
-    );
+  id: id,
+  parentId: parent,
+  name: id,
+  kind: NodeKind.leaf,
+  unitLabel: UnitLabel.daf,
+  unitCount: units,
+  unitOffset: 1,
+);
 
 void main() {
   test('leavesUnder returns the leaves of a normal subtree', () {
-    final c = Catalog([cat('root', null), leaf('a', 'root'), leaf('b', 'root')]);
+    final c = Catalog([
+      cat('root', null),
+      leaf('a', 'root'),
+      leaf('b', 'root'),
+    ]);
     expect(c.leavesUnder('root').map((n) => n.id).toSet(), {'a', 'b'});
   });
 

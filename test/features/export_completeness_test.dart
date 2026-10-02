@@ -27,8 +27,9 @@ import '../support/memory_database.dart';
 /// set, and then say "Exported to clipboard". A backup you only find out is
 /// incomplete when you restore it is the worst kind there is.
 void main() {
-  testWidgets('exporting carries the custom sefarim, mefarshim and layer config',
-      (tester) async {
+  testWidgets('exporting carries the custom sefarim, mefarshim and layer config', (
+    tester,
+  ) async {
     final repo = memoryRepository();
     const profile = 'default';
     await repo.addCustomNode(
@@ -44,12 +45,15 @@ void main() {
       ),
     );
     await repo.addCustomLayer(
-        profile, const Layer(id: 'maharsha', name: 'Maharsha'));
+      profile,
+      const Layer(id: 'maharsha', name: 'Maharsha'),
+    );
     await repo.setLayerConfig(
       profile,
       LayerConfigEntry(
-          nodeId: 'shas',
-          roles: roles(required: [mainLayerId, 'maharsha'])),
+        nodeId: 'shas',
+        roles: roles(required: [mainLayerId, 'maharsha']),
+      ),
     );
 
     // Capture what the app puts on the clipboard.
@@ -63,17 +67,23 @@ void main() {
         return null;
       },
     );
-    addTearDown(() => tester.binding.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, null));
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
 
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-        progressRepositoryProvider.overrideWithValue(repo),
-        appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-      ],
-      child: localizedApp(home: const SettingsScreen()),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+          progressRepositoryProvider.overrideWithValue(repo),
+          appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+        ],
+        child: localizedApp(home: const SettingsScreen()),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(find.text('Export to clipboard'), 200);
@@ -93,7 +103,9 @@ void main() {
     // Not just "a row came out" — the roles came with it. An export that wrote
     // the ids and dropped what they meant would restore every required meforish
     // as merely optional, and silently complete units the user had not finished.
-    expect((configs.single as Map)['roles'],
-        {mainLayerId: 'required', 'maharsha': 'required'});
+    expect((configs.single as Map)['roles'], {
+      mainLayerId: 'required',
+      'maharsha': 'required',
+    });
   });
 }

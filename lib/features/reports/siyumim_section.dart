@@ -56,11 +56,12 @@ class SiyumimSection extends ConsumerWidget {
                     : null,
               ),
               subtitle: Text(
-                  l10n.siyumCompleted(
-                        DateDisplay.format(s.completedOn, mode),
-                        unitCount(l10n, s.units, s.node.unitLabel),
-                      ) +
-                      (s.isCategory ? l10n.siyumEverythingUnderneath : '')),
+                l10n.siyumCompleted(
+                      DateDisplay.format(s.completedOn, mode),
+                      unitCount(l10n, s.units, s.node.unitLabel),
+                    ) +
+                    (s.isCategory ? l10n.siyumEverythingUnderneath : ''),
+              ),
             ),
         ],
       ),

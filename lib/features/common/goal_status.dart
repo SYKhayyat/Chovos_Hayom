@@ -29,7 +29,10 @@ import 'naming.dart';
 /// What a goal says: its date, the pace it needs, and whether that pace is being
 /// held — or that it is already done.
 String goalStatusText(
-    AppLocalizations l10n, GoalStatus goal, CalendarMode mode) {
+  AppLocalizations l10n,
+  GoalStatus goal,
+  CalendarMode mode,
+) {
   if (goal.achieved) return l10n.goalReached;
   return l10n.goalStatus(
     DateDisplay.format(goal.target.midnight, mode),
@@ -79,8 +82,10 @@ Future<void> removeGoalWithUndo(
             label: l10n.actionUndo,
             // Restoring is itself a write, so it reports like one rather than
             // silently doing nothing if it fails.
-            onPressed: () => guard.run(() => goals.setGoal(nodeId, previous),
-                what: l10n.whatRestoringGoal(name)),
+            onPressed: () => guard.run(
+              () => goals.setGoal(nodeId, previous),
+              what: l10n.whatRestoringGoal(name),
+            ),
           ),
   );
 }
@@ -88,11 +93,12 @@ Future<void> removeGoalWithUndo(
 /// The goal line as the unit grid wears it: a tinted strip across the top of the
 /// sefer it belongs to, with a close button that removes it.
 class GoalBanner extends ConsumerWidget {
-  const GoalBanner(
-      {super.key,
-      required this.goal,
-      required this.nodeId,
-      required this.name});
+  const GoalBanner({
+    super.key,
+    required this.goal,
+    required this.nodeId,
+    required this.name,
+  });
 
   final GoalStatus goal;
   final String nodeId;
@@ -112,8 +118,11 @@ class GoalBanner extends ConsumerWidget {
           Icon(goalStatusIcon(goal), color: color, size: 18),
           const SizedBox(width: 8),
           Expanded(
-              child: Text(goalStatusText(l10n, goal, mode),
-                  style: TextStyle(color: color))),
+            child: Text(
+              goalStatusText(l10n, goal, mode),
+              style: TextStyle(color: color),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.close, size: 18),
             tooltip: l10n.tooltipRemoveGoal,

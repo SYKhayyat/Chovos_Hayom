@@ -28,57 +28,72 @@ void main() {
   });
 
   Widget dashboard() => ProviderScope(
-        overrides: [
-          crashLogProvider.overrideWithValue(crashLog),
-          catalogRepositoryProvider.overrideWithValue(catalog),
-          progressRepositoryProvider
-              .overrideWithValue(memoryRepository()),
-        ],
-        child: localizedApp(
-          home: const DashboardScreen(),
-          onGenerateRoute: AppRouter.onGenerateRoute,
-          onUnknownRoute: AppRouter.onUnknownRoute,
-        ),
+    overrides: [
+      crashLogProvider.overrideWithValue(crashLog),
+      catalogRepositoryProvider.overrideWithValue(catalog),
+      progressRepositoryProvider.overrideWithValue(memoryRepository()),
+    ],
+    child: localizedApp(
+      home: const DashboardScreen(),
+      onGenerateRoute: AppRouter.onGenerateRoute,
+      onUnknownRoute: AppRouter.onUnknownRoute,
+    ),
+  );
+
+  testWidgets(
+    'a failed load explains itself instead of printing the exception',
+    (tester) async {
+      await tester.pumpWidget(dashboard());
+      await tester.pumpAndSettle();
+
+      expect(find.text('The catalog could not be loaded'), findsOneWidget);
+      // The first thing worth knowing: this was a read, so nothing was lost.
+      expect(
+        find.textContaining('Your learning log is untouched'),
+        findsOneWidget,
       );
+      // The raw exception is available, but not shoved in the user's face.
+      expect(
+        find.textContaining(FailingCatalogRepository.message),
+        findsNothing,
+      );
+    },
+  );
 
-  testWidgets('a failed load explains itself instead of printing the exception',
-      (tester) async {
-    await tester.pumpWidget(dashboard());
-    await tester.pumpAndSettle();
-
-    expect(find.text('The catalog could not be loaded'), findsOneWidget);
-    // The first thing worth knowing: this was a read, so nothing was lost.
-    expect(find.textContaining('Your learning log is untouched'), findsOneWidget);
-    // The raw exception is available, but not shoved in the user's face.
-    expect(find.textContaining(FailingCatalogRepository.message), findsNothing);
-  });
-
-  testWidgets('the raw error is one tap away for whoever wants it',
-      (tester) async {
+  testWidgets('the raw error is one tap away for whoever wants it', (
+    tester,
+  ) async {
     await tester.pumpWidget(dashboard());
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Show details'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining(FailingCatalogRepository.message), findsOneWidget);
+    expect(
+      find.textContaining(FailingCatalogRepository.message),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('the failure is in the crash log, so offering it is not a lie',
-      (tester) async {
+  testWidgets('the failure is in the crash log, so offering it is not a lie', (
+    tester,
+  ) async {
     await tester.pumpWidget(dashboard());
     await tester.pumpAndSettle();
 
     expect(crashLog.entries, hasLength(1));
-    expect(crashLog.entries.single,
-        contains(FailingCatalogRepository.message));
+    expect(crashLog.entries.single, contains(FailingCatalogRepository.message));
     // Filed under what failed, the same way the write guard files a write.
-    expect(crashLog.entries.single, contains('The catalog could not be loaded'));
+    expect(
+      crashLog.entries.single,
+      contains('The catalog could not be loaded'),
+    );
     expect(find.text('Open crash log'), findsOneWidget);
   });
 
-  testWidgets('a rebuild while the error is showing does not re-log it',
-      (tester) async {
+  testWidgets('a rebuild while the error is showing does not re-log it', (
+    tester,
+  ) async {
     await tester.pumpWidget(dashboard());
     await tester.pumpAndSettle();
     expect(crashLog.entries, hasLength(1));
@@ -110,21 +125,23 @@ void main() {
     expect(find.text('Kol HaTorah Kula'), findsOneWidget);
   });
 
-  testWidgets('the error view is localized like everything else',
-      (tester) async {
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        crashLogProvider.overrideWithValue(crashLog),
-        catalogRepositoryProvider.overrideWithValue(catalog),
-        progressRepositoryProvider
-            .overrideWithValue(memoryRepository()),
-      ],
-      child: localizedApp(
-        home: const DashboardScreen(),
-        locale: const Locale('he'),
-        onGenerateRoute: AppRouter.onGenerateRoute,
+  testWidgets('the error view is localized like everything else', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          crashLogProvider.overrideWithValue(crashLog),
+          catalogRepositoryProvider.overrideWithValue(catalog),
+          progressRepositoryProvider.overrideWithValue(memoryRepository()),
+        ],
+        child: localizedApp(
+          home: const DashboardScreen(),
+          locale: const Locale('he'),
+          onGenerateRoute: AppRouter.onGenerateRoute,
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('לא ניתן היה לטעון את הקטלוג'), findsOneWidget);

@@ -66,11 +66,15 @@ class _ErrorViewState extends ConsumerState<ErrorView> {
     // Once per mount, not per build: a rebuild while the error is on screen must
     // not append the same failure again and push the useful history out of a
     // capped log. `initState` cannot await, and the crash log never throws.
-    unawaited(ref.read(crashLogProvider).record(
-          widget.error,
-          widget.stackTrace ?? StackTrace.empty,
-          context: widget.title,
-        ));
+    unawaited(
+      ref
+          .read(crashLogProvider)
+          .record(
+            widget.error,
+            widget.stackTrace ?? StackTrace.empty,
+            context: widget.title,
+          ),
+    );
   }
 
   @override
@@ -93,9 +97,12 @@ class _ErrorViewState extends ConsumerState<ErrorView> {
                   Icon(Icons.error_outline, color: scheme.error, size: 28),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(widget.title,
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(color: scheme.error)),
+                    child: Text(
+                      widget.title,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: scheme.error,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -120,11 +127,14 @@ class _ErrorViewState extends ConsumerState<ErrorView> {
                   ),
                   TextButton.icon(
                     icon: Icon(
-                        _showDetails ? Icons.expand_less : Icons.expand_more,
-                        size: 18),
-                    label: Text(_showDetails
-                        ? l10n.errorHideDetails
-                        : l10n.errorShowDetails),
+                      _showDetails ? Icons.expand_less : Icons.expand_more,
+                      size: 18,
+                    ),
+                    label: Text(
+                      _showDetails
+                          ? l10n.errorHideDetails
+                          : l10n.errorShowDetails,
+                    ),
                     onPressed: () =>
                         setState(() => _showDetails = !_showDetails),
                   ),
@@ -146,7 +156,9 @@ class _ErrorViewState extends ConsumerState<ErrorView> {
                   child: SelectableText(
                     '${widget.error}',
                     style: const TextStyle(
-                        fontFamily: 'monospace', fontSize: 12),
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ],

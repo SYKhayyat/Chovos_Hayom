@@ -112,13 +112,14 @@ class _CalculatorSectionState extends ConsumerState<CalculatorSection>
   }
 
   Widget _body(
-      BuildContext context,
-      AppLocalizations l10n,
-      List<NodeChoice> choices,
-      String selectedId,
-      ProgressNode selected,
-      CalendarMode mode,
-      DateTime now) {
+    BuildContext context,
+    AppLocalizations l10n,
+    List<NodeChoice> choices,
+    String selectedId,
+    ProgressNode selected,
+    CalendarMode mode,
+    DateTime now,
+  ) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -129,17 +130,25 @@ class _CalculatorSectionState extends ConsumerState<CalculatorSection>
           onChanged: (v) => setState(() => _nodeId = v),
         ),
         const SizedBox(height: 8),
-        Text(l10n.calculatorRemaining(selected.remaining, selected.total),
-            style: Theme.of(context).textTheme.bodyMedium),
+        Text(
+          l10n.calculatorRemaining(selected.remaining, selected.total),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
         const SizedBox(height: 16),
         SegmentedButton<_CalcMode>(
           segments: [
             ButtonSegment(
-                value: _CalcMode.rate, label: Text(l10n.calculatorModeRate)),
+              value: _CalcMode.rate,
+              label: Text(l10n.calculatorModeRate),
+            ),
             ButtonSegment(
-                value: _CalcMode.cycle, label: Text(l10n.calculatorModeCycle)),
+              value: _CalcMode.cycle,
+              label: Text(l10n.calculatorModeCycle),
+            ),
             ButtonSegment(
-                value: _CalcMode.target, label: Text(l10n.calculatorModeByDate)),
+              value: _CalcMode.target,
+              label: Text(l10n.calculatorModeByDate),
+            ),
           ],
           selected: {_mode},
           // The tick beside the selected segment costs about 24dp, and on a
@@ -161,8 +170,12 @@ class _CalculatorSectionState extends ConsumerState<CalculatorSection>
     );
   }
 
-  List<Widget> _inputs(BuildContext context, AppLocalizations l10n,
-      CalendarMode mode, DateTime now) {
+  List<Widget> _inputs(
+    BuildContext context,
+    AppLocalizations l10n,
+    CalendarMode mode,
+    DateTime now,
+  ) {
     switch (_mode) {
       case _CalcMode.rate:
         return [
@@ -176,7 +189,9 @@ class _CalculatorSectionState extends ConsumerState<CalculatorSection>
           TextField(
             controller: _shabbosCtrl,
             keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: l10n.calculatorAmountShabbos),
+            decoration: InputDecoration(
+              labelText: l10n.calculatorAmountShabbos,
+            ),
             onChanged: (_) => setState(() {}),
           ),
         ];
@@ -206,14 +221,16 @@ class _CalculatorSectionState extends ConsumerState<CalculatorSection>
           Row(
             children: [
               Expanded(
-                  child: Text(
-                      l10n.calculatorTarget(DateDisplay.format(_target, mode)))),
+                child: Text(
+                  l10n.calculatorTarget(DateDisplay.format(_target, mode)),
+                ),
+              ),
               TextButton(
                 onPressed: () async {
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: _target,
-                     firstDate: datePickerFirstDate(now),
+                    firstDate: datePickerFirstDate(now),
 
                     lastDate: DateTime(2100),
                   );
@@ -227,8 +244,12 @@ class _CalculatorSectionState extends ConsumerState<CalculatorSection>
     }
   }
 
-  String _compute(AppLocalizations l10n, ProgressNode selected,
-      CalendarMode mode, DateTime now) {
+  String _compute(
+    AppLocalizations l10n,
+    ProgressNode selected,
+    CalendarMode mode,
+    DateTime now,
+  ) {
     final remaining = selected.remaining;
     if (remaining <= 0) return l10n.calculatorAlreadyFinished;
     final today = Day.of(now);
@@ -243,12 +264,14 @@ class _CalculatorSectionState extends ConsumerState<CalculatorSection>
                 remaining: remaining,
                 amounts: [daily],
                 startIndex: 0,
-                from: today)
+                from: today,
+              )
             : Predictor.finishDateWithShabbos(
                 remaining: remaining,
                 weekdayAmount: daily,
                 shabbosAmount: shabbos,
-                from: today);
+                from: today,
+              );
         return _finishText(l10n, date, mode, today);
 
       case _CalcMode.cycle:
@@ -273,22 +296,33 @@ class _CalculatorSectionState extends ConsumerState<CalculatorSection>
 
       case _CalcMode.target:
         final rate = Predictor.requiredPerDay(
-            remaining: remaining, from: today, target: Day.of(_target));
+          remaining: remaining,
+          from: today,
+          target: Day.of(_target),
+        );
         if (rate == double.infinity) return l10n.calculatorPickFutureDate;
         // The same rendering the goal line uses — which matters here more than
         // anywhere, because *Save as goal* is right underneath: the number this
         // sentence shows and the number that goal then reports are the same
         // arithmetic, and were two spellings of it.
         return l10n.calculatorRequiredRate(
-            requiredPerDayText(rate), DateDisplay.format(_target, mode));
+          requiredPerDayText(rate),
+          DateDisplay.format(_target, mode),
+        );
     }
   }
 
   String _finishText(
-      AppLocalizations l10n, Day? date, CalendarMode mode, Day today) {
+    AppLocalizations l10n,
+    Day? date,
+    CalendarMode mode,
+    Day today,
+  ) {
     if (date == null) return l10n.calculatorNeverFinish;
     return l10n.calculatorFinishOn(
-        DateDisplay.format(date.midnight, mode), date.difference(today));
+      DateDisplay.format(date.midnight, mode),
+      date.difference(today),
+    );
   }
 }
 
@@ -312,7 +346,9 @@ class _SaveAsGoal extends ConsumerWidget {
     return Align(
       child: FilledButton.icon(
         icon: const Icon(Icons.flag_outlined, size: 18),
-        label: Text(already ? l10n.calculatorGoalSaved : l10n.calculatorSaveGoal),
+        label: Text(
+          already ? l10n.calculatorGoalSaved : l10n.calculatorSaveGoal,
+        ),
         onPressed: already ? null : () => _save(context, ref),
       ),
     );

@@ -36,8 +36,9 @@ class LastBackupController extends Notifier<DateTime?> {
   }
 }
 
-final lastBackupProvider =
-    NotifierProvider<LastBackupController, DateTime?>(LastBackupController.new);
+final lastBackupProvider = NotifierProvider<LastBackupController, DateTime?>(
+  LastBackupController.new,
+);
 
 /// What the active profile stands to lose right now.
 ///
@@ -85,7 +86,8 @@ final lastBackupProvider =
 class BackupStatusNotifier extends Notifier<BackupStatus> {
   /// The exact log and boundary the cached count was taken over. Compared by
   /// identity for the log — a value comparison would be the pass again.
-  List<LearningEvent>? _countedLog; // log-pass: ok — held to compare by identity, never walked
+  List<LearningEvent>?
+  _countedLog; // log-pass: ok — held to compare by identity, never walked
   DateTime? _countedSince;
   int _unsavedUnits = 0;
 
@@ -102,11 +104,13 @@ class BackupStatusNotifier extends Notifier<BackupStatus> {
     }
 
     return BackupReminder.evaluate(
-      enabled:
-          ref.watch(settingsProvider.select((s) => s.backupReminderEnabled)),
+      enabled: ref.watch(
+        settingsProvider.select((s) => s.backupReminderEnabled),
+      ),
       lastBackupAt: since,
-      intervalDays:
-          ref.watch(settingsProvider.select((s) => s.backupIntervalDays)),
+      intervalDays: ref.watch(
+        settingsProvider.select((s) => s.backupIntervalDays),
+      ),
       unsavedUnits: _unsavedUnits,
       now: ref.watch(clockProvider)(),
     );
@@ -115,4 +119,5 @@ class BackupStatusNotifier extends Notifier<BackupStatus> {
 
 final backupStatusProvider =
     NotifierProvider<BackupStatusNotifier, BackupStatus>(
-        BackupStatusNotifier.new);
+      BackupStatusNotifier.new,
+    );

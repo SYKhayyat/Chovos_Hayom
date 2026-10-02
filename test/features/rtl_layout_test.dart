@@ -25,15 +25,14 @@ import '../support/localized_app.dart';
 /// both sides.
 void main() {
   Widget dashboard(Locale locale) => ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider
-              .overrideWithValue(memoryRepository()),
-          appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
-        ],
-        child: localizedApp(home: const DashboardScreen(), locale: locale),
-      );
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(memoryRepository()),
+      appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+      clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+    ],
+    child: localizedApp(home: const DashboardScreen(), locale: locale),
+  );
 
   /// Opens root → Shas so there are three generations on screen at once. The
   /// root opens itself on arrival, so only Shas is left to press.
@@ -45,13 +44,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('a Hebrew layout indents the tree from the right', (tester) async {
+  testWidgets('a Hebrew layout indents the tree from the right', (
+    tester,
+  ) async {
     await tester.pumpWidget(dashboard(const Locale('he')));
     await tester.pumpAndSettle();
     await expandTwoLevels(tester);
 
-    expect(Directionality.of(tester.element(find.text('Shas'))),
-        TextDirection.rtl);
+    expect(
+      Directionality.of(tester.element(find.text('Shas'))),
+      TextDirection.rtl,
+    );
 
     // Right-to-left: text begins at the right edge, so each deeper generation
     // starts *further from* it. A child's right edge must be left of its
@@ -82,8 +85,9 @@ void main() {
     expect(moed - shas, closeTo(16, 0.5));
   });
 
-  testWidgets('the progress line reads left to right inside the Hebrew tree',
-      (tester) async {
+  testWidgets('the progress line reads left to right inside the Hebrew tree', (
+    tester,
+  ) async {
     // End to end, on the widget the user reads: `bidi_numerals_test.dart` pins
     // the *string*, and this pins the call site, because a template that is safe
     // and a widget that forgot to isolate it look identical from the string's
@@ -101,19 +105,25 @@ void main() {
     )..layout();
     ui.Rect boxOf(int index) => painter
         .getBoxesForSelection(
-            TextSelection(baseOffset: index, extentOffset: index + 1))
+          TextSelection(baseOffset: index, extentOffset: index + 1),
+        )
         .first
         .toRect();
 
     final firstDigit = painted.indexOf(RegExp(r'\d'));
     final lastDigit = painted.lastIndexOf(RegExp(r'\d'));
-    expect(boxOf(lastDigit).left, greaterThan(boxOf(firstDigit).left),
-        reason: 'the numerator is painted left of the total, so "0 / 156" is '
-            'not read as "156 / 0"');
+    expect(
+      boxOf(lastDigit).left,
+      greaterThan(boxOf(firstDigit).left),
+      reason:
+          'the numerator is painted left of the total, so "0 / 156" is '
+          'not read as "156 / 0"',
+    );
   });
 
-  testWidgets('the drill-in chevron points the way the text runs',
-      (tester) async {
+  testWidgets('the drill-in chevron points the way the text runs', (
+    tester,
+  ) async {
     // A chevron that always points right is telling a right-to-left reader to
     // go back.
     await tester.pumpWidget(dashboard(const Locale('he')));

@@ -70,9 +70,11 @@ class ProgressTile extends ConsumerWidget {
                 // "Drill in" points the way the text runs, so it points left
                 // under Hebrew. A chevron that always points right is telling a
                 // right-to-left reader to go back.
-                : Icon(Directionality.of(context) == TextDirection.rtl
-                    ? Icons.chevron_left
-                    : Icons.chevron_right),
+                : Icon(
+                    Directionality.of(context) == TextDirection.rtl
+                        ? Icons.chevron_left
+                        : Icons.chevron_right,
+                  ),
           ],
         ),
         onTap: () => Navigator.pushNamed(context, Routes.sefer(node.node.id)),
@@ -113,7 +115,8 @@ class ProgressTile extends ConsumerWidget {
     // (rather than `CatalogEditor.isOverridden`, which is `.asData?.value ??
     // const []` — "not loaded" read as "no overrides", the silent-lie shape in a
     // decision path) makes the tile depend on it and stay current.
-    final customNodes = ref.watch(customNodesProvider).asData?.value ?? const [];
+    final customNodes =
+        ref.watch(customNodesProvider).asData?.value ?? const [];
     final overridden = customNodes.any((n) => n.id == node.node.id);
     final builtIn = editor.isBuiltIn(node.node.id);
     return PopupMenuButton<String>(
@@ -133,16 +136,21 @@ class ProgressTile extends ConsumerWidget {
         PopupMenuItem(value: 'hide', child: Text(l10n.menuHideDelete)),
         if (overridden)
           PopupMenuItem(
-              value: 'reset',
-              child: Text(builtIn
-                  ? l10n.menuResetToDefault
-                  : l10n.menuRemovePermanently)),
+            value: 'reset',
+            child: Text(
+              builtIn ? l10n.menuResetToDefault : l10n.menuRemovePermanently,
+            ),
+          ),
       ],
     );
   }
 
-  Future<void> _onMenu(BuildContext context, WidgetRef ref, CatalogEditor editor,
-      String action) async {
+  Future<void> _onMenu(
+    BuildContext context,
+    WidgetRef ref,
+    CatalogEditor editor,
+    String action,
+  ) async {
     final navigator = Navigator.of(context);
     // Captured up front: 'hide' confirms first, so by the time it writes there
     // has already been an async gap.
@@ -159,18 +167,28 @@ class ProgressTile extends ConsumerWidget {
       case 'add':
         await navigator.pushNamed(Routes.addItemUnder(node.node.id));
       case 'clone':
-        await guard.run(() => editor.cloneStructure(node.node),
-            what: l10n.whatCloning(name), success: l10n.clonedNode(name));
+        await guard.run(
+          () => editor.cloneStructure(node.node),
+          what: l10n.whatCloning(name),
+          success: l10n.clonedNode(name),
+        );
       case 'hide':
         final ok = await _confirm(
-            context, l10n.hideNodeTitle(name), l10n.hideNodeBody);
+          context,
+          l10n.hideNodeTitle(name),
+          l10n.hideNodeBody,
+        );
         if (ok) {
-          await guard.run(() => editor.hide(node.node),
-              what: l10n.whatHiding(name));
+          await guard.run(
+            () => editor.hide(node.node),
+            what: l10n.whatHiding(name),
+          );
         }
       case 'reset':
-        await guard.run(() => editor.reset(node.node.id),
-            what: l10n.whatResetting(name));
+        await guard.run(
+          () => editor.reset(node.node.id),
+          what: l10n.whatResetting(name),
+        );
     }
   }
 
@@ -183,11 +201,13 @@ class ProgressTile extends ConsumerWidget {
         content: Text(body),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(l10n.actionCancel)),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.actionCancel),
+          ),
           FilledButton.tonal(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(l10n.hideNodeConfirm)),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.hideNodeConfirm),
+          ),
         ],
       ),
     );
@@ -229,8 +249,13 @@ class _ProgressBar extends ConsumerWidget {
           Text(
             // Isolated, or Hebrew paints "0 / 929" as "929 / 0" — see
             // [ltrNumerals]. This is the most-read number in the app.
-            ltrNumerals(l10n.progressCount(
-                node.learned, node.total, node.percent.toStringAsFixed(1))),
+            ltrNumerals(
+              l10n.progressCount(
+                node.learned,
+                node.total,
+                node.percent.toStringAsFixed(1),
+              ),
+            ),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           ..._meforishBars(context, ref),
@@ -248,12 +273,11 @@ class _ProgressBar extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final checkable = ref.watch(layerRolesProvider).checkableFor(node.id);
     final layers = ref.watch(allLayersProvider);
-    final hidden = ref.watch(settingsProvider.select((s) => s.hiddenMeforishBars));
+    final hidden = ref.watch(
+      settingsProvider.select((s) => s.hiddenMeforishBars),
+    );
 
-    final show = <String>{
-      ...checkable,
-      ...node.learnedByLayer.keys,
-    }
+    final show = <String>{...checkable, ...node.learnedByLayer.keys}
       ..remove(mainLayerId)
       ..removeWhere(hidden.contains); // per-meforish toggle in Settings
     if (show.isEmpty) return const [];
@@ -266,8 +290,10 @@ class _ProgressBar extends ConsumerWidget {
         if (layers.every((l) => l.id != id)) id,
     ];
 
-    Layer layerOf(String id) =>
-        layers.firstWhere((l) => l.id == id, orElse: () => Layer(id: id, name: id));
+    Layer layerOf(String id) => layers.firstWhere(
+      (l) => l.id == id,
+      orElse: () => Layer(id: id, name: id),
+    );
 
     return [
       const SizedBox(height: 4),
@@ -283,8 +309,11 @@ class _ProgressBar extends ConsumerWidget {
 
 /// One compact meforish coverage line: name · thin bar · count.
 class _MeforishBar extends StatelessWidget {
-  const _MeforishBar(
-      {required this.name, required this.learned, required this.total});
+  const _MeforishBar({
+    required this.name,
+    required this.learned,
+    required this.total,
+  });
   final String name;
   final int learned;
   final int total;
@@ -306,10 +335,9 @@ class _MeforishBar extends StatelessWidget {
                 name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.copyWith(color: scheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ),
             Expanded(
@@ -329,11 +357,12 @@ class _MeforishBar extends StatelessWidget {
             // Safe as spelled (an unspaced slash joins the numeric run) and
             // isolated anyway: see [ltrNumerals] on why "it happens to be safe"
             // is not a property to leave a string table depending on.
-            Text(ltrNumerals(l10n.meforishCoverage(learned, total)),
-                style: Theme.of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.copyWith(color: scheme.onSurfaceVariant)),
+            Text(
+              ltrNumerals(l10n.meforishCoverage(learned, total)),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+            ),
           ],
         ),
       ),

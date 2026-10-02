@@ -13,15 +13,14 @@ SequentialCycle cycle({
     CycleSegment(nodeId: 'a', unitCount: 3, unitOffset: 1), // units 1,2,3
     CycleSegment(nodeId: 'b', unitCount: 2, unitOffset: 5), // units 5,6
   ],
-}) =>
-    SequentialCycle(
-      id: 'c',
-      name: 'Test cycle',
-      startDate: _start,
-      unitsPerDay: unitsPerDay,
-      repeats: repeats,
-      segments: segments,
-    );
+}) => SequentialCycle(
+  id: 'c',
+  name: 'Test cycle',
+  startDate: _start,
+  unitsPerDay: unitsPerDay,
+  repeats: repeats,
+  segments: segments,
+);
 
 DateTime day(int n) => _start.add(Duration(days: n));
 
@@ -33,8 +32,11 @@ void main() {
       expect(c.unitsOn(day(0)).single.unit, 1);
       expect(c.unitsOn(day(2)).single.unit, 3, reason: 'last unit of A');
       expect(c.unitsOn(day(3)).single.nodeId, 'b');
-      expect(c.unitsOn(day(3)).single.unit, 5,
-          reason: "B's units start at its own offset");
+      expect(
+        c.unitsOn(day(3)).single.unit,
+        5,
+        reason: "B's units start at its own offset",
+      );
     });
 
     test('starts over at the end', () {
@@ -52,8 +54,14 @@ void main() {
     });
 
     test('nothing is scheduled before the start date', () {
-      expect(cycle().unitsOn(_start.subtract(const Duration(days: 1))), isEmpty);
-      expect(cycle().cycleNumberOn(_start.subtract(const Duration(days: 1))), 0);
+      expect(
+        cycle().unitsOn(_start.subtract(const Duration(days: 1))),
+        isEmpty,
+      );
+      expect(
+        cycle().cycleNumberOn(_start.subtract(const Duration(days: 1))),
+        0,
+      );
     });
 
     test('more than one unit a day (Mishna Yomi is two)', () {
@@ -100,57 +108,91 @@ void main() {
     test('a node-defined cycle needs no matching at all', () {
       final mapper = CycleMapper(catalog: catalog);
       final resolved = mapper.resolve(
-          const CycleDay(sefer: 'shas.beitza', unit: 3, nodeId: 'shas.beitza'));
+        const CycleDay(sefer: 'shas.beitza', unit: 3, nodeId: 'shas.beitza'),
+      );
       expect(resolved?.id, 'shas.beitza');
     });
 
     test('matches on an English name ignoring spacing and punctuation', () {
       final mapper = CycleMapper(catalog: catalog);
-      expect(mapper.resolve(const CycleDay(sefer: 'Beitzah', unit: 3))?.id,
-          'shas.beitza');
+      expect(
+        mapper.resolve(const CycleDay(sefer: 'Beitzah', unit: 3))?.id,
+        'shas.beitza',
+      );
     });
 
     test('matches on the Hebrew name', () {
       final mapper = CycleMapper(catalog: catalog);
       expect(
-          mapper
-              .resolve(const CycleDay(sefer: 'Nope', seferHebrew: 'ביצה', unit: 3))
-              ?.id,
-          'shas.beitza');
+        mapper
+            .resolve(
+              const CycleDay(sefer: 'Nope', seferHebrew: 'ביצה', unit: 3),
+            )
+            ?.id,
+        'shas.beitza',
+      );
     });
 
     test('a differing transliteration finds nothing — and that is what the '
         'user mapping is for', () {
       // "Beitza" vs "Beitzah" is exactly the case that used to silently make a
       // daf unloggable, with nothing the user could do about it.
-      expect(CycleMapper(catalog: catalog)
-          .resolve(const CycleDay(sefer: 'Beitza', unit: 3)),
-          isNull);
+      expect(
+        CycleMapper(
+          catalog: catalog,
+        ).resolve(const CycleDay(sefer: 'Beitza', unit: 3)),
+        isNull,
+      );
 
       final mapped = CycleMapper(
-          catalog: catalog, overrides: const {'Beitza': 'shas.beitza'});
-      expect(mapped.resolve(const CycleDay(sefer: 'Beitza', unit: 3))?.id,
-          'shas.beitza');
+        catalog: catalog,
+        overrides: const {'Beitza': 'shas.beitza'},
+      );
+      expect(
+        mapped.resolve(const CycleDay(sefer: 'Beitza', unit: 3))?.id,
+        'shas.beitza',
+      );
     });
 
     test('a user mapping wins over name matching', () {
       final other = Catalog(const [
         CatalogNode(
-            id: 'a', parentId: null, name: 'Beitzah', kind: NodeKind.leaf,
-            unitCount: 5),
+          id: 'a',
+          parentId: null,
+          name: 'Beitzah',
+          kind: NodeKind.leaf,
+          unitCount: 5,
+        ),
         CatalogNode(
-            id: 'b', parentId: null, name: 'Something else', kind: NodeKind.leaf,
-            unitCount: 5),
+          id: 'b',
+          parentId: null,
+          name: 'Something else',
+          kind: NodeKind.leaf,
+          unitCount: 5,
+        ),
       ]);
-      final mapper = CycleMapper(catalog: other, overrides: const {'Beitzah': 'b'});
-      expect(mapper.resolve(const CycleDay(sefer: 'Beitzah', unit: 1))?.id, 'b');
+      final mapper = CycleMapper(
+        catalog: other,
+        overrides: const {'Beitzah': 'b'},
+      );
+      expect(
+        mapper.resolve(const CycleDay(sefer: 'Beitzah', unit: 1))?.id,
+        'b',
+      );
     });
 
-    test('a stale mapping falls back to name matching rather than breaking', () {
-      final mapper = CycleMapper(
-          catalog: catalog, overrides: const {'Beitzah': 'deleted-node'});
-      expect(mapper.resolve(const CycleDay(sefer: 'Beitzah', unit: 3))?.id,
-          'shas.beitza');
-    });
+    test(
+      'a stale mapping falls back to name matching rather than breaking',
+      () {
+        final mapper = CycleMapper(
+          catalog: catalog,
+          overrides: const {'Beitzah': 'deleted-node'},
+        );
+        expect(
+          mapper.resolve(const CycleDay(sefer: 'Beitzah', unit: 3))?.id,
+          'shas.beitza',
+        );
+      },
+    );
   });
 }

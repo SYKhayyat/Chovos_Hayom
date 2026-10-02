@@ -39,7 +39,9 @@ void main() {
   double xOf(String text, int index, TextDirection direction) {
     final painter = TextPainter(
       text: TextSpan(
-          text: text, style: const TextStyle(fontSize: 14, fontFamily: 'Ahem')),
+        text: text,
+        style: const TextStyle(fontSize: 14, fontFamily: 'Ahem'),
+      ),
       textDirection: direction,
     )..layout();
     final boxes = painter.getBoxesForSelection(
@@ -61,11 +63,16 @@ void main() {
     expect(first, isNot(-1), reason: 'no digits in "$text"');
     expect(last, greaterThan(first), reason: 'need two digits in "$text"');
 
-    expect(xOf(text, last, TextDirection.ltr),
-        greaterThan(xOf(text, first, TextDirection.ltr)),
-        reason: 'sanity: under LTR the line reads left to right');
-    expect(xOf(text, last, TextDirection.rtl),
-        greaterThan(xOf(text, first, TextDirection.rtl)), reason: reason);
+    expect(
+      xOf(text, last, TextDirection.ltr),
+      greaterThan(xOf(text, first, TextDirection.ltr)),
+      reason: 'sanity: under LTR the line reads left to right',
+    );
+    expect(
+      xOf(text, last, TextDirection.rtl),
+      greaterThan(xOf(text, first, TextDirection.rtl)),
+      reason: reason,
+    );
   }
 
   test('the progress template keeps its reading order under Hebrew', () {
@@ -91,7 +98,8 @@ void main() {
     );
     expectReadsLeftToRight(
       ltrNumerals(he.statsLearnedValue(7, 100)),
-      reason: 'the space-padded form renders reversed under Hebrew — the user '
+      reason:
+          'the space-padded form renders reversed under Hebrew — the user '
           'reads the total and the learned count swapped',
     );
   });
@@ -104,9 +112,12 @@ void main() {
     final first = bare.indexOf(RegExp(r'\d'));
     final last = bare.lastIndexOf(RegExp(r'\d'));
 
-    expect(xOf(bare, last, TextDirection.rtl),
-        lessThan(xOf(bare, first, TextDirection.rtl)),
-        reason: 'the defect this file exists for: "7 / 100" laid out under RTL '
-            'puts its last digit to the LEFT of its first');
+    expect(
+      xOf(bare, last, TextDirection.rtl),
+      lessThan(xOf(bare, first, TextDirection.rtl)),
+      reason:
+          'the defect this file exists for: "7 / 100" laid out under RTL '
+          'puts its last digit to the LEFT of its first',
+    );
   });
 }

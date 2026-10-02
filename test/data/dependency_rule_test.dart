@@ -28,7 +28,8 @@ import '../support/source_scan.dart';
 void main() {
   const escapeHatch = 'layering: ok';
   const roots = {
-    'lib/application/providers.dart': 'the composition root: where the concrete '
+    'lib/application/providers.dart':
+        'the composition root: where the concrete '
         'repositories are handed to Riverpod',
     'lib/main.dart': 'supplies the platform preference store at startup',
   };
@@ -36,15 +37,23 @@ void main() {
   final dataImport = RegExp(r"""import\s+'[^']*data/""");
 
   test('the regex matches the shape it bans', () {
-    expect(dataImport.hasMatch("import '../data/drift/database.dart';"), isTrue);
-    expect(dataImport.hasMatch("import '../domain/entities/layer.dart';"),
-        isFalse);
+    expect(
+      dataImport.hasMatch("import '../data/drift/database.dart';"),
+      isTrue,
+    );
+    expect(
+      dataImport.hasMatch("import '../domain/entities/layer.dart';"),
+      isFalse,
+    );
   });
 
   test('every root named here still exists', () {
     for (final root in roots.keys) {
-      expect(File(root).existsSync(), isTrue,
-          reason: '$root is exempt from the layering rule and has moved');
+      expect(
+        File(root).existsSync(),
+        isTrue,
+        reason: '$root is exempt from the layering rule and has moved',
+      );
     }
   });
 
@@ -54,8 +63,10 @@ void main() {
     for (final path in dartSourcesUnder()) {
       if (path.startsWith('lib/data/')) continue;
       if (roots.containsKey(path)) continue;
-      for (final line
-          in codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch)) {
+      for (final line in codeLines(
+        File(path).readAsStringSync(),
+        escapeHatch: escapeHatch,
+      )) {
         if (!dataImport.hasMatch(line.text)) continue;
         violations.add('$path:${line.line}\n    ${line.text.trim()}');
       }
@@ -64,7 +75,8 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason: 'talk to storage through ProgressRepository or CatalogRepository. '
+      reason:
+          'talk to storage through ProgressRepository or CatalogRepository. '
           'An import of data/ from application/ or features/ makes drift a '
           'compile-time dependency of the layer holding the app\'s '
           'rules.\n\n${violations.join('\n')}',
@@ -82,19 +94,26 @@ void main() {
     // the whole of `domain/` pay for the calendar again.
     final violations = <String>[];
     final flutter = RegExp(
-        r"""import\s+'package:(flutter|flutter_riverpod|drift|kosher_dart)/""");
+      r"""import\s+'package:(flutter|flutter_riverpod|drift|kosher_dart)/""",
+    );
 
     for (final path in dartSourcesUnder('lib/domain')) {
-      for (final line
-          in codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch)) {
+      for (final line in codeLines(
+        File(path).readAsStringSync(),
+        escapeHatch: escapeHatch,
+      )) {
         if (dataImport.hasMatch(line.text) || flutter.hasMatch(line.text)) {
           violations.add('$path:${line.line}\n    ${line.text.trim()}');
         }
       }
     }
 
-    expect(violations, isEmpty,
-        reason: 'domain/ is pure Dart: no Flutter, no Riverpod, no Drift, no '
-            'kosher_dart, no data/.\n\n${violations.join('\n')}');
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'domain/ is pure Dart: no Flutter, no Riverpod, no Drift, no '
+          'kosher_dart, no data/.\n\n${violations.join('\n')}',
+    );
   });
 }

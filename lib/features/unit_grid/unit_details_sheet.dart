@@ -55,12 +55,16 @@ class _UnitDetailsSheet extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(nodeAndUnit(l10n, node, unit),
-                  style: theme.textTheme.titleLarge),
+              Text(
+                nodeAndUnit(l10n, node, unit),
+                style: theme.textTheme.titleLarge,
+              ),
               const SizedBox(height: 12),
               if (done == null)
-                Text(l10n.detailsNotLearnedYet,
-                    style: theme.textTheme.bodyLarge)
+                Text(
+                  l10n.detailsNotLearnedYet,
+                  style: theme.textTheme.bodyLarge,
+                )
               else ...[
                 _DetailRow(
                   icon: Icons.event_available,
@@ -86,12 +90,21 @@ class _UnitDetailsSheet extends ConsumerWidget {
                     // Directional: these chazara lines indent *under* the row
                     // above them, which is the start edge, not the left one.
                     padding: const EdgeInsetsDirectional.only(
-                        start: 32, top: 2, bottom: 4),
+                      start: 32,
+                      top: 2,
+                      bottom: 4,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         for (var i = 0; i < history.reviews.length; i++)
-                          _chazaraLine(context, ref, i + 1, history.reviews[i], mode),
+                          _chazaraLine(
+                            context,
+                            ref,
+                            i + 1,
+                            history.reviews[i],
+                            mode,
+                          ),
                       ],
                     ),
                   ),
@@ -115,8 +128,12 @@ class _UnitDetailsSheet extends ConsumerWidget {
                     FilledButton.tonalIcon(
                       icon: const Icon(Icons.refresh, size: 18),
                       label: Text(l10n.detailsAddChazara),
-                      onPressed: () =>
-                          logChazaraWithDetails(context, ref, node: node, unit: unit),
+                      onPressed: () => logChazaraWithDetails(
+                        context,
+                        ref,
+                        node: node,
+                        unit: unit,
+                      ),
                     ),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.undo, size: 18),
@@ -140,12 +157,19 @@ class _UnitDetailsSheet extends ConsumerWidget {
     final guard = WriteGuard.of(context, ref);
     final l10n = AppLocalizations.of(context);
     Navigator.of(context).pop();
-    await guard.run(() => logger.markUndone(node.id, unit),
-        what: l10n.whatUnmarking(nodeAndUnit(l10n, node, unit)));
+    await guard.run(
+      () => logger.markUndone(node.id, unit),
+      what: l10n.whatUnmarking(nodeAndUnit(l10n, node, unit)),
+    );
   }
 
-  Widget _chazaraLine(BuildContext context, WidgetRef ref, int n,
-      LearningEvent review, CalendarMode mode) {
+  Widget _chazaraLine(
+    BuildContext context,
+    WidgetRef ref,
+    int n,
+    LearningEvent review,
+    CalendarMode mode,
+  ) {
     final l10n = AppLocalizations.of(context);
     final allLayers = ref.read(allLayersProvider);
     final mefarshim = review.layers
@@ -170,16 +194,22 @@ class _UnitDetailsSheet extends ConsumerWidget {
         children: [
           Text(head, style: theme.textTheme.bodySmall),
           if (review.note != null && review.note!.isNotEmpty)
-            Text('“${review.note}”',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(fontStyle: FontStyle.italic)),
+            Text(
+              '“${review.note}”',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontStyle: FontStyle.italic,
+              ),
+            ),
         ],
       ),
     );
   }
 
   Future<void> _edit(
-      BuildContext context, WidgetRef ref, UnitHistory history) async {
+    BuildContext context,
+    WidgetRef ref,
+    UnitHistory history,
+  ) async {
     final done = history.done;
     if (done == null) return;
     final logger = ref.read(loggingServiceProvider);
@@ -209,8 +239,11 @@ class _UnitDetailsSheet extends ConsumerWidget {
 }
 
 class _DetailRow extends StatelessWidget {
-  const _DetailRow(
-      {required this.icon, required this.label, required this.value});
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   final IconData icon;
   final String label;

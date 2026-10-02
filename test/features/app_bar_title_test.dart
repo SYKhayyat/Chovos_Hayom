@@ -21,32 +21,34 @@ import '../support/localized_app.dart';
 /// app is really for — and it is the first thing every English user sees.
 void main() {
   Widget dashboard({double textScale = 1.0}) => ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider
-              .overrideWithValue(memoryRepository()),
-          appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
-        ],
-        child: localizedApp(
-          // Built from the surrounding MediaQuery rather than from scratch. A
-          // bare `MediaQueryData(textScaler: …)` also sets `size` to zero, and
-          // the bar now asks how wide it is (below ~300dp it folds its actions
-          // into an overflow menu), so a zero-width query made every test here
-          // render the phone-sized bar while claiming to be 407 wide.
-          home: Builder(
-            builder: (context) => MediaQuery(
-              data: MediaQuery.of(context)
-                  .copyWith(textScaler: TextScaler.linear(textScale)),
-              child: const DashboardScreen(),
-            ),
-          ),
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(memoryRepository()),
+      appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+      clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+    ],
+    child: localizedApp(
+      // Built from the surrounding MediaQuery rather than from scratch. A
+      // bare `MediaQueryData(textScaler: …)` also sets `size` to zero, and
+      // the bar now asks how wide it is (below ~300dp it folds its actions
+      // into an overflow menu), so a zero-width query made every test here
+      // render the phone-sized bar while claiming to be 407 wide.
+      home: Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: const DashboardScreen(),
         ),
-      );
+      ),
+    ),
+  );
 
   /// Pumps a phone-width dashboard and returns the title's paragraph.
-  Future<RenderParagraph> title(WidgetTester tester,
-      {double textScale = 1.0}) async {
+  Future<RenderParagraph> title(
+    WidgetTester tester, {
+    double textScale = 1.0,
+  }) async {
     // 407 logical pixels: the 1220px/450dpi phone this was measured on.
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = const Size(407, 900);
@@ -57,20 +59,29 @@ void main() {
     return tester.renderObject<RenderParagraph>(find.text('Chovos Hayom'));
   }
 
-  testWidgets('the whole name is painted at the default font size',
-      (tester) async {
-    expect((await title(tester)).didExceedMaxLines, isFalse,
-        reason: 'the app bar truncated the app name to "Chovos …"');
+  testWidgets('the whole name is painted at the default font size', (
+    tester,
+  ) async {
+    expect(
+      (await title(tester)).didExceedMaxLines,
+      isFalse,
+      reason: 'the app bar truncated the app name to "Chovos …"',
+    );
   });
 
-  testWidgets('and at 1.6x font scale, where it truncated to "Chovo…"',
-      (tester) async {
-    expect((await title(tester, textScale: 1.6)).didExceedMaxLines, isFalse,
-        reason: 'a large-font user reads even less of it');
+  testWidgets('and at 1.6x font scale, where it truncated to "Chovo…"', (
+    tester,
+  ) async {
+    expect(
+      (await title(tester, textScale: 1.6)).didExceedMaxLines,
+      isFalse,
+      reason: 'a large-font user reads even less of it',
+    );
   });
 
-  testWidgets('the bar keeps only what acts on the tree in front of you',
-      (tester) async {
+  testWidgets('the bar keeps only what acts on the tree in front of you', (
+    tester,
+  ) async {
     await title(tester);
 
     // Expand, sort, search: three things that do something to *this* tree.
@@ -83,8 +94,9 @@ void main() {
     expect(find.byTooltip('Siyum calculator'), findsNothing);
   });
 
-  testWidgets('and the two that moved are still reachable, under Reports',
-      (tester) async {
+  testWidgets('and the two that moved are still reachable, under Reports', (
+    tester,
+  ) async {
     await title(tester);
     await tester.tap(find.byTooltip('Open navigation menu'));
     await tester.pumpAndSettle();
@@ -107,14 +119,20 @@ void main() {
     await title(tester);
     await tester.tap(find.byTooltip('Open navigation menu'));
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(ListTile, 'Settings'), findsOneWidget,
-        reason: 'the drawer is open');
+    expect(
+      find.widgetWithText(ListTile, 'Settings'),
+      findsOneWidget,
+      reason: 'the drawer is open',
+    );
 
     await tester.tap(find.widgetWithText(ListTile, 'Learning tree'));
     await tester.pumpAndSettle();
 
     expect(find.text('Kol HaTorah Kula'), findsOneWidget);
-    expect(find.widgetWithText(ListTile, 'Settings'), findsNothing,
-        reason: 'the drawer closed rather than merely scrolling');
+    expect(
+      find.widgetWithText(ListTile, 'Settings'),
+      findsNothing,
+      reason: 'the drawer closed rather than merely scrolling',
+    );
   });
 }

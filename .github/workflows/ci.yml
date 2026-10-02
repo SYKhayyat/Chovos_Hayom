@@ -79,10 +79,15 @@ jobs:
             exit 1
           fi
 
-      # Deliberately no `dart format` gate. The codebase is hand-wrapped so that
-      # the explanatory comments read well, and the current formatter reflows
-      # ~100 files against that. The analyzer enforces what actually matters.
       - run: flutter analyze --fatal-infos
+
+      # Formatting **is** enforced, reversing a deliberate earlier opt-out that
+      # said the hand-wrapping was there to be read and the formatter fought it.
+      # The wrapping is still there — comments were never reflowed — and the
+      # argument signatures the formatter expands are the cost of being able to
+      # say "formatted" and mean it.
+      - name: dart format
+        run: dart format --output=none --set-exit-if-changed lib test integration_test
 
       - run: flutter test --coverage
 

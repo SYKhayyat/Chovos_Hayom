@@ -20,20 +20,20 @@ class PlansConfig {
   final List<PlanChain> chains;
 
   Map<String, dynamic> toJson() => {
-        'plans': [for (final plan in plans) plan.toJson()],
-        'chains': [for (final chain in chains) chain.toJson()],
-      };
+    'plans': [for (final plan in plans) plan.toJson()],
+    'chains': [for (final chain in chains) chain.toJson()],
+  };
 
   factory PlansConfig.fromJson(Map<String, dynamic> json) => PlansConfig(
-        plans: [
-          for (final plan in (json['plans'] as List<dynamic>? ?? const []))
-            LearningPlan.fromJson((plan as Map).cast<String, dynamic>()),
-        ],
-        chains: [
-          for (final chain in (json['chains'] as List<dynamic>? ?? const []))
-            PlanChain.fromJson((chain as Map).cast<String, dynamic>()),
-        ],
-      );
+    plans: [
+      for (final plan in (json['plans'] as List<dynamic>? ?? const []))
+        LearningPlan.fromJson((plan as Map).cast<String, dynamic>()),
+    ],
+    chains: [
+      for (final chain in (json['chains'] as List<dynamic>? ?? const []))
+        PlanChain.fromJson((chain as Map).cast<String, dynamic>()),
+    ],
+  );
 }
 
 class PlansController extends Notifier<PlansConfig> {
@@ -47,7 +47,9 @@ class PlansController extends Notifier<PlansConfig> {
         .getString(PrefKeys.scoped(_profileId, PrefKeys.plans));
     if (raw == null || raw.isEmpty) return const PlansConfig();
     try {
-      return PlansConfig.fromJson((jsonDecode(raw) as Map).cast<String, dynamic>());
+      return PlansConfig.fromJson(
+        (jsonDecode(raw) as Map).cast<String, dynamic>(),
+      );
     } catch (_) {
       return const PlansConfig();
     }
@@ -63,24 +65,36 @@ class PlansController extends Notifier<PlansConfig> {
   }
 
   Future<void> remove(String id) async {
-    await _write(state.copyWith(
-      plans: [for (final plan in state.plans) if (plan.id != id) plan],
-      chains: [
-        for (final chain in state.chains)
-          PlanChain(
-            id: chain.id,
-            name: chain.name,
-            planIds: [for (final p in chain.planIds) if (p != id) p],
-            mode: chain.mode,
-          ),
-      ],
-    ));
+    await _write(
+      state.copyWith(
+        plans: [
+          for (final plan in state.plans)
+            if (plan.id != id) plan,
+        ],
+        chains: [
+          for (final chain in state.chains)
+            PlanChain(
+              id: chain.id,
+              name: chain.name,
+              planIds: [
+                for (final p in chain.planIds)
+                  if (p != id) p,
+              ],
+              mode: chain.mode,
+            ),
+        ],
+      ),
+    );
   }
 
   Future<void> _write(PlansConfig next) async {
     state = next;
-    await ref.read(appPreferencesProvider).setString(
-        PrefKeys.scoped(_profileId, PrefKeys.plans), jsonEncode(next.toJson()));
+    await ref
+        .read(appPreferencesProvider)
+        .setString(
+          PrefKeys.scoped(_profileId, PrefKeys.plans),
+          jsonEncode(next.toJson()),
+        );
   }
 }
 
@@ -89,8 +103,9 @@ extension on PlansConfig {
       PlansConfig(plans: plans ?? this.plans, chains: chains ?? this.chains);
 }
 
-final plansConfigProvider =
-    NotifierProvider<PlansController, PlansConfig>(PlansController.new);
+final plansConfigProvider = NotifierProvider<PlansController, PlansConfig>(
+  PlansController.new,
+);
 
 class TodayAssignment {
   const TodayAssignment({
@@ -125,22 +140,36 @@ final todayAssignmentsProvider = Provider<List<TodayAssignment>>((ref) {
   };
   final active = <String>{};
   for (final chain in config.chains) {
-    active.addAll(ChainSchedule.activePlanIds(chain, day, (id, at) {
-      final plan = byId[id];
-      return plan != null &&
-          PlanCompletion.completeBefore(plan, catalog, fold, at, layers: layers);
-    }));
+    active.addAll(
+      ChainSchedule.activePlanIds(chain, day, (id, at) {
+        final plan = byId[id];
+        return plan != null &&
+            PlanCompletion.completeBefore(
+              plan,
+              catalog,
+              fold,
+              at,
+              layers: layers,
+            );
+      }),
+    );
   }
 
   return [
     for (final plan in config.plans)
-      if (!chained.values.any((c) => c.planIds.contains(plan.id)) || active.contains(plan.id))
+      if (!chained.values.any((c) => c.planIds.contains(plan.id)) ||
+          active.contains(plan.id))
         for (final assignment in PlannerSchedule.assignmentsOn(plan, info))
-          if (assignment.targetNodeId != null && catalog.byId(assignment.targetNodeId!) != null)
+          if (assignment.targetNodeId != null &&
+              catalog.byId(assignment.targetNodeId!) != null)
             () {
               final node = catalog.byId(assignment.targetNodeId!)!;
               final next = PlanProgress.nextUnitUnder(
-                  node, catalog, fold, layers: layers);
+                node,
+                catalog,
+                fold,
+                layers: layers,
+              );
               return TodayAssignment(
                 plan: plan,
                 assignment: assignment,

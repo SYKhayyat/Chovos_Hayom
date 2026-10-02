@@ -85,14 +85,19 @@ class PlanRange {
     // to produce: a setting that reads as in force and is not.
     if (first < naturalFirst) {
       throw FormatException(
-          'startUnit $first is below ${node.name}\'s first unit '
-          '($naturalFirst)');
+        'startUnit $first is below ${node.name}\'s first unit '
+        '($naturalFirst)',
+      );
     }
     if (last < first) {
-      throw FormatException(
-          'endUnit ($last) is before startUnit ($first)');
+      throw FormatException('endUnit ($last) is before startUnit ($first)');
     }
-    return PlanRange(node: node, first: first, last: last, wraps: item.wrapsRange);
+    return PlanRange(
+      node: node,
+      first: first,
+      last: last,
+      wraps: item.wrapsRange,
+    );
   }
 
   /// The sefer's own first unit — the node's offset for a leaf, and the earliest
@@ -238,8 +243,7 @@ class PlanRunProgress {
     LogFold fold,
     Day asOf, {
     LayerRoles? layers,
-  }) =>
-      unitInRange(plan, catalog, fold, asOf, 0, layers: layers);
+  }) => unitInRange(plan, catalog, fold, asOf, 0, layers: layers);
 
   /// As [unitOn], but for item [index] of the chain.
   static int? unitInRange(

@@ -13,8 +13,8 @@ void main() {
   late ProviderContainer container;
 
   ProviderContainer build() => ProviderContainer(
-        overrides: [appPreferencesProvider.overrideWithValue(prefs)],
-      );
+    overrides: [appPreferencesProvider.overrideWithValue(prefs)],
+  );
 
   setUp(() {
     prefs = InMemoryPreferences();
@@ -32,8 +32,10 @@ void main() {
   test('elapsed comes from wall-clock, not from ticks', () async {
     await timer().start(now: t0, label: 'Shabbos · daf 12');
     // No ticker ran; nothing was counting. The answer is still right.
-    expect(state().elapsedAt(t0.add(const Duration(minutes: 42))),
-        const Duration(minutes: 42));
+    expect(
+      state().elapsedAt(t0.add(const Duration(minutes: 42))),
+      const Duration(minutes: 42),
+    );
   });
 
   test('pausing banks the time and stops accruing', () async {
@@ -43,8 +45,10 @@ void main() {
     expect(state().isRunning, isFalse);
     expect(state().accumulated, const Duration(minutes: 10));
     // An hour later it still reads ten minutes.
-    expect(state().elapsedAt(t0.add(const Duration(hours: 1))),
-        const Duration(minutes: 10));
+    expect(
+      state().elapsedAt(t0.add(const Duration(hours: 1))),
+      const Duration(minutes: 10),
+    );
   });
 
   test('resuming adds to the banked time rather than restarting', () async {
@@ -52,12 +56,19 @@ void main() {
     await timer().pause(t0.add(const Duration(minutes: 10)));
     await timer().start(now: t0.add(const Duration(minutes: 30)));
 
-    expect(state().elapsedAt(t0.add(const Duration(minutes: 35))),
-        const Duration(minutes: 15));
+    expect(
+      state().elapsedAt(t0.add(const Duration(minutes: 35))),
+      const Duration(minutes: 15),
+    );
   });
 
   test('a running session survives the app being killed', () async {
-    await timer().start(now: t0, label: 'Shabbos · daf 12', nodeId: 'shabbos', unitIndex: 12);
+    await timer().start(
+      now: t0,
+      label: 'Shabbos · daf 12',
+      nodeId: 'shabbos',
+      unitIndex: 12,
+    );
 
     // A brand-new container over the same preferences is a fresh launch.
     container.dispose();
@@ -68,9 +79,11 @@ void main() {
     expect(restored.label, 'Shabbos · daf 12');
     expect(restored.nodeId, 'shabbos');
     expect(restored.unitIndex, 12);
-    expect(restored.elapsedAt(t0.add(const Duration(minutes: 20))),
-        const Duration(minutes: 20),
-        reason: 'time spent away still counts');
+    expect(
+      restored.elapsedAt(t0.add(const Duration(minutes: 20))),
+      const Duration(minutes: 20),
+      reason: 'time spent away still counts',
+    );
   });
 
   test('a paused session survives too, without accruing while gone', () async {
@@ -82,8 +95,10 @@ void main() {
 
     final restored = container.read(sessionTimerProvider);
     expect(restored.isRunning, isFalse);
-    expect(restored.elapsedAt(t0.add(const Duration(days: 1))),
-        const Duration(minutes: 5));
+    expect(
+      restored.elapsedAt(t0.add(const Duration(days: 1))),
+      const Duration(minutes: 5),
+    );
   });
 
   test('reset clears the session and leaves nothing persisted', () async {
@@ -91,8 +106,10 @@ void main() {
     await timer().reset();
 
     expect(state().isActive, isFalse);
-    expect(prefs.getString(PrefKeys.scoped('default', PrefKeys.sessionTimer)),
-        isNull);
+    expect(
+      prefs.getString(PrefKeys.scoped('default', PrefKeys.sessionTimer)),
+      isNull,
+    );
   });
 
   test('the timer belongs to the active profile, not the device', () async {
@@ -113,7 +130,10 @@ void main() {
     await timer().start(now: t0, nodeId: 'shabbos', unitIndex: 12);
     await timer().pause(t0.add(const Duration(minutes: 10)));
     await timer().start(
-        now: t0.add(const Duration(hours: 2)), nodeId: 'eruvin', unitIndex: 2);
+      now: t0.add(const Duration(hours: 2)),
+      nodeId: 'eruvin',
+      unitIndex: 2,
+    );
 
     expect(state().accumulated, Duration.zero);
     expect(state().nodeId, 'eruvin');
@@ -123,7 +143,10 @@ void main() {
     await timer().start(now: t0, nodeId: 'shabbos', unitIndex: 12);
     await timer().pause(t0.add(const Duration(minutes: 10)));
     await timer().start(
-        now: t0.add(const Duration(hours: 2)), nodeId: 'shabbos', unitIndex: 12);
+      now: t0.add(const Duration(hours: 2)),
+      nodeId: 'shabbos',
+      unitIndex: 12,
+    );
 
     expect(state().accumulated, const Duration(minutes: 10));
   });
@@ -136,8 +159,9 @@ void main() {
   });
 
   test('a corrupt stored session does not stop the app from opening', () async {
-    prefs = InMemoryPreferences(
-        {PrefKeys.scoped('default', PrefKeys.sessionTimer): 'not json at all'});
+    prefs = InMemoryPreferences({
+      PrefKeys.scoped('default', PrefKeys.sessionTimer): 'not json at all',
+    });
     container.dispose();
     container = build();
 

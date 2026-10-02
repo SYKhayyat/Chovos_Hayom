@@ -11,21 +11,24 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   ProviderContainer containerFor(AppPreferences prefs) {
     final c = ProviderContainer(
-        overrides: [appPreferencesProvider.overrideWithValue(prefs)]);
+      overrides: [appPreferencesProvider.overrideWithValue(prefs)],
+    );
     addTearDown(c.dispose);
     return c;
   }
 
   test('a corrupt goals value yields no goals rather than crashing', () {
-    final prefs = InMemoryPreferences(
-        {PrefKeys.goalsFor('default'): 'not valid json'});
+    final prefs = InMemoryPreferences({
+      PrefKeys.goalsFor('default'): 'not valid json',
+    });
     final container = containerFor(prefs);
     expect(container.read(goalsProvider), isEmpty);
   });
 
   test('a goals value with a bad date does not throw either', () {
-    final prefs = InMemoryPreferences(
-        {PrefKeys.goalsFor('default'): '{"shas":"whenever"}'});
+    final prefs = InMemoryPreferences({
+      PrefKeys.goalsFor('default'): '{"shas":"whenever"}',
+    });
     final container = containerFor(prefs);
     expect(container.read(goalsProvider), isEmpty);
   });

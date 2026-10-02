@@ -58,8 +58,9 @@ Widget compactTheme(BuildContext context, Widget child) {
         // room and was just asking for too much of it. One step down, plus half
         // the usual gap after the back button, fits the longest title this app
         // has — and it is still the largest text on the screen.
-        titleTextStyle: theme.textTheme.titleMedium
-            ?.copyWith(color: theme.colorScheme.onSurface),
+        titleTextStyle: theme.textTheme.titleMedium?.copyWith(
+          color: theme.colorScheme.onSurface,
+        ),
         titleSpacing: 8,
       ),
     ),

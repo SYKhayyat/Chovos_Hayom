@@ -36,7 +36,8 @@ class GoalsController extends Notifier<Map<String, DateTime>> {
   Future<void> _persist() async {
     final profileId = ref.read(activeProfileProvider);
     final raw = jsonEncode(
-        state.map((k, v) => MapEntry(k, v.toIso8601String())));
+      state.map((k, v) => MapEntry(k, v.toIso8601String())),
+    );
     await ref.read(appPreferencesProvider).setString(_key(profileId), raw);
   }
 
@@ -93,10 +94,9 @@ class GoalsController extends Notifier<Map<String, DateTime>> {
     Map<String, DateTime> current,
     Map<String, DateTime> backup,
     ImportMode mode,
-  ) =>
-      mode.replacesCustomisation
-          ? current.keys.where((nodeId) => !backup.containsKey(nodeId))
-          : const [];
+  ) => mode.replacesCustomisation
+      ? current.keys.where((nodeId) => !backup.containsKey(nodeId))
+      : const [];
 
   /// Drop every goal for the active profile (part of "clear settings").
   Future<void> clearAll() async {
@@ -105,8 +105,9 @@ class GoalsController extends Notifier<Map<String, DateTime>> {
   }
 }
 
-final goalsProvider =
-    NotifierProvider<GoalsController, Map<String, DateTime>>(GoalsController.new);
+final goalsProvider = NotifierProvider<GoalsController, Map<String, DateTime>>(
+  GoalsController.new,
+);
 
 /// Evaluated status for a node's goal (null if no goal is set).
 ///
@@ -118,8 +119,10 @@ final goalsProvider =
 /// [paceProvider] — so what an element costs now is a map lookup and a
 /// subtraction, and what N goals cost is N of those rather than N full passes
 /// over the log.
-final goalStatusProvider =
-    Provider.autoDispose.family<GoalStatus?, String>((ref, nodeId) {
+final goalStatusProvider = Provider.autoDispose.family<GoalStatus?, String>((
+  ref,
+  nodeId,
+) {
   final target = ref.watch(goalsProvider)[nodeId];
   if (target == null) return null;
   final node = ref.watch(progressNodeProvider(nodeId));

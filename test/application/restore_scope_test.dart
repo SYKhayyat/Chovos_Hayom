@@ -43,7 +43,8 @@ void main() {
   /// Takes a backup of a clean profile, then invents a sefer the user regrets.
   Future<String> backupThenAddASefer() async {
     await repo.addProfile(
-        Profile(id: 'p1', name: 'Reuven', createdAt: DateTime(2026)));
+      Profile(id: 'p1', name: 'Reuven', createdAt: DateTime(2026)),
+    );
     final backup = await BackupService(repo).export('p1');
     await repo.addCustomNode(
       'p1',
@@ -59,29 +60,51 @@ void main() {
     return backup;
   }
 
-  test('"Restore everything" undoes a custom sefer added after the backup',
-      () async {
-    final backup = await backupThenAddASefer();
+  test(
+    '"Restore everything" undoes a custom sefer added after the backup',
+    () async {
+      final backup = await backupThenAddASefer();
 
-    final result = await BackupService(repo)
-        .importInto('p1', BackupService.parse(backup), mode: ImportMode.restoreEverything);
+      final result = await BackupService(repo).importInto(
+        'p1',
+        BackupService.parse(backup),
+        mode: ImportMode.restoreEverything,
+      );
 
-    expect(await repo.getCustomNodes('p1'), isEmpty,
-        reason: 'this is the restore that promises to undo everything recorded '
-            'since the backup');
-    expect(result.removedCustomisations, 1,
-        reason: 'and it has to be able to say how much, before it does it');
-  });
+      expect(
+        await repo.getCustomNodes('p1'),
+        isEmpty,
+        reason:
+            'this is the restore that promises to undo everything recorded '
+            'since the backup',
+      );
+      expect(
+        result.removedCustomisations,
+        1,
+        reason: 'and it has to be able to say how much, before it does it',
+      );
+    },
+  );
 
-  test('"Restore learning" keeps it, which is what its copy now says', () async {
-    final backup = await backupThenAddASefer();
+  test(
+    '"Restore learning" keeps it, which is what its copy now says',
+    () async {
+      final backup = await backupThenAddASefer();
 
-    final result = await BackupService(repo)
-        .importInto('p1', BackupService.parse(backup), mode: ImportMode.restoreLog);
+      final result = await BackupService(repo).importInto(
+        'p1',
+        BackupService.parse(backup),
+        mode: ImportMode.restoreLog,
+      );
 
-    expect((await repo.getCustomNodes('p1')).single.id, 'custom.oops',
-        reason: 'the narrow restore reconciles the log and nothing else — '
-            '"Custom sefarim, mefarshim and settings are kept"');
-    expect(result.removedCustomisations, 0);
-  });
+      expect(
+        (await repo.getCustomNodes('p1')).single.id,
+        'custom.oops',
+        reason:
+            'the narrow restore reconciles the log and nothing else — '
+            '"Custom sefarim, mefarshim and settings are kept"',
+      );
+      expect(result.removedCustomisations, 0);
+    },
+  );
 }

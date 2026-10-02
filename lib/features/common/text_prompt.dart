@@ -127,11 +127,11 @@ class _TextPromptDialogState extends State<TextPromptDialog> {
   }
 
   Map<String, String> get _values => {
-        for (final f in widget.fields)
-          f.key: f.trim
-              ? _controllers[f.key]!.text.trim()
-              : _controllers[f.key]!.text,
-      };
+    for (final f in widget.fields)
+      f.key: f.trim
+          ? _controllers[f.key]!.text.trim()
+          : _controllers[f.key]!.text,
+  };
 
   void _submit() {
     final values = _values;
@@ -153,14 +153,14 @@ class _TextPromptDialogState extends State<TextPromptDialog> {
   }
 
   Widget _field(PromptField f, {required bool autofocus}) => TextField(
-        controller: _controllers[f.key],
-        autofocus: autofocus,
-        keyboardType: f.keyboardType,
-        maxLines: f.maxLines,
-        textDirection: f.textDirection,
-        decoration: InputDecoration(labelText: f.label, hintText: f.hintText),
-        onSubmitted: f.key == _submittingField ? (_) => _submit() : null,
-      );
+    controller: _controllers[f.key],
+    autofocus: autofocus,
+    keyboardType: f.keyboardType,
+    maxLines: f.maxLines,
+    textDirection: f.textDirection,
+    decoration: InputDecoration(labelText: f.label, hintText: f.hintText),
+    onSubmitted: f.key == _submittingField ? (_) => _submit() : null,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -192,20 +192,22 @@ class _TextPromptDialogState extends State<TextPromptDialog> {
             ...fields,
           if (widget.footer != null) ...[
             const SizedBox(height: 8),
-            Text(widget.footer!,
-                style: Theme.of(context).textTheme.bodySmall),
+            Text(widget.footer!, style: Theme.of(context).textTheme.bodySmall),
           ],
           if (_error != null) ...[
             const SizedBox(height: 8),
-            Text(_error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ],
         ],
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(widget.cancelLabel)),
+          onPressed: () => Navigator.pop(context),
+          child: Text(widget.cancelLabel),
+        ),
         FilledButton(onPressed: _submit, child: Text(widget.confirmLabel)),
       ],
     );
@@ -223,20 +225,19 @@ Future<Map<String, String>?> promptForFields(
   String? footer,
   String? Function(Map<String, String> values)? validate,
   PromptLayout layout = PromptLayout.column,
-}) =>
-    showDialog<Map<String, String>>(
-      context: context,
-      builder: (_) => TextPromptDialog(
-        title: title,
-        fields: fields,
-        confirmLabel: confirmLabel,
-        cancelLabel: cancelLabel,
-        body: body,
-        footer: footer,
-        validate: validate,
-        layout: layout,
-      ),
-    );
+}) => showDialog<Map<String, String>>(
+  context: context,
+  builder: (_) => TextPromptDialog(
+    title: title,
+    fields: fields,
+    confirmLabel: confirmLabel,
+    cancelLabel: cancelLabel,
+    body: body,
+    footer: footer,
+    validate: validate,
+    layout: layout,
+  ),
+);
 
 /// Ask for one line (or block) of text. Returns null if it was dismissed, which
 /// every caller distinguishes from an empty string.

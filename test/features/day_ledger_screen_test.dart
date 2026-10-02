@@ -37,45 +37,47 @@ void main() {
   /// tidier and quietly ignored the parameter, which is the sort of thing that
   /// makes a test pass for the wrong reason.
   String planJson({int unitsPerDay = 3}) => jsonEncode(
-        PlansConfig(
-          plans: [
-            LearningPlan(
-              id: 'daf-yomi',
-              name: 'Daf Yomi',
-              unitsPerDay: unitsPerDay,
-              assignments: const [PlanAssignment(id: 'a', rule: DailyRule())],
-              items: const [PlanItem(id: 'i1', nodeId: 'shas.moed.shabbos')],
-            ),
-          ],
-        ).toJson(),
-      );
+    PlansConfig(
+      plans: [
+        LearningPlan(
+          id: 'daf-yomi',
+          name: 'Daf Yomi',
+          unitsPerDay: unitsPerDay,
+          assignments: const [PlanAssignment(id: 'a', rule: DailyRule())],
+          items: const [PlanItem(id: 'i1', nodeId: 'shas.moed.shabbos')],
+        ),
+      ],
+    ).toJson(),
+  );
 
   /// The day sheet, open on [theDay], over [repo].
   /// Two plans, the second on a weekday rule so it is **not** firing on the 5th
   /// and has no business being touched by a reflow aimed at the other.
   String plansWithSecond() => jsonEncode(
-        const PlansConfig(
-          plans: [
-            LearningPlan(
-              id: 'daf-yomi',
-              name: 'Daf Yomi',
-              unitsPerDay: 3,
-              assignments: [PlanAssignment(id: 'a', rule: DailyRule())],
-              items: [PlanItem(id: 'i1', nodeId: shabbos)],
-            ),
-            LearningPlan(
-              id: 'other',
-              name: 'Other',
-              unitsPerDay: 2,
-              assignments: [
-                PlanAssignment(
-                    id: 'a', rule: WeekdayRule(weekdays: {DateTime.monday})),
-              ],
-              items: [PlanItem(id: 'i1', nodeId: shabbos)],
+    const PlansConfig(
+      plans: [
+        LearningPlan(
+          id: 'daf-yomi',
+          name: 'Daf Yomi',
+          unitsPerDay: 3,
+          assignments: [PlanAssignment(id: 'a', rule: DailyRule())],
+          items: [PlanItem(id: 'i1', nodeId: shabbos)],
+        ),
+        LearningPlan(
+          id: 'other',
+          name: 'Other',
+          unitsPerDay: 2,
+          assignments: [
+            PlanAssignment(
+              id: 'a',
+              rule: WeekdayRule(weekdays: {DateTime.monday}),
             ),
           ],
-        ).toJson(),
-      );
+          items: [PlanItem(id: 'i1', nodeId: shabbos)],
+        ),
+      ],
+    ).toJson(),
+  );
 
   Future<InMemoryPreferences> openSheet(
     WidgetTester tester, {
@@ -95,7 +97,9 @@ void main() {
         overrides: [
           appPreferencesProvider.overrideWithValue(prefs),
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider.overrideWithValue(repo ?? memoryRepository()),
+          progressRepositoryProvider.overrideWithValue(
+            repo ?? memoryRepository(),
+          ),
           clockProvider.overrideWithValue(() => theDay),
         ],
         child: localizedApp(home: const PlannerCalendarScreen()),
@@ -108,7 +112,8 @@ void main() {
   }
 
   /// The ledger's checkbox for one unit.
-  Finder box(int unit) => find.byKey(ValueKey('ledger-daf-yomi-$shabbos-$unit'));
+  Finder box(int unit) =>
+      find.byKey(ValueKey('ledger-daf-yomi-$shabbos-$unit'));
 
   group('the ledger appears', () {
     testWidgets('a day asks for its units, with the count', (tester) async {
@@ -120,8 +125,9 @@ void main() {
       expect(find.textContaining('0 of 3'), findsOneWidget);
     });
 
-    testWidgets('and a plan asking for more than the sefer holds is short',
-        (tester) async {
+    testWidgets('and a plan asking for more than the sefer holds is short', (
+      tester,
+    ) async {
       // Shabbos in the fake catalog holds 156, so this asks for a lot; the point
       // is the count matches what the ledger actually shows rather than the plan
       // asking for a number the sefer cannot supply.
@@ -132,8 +138,9 @@ void main() {
   });
 
   group('ticking in the calendar writes the log', () {
-    testWidgets('and names the plan and the day it was made for',
-        (tester) async {
+    testWidgets('and names the plan and the day it was made for', (
+      tester,
+    ) async {
       final repo = memoryRepository();
       await openSheet(tester, repo: repo);
 
@@ -143,11 +150,18 @@ void main() {
       final events = await repo.getEvents('default');
       final tick = events.firstWhere((e) => e.unitIndex == 2);
       expect(tick.action.name, 'done');
-      expect(tick.planId, 'daf-yomi',
-          reason: 'so the app can tell a plan tick from a grid tick afterwards');
-      expect(Day.of(tick.occurredAt), Day.of(theDay),
-          reason: 'and the day it belongs to is the plan\'s day, not the wall '
-              'clock — a tick made on Friday for Thursday lands on Thursday');
+      expect(
+        tick.planId,
+        'daf-yomi',
+        reason: 'so the app can tell a plan tick from a grid tick afterwards',
+      );
+      expect(
+        Day.of(tick.occurredAt),
+        Day.of(theDay),
+        reason:
+            'and the day it belongs to is the plan\'s day, not the wall '
+            'clock — a tick made on Friday for Thursday lands on Thursday',
+      );
     });
 
     testWidgets('and the tick shows in the sheet', (tester) async {
@@ -163,21 +177,24 @@ void main() {
       expect(find.textContaining('1 of 3'), findsOneWidget);
     });
 
-    testWidgets('a unit done on another day is shown as such, not as done here',
-        (tester) async {
+    testWidgets('a unit done on another day is shown as such, not as done here', (
+      tester,
+    ) async {
       // Ticking it on the 5th when you did it on the 2nd does not make the 5th
       // look done — and it is not work still owed either. It gets its own state
       // and its own line, because a backlog is the reader's business.
       final repo = memoryRepository();
-      await repo.addEvent(LearningEvent(
-        id: 'e1',
-        profileId: 'default',
-        nodeId: shabbos,
-        unitIndex: 2,
-        action: EventAction.done,
-        occurredAt: DateTime(2026, 1, 2),
-        loggedAt: DateTime(2026, 1, 2),
-      ));
+      await repo.addEvent(
+        LearningEvent(
+          id: 'e1',
+          profileId: 'default',
+          nodeId: shabbos,
+          unitIndex: 2,
+          action: EventAction.done,
+          occurredAt: DateTime(2026, 1, 2),
+          loggedAt: DateTime(2026, 1, 2),
+        ),
+      );
       await openSheet(tester, repo: repo);
 
       expect(box(2), findsOneWidget);
@@ -185,8 +202,9 @@ void main() {
       expect(find.textContaining('Done on'), findsOneWidget);
     });
 
-    testWidgets('an empty ledger is a rest day, not a day of zero',
-        (tester) async {
+    testWidgets('an empty ledger is a rest day, not a day of zero', (
+      tester,
+    ) async {
       // 0 means "nothing on this day" and must never read as an absence.
       final prefs = jsonEncode(
         const PlansConfig(
@@ -207,25 +225,31 @@ void main() {
   });
 
   group('the reverse does not happen', () {
-    testWidgets('a unit ticked in the grid is still in the plan\'s list',
-        (tester) async {
+    testWidgets('a unit ticked in the grid is still in the plan\'s list', (
+      tester,
+    ) async {
       // **The claim that matters most.** This tick carries no plan — it was made
       // in the unit grid and is a fact about the learner — and the plan still
       // asks for the unit, so it must still be offered here, ticked.
       final repo = memoryRepository();
-      await repo.addEvent(LearningEvent(
-        id: 'e1',
-        profileId: 'default',
-        nodeId: shabbos,
-        unitIndex: 2,
-        action: EventAction.done,
-        occurredAt: DateTime(2026, 1, 5),
-        loggedAt: DateTime(2026, 1, 5),
-      ));
+      await repo.addEvent(
+        LearningEvent(
+          id: 'e1',
+          profileId: 'default',
+          nodeId: shabbos,
+          unitIndex: 2,
+          action: EventAction.done,
+          occurredAt: DateTime(2026, 1, 5),
+          loggedAt: DateTime(2026, 1, 5),
+        ),
+      );
       await openSheet(tester, repo: repo);
 
-      expect(box(2), findsOneWidget,
-          reason: 'the plan asks for three units, so three rows are shown');
+      expect(
+        box(2),
+        findsOneWidget,
+        reason: 'the plan asks for three units, so three rows are shown',
+      );
       expect(find.text('Done this day'), findsOneWidget);
       expect(find.textContaining('1 of 3'), findsOneWidget);
     });
@@ -238,20 +262,27 @@ void main() {
       await tester.pumpAndSettle();
 
       final stored = PlansConfig.fromJson(
-          (jsonDecode(prefs.getString(
-                      PrefKeys.scoped('default', PrefKeys.plans)) ??
-                  '{}') as Map)
-              .cast<String, dynamic>());
+        (jsonDecode(
+                  prefs.getString(PrefKeys.scoped('default', PrefKeys.plans)) ??
+                      '{}',
+                )
+                as Map)
+            .cast<String, dynamic>(),
+      );
       expect(stored.plans.single.dateAmounts, isEmpty);
       expect(stored.plans.single.unitsPerDay, 3);
-      expect(stored.plans.single.items, hasLength(1),
-          reason: 'the sefer chain is untouched by a tick');
+      expect(
+        stored.plans.single.items,
+        hasLength(1),
+        reason: 'the sefer chain is untouched by a tick',
+      );
     });
   });
 
   group('un-ticking from the ledger', () {
-    testWidgets('takes back this day\'s tick and offers the unit again',
-        (tester) async {
+    testWidgets('takes back this day\'s tick and offers the unit again', (
+      tester,
+    ) async {
       final repo = memoryRepository();
       await openSheet(tester, repo: repo);
       await tester.tap(box(2));
@@ -263,14 +294,19 @@ void main() {
 
       expect(find.text('Owed'), findsNWidgets(3));
       expect(find.textContaining('0 of 3'), findsOneWidget);
-      final undone =
-          (await repo.getEvents('default')).where((e) => e.unitIndex == 2);
-      expect(undone.any((e) => e.action.name == 'undone'), isTrue,
-          reason: 'and the log records it, rather than the sheet forgetting');
+      final undone = (await repo.getEvents(
+        'default',
+      )).where((e) => e.unitIndex == 2);
+      expect(
+        undone.any((e) => e.action.name == 'undone'),
+        isTrue,
+        reason: 'and the log records it, rather than the sheet forgetting',
+      );
     });
 
-    testWidgets('it names the day it is undoing, not the latest one',
-        (tester) async {
+    testWidgets('it names the day it is undoing, not the latest one', (
+      tester,
+    ) async {
       // You can tick things in the past, so an un-tick names the day it takes
       // back rather than reaching for the most recent.
       final repo = memoryRepository();
@@ -280,8 +316,9 @@ void main() {
       await tester.tap(box(2));
       await tester.pumpAndSettle();
 
-      final undone = (await repo.getEvents('default'))
-          .firstWhere((e) => e.action.name == 'undone');
+      final undone = (await repo.getEvents(
+        'default',
+      )).firstWhere((e) => e.action.name == 'undone');
       expect(Day.of(undone.occurredAt), Day.of(theDay));
       expect(undone.planId, 'daf-yomi');
     });
@@ -291,15 +328,17 @@ void main() {
     testWidgets('says so', (tester) async {
       final repo = memoryRepository();
       for (final u in [2, 3, 4]) {
-        await repo.addEvent(LearningEvent(
-          id: 'e$u',
-          profileId: 'default',
-          nodeId: shabbos,
-          unitIndex: u,
-          action: EventAction.done,
-          occurredAt: theDay,
-          loggedAt: theDay,
-        ));
+        await repo.addEvent(
+          LearningEvent(
+            id: 'e$u',
+            profileId: 'default',
+            nodeId: shabbos,
+            unitIndex: u,
+            action: EventAction.done,
+            occurredAt: theDay,
+            loggedAt: theDay,
+          ),
+        );
       }
       await openSheet(tester, repo: repo);
       expect(find.text('Everything for this day is done.'), findsOneWidget);
@@ -307,8 +346,9 @@ void main() {
   });
 
   group('recompute', () {
-    testWidgets('spreading writes a date override and no event',
-        (tester) async {
+    testWidgets('spreading writes a date override and no event', (
+      tester,
+    ) async {
       // **The promise that matters.** A reflow is a claim about the schedule,
       // never about what was learned, so the log must be exactly as it was.
       final repo = memoryRepository();
@@ -320,16 +360,23 @@ void main() {
       await tester.pumpAndSettle();
 
       final plan = PlansConfig.fromJson(
-              (jsonDecode(prefs.getString(
-                          PrefKeys.scoped('default', PrefKeys.plans)) ??
-                      '{}') as Map)
-                  .cast<String, dynamic>())
-          .plans
-          .firstWhere((p) => p.id == 'daf-yomi');
-      expect(plan.dateAmounts, isNotEmpty,
-          reason: 'the spread wrote the days it needed to');
-      expect(await repo.getEvents('default'), isEmpty,
-          reason: 'and wrote nothing that says anything was learned');
+        (jsonDecode(
+                  prefs.getString(PrefKeys.scoped('default', PrefKeys.plans)) ??
+                      '{}',
+                )
+                as Map)
+            .cast<String, dynamic>(),
+      ).plans.firstWhere((p) => p.id == 'daf-yomi');
+      expect(
+        plan.dateAmounts,
+        isNotEmpty,
+        reason: 'the spread wrote the days it needed to',
+      );
+      expect(
+        await repo.getEvents('default'),
+        isEmpty,
+        reason: 'and wrote nothing that says anything was learned',
+      );
     });
 
     testWidgets('keeping the same amounts changes nothing', (tester) async {
@@ -344,29 +391,42 @@ void main() {
       await tester.pumpAndSettle();
 
       final plan = PlansConfig.fromJson(
-              (jsonDecode(prefs.getString(
-                          PrefKeys.scoped('default', PrefKeys.plans)) ??
-                      '{}') as Map)
-                  .cast<String, dynamic>())
-          .plans
-          .firstWhere((p) => p.id == 'daf-yomi');
-      expect(plan.dateAmounts, isEmpty,
-          reason: 'mode 1 is a no-op, and must not put overrides on days that '
-              'never had any');
+        (jsonDecode(
+                  prefs.getString(PrefKeys.scoped('default', PrefKeys.plans)) ??
+                      '{}',
+                )
+                as Map)
+            .cast<String, dynamic>(),
+      ).plans.firstWhere((p) => p.id == 'daf-yomi');
+      expect(
+        plan.dateAmounts,
+        isEmpty,
+        reason:
+            'mode 1 is a no-op, and must not put overrides on days that '
+            'never had any',
+      );
     });
 
-    testWidgets('a plan with no end is not offered "up to its end"',
-        (tester) async {
+    testWidgets('a plan with no end is not offered "up to its end"', (
+      tester,
+    ) async {
       final repo = memoryRepository();
       await openSheet(tester, repo: repo);
       await tester.tap(find.byKey(const ValueKey('recompute-open-daf-yomi')));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const ValueKey('recompute-until-end')), findsNothing,
-          reason: 'an endless plan has no end to spread into, and the option '
-              'would do nothing');
-      expect(find.byKey(const ValueKey('recompute-all')), findsOneWidget,
-          reason: '"all" is the answer that does apply');
+      expect(
+        find.byKey(const ValueKey('recompute-until-end')),
+        findsNothing,
+        reason:
+            'an endless plan has no end to spread into, and the option '
+            'would do nothing',
+      );
+      expect(
+        find.byKey(const ValueKey('recompute-all')),
+        findsOneWidget,
+        reason: '"all" is the answer that does apply',
+      );
     });
 
     testWidgets('and it leaves other plans alone', (tester) async {
@@ -379,12 +439,18 @@ void main() {
       await tester.pumpAndSettle();
 
       final plans = PlansConfig.fromJson(
-          (jsonDecode(prefs.getString(PrefKeys.scoped('default', PrefKeys.plans)) ??
-                  '{}') as Map)
-              .cast<String, dynamic>())
-          .plans;
-      expect(plans.firstWhere((p) => p.id == 'other').dateAmounts, isEmpty,
-          reason: 'recomputing one plan must not disturb another');
+        (jsonDecode(
+                  prefs.getString(PrefKeys.scoped('default', PrefKeys.plans)) ??
+                      '{}',
+                )
+                as Map)
+            .cast<String, dynamic>(),
+      ).plans;
+      expect(
+        plans.firstWhere((p) => p.id == 'other').dateAmounts,
+        isEmpty,
+        reason: 'recomputing one plan must not disturb another',
+      );
     });
   });
 }

@@ -30,9 +30,9 @@ class ProfileCustomisations {
   });
 
   const ProfileCustomisations.empty()
-      : nodes = const [],
-        layers = const [],
-        configs = const [];
+    : nodes = const [],
+      layers = const [],
+      configs = const [];
 
   /// Custom sefarim — new nodes, and per-profile overrides of built-in ones.
   final List<CatalogNode> nodes;
@@ -57,7 +57,9 @@ class ProfileCustomisations {
   /// deterministic order is what lets the export and the teardown be compared
   /// row for row when they disagree.
   static Future<ProfileCustomisations> of(
-      ProgressRepository repo, String profileId) async {
+    ProgressRepository repo,
+    String profileId,
+  ) async {
     return ProfileCustomisations(
       nodes: await repo.getCustomNodes(profileId),
       layers: await repo.getCustomLayers(profileId),

@@ -43,10 +43,10 @@ enum PlannerCalendarRange {
   /// every month is drawn at the same size and the page never changes height as
   /// the arrow moves from a 28-day February to a 31-day March.
   int get dayCount => switch (this) {
-        PlannerCalendarRange.day => 1,
-        PlannerCalendarRange.week => 7,
-        PlannerCalendarRange.month => 42,
-      };
+    PlannerCalendarRange.day => 1,
+    PlannerCalendarRange.week => 7,
+    PlannerCalendarRange.month => 42,
+  };
 
   /// The first day of the page that contains [anchor].
   ///
@@ -54,15 +54,12 @@ enum PlannerCalendarRange {
   /// so a week is Monday-to-Sunday and a month grid is six whole weeks rather
   /// than six ragged rows.
   Day startFrom(Day anchor) => switch (this) {
-        PlannerCalendarRange.day => anchor,
-        PlannerCalendarRange.week => _mondayOnOrBefore(anchor),
-        PlannerCalendarRange.month =>
-          _mondayOnOrBefore(Day.of(DateTime(
-            anchor.midnight.year,
-            anchor.midnight.month,
-            1,
-          ))),
-      };
+    PlannerCalendarRange.day => anchor,
+    PlannerCalendarRange.week => _mondayOnOrBefore(anchor),
+    PlannerCalendarRange.month => _mondayOnOrBefore(
+      Day.of(DateTime(anchor.midnight.year, anchor.midnight.month, 1)),
+    ),
+  };
 
   /// The day a page of this range is **named** by — the date a heading for the
   /// page should print.
@@ -76,11 +73,12 @@ enum PlannerCalendarRange {
   /// day, and a week — which has no padding to begin with — is the same value
   /// in both.
   Day namedDay(Day anchor) => switch (this) {
-        PlannerCalendarRange.day => anchor,
-        PlannerCalendarRange.week => _mondayOnOrBefore(anchor),
-        PlannerCalendarRange.month => Day.of(
-            DateTime(anchor.midnight.year, anchor.midnight.month, 1)),
-      };
+    PlannerCalendarRange.day => anchor,
+    PlannerCalendarRange.week => _mondayOnOrBefore(anchor),
+    PlannerCalendarRange.month => Day.of(
+      DateTime(anchor.midnight.year, anchor.midnight.month, 1),
+    ),
+  };
 
   /// The anchor a page [delta] steps away should hold, so that
   /// `startFrom(step(anchor, d))` is the window [delta] pages on.
@@ -93,13 +91,13 @@ enum PlannerCalendarRange {
   /// month from the 31st lands on the 1st of the next month and not on the 3rd
   /// of the one after.
   Day step(Day anchor, int delta) => switch (this) {
-        PlannerCalendarRange.day => anchor + delta,
-        PlannerCalendarRange.week => _mondayOnOrBefore(anchor) + (delta * 7),
-        PlannerCalendarRange.month => _addMonths(
-            Day.of(DateTime(
-                anchor.midnight.year, anchor.midnight.month, 1)),
-            delta),
-      };
+    PlannerCalendarRange.day => anchor + delta,
+    PlannerCalendarRange.week => _mondayOnOrBefore(anchor) + (delta * 7),
+    PlannerCalendarRange.month => _addMonths(
+      Day.of(DateTime(anchor.midnight.year, anchor.midnight.month, 1)),
+      delta,
+    ),
+  };
 
   /// [anchor] shifted by [delta] months, clamped to the target month's length.
   ///
@@ -110,12 +108,18 @@ enum PlannerCalendarRange {
   static Day _addMonths(Day anchor, int delta) {
     final d = anchor.midnight;
     final firstOfTarget = DateTime(d.year, d.month + delta, 1);
-    final lastDay = DateTime(firstOfTarget.year, firstOfTarget.month + 1, 0).day;
-    return Day.of(DateTime(
+    final lastDay = DateTime(
       firstOfTarget.year,
-      firstOfTarget.month,
-      d.day <= lastDay ? d.day : lastDay,
-    ));
+      firstOfTarget.month + 1,
+      0,
+    ).day;
+    return Day.of(
+      DateTime(
+        firstOfTarget.year,
+        firstOfTarget.month,
+        d.day <= lastDay ? d.day : lastDay,
+      ),
+    );
   }
 
   static Day _mondayOnOrBefore(Day day) => day - (day.weekday - 1);
@@ -126,10 +130,6 @@ enum PlannerCalendarRange {
 /// Returned as a list rather than a count so a caller cannot ask for "42 days
 /// from March" — the caller asks for the days a page *has*, and the length is
 /// the range's to decide.
-List<Day> calendarWindow(
-  Day anchor,
-  PlannerCalendarRange range,
-) =>
-    [
-      for (var i = 0; i < range.dayCount; i++) range.startFrom(anchor) + i,
-    ];
+List<Day> calendarWindow(Day anchor, PlannerCalendarRange range) => [
+  for (var i = 0; i < range.dayCount; i++) range.startFrom(anchor) + i,
+];

@@ -109,11 +109,14 @@ class BulkMarker {
       final have = fold.completedLayers(leaf.id, unit);
       final toAdd = _finishLayersFor(leaf.id, selection, have);
       if (toAdd.isNotEmpty) {
-        marks.add(BulkMark(
+        marks.add(
+          BulkMark(
             nodeId: leaf.id,
             unitIndex: unit,
             action: EventAction.done,
-            layers: toAdd));
+            layers: toAdd,
+          ),
+        );
       }
     }
     return BulkPlan(marks);
@@ -137,11 +140,14 @@ class BulkMarker {
         _ => have.toList(),
       };
       if (toRemove.isNotEmpty) {
-        marks.add(BulkMark(
+        marks.add(
+          BulkMark(
             nodeId: leaf.id,
             unitIndex: unit,
             action: EventAction.undone,
-            layers: toRemove));
+            layers: toRemove,
+          ),
+        );
       }
     }
     return BulkPlan(marks);
@@ -153,20 +159,21 @@ class BulkMarker {
     required String nodeId,
     required LayerSelection selection,
     UnitRange? range,
-  }) =>
-      commit(planFinish(nodeId: nodeId, selection: selection, range: range));
+  }) => commit(planFinish(nodeId: nodeId, selection: selection, range: range));
 
   Future<BulkResult> clear({
     required String nodeId,
     LayerSelection selection = const AllLayersSelection(),
     UnitRange? range,
-  }) =>
-      commit(planClear(nodeId: nodeId, selection: selection, range: range));
+  }) => commit(planClear(nodeId: nodeId, selection: selection, range: range));
 
   /// The layers to *add* for one unit under [selection], excluding any already
   /// learned. Empty means "nothing to do — skip this unit".
   List<String> _finishLayersFor(
-      String leafId, LayerSelection selection, Set<String> have) {
+    String leafId,
+    LayerSelection selection,
+    Set<String> have,
+  ) {
     final want = switch (selection) {
       SingleLayerSelection(:final layerId) => {layerId},
       RequiredLayerSelection() => layers.requiredFor(leafId),
@@ -182,7 +189,10 @@ class BulkMarker {
   /// Every (leaf, unitIndex) pair the action should visit. For a leaf node this
   /// is its own units (optionally bounded by [range]); for a category it is the
   /// union over all descendant leaves (range ignored).
-  Iterable<(CatalogNode, int)> _targetUnits(String nodeId, UnitRange? range) sync* {
+  Iterable<(CatalogNode, int)> _targetUnits(
+    String nodeId,
+    UnitRange? range,
+  ) sync* {
     final node = catalog.byId(nodeId);
     if (node == null) return;
     final singleLeaf = node.isLeaf;

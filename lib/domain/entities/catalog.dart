@@ -27,8 +27,8 @@ class Catalog {
   Catalog(List<CatalogNode> nodes) : this._(_asForest(nodes));
 
   Catalog._(Map<String, CatalogNode> byId)
-      : _byId = byId,
-        _childrenByParent = _groupChildren(byId.values);
+    : _byId = byId,
+      _childrenByParent = _groupChildren(byId.values);
 
   final Map<String, CatalogNode> _byId;
   final Map<String?, List<CatalogNode>> _childrenByParent;
@@ -106,15 +106,18 @@ class Catalog {
   }
 
   static Map<String?, List<CatalogNode>> _groupChildren(
-      Iterable<CatalogNode> nodes) {
+    Iterable<CatalogNode> nodes,
+  ) {
     final map = <String?, List<CatalogNode>>{};
     for (final n in nodes) {
       (map[n.parentId] ??= []).add(n);
     }
     for (final list in map.values) {
-      list.sort((a, b) => a.sortOrder != b.sortOrder
-          ? a.sortOrder.compareTo(b.sortOrder)
-          : a.name.compareTo(b.name));
+      list.sort(
+        (a, b) => a.sortOrder != b.sortOrder
+            ? a.sortOrder.compareTo(b.sortOrder)
+            : a.name.compareTo(b.name),
+      );
     }
     return map;
   }

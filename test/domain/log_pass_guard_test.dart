@@ -39,10 +39,10 @@ void main() {
         'one unit\'s own events, in order, for its details sheet',
     'lib/domain/usecases/backup_reminder.dart':
         'distinct units touched since an *instant*, keyed on loggedAt — a '
-            'boundary no day index can answer',
+        'boundary no day index can answer',
     'lib/application/backup_service.dart':
         'serialising the log to a file, which is the log itself and not a '
-            'question about it',
+        'question about it',
     'lib/application/logging_service.dart': 'writing events, not reading them',
   };
 
@@ -57,12 +57,16 @@ void main() {
     // The failure mode of every source-scanning check is quietly matching
     // nothing, so it is asserted against the line it exists to catch.
     expect(
-        logParameter.hasMatch(
-            'static double averagePerDay(Iterable<LearningEvent> events, {'),
-        isTrue);
-    expect(logParameter.hasMatch('final events = ref.watch(eventsProvider);'),
-        isFalse,
-        reason: 'watching the log is not the ban — taking it is');
+      logParameter.hasMatch(
+        'static double averagePerDay(Iterable<LearningEvent> events, {',
+      ),
+      isTrue,
+    );
+    expect(
+      logParameter.hasMatch('final events = ref.watch(eventsProvider);'),
+      isFalse,
+      reason: 'watching the log is not the ban — taking it is',
+    );
   });
 
   test('every file on the allowlist exists and still takes the log', () {
@@ -72,11 +76,15 @@ void main() {
       final file = File(entry.key);
       expect(file.existsSync(), isTrue, reason: '${entry.key} is gone');
       expect(
-          codeLines(file.readAsStringSync(), escapeHatch: escapeHatch)
-              .any((l) => logParameter.hasMatch(l.text)),
-          isTrue,
-          reason: '${entry.key} is allowed to take the whole log for '
-              '"${entry.value}" and no longer does — drop it from the list');
+        codeLines(
+          file.readAsStringSync(),
+          escapeHatch: escapeHatch,
+        ).any((l) => logParameter.hasMatch(l.text)),
+        isTrue,
+        reason:
+            '${entry.key} is allowed to take the whole log for '
+            '"${entry.value}" and no longer does — drop it from the list',
+      );
     }
   });
 
@@ -92,8 +100,10 @@ void main() {
         continue;
       }
 
-      for (final line
-          in codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch)) {
+      for (final line in codeLines(
+        File(path).readAsStringSync(),
+        escapeHatch: escapeHatch,
+      )) {
         if (!logParameter.hasMatch(line.text)) continue;
         violations.add('$path:${line.line}\n    ${line.text.trim()}');
       }
@@ -102,7 +112,8 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason: 'A function that takes the whole event log walks the whole event '
+      reason:
+          'A function that takes the whole event log walks the whole event '
           'log, and it runs once per caller rather than once per change. Ask '
           'LogFold (what is learned now) or LogActivity (what happened, and '
           'when) instead. If the question is genuinely a new axis over the raw '

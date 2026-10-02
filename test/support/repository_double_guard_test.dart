@@ -41,22 +41,26 @@ void main() {
 
   const bans = <({String why, String pattern, String sample, String? allow})>[
     (
-      why: 'is a second implementation of ProgressRepository — use '
+      why:
+          'is a second implementation of ProgressRepository — use '
           'memoryRepository(), or delegate to it as '
           'FailingProgressRepository does',
       pattern: r'(implements|extends)\s+ProgressRepository\b',
-      sample: 'class InMemoryProgressRepository implements ProgressRepository {',
+      sample:
+          'class InMemoryProgressRepository implements ProgressRepository {',
       allow: wrapper,
     ),
     (
-      why: 'opens a database by hand — use memoryDatabase(), which sets '
+      why:
+          'opens a database by hand — use memoryDatabase(), which sets '
           'closeStreamsSynchronously and registers the close',
       pattern: r'NativeDatabase\.memory\(\)',
       sample: 'final db = AppDatabase(NativeDatabase.memory());',
       allow: home,
     ),
     (
-      why: 'reads a one-shot value off a live query stream — use the getX() '
+      why:
+          'reads a one-shot value off a live query stream — use the getX() '
           'half of the interface',
       pattern: r'\.watch[A-Z]\w*\([^)]*\)\.first',
       sample: 'final nodes = await repo.watchCustomNodes(profileId).first;',
@@ -70,9 +74,13 @@ void main() {
     // The failure mode of every source-scanning check ever written is quietly
     // matching nothing, so each ban carries the line it exists to catch.
     for (final ban in bans) {
-      expect(RegExp(ban.pattern).hasMatch(ban.sample), isTrue,
-          reason: 'the pattern for "${ban.why}" no longer matches its own '
-              'sample, so it is guarding nothing');
+      expect(
+        RegExp(ban.pattern).hasMatch(ban.sample),
+        isTrue,
+        reason:
+            'the pattern for "${ban.why}" no longer matches its own '
+            'sample, so it is guarding nothing',
+      );
     }
   });
 
@@ -90,14 +98,18 @@ void main() {
         final isProduction =
             path == 'lib/data/repositories/drift_progress_repository.dart';
 
-        for (final line in codeLines(File(path).readAsStringSync(),
-            escapeHatch: escapeHatch)) {
+        for (final line in codeLines(
+          File(path).readAsStringSync(),
+          escapeHatch: escapeHatch,
+        )) {
           for (final ban in bans) {
             if (path == ban.allow) continue;
             if (isProduction && ban.allow == wrapper) continue;
             if (!RegExp(ban.pattern).hasMatch(line.text)) continue;
-            violations.add('$path:${line.line} ${ban.why}\n'
-                '    ${line.text.trim()}');
+            violations.add(
+              '$path:${line.line} ${ban.why}\n'
+              '    ${line.text.trim()}',
+            );
           }
         }
       }
@@ -106,7 +118,8 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason: 'The tests run against the real repository over an in-memory '
+      reason:
+          'The tests run against the real repository over an in-memory '
           'SQLite database.\n\n${violations.join('\n')}\n\n'
           'If a line genuinely needs one of these, mark it '
           '`// $escapeHatch — <reason>`.',
@@ -122,7 +135,10 @@ void main() {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
       if (entity.readAsStringSync().contains('memoryRepository()')) users++;
     }
-    expect(users, greaterThan(20),
-        reason: 'memory_database.dart is how a test gets a repository');
+    expect(
+      users,
+      greaterThan(20),
+      reason: 'memory_database.dart is how a test gets a repository',
+    );
   });
 }

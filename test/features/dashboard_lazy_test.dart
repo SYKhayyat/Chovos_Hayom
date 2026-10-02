@@ -20,21 +20,33 @@ const _totalNodes = 1 + _categories + _categories * _leavesEach;
 Catalog _bigCatalog() {
   final nodes = <CatalogNode>[
     const CatalogNode(
-        id: 'root', parentId: null, name: 'Kol HaTorah Kula', kind: NodeKind.category),
+      id: 'root',
+      parentId: null,
+      name: 'Kol HaTorah Kula',
+      kind: NodeKind.category,
+    ),
   ];
   for (var c = 0; c < _categories; c++) {
-    nodes.add(CatalogNode(
-        id: 'cat$c', parentId: 'root', name: 'Category $c', kind: NodeKind.category));
+    nodes.add(
+      CatalogNode(
+        id: 'cat$c',
+        parentId: 'root',
+        name: 'Category $c',
+        kind: NodeKind.category,
+      ),
+    );
     for (var l = 0; l < _leavesEach; l++) {
-      nodes.add(CatalogNode(
-        id: 'cat$c.leaf$l',
-        parentId: 'cat$c',
-        name: 'Sefer $c-$l',
-        kind: NodeKind.leaf,
-        unitLabel: UnitLabel.daf,
-        unitCount: 10,
-        unitOffset: 1,
-      ));
+      nodes.add(
+        CatalogNode(
+          id: 'cat$c.leaf$l',
+          parentId: 'cat$c',
+          name: 'Sefer $c-$l',
+          kind: NodeKind.leaf,
+          unitLabel: UnitLabel.daf,
+          unitCount: 10,
+          unitOffset: 1,
+        ),
+      );
     }
   }
   return Catalog(nodes);
@@ -55,8 +67,7 @@ void main() {
       ProviderScope(
         overrides: [
           catalogRepositoryProvider.overrideWithValue(_BigCatalogRepository()),
-          progressRepositoryProvider
-              .overrideWithValue(memoryRepository()),
+          progressRepositoryProvider.overrideWithValue(memoryRepository()),
         ],
         child: const ChovosHayomApp(),
       ),
@@ -64,8 +75,9 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('opens on the top level rather than a single collapsed root',
-      (tester) async {
+  testWidgets('opens on the top level rather than a single collapsed root', (
+    tester,
+  ) async {
     // The catalog is one root with everything under it, so a fully collapsed
     // tree opened the app on ONE row above an empty screen — reported from the
     // phone as "it does not open onto the main tree and I don't know how to get
@@ -74,15 +86,19 @@ void main() {
 
     expect(find.text('Kol HaTorah Kula'), findsOneWidget);
     expect(find.text('Category 0'), findsOneWidget);
-    expect(find.text('Sefer 0-0'), findsNothing,
-        reason: 'only the first generation opens, not the whole tree');
+    expect(
+      find.text('Sefer 0-0'),
+      findsNothing,
+      reason: 'only the first generation opens, not the whole tree',
+    );
     // And the app bar agrees with the tree it is sitting on, in the same frame.
     expect(find.byTooltip('Collapse all'), findsOneWidget);
     expect(find.byTooltip('Expand all'), findsNothing);
   });
 
-  testWidgets('expand-all reveals the tree without mounting all of it',
-      (tester) async {
+  testWidgets('expand-all reveals the tree without mounting all of it', (
+    tester,
+  ) async {
     await pumpDashboard(tester);
 
     await tester.tap(find.byTooltip('Collapse all'));
@@ -100,7 +116,8 @@ void main() {
     expect(
       mounted,
       lessThan(_totalNodes ~/ 4),
-      reason: 'expand-all mounted $mounted of $_totalNodes tiles — the tree is '
+      reason:
+          'expand-all mounted $mounted of $_totalNodes tiles — the tree is '
           'not rendering lazily',
     );
   });
@@ -118,8 +135,9 @@ void main() {
     expect(find.byType(ProgressTile), findsOneWidget);
   });
 
-  testWidgets('expanding one node does not expand its siblings',
-      (tester) async {
+  testWidgets('expanding one node does not expand its siblings', (
+    tester,
+  ) async {
     await pumpDashboard(tester);
 
     // The root is open on arrival; open a single category under it.

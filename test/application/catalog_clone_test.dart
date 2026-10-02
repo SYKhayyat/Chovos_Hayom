@@ -15,7 +15,11 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final catalog = Catalog(const [
     CatalogNode(
-        id: 'chumash', parentId: null, name: 'Chumash', kind: NodeKind.category),
+      id: 'chumash',
+      parentId: null,
+      name: 'Chumash',
+      kind: NodeKind.category,
+    ),
     CatalogNode(
       id: 'bereishis',
       parentId: 'chumash',
@@ -37,8 +41,9 @@ void main() {
   test('cloning a subtree keeps its named units', () {
     // Named units are structure, not progress. Dropping them turned a clone of
     // Chumash into a list of numbers.
-    final leaf =
-        clone(catalog.byId('chumash')!).firstWhere((n) => n.name == 'Bereishis');
+    final leaf = clone(
+      catalog.byId('chumash')!,
+    ).firstWhere((n) => n.name == 'Bereishis');
 
     expect(leaf.unitNames, ['Bereishis', 'Noach', 'Lech Lecha']);
     expect(leaf.unitDisplay(2), 'Noach');
@@ -51,8 +56,11 @@ void main() {
     final root = nodes.firstWhere((n) => n.name == 'Chumash (copy)');
     final leaf = nodes.firstWhere((n) => n.name == 'Bereishis');
 
-    expect(nodes.map((n) => n.id), isNot(contains('chumash')),
-        reason: 'nothing keeps an id from the tree it was copied out of');
+    expect(
+      nodes.map((n) => n.id),
+      isNot(contains('chumash')),
+      reason: 'nothing keeps an id from the tree it was copied out of',
+    );
     expect(leaf.parentId, root.id, reason: 'children point at the new root');
     expect(root.parentId, isNull, reason: 'cloned in as a sibling');
   });
@@ -70,8 +78,12 @@ void main() {
 
     expect(nodes, hasLength(1));
     expect(nodes.single.name, 'Bereishis (copy)');
-    expect(nodes.single.parentId, 'chumash',
-        reason: 'a leaf copy is a sibling of the original, under the real '
-            'parent — which is a built-in id, not a minted one');
+    expect(
+      nodes.single.parentId,
+      'chumash',
+      reason:
+          'a leaf copy is a sibling of the original, under the real '
+          'parent — which is a built-in id, not a minted one',
+    );
   });
 }

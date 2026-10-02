@@ -64,33 +64,27 @@ class _UnitGrid extends ConsumerWidget {
         // Three actions plus a back button on a 240dp bar left the sefer's own
         // name no room, so the grid showed a screenful of numbered cells and
         // nothing saying which sefer they belonged to. See [barActions].
-        actions: barActions(
-          context,
-          [
-            BarAction(
-              icon: Icons.checklist,
-              label: l10n.tooltipBulkActions,
-              onPressed: () => showBulkActionsSheet(context, ref, node: node),
-            ),
-            BarAction(
-              icon: Icons.auto_stories_outlined,
-              label: l10n.tooltipMefarshim,
-              onPressed: () =>
-                  showMefarshimConfigSheet(context, ref, node: node),
-            ),
-            BarAction(
-              icon: Icons.flag_outlined,
-              label: l10n.tooltipSetGoalDate,
-              onPressed: () => _setGoal(context, ref),
-            ),
-          ],
-          moreTooltip: l10n.tooltipMore,
-        ),
+        actions: barActions(context, [
+          BarAction(
+            icon: Icons.checklist,
+            label: l10n.tooltipBulkActions,
+            onPressed: () => showBulkActionsSheet(context, ref, node: node),
+          ),
+          BarAction(
+            icon: Icons.auto_stories_outlined,
+            label: l10n.tooltipMefarshim,
+            onPressed: () => showMefarshimConfigSheet(context, ref, node: node),
+          ),
+          BarAction(
+            icon: Icons.flag_outlined,
+            label: l10n.tooltipSetGoalDate,
+            onPressed: () => _setGoal(context, ref),
+          ),
+        ], moreTooltip: l10n.tooltipMore),
       ),
       body: Column(
         children: [
-          if (goal != null)
-            GoalBanner(goal: goal, nodeId: node.id, name: name),
+          if (goal != null) GoalBanner(goal: goal, nodeId: node.id, name: name),
           Expanded(
             child: foldAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -177,7 +171,9 @@ class _UnitGrid extends ConsumerWidget {
               l10n.gridCellSemanticDone(unitHeading(l10n, node, unit))
             else if (fraction > 0)
               l10n.gridCellSemanticPartial(
-                  unitHeading(l10n, node, unit), (fraction * 100).round())
+                unitHeading(l10n, node, unit),
+                (fraction * 100).round(),
+              )
             else
               l10n.gridCellSemanticNotDone(unitHeading(l10n, node, unit)),
             if (passes > 1) l10n.gridCellSemanticReviews(passes - 1),
@@ -216,7 +212,11 @@ class _UnitGrid extends ConsumerWidget {
   }
 
   Future<void> _cellMenu(
-      BuildContext context, WidgetRef ref, int unit, bool isDone) async {
+    BuildContext context,
+    WidgetRef ref,
+    int unit,
+    bool isDone,
+  ) async {
     final logger = ref.read(loggingServiceProvider);
     final l10n = AppLocalizations.of(context);
     final heading = nodeAndUnit(l10n, node, unit);
@@ -239,8 +239,7 @@ class _UnitGrid extends ConsumerWidget {
               ),
             ListTile(
               leading: const Icon(Icons.edit_calendar),
-              title: Text(
-                  isDone ? l10n.cellMenuRelog : l10n.cellMenuLog),
+              title: Text(isDone ? l10n.cellMenuRelog : l10n.cellMenuLog),
               onTap: () async {
                 Navigator.pop(sheetContext);
                 await logWithDetails(context, ref, node: node, unit: unit);
@@ -260,8 +259,12 @@ class _UnitGrid extends ConsumerWidget {
                 title: Text(l10n.cellMenuUnmark),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  guarded(context, ref, () => logger.markUndone(node.id, unit),
-                      what: l10n.whatUnmarking(heading));
+                  guarded(
+                    context,
+                    ref,
+                    () => logger.markUndone(node.id, unit),
+                    what: l10n.whatUnmarking(heading),
+                  );
                 },
               ),
             ] else
@@ -270,8 +273,12 @@ class _UnitGrid extends ConsumerWidget {
                 title: Text(l10n.cellMenuMarkLearned),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  guarded(context, ref, () => logger.markDone(node.id, unit),
-                      what: l10n.whatMarkingLearned(heading));
+                  guarded(
+                    context,
+                    ref,
+                    () => logger.markDone(node.id, unit),
+                    what: l10n.whatMarkingLearned(heading),
+                  );
                 },
               ),
           ],
@@ -311,6 +318,7 @@ class _UnitCell extends StatefulWidget {
 
   /// 0..1 share of required layers done — a partial fill for layered units.
   final double fraction;
+
   /// How many times this unit has been finished (#46). The corner shows this
   /// from 2 upward: a `1` on every learned box would be noise.
   final int passes;
@@ -386,8 +394,9 @@ class _UnitCellState extends State<_UnitCell> {
               borderRadius: BorderRadius.circular(8),
               child: Container(
                 decoration: BoxDecoration(
-                  color:
-                      isDone ? scheme.primary : scheme.surfaceContainerHighest,
+                  color: isDone
+                      ? scheme.primary
+                      : scheme.surfaceContainerHighest,
                   // The focus ring. Drawn against the cell's *own* background,
                   // so it takes that background's "on" colour and is legible on
                   // a filled cell and an empty one alike — the default highlight
@@ -396,8 +405,8 @@ class _UnitCellState extends State<_UnitCell> {
                   border: _focused
                       ? Border.all(
                           width: 2,
-                          color:
-                              isDone ? scheme.onPrimary : scheme.onSurface)
+                          color: isDone ? scheme.onPrimary : scheme.onSurface,
+                        )
                       : null,
                 ),
                 alignment: Alignment.center,
@@ -447,21 +456,24 @@ class _UnitCellState extends State<_UnitCell> {
                       PositionedDirectional(
                         end: 3,
                         top: 1,
-                        child: Text('$passes',
-                            style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: isDone
-                                    ? scheme.onPrimary
-                                    : scheme.primary)),
+                        child: Text(
+                          '$passes',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: isDone ? scheme.onPrimary : scheme.primary,
+                          ),
+                        ),
                       ),
                     if (widget.hasDetails)
                       PositionedDirectional(
                         start: 5,
                         bottom: 4,
-                        child: Icon(Icons.sticky_note_2,
-                            size: 11,
-                            color: isDone ? scheme.onPrimary : scheme.primary),
+                        child: Icon(
+                          Icons.sticky_note_2,
+                          size: 11,
+                          color: isDone ? scheme.onPrimary : scheme.primary,
+                        ),
                       ),
                   ],
                 ),

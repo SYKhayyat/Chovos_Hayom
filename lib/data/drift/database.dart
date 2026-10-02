@@ -242,22 +242,18 @@ class SchemaMismatchException implements Exception {
   @override
   String toString() => onDisk > expected
       ? 'This database was written by a build from before the schema squash '
-          '(schema v$onDisk); this build creates v$expected and no longer '
-          'carries the migrations between them. Export a backup from the build '
-          'that wrote it — it can still open this file, which is untouched — '
-          'and restore that backup into a fresh install.'
+            '(schema v$onDisk); this build creates v$expected and no longer '
+            'carries the migrations between them. Export a backup from the build '
+            'that wrote it — it can still open this file, which is untouched — '
+            'and restore that backup into a fresh install.'
       : 'schemaVersion was raised to v$expected without a migration step for a '
-          'v$onDisk database. Add one to AppDatabase.migration — a bump on its '
-          'own changes nothing but the number.';
+            'v$onDisk database. Add one to AppDatabase.migration — a bump on its '
+            'own changes nothing but the number.';
 }
 
-@DriftDatabase(tables: [
-  Profiles,
-  LearningEvents,
-  CustomNodes,
-  CustomLayers,
-  LayerConfigs
-])
+@DriftDatabase(
+  tables: [Profiles, LearningEvents, CustomNodes, CustomLayers, LayerConfigs],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
@@ -285,22 +281,22 @@ class AppDatabase extends _$AppDatabase {
   ///   several screens later.
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
-        onUpgrade: (m, from, to) async {
-          // Steps are **chained, not matched one at a time.** A v1 install has
-          // to reach the tip, so it needs both of them, and matching only
-          // `from == 1 && to == 2` would leave every v1 user stranded — which is
-          // exactly the state the message below used to leave them in, and the
-          // reason this is a fall-through rather than a single `if`.
-          if (from == 1 && to == 3) {
-            await _dropUnitIndex(m);
-            return _addPlanId(m);
-          }
-          if (from == 1 && to == 2) return _dropUnitIndex(m);
-          if (from == 2 && to == 3) return _addPlanId(m);
-          throw SchemaMismatchException(from, to);
-        },
-      );
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      // Steps are **chained, not matched one at a time.** A v1 install has
+      // to reach the tip, so it needs both of them, and matching only
+      // `from == 1 && to == 2` would leave every v1 user stranded — which is
+      // exactly the state the message below used to leave them in, and the
+      // reason this is a fall-through rather than a single `if`.
+      if (from == 1 && to == 3) {
+        await _dropUnitIndex(m);
+        return _addPlanId(m);
+      }
+      if (from == 1 && to == 2) return _dropUnitIndex(m);
+      if (from == 2 && to == 3) return _addPlanId(m);
+      throw SchemaMismatchException(from, to);
+    },
+  );
 
   /// v2 -> v3: `learning_events` gains `plan_id`, nullable.
   ///
@@ -323,9 +319,9 @@ class AppDatabase extends _$AppDatabase {
   /// made it necessary; `addColumn` looks like it does not, which is exactly why
   /// it needed checking rather than an assumption.
   Future<void> _addPlanId(Migrator m) async {
-    final columns =
-        await customSelect("SELECT name FROM pragma_table_info('learning_events')")
-            .get();
+    final columns = await customSelect(
+      "SELECT name FROM pragma_table_info('learning_events')",
+    ).get();
     if (columns.any((r) => r.read<String>('name') == 'plan_id')) return;
 
     await m.addColumn(learningEvents, learningEvents.planId);
@@ -350,9 +346,9 @@ class AppDatabase extends _$AppDatabase {
   /// project a guard on every one of the twelve deleted steps; it is cheaper to
   /// keep the lesson than to relearn it.
   Future<void> _dropUnitIndex(Migrator m) async {
-    final columns =
-        await customSelect("SELECT name FROM pragma_table_info('layer_configs')")
-            .get();
+    final columns = await customSelect(
+      "SELECT name FROM pragma_table_info('layer_configs')",
+    ).get();
     if (!columns.any((r) => r.read<String>('name') == 'unit_index')) return;
 
     await customStatement('DELETE FROM layer_configs WHERE unit_index >= 0');

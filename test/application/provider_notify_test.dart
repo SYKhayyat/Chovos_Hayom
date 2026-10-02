@@ -38,68 +38,75 @@ void main() {
   /// there" are distinguishable — the shared `fakeCatalog()` has one leaf, and
   /// one leaf cannot show that a mark is *scoped*.
   Catalog twoLeafCatalog() => Catalog(const [
-        CatalogNode(
-            id: 'root',
-            parentId: null,
-            name: 'Kol HaTorah Kula',
-            kind: NodeKind.category),
-        CatalogNode(
-            id: 'shas',
-            parentId: 'root',
-            name: 'Shas',
-            kind: NodeKind.category),
-        CatalogNode(
-            id: 'shas.moed',
-            parentId: 'shas',
-            name: 'Moed',
-            kind: NodeKind.category),
-        CatalogNode(
-          id: 'shas.moed.shabbos',
-          parentId: 'shas.moed',
-          name: 'Shabbos',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf,
-          unitCount: 156,
-          unitOffset: 2,
-        ),
-        CatalogNode(
-            id: 'shas.zeraim',
-            parentId: 'root',
-            name: 'Zeraim',
-            kind: NodeKind.category),
-        CatalogNode(
-          id: 'shas.zeraim.berachos',
-          parentId: 'shas.zeraim',
-          name: 'Berachos',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf,
-          unitCount: 63,
-          unitOffset: 2,
-        ),
-      ]);
+    CatalogNode(
+      id: 'root',
+      parentId: null,
+      name: 'Kol HaTorah Kula',
+      kind: NodeKind.category,
+    ),
+    CatalogNode(
+      id: 'shas',
+      parentId: 'root',
+      name: 'Shas',
+      kind: NodeKind.category,
+    ),
+    CatalogNode(
+      id: 'shas.moed',
+      parentId: 'shas',
+      name: 'Moed',
+      kind: NodeKind.category,
+    ),
+    CatalogNode(
+      id: 'shas.moed.shabbos',
+      parentId: 'shas.moed',
+      name: 'Shabbos',
+      kind: NodeKind.leaf,
+      unitLabel: UnitLabel.daf,
+      unitCount: 156,
+      unitOffset: 2,
+    ),
+    CatalogNode(
+      id: 'shas.zeraim',
+      parentId: 'root',
+      name: 'Zeraim',
+      kind: NodeKind.category,
+    ),
+    CatalogNode(
+      id: 'shas.zeraim.berachos',
+      parentId: 'shas.zeraim',
+      name: 'Berachos',
+      kind: NodeKind.leaf,
+      unitLabel: UnitLabel.daf,
+      unitCount: 63,
+      unitOffset: 2,
+    ),
+  ]);
 
   LearningEvent done(String nodeId, int unit) => LearningEvent(
-        id: '$nodeId#$unit',
-        profileId: 'default',
-        nodeId: nodeId,
-        unitIndex: unit,
-        action: EventAction.done,
-        occurredAt: DateTime(2026, 1, 1),
-        loggedAt: DateTime(2026, 1, 1),
-      );
+    id: '$nodeId#$unit',
+    profileId: 'default',
+    nodeId: nodeId,
+    unitIndex: unit,
+    action: EventAction.done,
+    occurredAt: DateTime(2026, 1, 1),
+    loggedAt: DateTime(2026, 1, 1),
+  );
 
   late ProgressRepository repo;
   late ProviderContainer container;
 
   setUp(() async {
     repo = memoryRepository();
-    container = ProviderContainer(overrides: [
-      catalogRepositoryProvider
-          .overrideWithValue(_FixedCatalogRepository(twoLeafCatalog())),
-      progressRepositoryProvider.overrideWithValue(repo),
-      appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-      clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
-    ]);
+    container = ProviderContainer(
+      overrides: [
+        catalogRepositoryProvider.overrideWithValue(
+          _FixedCatalogRepository(twoLeafCatalog()),
+        ),
+        progressRepositoryProvider.overrideWithValue(repo),
+        appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+        clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+      ],
+    );
     addTearDown(container.dispose);
     // Warm the whole graph before any counter is attached.
     //
@@ -124,18 +131,26 @@ void main() {
       // autoDispose, with two screens merely having *been* open.
       final shabbos = _Counter();
       final berachos = _Counter();
-      container.listen(progressNodeProvider('shas.moed.shabbos'),
-          (_, _) => shabbos.bump());
-      container.listen(progressNodeProvider('shas.zeraim.berachos'),
-          (_, _) => berachos.bump());
+      container.listen(
+        progressNodeProvider('shas.moed.shabbos'),
+        (_, _) => shabbos.bump(),
+      );
+      container.listen(
+        progressNodeProvider('shas.zeraim.berachos'),
+        (_, _) => berachos.bump(),
+      );
 
       await repo.addEvent(done('shas.moed.shabbos', 12));
       await pumpEventQueue();
 
       expect(shabbos.value, 1, reason: 'its own subtree gained a daf');
-      expect(berachos.value, 0,
-          reason: 'Berachos did not move, so nothing that renders Berachos — '
-              'its tile, its goal row, its open screen — should rebuild');
+      expect(
+        berachos.value,
+        0,
+        reason:
+            'Berachos did not move, so nothing that renders Berachos — '
+            'its tile, its goal row, its open screen — should rebuild',
+      );
     });
 
     test('a mark notifies every node on its own ancestor chain', () async {
@@ -144,18 +159,27 @@ void main() {
       final root = _Counter();
       final sibling = _Counter();
       container.listen(
-          progressNodeProvider('shas.moed.shabbos'), (_, _) => leaf.bump());
+        progressNodeProvider('shas.moed.shabbos'),
+        (_, _) => leaf.bump(),
+      );
       container.listen(
-          progressNodeProvider('shas.moed'), (_, _) => parent.bump());
+        progressNodeProvider('shas.moed'),
+        (_, _) => parent.bump(),
+      );
       container.listen(progressNodeProvider('root'), (_, _) => root.bump());
       container.listen(
-          progressNodeProvider('shas.zeraim'), (_, _) => sibling.bump());
+        progressNodeProvider('shas.zeraim'),
+        (_, _) => sibling.bump(),
+      );
 
       await repo.addEvent(done('shas.moed.shabbos', 12));
       await pumpEventQueue();
 
-      expect([leaf.value, parent.value, root.value], [1, 1, 1],
-          reason: 'learned rolls up, so the chain genuinely changed');
+      expect(
+        [leaf.value, parent.value, root.value],
+        [1, 1, 1],
+        reason: 'learned rolls up, so the chain genuinely changed',
+      );
       expect(sibling.value, 0);
     });
 
@@ -167,43 +191,51 @@ void main() {
       sub.close();
       await pumpEventQueue();
 
-      expect(container.exists(node), isFalse,
-          reason: 'a family without autoDispose keeps one element per argument '
-              'for the life of the container, and each of them re-derives on '
-              'every mark — for screens that were closed an hour ago');
+      expect(
+        container.exists(node),
+        isFalse,
+        reason:
+            'a family without autoDispose keeps one element per argument '
+            'for the life of the container, and each of them re-derives on '
+            'every mark — for screens that were closed an hour ago',
+      );
     });
   });
 
   group('goalStatusProvider', () {
-    test('a mark that moves none of this goal\'s numbers does not notify it',
-        () async {
-      await container
-          .read(goalsProvider.notifier)
-          .setGoal('shas.zeraim.berachos', DateTime(2026, 6, 1));
-      final berachosGoal = _Counter();
-      container.listen(
+    test(
+      'a mark that moves none of this goal\'s numbers does not notify it',
+      () async {
+        await container
+            .read(goalsProvider.notifier)
+            .setGoal('shas.zeraim.berachos', DateTime(2026, 6, 1));
+        final berachosGoal = _Counter();
+        container.listen(
           goalStatusProvider('shas.zeraim.berachos'),
-          (_, _) => berachosGoal.bump());
+          (_, _) => berachosGoal.bump(),
+        );
 
-      // A different mesechta *and* outside the 30-day pace window, so neither
-      // `remaining` nor `currentPace` moves. The provider still re-derives — it
-      // watches the log — it just has nothing new to say, and says nothing.
-      await repo.addEvent(LearningEvent(
-        id: 'ancient',
-        profileId: 'default',
-        nodeId: 'shas.moed.shabbos',
-        unitIndex: 12,
-        action: EventAction.done,
-        occurredAt: DateTime(2020, 1, 1),
-        loggedAt: DateTime(2020, 1, 1),
-      ));
-      await pumpEventQueue();
+        // A different mesechta *and* outside the 30-day pace window, so neither
+        // `remaining` nor `currentPace` moves. The provider still re-derives — it
+        // watches the log — it just has nothing new to say, and says nothing.
+        await repo.addEvent(
+          LearningEvent(
+            id: 'ancient',
+            profileId: 'default',
+            nodeId: 'shas.moed.shabbos',
+            unitIndex: 12,
+            action: EventAction.done,
+            occurredAt: DateTime(2020, 1, 1),
+            loggedAt: DateTime(2020, 1, 1),
+          ),
+        );
+        await pumpEventQueue();
 
-      expect(berachosGoal.value, 0);
-    });
+        expect(berachosGoal.value, 0);
+      },
+    );
 
-    test('a mark inside the pace window notifies every goal, and should',
-        () async {
+    test('a mark inside the pace window notifies every goal, and should', () async {
       // The honest other half, pinned so a later "optimisation" cannot quietly
       // take it away. `currentPace` is a whole-log average, so learning a daf of
       // Shabbos genuinely changes whether the *Berachos* goal is on track. That
@@ -213,8 +245,9 @@ void main() {
           .setGoal('shas.zeraim.berachos', DateTime(2026, 6, 1));
       final berachosGoal = _Counter();
       container.listen(
-          goalStatusProvider('shas.zeraim.berachos'),
-          (_, _) => berachosGoal.bump());
+        goalStatusProvider('shas.zeraim.berachos'),
+        (_, _) => berachosGoal.bump(),
+      );
 
       await repo.addEvent(done('shas.moed.shabbos', 12));
       await pumpEventQueue();
@@ -228,7 +261,9 @@ void main() {
           .setGoal('shas.moed.shabbos', DateTime(2026, 6, 1));
       final goal = _Counter();
       container.listen(
-          goalStatusProvider('shas.moed.shabbos'), (_, _) => goal.bump());
+        goalStatusProvider('shas.moed.shabbos'),
+        (_, _) => goal.bump(),
+      );
 
       await repo.addEvent(done('shas.moed.shabbos', 12));
       await pumpEventQueue();
@@ -238,28 +273,36 @@ void main() {
   });
 
   group('settingsProvider', () {
-    test('changing the backup interval does not notify a calendar reader',
-        () async {
-      final calendar = _Counter();
-      final sort = _Counter();
-      final wholeObject = _Counter();
-      container.listen(settingsProvider.select((s) => s.calendar),
-          (_, _) => calendar.bump());
-      container.listen(
-          settingsProvider.select((s) => s.sort), (_, _) => sort.bump());
-      container.listen(settingsProvider, (_, _) => wholeObject.bump());
+    test(
+      'changing the backup interval does not notify a calendar reader',
+      () async {
+        final calendar = _Counter();
+        final sort = _Counter();
+        final wholeObject = _Counter();
+        container.listen(
+          settingsProvider.select((s) => s.calendar),
+          (_, _) => calendar.bump(),
+        );
+        container.listen(
+          settingsProvider.select((s) => s.sort),
+          (_, _) => sort.bump(),
+        );
+        container.listen(settingsProvider, (_, _) => wholeObject.bump());
 
-      await container.read(settingsProvider.notifier).setBackupIntervalDays(30);
-      await pumpEventQueue();
+        await container
+            .read(settingsProvider.notifier)
+            .setBackupIntervalDays(30);
+        await pumpEventQueue();
 
-      expect(calendar.value, 0);
-      expect(sort.value, 0);
-      // The negative control, and the reason the `.select`s at the call sites
-      // are not decoration: anything watching the whole object still rebuilds.
-      // Thirteen screens did — the calculator, cycles, goals, the journal,
-      // siyumim, stats and the unit grid, because one number in Settings moved.
-      expect(wholeObject.value, 1);
-    });
+        expect(calendar.value, 0);
+        expect(sort.value, 0);
+        // The negative control, and the reason the `.select`s at the call sites
+        // are not decoration: anything watching the whole object still rebuilds.
+        // Thirteen screens did — the calculator, cycles, goals, the journal,
+        // siyumim, stats and the unit grid, because one number in Settings moved.
+        expect(wholeObject.value, 1);
+      },
+    );
 
     test('a settings write that changes nothing notifies nobody', () async {
       final notifier = container.read(settingsProvider.notifier);
@@ -271,36 +314,44 @@ void main() {
       await notifier.setBackupIntervalDays(30);
       await pumpEventQueue();
 
-      expect(wholeObject.value, 0,
-          reason: 'SettingsState has value equality, so re-writing the same '
-              'value is not a change');
+      expect(
+        wholeObject.value,
+        0,
+        reason:
+            'SettingsState has value equality, so re-writing the same '
+            'value is not a change',
+      );
     });
 
-    test('SortConfig compares by value, so a reloaded config is not a change',
-        () async {
-      // `_load()` rebuilds a *fresh* SortConfig from the stored strings, which
-      // is what `applyBackup`, `clearAll` and a profile switch all go through.
-      //
-      // Deliberately the *wide* mode: a merge now declines to overwrite a key
-      // the profile already has, so a second merge would notify nobody by never
-      // writing — which would pass this test without exercising the reload this
-      // test is about. `restoreEverything` clears and rewrites every time, so
-      // the only thing standing between it and a notification is `SortConfig.==`.
-      final sort = _Counter();
-      container.listen(
-          settingsProvider.select((s) => s.sort), (_, _) => sort.bump());
-      await container.read(settingsProvider.notifier).applyBackup(
-          {PrefKeys.sortMetric: SortMetric.name.name},
-          ImportMode.restoreEverything);
-      await pumpEventQueue();
-      expect(sort.value, 1, reason: 'the metric genuinely changed');
+    test(
+      'SortConfig compares by value, so a reloaded config is not a change',
+      () async {
+        // `_load()` rebuilds a *fresh* SortConfig from the stored strings, which
+        // is what `applyBackup`, `clearAll` and a profile switch all go through.
+        //
+        // Deliberately the *wide* mode: a merge now declines to overwrite a key
+        // the profile already has, so a second merge would notify nobody by never
+        // writing — which would pass this test without exercising the reload this
+        // test is about. `restoreEverything` clears and rewrites every time, so
+        // the only thing standing between it and a notification is `SortConfig.==`.
+        final sort = _Counter();
+        container.listen(
+          settingsProvider.select((s) => s.sort),
+          (_, _) => sort.bump(),
+        );
+        await container.read(settingsProvider.notifier).applyBackup({
+          PrefKeys.sortMetric: SortMetric.name.name,
+        }, ImportMode.restoreEverything);
+        await pumpEventQueue();
+        expect(sort.value, 1, reason: 'the metric genuinely changed');
 
-      await container.read(settingsProvider.notifier).applyBackup(
-          {PrefKeys.sortMetric: SortMetric.name.name},
-          ImportMode.restoreEverything);
-      await pumpEventQueue();
-      expect(sort.value, 1, reason: 'the second import says the same thing');
-    });
+        await container.read(settingsProvider.notifier).applyBackup({
+          PrefKeys.sortMetric: SortMetric.name.name,
+        }, ImportMode.restoreEverything);
+        await pumpEventQueue();
+        expect(sort.value, 1, reason: 'the second import says the same thing');
+      },
+    );
   });
 
   group('the clock', () {
@@ -323,9 +374,13 @@ void main() {
       real.invalidate(clockProvider);
       real.read(clockProvider);
 
-      expect(notifications, 1,
-          reason: 'if the clock hands back the identical object on every '
-              'rebuild, nothing date-dependent ever re-derives');
+      expect(
+        notifications,
+        1,
+        reason:
+            'if the clock hands back the identical object on every '
+            'rebuild, nothing date-dependent ever re-derives',
+      );
     });
 
     test('re-deriving stats over unchanged data notifies nobody', () async {

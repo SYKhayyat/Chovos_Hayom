@@ -12,58 +12,67 @@ import 'package:flutter_test/flutter_test.dart';
 
 var _seq = 0;
 LearningEvent done(String node, int unit, DateTime day) => LearningEvent(
-      id: 'e${_seq++}',
-      profileId: 'p',
-      nodeId: node,
-      unitIndex: unit,
-      action: EventAction.done,
-      occurredAt: day,
-      loggedAt: day,
-    );
+  id: 'e${_seq++}',
+  profileId: 'p',
+  nodeId: node,
+  unitIndex: unit,
+  action: EventAction.done,
+  occurredAt: day,
+  loggedAt: day,
+);
 
 /// A four-step sequence in the shape the requester described: Yoma, then Sukkah,
 /// then Chagigah, then Moed. Each is two units so the boundaries are easy to hit
 /// exactly.
 final catalog = Catalog([
-  const   CatalogNode(id: 'root', parentId: null, name: 'Root', kind: NodeKind.category),
-  const   CatalogNode(
-      id: 'yoma',
-      parentId: 'root',
-      name: 'Yoma',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.daf,
-      unitCount: 2,
-      unitOffset: 1),
-  const   CatalogNode(
-      id: 'sukkah',
-      parentId: 'root',
-      name: 'Sukkah',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.daf,
-      unitCount: 2,
-      unitOffset: 1),
-  const   CatalogNode(
-      id: 'chagigah',
-      parentId: 'root',
-      name: 'Chagigah',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.daf,
-      unitCount: 2,
-      unitOffset: 1),
-  const   CatalogNode(
-      id: 'moed',
-      parentId: 'root',
-      name: 'Moed',
-      kind: NodeKind.category,
+  const CatalogNode(
+    id: 'root',
+    parentId: null,
+    name: 'Root',
+    kind: NodeKind.category,
   ),
-  const   CatalogNode(
-      id: 'moed.shabbos',
-      parentId: 'moed',
-      name: 'Shabbos',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.perek,
-      unitCount: 2,
-      unitOffset: 1),
+  const CatalogNode(
+    id: 'yoma',
+    parentId: 'root',
+    name: 'Yoma',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.daf,
+    unitCount: 2,
+    unitOffset: 1,
+  ),
+  const CatalogNode(
+    id: 'sukkah',
+    parentId: 'root',
+    name: 'Sukkah',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.daf,
+    unitCount: 2,
+    unitOffset: 1,
+  ),
+  const CatalogNode(
+    id: 'chagigah',
+    parentId: 'root',
+    name: 'Chagigah',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.daf,
+    unitCount: 2,
+    unitOffset: 1,
+  ),
+  const CatalogNode(
+    id: 'moed',
+    parentId: 'root',
+    name: 'Moed',
+    kind: NodeKind.category,
+  ),
+  const CatalogNode(
+    id: 'moed.shabbos',
+    parentId: 'moed',
+    name: 'Shabbos',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.perek,
+    unitCount: 2,
+    unitOffset: 1,
+  ),
 ]);
 
 final today = Day.of(DateTime(2026, 1, 10));
@@ -73,21 +82,21 @@ LearningPlan sequence({
   List<PlanItem>? items,
   int unitsPerDay = 2,
   SpilloverMode spillover = SpilloverMode.ignore,
-}) =>
-    LearningPlan(
-      id: 'chain',
-      name: 'Chain',
-      unitsPerDay: unitsPerDay,
-      spillover: spillover,
-      flowsToNextItem: flows,
-      items: items ??
-          const [
-            PlanItem(id: 'i1', nodeId: 'yoma'),
-            PlanItem(id: 'i2', nodeId: 'sukkah'),
-            PlanItem(id: 'i3', nodeId: 'chagigah'),
-            PlanItem(id: 'i4', nodeId: 'moed'),
-          ],
-    );
+}) => LearningPlan(
+  id: 'chain',
+  name: 'Chain',
+  unitsPerDay: unitsPerDay,
+  spillover: spillover,
+  flowsToNextItem: flows,
+  items:
+      items ??
+      const [
+        PlanItem(id: 'i1', nodeId: 'yoma'),
+        PlanItem(id: 'i2', nodeId: 'sukkah'),
+        PlanItem(id: 'i3', nodeId: 'chagigah'),
+        PlanItem(id: 'i4', nodeId: 'moed'),
+      ],
+);
 
 void main() {
   setUp(() => _seq = 0);
@@ -97,9 +106,11 @@ void main() {
       final p = sequence();
       final restored = LearningPlan.fromJson(p.toJson());
       expect(restored, p);
-      expect(restored.items.map((i) => i.nodeId),
-          ['yoma', 'sukkah', 'chagigah', 'moed'],
-          reason: 'order is the whole point of a sequence');
+      expect(
+        restored.items.map((i) => i.nodeId),
+        ['yoma', 'sukkah', 'chagigah', 'moed'],
+        reason: 'order is the whole point of a sequence',
+      );
       expect(restored.flowsToNextItem, isTrue);
     });
 
@@ -108,9 +119,13 @@ void main() {
       final restored = LearningPlan.fromJson(bare.toJson());
       expect(restored, bare);
       expect(restored.items, isEmpty);
-      expect(restored.flowsToNextItem, isFalse,
-          reason: 'flowing is opt-in; a plan that lists four seferim and stops '
-              'at the first is expressing an intention, not a bug');
+      expect(
+        restored.flowsToNextItem,
+        isFalse,
+        reason:
+            'flowing is opt-in; a plan that lists four seferim and stops '
+            'at the first is expressing an intention, not a bug',
+      );
     });
 
     test('the flow toggle and the items are part of equality', () {
@@ -118,7 +133,11 @@ void main() {
       expect(sequence(), isNot(sequence(flows: false)));
       expect(
         sequence(),
-        isNot(sequence(items: const [PlanItem(id: 'i1', nodeId: 'yoma')])),
+        isNot(
+          sequence(
+            items: const [PlanItem(id: 'i1', nodeId: 'yoma')],
+          ),
+        ),
       );
     });
 
@@ -165,7 +184,11 @@ void main() {
   group('where you are holding', () {
     test('nothing done: the first item, first unit', () {
       final pos = PlanProgress.positionOn(
-          sequence(), catalog, FoldLog.fold([]), today);
+        sequence(),
+        catalog,
+        FoldLog.fold([]),
+        today,
+      );
       expect(pos.itemIndex, 0);
       expect(pos.itemId, 'i1');
       expect(pos.nodeId, 'yoma');
@@ -176,8 +199,7 @@ void main() {
 
     test('advances through the units of an item', () {
       final fold = FoldLog.fold([done('yoma', 1, DateTime(2026, 1, 1))]);
-      final pos =
-          PlanProgress.positionOn(sequence(), catalog, fold, today);
+      final pos = PlanProgress.positionOn(sequence(), catalog, fold, today);
       expect(pos.itemId, 'i1');
       expect(pos.unitIndex, 2, reason: 'daf 1 done, so daf 2 is next');
       expect(pos.remaining, 7);
@@ -198,10 +220,17 @@ void main() {
       final fold = FoldLog.fold([
         for (var u = 1; u <= 2; u++) done('yoma', u, DateTime(2026, 1, 1)),
       ]);
-      final pos =
-          PlanProgress.positionOn(sequence(flows: false), catalog, fold, today);
-      expect(pos.isComplete, isTrue,
-          reason: 'Yoma is done and we are not told to continue');
+      final pos = PlanProgress.positionOn(
+        sequence(flows: false),
+        catalog,
+        fold,
+        today,
+      );
+      expect(
+        pos.isComplete,
+        isTrue,
+        reason: 'Yoma is done and we are not told to continue',
+      );
       expect(pos.remaining, 6, reason: 'the rest is genuinely still owed');
     });
 
@@ -234,7 +263,11 @@ void main() {
       expect(pos.remaining, 8);
       // ...but by tomorrow it has.
       final tomorrow = PlanProgress.positionOn(
-          sequence(), catalog, fold, today + 1);
+        sequence(),
+        catalog,
+        fold,
+        today + 1,
+      );
       expect(tomorrow.isComplete, isTrue);
     });
 
@@ -246,7 +279,11 @@ void main() {
         ],
       );
       final pos = PlanProgress.positionOn(p, catalog, FoldLog.fold([]), today);
-      expect(pos.itemId, 'i2', reason: 'a custom node can be deleted underneath');
+      expect(
+        pos.itemId,
+        'i2',
+        reason: 'a custom node can be deleted underneath',
+      );
       expect(pos.nodeId, 'yoma');
     });
 
@@ -279,11 +316,8 @@ void main() {
   });
 
   group('the projected siyum day', () {
-    DayInfo info(Day day) => DayInfo(
-          day: day,
-          weekday: day.weekday,
-          dayOfMonth: day.midnight.day,
-        );
+    DayInfo info(Day day) =>
+        DayInfo(day: day, weekday: day.weekday, dayOfMonth: day.midnight.day);
 
     test('is derived from cumulative amounts, never stored', () {
       // 6 units left at 2/day: three days.
@@ -298,26 +332,46 @@ void main() {
     });
 
     test('a faster plan finishes sooner', () {
-      final slow = PlanSchedule.projectedFinishDay(sequence(unitsPerDay: 2),
-          remaining: 6, info: info, from: today, to: today + 30);
-      final fast = PlanSchedule.projectedFinishDay(sequence(unitsPerDay: 6),
-          remaining: 6, info: info, from: today, to: today + 30);
+      final slow = PlanSchedule.projectedFinishDay(
+        sequence(unitsPerDay: 2),
+        remaining: 6,
+        info: info,
+        from: today,
+        to: today + 30,
+      );
+      final fast = PlanSchedule.projectedFinishDay(
+        sequence(unitsPerDay: 6),
+        remaining: 6,
+        info: info,
+        from: today,
+        to: today + 30,
+      );
       expect(slow, today + 2);
       expect(fast, today, reason: 'six at six a day is today');
     });
 
     test('nothing remaining finishes today', () {
       expect(
-        PlanSchedule.projectedFinishDay(sequence(),
-            remaining: 0, info: info, from: today, to: today + 30),
+        PlanSchedule.projectedFinishDay(
+          sequence(),
+          remaining: 0,
+          info: info,
+          from: today,
+          to: today + 30,
+        ),
         today,
       );
     });
 
     test('more remaining than the window holds answers honestly', () {
       expect(
-        PlanSchedule.projectedFinishDay(sequence(),
-            remaining: 999, info: info, from: today, to: today + 3),
+        PlanSchedule.projectedFinishDay(
+          sequence(),
+          remaining: 999,
+          info: info,
+          from: today,
+          to: today + 3,
+        ),
         isNull,
       );
     });
@@ -331,8 +385,13 @@ void main() {
       );
       // 2 units at 2/day would be today; today asks 0, so it is tomorrow.
       expect(
-        PlanSchedule.projectedFinishDay(p,
-            remaining: 2, info: info, from: today, to: today + 10),
+        PlanSchedule.projectedFinishDay(
+          p,
+          remaining: 2,
+          info: info,
+          from: today,
+          to: today + 10,
+        ),
         today + 1,
       );
     });
@@ -357,8 +416,14 @@ void main() {
       // The invariant that matters: a flat plan at 2/day with nothing owed
       // reduces to the plain remaining/rate answer, so the projection cannot
       // drift from the schedule walk it is built on.
-      final walk = PlanSchedule.walk(sequence(),
-          info: info, from: today, to: today + 10, owedAtStart: 0, doneOn: (_) => 0);
+      final walk = PlanSchedule.walk(
+        sequence(),
+        info: info,
+        from: today,
+        to: today + 10,
+        owedAtStart: 0,
+        doneOn: (_) => 0,
+      );
       var covered = 0;
       var byHand = today;
       for (final day in walk) {
@@ -369,8 +434,13 @@ void main() {
         }
       }
       expect(
-        PlanSchedule.projectedFinishDay(sequence(),
-            remaining: 8, info: info, from: today, to: today + 10),
+        PlanSchedule.projectedFinishDay(
+          sequence(),
+          remaining: 8,
+          info: info,
+          from: today,
+          to: today + 10,
+        ),
         byHand,
       );
     });
@@ -401,14 +471,16 @@ void main() {
       expect(a.hashCode, a.hashCode);
       expect(
         a,
-        isNot(const PlanPosition(
-          itemIndex: 2,
-          itemId: 'i',
-          nodeId: 'n',
-          unitNodeId: 'n',
-          unitIndex: 3,
-          remaining: 5,
-        )),
+        isNot(
+          const PlanPosition(
+            itemIndex: 2,
+            itemId: 'i',
+            nodeId: 'n',
+            unitNodeId: 'n',
+            unitIndex: 3,
+            remaining: 5,
+          ),
+        ),
       );
     });
   });

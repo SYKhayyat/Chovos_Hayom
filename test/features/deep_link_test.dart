@@ -18,16 +18,17 @@ void main() {
     // How the engine hands a launch URL to the framework: as the initial route
     // name, before the first frame.
     if (initialRoute != null) {
-      tester.binding.platformDispatcher.defaultRouteNameTestValue = initialRoute;
+      tester.binding.platformDispatcher.defaultRouteNameTestValue =
+          initialRoute;
       addTearDown(
-          tester.binding.platformDispatcher.clearDefaultRouteNameTestValue);
+        tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
+      );
     }
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider
-              .overrideWithValue(memoryRepository()),
+          progressRepositoryProvider.overrideWithValue(memoryRepository()),
         ],
         child: const ChovosHayomApp(),
       ),
@@ -40,8 +41,9 @@ void main() {
     expect(find.text('Chovos Hayom'), findsOneWidget);
   });
 
-  testWidgets('a link to a sefer opens it, with the dashboard behind it',
-      (tester) async {
+  testWidgets('a link to a sefer opens it, with the dashboard behind it', (
+    tester,
+  ) async {
     await pumpApp(tester, initialRoute: Routes.sefer('shas.moed.shabbos'));
     expect(find.text('Shabbos'), findsOneWidget);
 
@@ -52,10 +54,14 @@ void main() {
     expect(find.text('Chovos Hayom'), findsOneWidget);
   });
 
-  testWidgets('the same link as a chovoshayom:// URI opens the same screen',
-      (tester) async {
+  testWidgets('the same link as a chovoshayom:// URI opens the same screen', (
+    tester,
+  ) async {
     // The shape Android actually delivers from the manifest's intent filter.
-    await pumpApp(tester, initialRoute: 'chovoshayom://sefer/shas.moed.shabbos');
+    await pumpApp(
+      tester,
+      initialRoute: 'chovoshayom://sefer/shas.moed.shabbos',
+    );
     expect(find.text('Shabbos'), findsOneWidget);
   });
 
@@ -85,23 +91,33 @@ void main() {
 
     await deliverWhileRunning(tester, 'chovoshayom://sefer/shas.moed.shabbos');
 
-    expect(find.text('Shabbos'), findsOneWidget,
-        reason: 'the screen type lives in the URI authority, and the '
-            'framework default rebuilds the route from path + query alone — so '
-            'this arrived as "/shas.moed.shabbos" and missed the table');
+    expect(
+      find.text('Shabbos'),
+      findsOneWidget,
+      reason:
+          'the screen type lives in the URI authority, and the '
+          'framework default rebuilds the route from path + query alone — so '
+          'this arrived as "/shas.moed.shabbos" and missed the table',
+    );
   });
 
-  testWidgets('a running app still says so for a link it does not serve',
-      (tester) async {
+  testWidgets('a running app still says so for a link it does not serve', (
+    tester,
+  ) async {
     await pumpApp(tester);
     await deliverWhileRunning(tester, 'chovoshayom://nonsense/xyz');
 
     expect(find.text('Not found'), findsOneWidget);
-    expect(find.textContaining('chovoshayom://nonsense/xyz'), findsOneWidget,
-        reason: 'and it quotes back what it was actually asked for');
+    expect(
+      find.textContaining('chovoshayom://nonsense/xyz'),
+      findsOneWidget,
+      reason: 'and it quotes back what it was actually asked for',
+    );
   });
 
-  testWidgets('a bare path delivered while running still works', (tester) async {
+  testWidgets('a bare path delivered while running still works', (
+    tester,
+  ) async {
     // The in-app shape, and what the platform sends for a link with no
     // authority. Both have to keep working through the same handler.
     await pumpApp(tester);
@@ -110,8 +126,9 @@ void main() {
     expect(find.text('Shabbos'), findsOneWidget);
   });
 
-  testWidgets('a link we do not serve lands on a page that says so',
-      (tester) async {
+  testWidgets('a link we do not serve lands on a page that says so', (
+    tester,
+  ) async {
     await pumpApp(tester, initialRoute: '/sefer-of-the-month');
     expect(find.text('Not found'), findsOneWidget);
     expect(find.textContaining('/sefer-of-the-month'), findsOneWidget);
@@ -129,12 +146,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Siyumim'), findsOneWidget, reason: 'as a tab');
-    expect(ModalRoute.of(tester.element(find.text('Siyumim')))?.settings.name,
-        Routes.stats);
+    expect(
+      ModalRoute.of(tester.element(find.text('Siyumim')))?.settings.name,
+      Routes.stats,
+    );
   });
 
-  testWidgets('every route the app is asked for by name resolves',
-      (tester) async {
+  testWidgets('every route the app is asked for by name resolves', (
+    tester,
+  ) async {
     // A cheap guard against a route constant losing its table entry: the
     // constants and the switch live in the same file, and nothing else would
     // notice them drifting apart until a user tapped the dead one.

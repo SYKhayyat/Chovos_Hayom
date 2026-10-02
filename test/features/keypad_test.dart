@@ -58,30 +58,28 @@ const Size kPhone = Size(407, 900);
 
 void main() {
   Widget dashboard({bool ring = false}) => ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider
-              .overrideWithValue(memoryRepository()),
-          appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
-        ],
-        child: localizedApp(
-          home: ring
-              ? const FocusRingOverlay(child: DashboardScreen())
-              : const DashboardScreen(),
-        ),
-      );
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(memoryRepository()),
+      appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+      clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+    ],
+    child: localizedApp(
+      home: ring
+          ? const FocusRingOverlay(child: DashboardScreen())
+          : const DashboardScreen(),
+    ),
+  );
 
   Widget stats() => ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider
-              .overrideWithValue(memoryRepository()),
-          appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
-        ],
-        child: localizedApp(home: const ReportScreen()),
-      );
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(memoryRepository()),
+      appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+      clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+    ],
+    child: localizedApp(home: const ReportScreen()),
+  );
 
   /// Renders at [size] logical pixels, the way the device reports itself.
   void sized(WidgetTester tester, Size size) {
@@ -103,8 +101,9 @@ void main() {
       expect(find.byTooltip('Expand all'), findsNothing);
     });
 
-    testWidgets('and loses none of them — each is in the menu, with a name',
-        (tester) async {
+    testWidgets('and loses none of them — each is in the menu, with a name', (
+      tester,
+    ) async {
       sized(tester, kSonim);
       await tester.pumpWidget(dashboard());
       await tester.pumpAndSettle();
@@ -121,8 +120,9 @@ void main() {
       expect(find.text('Search'), findsOneWidget);
     });
 
-    testWidgets('while a normal phone keeps the three buttons it always had',
-        (tester) async {
+    testWidgets('while a normal phone keeps the three buttons it always had', (
+      tester,
+    ) async {
       sized(tester, kPhone);
       await tester.pumpWidget(dashboard());
       await tester.pumpAndSettle();
@@ -135,8 +135,9 @@ void main() {
   });
 
   group('the report screen', () {
-    testWidgets('lays out on a 240dp screen without overflowing',
-        (tester) async {
+    testWidgets('lays out on a 240dp screen without overflowing', (
+      tester,
+    ) async {
       sized(tester, kSonim);
       await tester.pumpWidget(stats());
       await tester.pumpAndSettle();
@@ -159,19 +160,25 @@ void main() {
       await tester.pumpAndSettle();
 
       for (final tab in ['Calculator', 'Goals', 'Siyumim', 'Mefarshim']) {
-        await tester.scrollUntilVisible(find.widgetWithText(Tab, tab), 60,
-            scrollable: find
-                .descendant(
-                    of: find.byType(TabBar), matching: find.byType(Scrollable))
-                .first);
+        await tester.scrollUntilVisible(
+          find.widgetWithText(Tab, tab),
+          60,
+          scrollable: find
+              .descendant(
+                of: find.byType(TabBar),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
         await tester.tap(find.widgetWithText(Tab, tab));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull, reason: tab);
       }
     });
 
-    testWidgets('and scrolls on a D-pad, having nothing focusable in it',
-        (tester) async {
+    testWidgets('and scrolls on a D-pad, having nothing focusable in it', (
+      tester,
+    ) async {
       sized(tester, kSonim);
       await tester.pumpWidget(stats());
       await tester.pumpAndSettle();
@@ -181,7 +188,9 @@ void main() {
       // sits above this, and so does the TabBarView's pager.
       final list = find
           .descendant(
-              of: find.byType(OverviewSection), matching: find.byType(Scrollable))
+            of: find.byType(OverviewSection),
+            matching: find.byType(Scrollable),
+          )
           .first;
       final before = tester.widget<Scrollable>(list).controller!.offset;
 
@@ -192,12 +201,15 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
 
-      expect(tester.widget<Scrollable>(list).controller!.offset,
-          greaterThan(before));
+      expect(
+        tester.widget<Scrollable>(list).controller!.offset,
+        greaterThan(before),
+      );
     });
 
-    testWidgets('and the tab bar above it can be reached, and left again',
-        (tester) async {
+    testWidgets('and the tab bar above it can be reached, and left again', (
+      tester,
+    ) async {
       // The one interaction the merge introduced. Five report routes became
       // five tabs, and a tab bar is a second axis of navigation on a device
       // that has one comfortable one — so the round trip has to work by key or
@@ -214,14 +226,15 @@ void main() {
       await tester.pumpWidget(stats());
       await tester.pumpAndSettle();
 
-      bool inTabBar() =>
-          find
-              .ancestor(
-                  of: find.byWidget(
-                      FocusManager.instance.primaryFocus!.context!.widget),
-                  matching: find.byType(TabBar))
-              .evaluate()
-              .isNotEmpty;
+      bool inTabBar() => find
+          .ancestor(
+            of: find.byWidget(
+              FocusManager.instance.primaryFocus!.context!.widget,
+            ),
+            matching: find.byType(TabBar),
+          )
+          .evaluate()
+          .isNotEmpty;
 
       expect(inTabBar(), isFalse, reason: 'the section starts focused');
 
@@ -244,41 +257,49 @@ void main() {
       sized(tester, size);
       final node = FocusNode();
       addTearDown(node.dispose);
-      await tester.pumpWidget(MaterialApp(
-        home: FocusRingOverlay(
-          child: Scaffold(
-            body: Center(
-              child: SizedBox(
-                width: 120,
-                height: 40,
-                child: TextButton(
-                  focusNode: node,
-                  onPressed: () {},
-                  child: const Text('x'),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FocusRingOverlay(
+            child: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 120,
+                  height: 40,
+                  child: TextButton(
+                    focusNode: node,
+                    onPressed: () {},
+                    child: const Text('x'),
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       return node;
     }
 
-    testWidgets('is drawn on a keypad screen, where focus is otherwise unseen',
-        (tester) async {
-      final node = await pumpRinged(tester, kSonim);
-      expect(find.byKey(focusRingKey), findsNothing,
-          reason: 'nothing has focus yet');
+    testWidgets(
+      'is drawn on a keypad screen, where focus is otherwise unseen',
+      (tester) async {
+        final node = await pumpRinged(tester, kSonim);
+        expect(
+          find.byKey(focusRingKey),
+          findsNothing,
+          reason: 'nothing has focus yet',
+        );
 
-      node.requestFocus();
-      await tester.pumpAndSettle();
+        node.requestFocus();
+        await tester.pumpAndSettle();
 
-      expect(find.byKey(focusRingKey), findsOneWidget);
-    });
+        expect(find.byKey(focusRingKey), findsOneWidget);
+      },
+    );
 
-    testWidgets('stays away on a touchscreen phone that has seen no key',
-        (tester) async {
+    testWidgets('stays away on a touchscreen phone that has seen no key', (
+      tester,
+    ) async {
       final node = await pumpRinged(tester, kPhone);
       node.requestFocus();
       await tester.pumpAndSettle();
@@ -289,8 +310,9 @@ void main() {
       expect(find.byKey(focusRingKey), findsNothing);
     });
 
-    testWidgets('but appears on that phone once a key is used, for keyboards',
-        (tester) async {
+    testWidgets('but appears on that phone once a key is used, for keyboards', (
+      tester,
+    ) async {
       final node = await pumpRinged(tester, kPhone);
       node.requestFocus();
       await tester.pumpAndSettle();
@@ -312,34 +334,42 @@ void main() {
     Future<void> pumpBanner(WidgetTester tester, Size size) async {
       sized(tester, size);
       final repo = memoryRepository();
-      await repo.addEvent(LearningEvent(
-        id: 'e1',
-        profileId: 'default',
-        nodeId: 'shas.moed.shabbos',
-        unitIndex: 2,
-        action: EventAction.done,
-        occurredAt: DateTime(2026, 1, 10),
-        loggedAt: DateTime(2026, 1, 10),
-      ));
+      await repo.addEvent(
+        LearningEvent(
+          id: 'e1',
+          profileId: 'default',
+          nodeId: 'shas.moed.shabbos',
+          unitIndex: 2,
+          action: EventAction.done,
+          occurredAt: DateTime(2026, 1, 10),
+          loggedAt: DateTime(2026, 1, 10),
+        ),
+      );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider.overrideWithValue(repo),
-          appPreferencesProvider.overrideWithValue(InMemoryPreferences({})),
-          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
-        ],
-        child: localizedApp(home: const DashboardScreen()),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            catalogRepositoryProvider.overrideWithValue(
+              FakeCatalogRepository(),
+            ),
+            progressRepositoryProvider.overrideWithValue(repo),
+            appPreferencesProvider.overrideWithValue(InMemoryPreferences({})),
+            clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+          ],
+          child: localizedApp(home: const DashboardScreen()),
+        ),
+      );
       await tester.pumpAndSettle();
     }
 
-    testWidgets('gets a readable width for its prose on a 240dp screen',
-        (tester) async {
+    testWidgets('gets a readable width for its prose on a 240dp screen', (
+      tester,
+    ) async {
       await pumpBanner(tester, kSonim);
 
-      final headline =
-          find.text('1 unit of your learning has never been backed up.');
+      final headline = find.text(
+        '1 unit of your learning has never been backed up.',
+      );
       expect(headline, findsOneWidget);
 
       // A shield, this prose, a "Back up" button and a close button want about
@@ -348,12 +378,16 @@ void main() {
       // PER LINE. A column of single red letters, on the banner whose entire job
       // is to be read. Stacking the parts is what gives it its width back.
       final paragraph = tester.renderObject<RenderBox>(headline);
-      expect(paragraph.size.width, greaterThan(120),
-          reason: 'the banner text collapsed to a narrow column again');
+      expect(
+        paragraph.size.width,
+        greaterThan(120),
+        reason: 'the banner text collapsed to a narrow column again',
+      );
     });
 
-    testWidgets('names its dismiss control instead of hiding it in an icon',
-        (tester) async {
+    testWidgets('names its dismiss control instead of hiding it in an icon', (
+      tester,
+    ) async {
       await pumpBanner(tester, kSonim);
 
       // On the device the ✕ was reachable only by pressing *right* from "Back
@@ -368,16 +402,18 @@ void main() {
       expect(find.text('Back up'), findsNothing);
     });
 
-    testWidgets('and keeps the close icon on a screen that can hover it',
-        (tester) async {
+    testWidgets('and keeps the close icon on a screen that can hover it', (
+      tester,
+    ) async {
       await pumpBanner(tester, kPhone);
 
       expect(find.byTooltip('Turn off this reminder'), findsOneWidget);
       expect(find.byIcon(Icons.close), findsOneWidget);
     });
 
-    testWidgets('drops its second paragraph where there is no room for it',
-        (tester) async {
+    testWidgets('drops its second paragraph where there is no room for it', (
+      tester,
+    ) async {
       await pumpBanner(tester, kSonim);
 
       // Headline, reasoning and two buttons come to more than the 244dp the
@@ -397,8 +433,10 @@ void main() {
 
     testWidgets('and keeps it on a screen with the room', (tester) async {
       await pumpBanner(tester, kPhone);
-      expect(find.textContaining('It lives only on this device'),
-          findsOneWidget);
+      expect(
+        find.textContaining('It lives only on this device'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -408,30 +446,30 @@ void main() {
   // all on this phone.
   group('the planner calendar', () {
     Widget calendar() => ProviderScope(
-          overrides: [
-            catalogRepositoryProvider
-                .overrideWithValue(FakeCatalogRepository()),
-            progressRepositoryProvider
-                .overrideWithValue(memoryRepository()),
-            appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-            clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
-          ],
-          child: localizedApp(home: const PlannerCalendarScreen()),
-        );
+      overrides: [
+        catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+        progressRepositoryProvider.overrideWithValue(memoryRepository()),
+        appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+        clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+      ],
+      child: localizedApp(home: const PlannerCalendarScreen()),
+    );
 
     /// What the calendar is showing, as the heading states it.
     ///
     /// The heading is the screen's answer to "which range, and when", so it is
     /// what a key press on this device has to be able to change — found by its
     /// key, because a bare `Text` is not a thing a finder can point at.
-    String heading(WidgetTester tester) => (tester
-            .widget<Text>(find.descendant(
-                of: find.byKey(const ValueKey('calendar-heading')),
-                matching: find.byType(Text))))
-        .data!;
+    String heading(WidgetTester tester) => (tester.widget<Text>(
+      find.descendant(
+        of: find.byKey(const ValueKey('calendar-heading')),
+        matching: find.byType(Text),
+      ),
+    )).data!;
 
-    testWidgets('lays out in all three ranges without overflowing',
-        (tester) async {
+    testWidgets('lays out in all three ranges without overflowing', (
+      tester,
+    ) async {
       sized(tester, kSonim);
       await tester.pumpWidget(calendar());
       await tester.pumpAndSettle();
@@ -448,8 +486,9 @@ void main() {
       }
     });
 
-    testWidgets('the arrows are reachable by key and press with the centre key',
-        (tester) async {
+    testWidgets('the arrows are reachable by key and press with the centre key', (
+      tester,
+    ) async {
       sized(tester, kSonim);
       await tester.pumpWidget(calendar());
       await tester.pumpAndSettle();
@@ -503,12 +542,16 @@ void main() {
       expect(focusedArrow(), 'Previous month');
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
-      expect(heading(tester), '2026-01-01',
-          reason: 'and back, so the arrows are not a one-way ratchet');
+      expect(
+        heading(tester),
+        '2026-01-01',
+        reason: 'and back, so the arrows are not a one-way ratchet',
+      );
     });
 
-    testWidgets('the range selector is given less room, on purpose',
-        (tester) async {
+    testWidgets('the range selector is given less room, on purpose', (
+      tester,
+    ) async {
       // Three segments with three labels, each padded 12dp either side, is
       // 232dp of chrome on a screen 208dp wide, so the longest label wrapped
       // mid-word and the control read "Mo / nth" — in *month* range only,
@@ -530,20 +573,27 @@ void main() {
       final button = tester.widget<SegmentedButton<PlannerCalendarRange>>(
         find.byType(SegmentedButton<PlannerCalendarRange>),
       );
-      expect(button.showSelectedIcon, isFalse,
-          reason: 'the checkmark is 24dp the longest label does not have');
+      expect(
+        button.showSelectedIcon,
+        isFalse,
+        reason: 'the checkmark is 24dp the longest label does not have',
+      );
       // The padding is asserted as *present and compact-only* rather than by
       // reading the number back: `SegmentedButton` merges the style it is given
       // with its own, and resolving the merged padding reports Material's
       // default 12 whatever was passed in. Asserting the value would therefore
       // be asserting the framework, not this screen.
-      expect(button.style, isNotNull,
-          reason: 'a compact screen gets its own padding');
+      expect(
+        button.style,
+        isNotNull,
+        reason: 'a compact screen gets its own padding',
+      );
       expect(button.style!.padding, isNotNull);
     });
 
-    testWidgets('an ordinary phone keeps its checkmark and its padding',
-        (tester) async {
+    testWidgets('an ordinary phone keeps its checkmark and its padding', (
+      tester,
+    ) async {
       // The other half of the pair, and the one a fix for this device is most
       // likely to forget: a change that quietly made every other screen worse
       // would pass the test above.
@@ -555,12 +605,16 @@ void main() {
         find.byType(SegmentedButton<PlannerCalendarRange>),
       );
       expect(button.showSelectedIcon, isTrue);
-      expect(button.style?.padding, isNull,
-          reason: 'no compact styling off a compact screen');
+      expect(
+        button.style?.padding,
+        isNull,
+        reason: 'no compact styling off a compact screen',
+      );
     });
 
-    testWidgets('a month cell fits this width by using smaller type',
-        (tester) async {
+    testWidgets('a month cell fits this width by using smaller type', (
+      tester,
+    ) async {
       // The 240dp cell is 28 logical pixels and a day number over an amount
       // needs about 36 of them stacked, so the cell had to give something up.
       // `FittedBox(scaleDown)` fixed the overflow by scaling the *day number*
@@ -581,12 +635,17 @@ void main() {
         if (box.fit != BoxFit.scaleDown || box.child == null) continue;
         final outer = tester.renderObject<RenderBox>(find.byWidget(box));
         final inner = tester.renderObject<RenderBox>(find.byWidget(box.child!));
-        if (inner.size.width > 0) scales.add(outer.size.width / inner.size.width);
+        if (inner.size.width > 0) {
+          scales.add(outer.size.width / inner.size.width);
+        }
       }
       expect(scales, isNotEmpty, reason: 'the month grid is on screen');
       for (final scale in scales) {
-        expect(scale, greaterThan(0.9),
-            reason: 'the type should fit; the scale is a backstop, not the fix');
+        expect(
+          scale,
+          greaterThan(0.9),
+          reason: 'the type should fit; the scale is a backstop, not the fix',
+        );
       }
     });
 
@@ -607,8 +666,9 @@ void main() {
       }
     });
 
-    testWidgets('and left and right page it, once focus is on the calendar',
-        (tester) async {
+    testWidgets('and left and right page it, once focus is on the calendar', (
+      tester,
+    ) async {
       // The half of #31 that a swipe was covering on its own. A `PageView`
       // answers a drag and nothing else, and this device has a D-pad and no
       // touchscreen — so paging was reachable by finger only, and a reader who
@@ -634,8 +694,9 @@ void main() {
       expect(heading(tester), '2026-01-01', reason: 'and back');
     });
 
-    testWidgets('but the range selector keeps its own left and right',
-        (tester) async {
+    testWidgets('but the range selector keeps its own left and right', (
+      tester,
+    ) async {
       // The reason the pager listens *above* its pages and not on them: the
       // SegmentedButton moves between its own segments with left and right, and
       // a page handler that took the key first would make the range unreachable
@@ -670,17 +731,20 @@ void main() {
       final inSelector = find
           .ancestor(
             of: find.byWidget(focus.context!.widget),
-            matching:
-                find.byType(SegmentedButton<PlannerCalendarRange>),
+            matching: find.byType(SegmentedButton<PlannerCalendarRange>),
           )
           .evaluate()
           .isNotEmpty;
-      expect(inSelector, isTrue,
-          reason: 'the range selector must be reachable on a 240dp screen');
+      expect(
+        inSelector,
+        isTrue,
+        reason: 'the range selector must be reachable on a 240dp screen',
+      );
     });
 
-    testWidgets('a day range is a whole day of tapping, not a whole month',
-        (tester) async {
+    testWidgets('a day range is a whole day of tapping, not a whole month', (
+      tester,
+    ) async {
       sized(tester, kSonim);
       await tester.pumpWidget(calendar());
       await tester.pumpAndSettle();
@@ -695,23 +759,34 @@ void main() {
   });
 
   group('isCompact', () {
-    testWidgets('is true at the Sonim size and false on an ordinary phone',
-        (tester) async {
+    testWidgets('is true at the Sonim size and false on an ordinary phone', (
+      tester,
+    ) async {
       late bool sonim;
       late bool phone;
 
       sized(tester, kSonim);
-      await tester.pumpWidget(MaterialApp(
-          home: Builder(builder: (context) {
-        sonim = isCompact(context);
-        return const SizedBox();
-      })));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              sonim = isCompact(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
       tester.view.physicalSize = kPhone;
-      await tester.pumpWidget(MaterialApp(
-          home: Builder(builder: (context) {
-        phone = isCompact(context);
-        return const SizedBox();
-      })));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              phone = isCompact(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
 
       expect(sonim, isTrue);
       // 320dp is the narrowest phone anyone ships, so the threshold cannot fire

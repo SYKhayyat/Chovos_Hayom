@@ -67,7 +67,8 @@ class _SessionBannerState extends ConsumerState<SessionBanner> {
     final scheme = Theme.of(context).colorScheme;
     final now = ref.read(clockProvider)();
     final seconds = session.elapsedAt(now).inSeconds;
-    final clock = '${(seconds ~/ 60).toString().padLeft(2, '0')}:'
+    final clock =
+        '${(seconds ~/ 60).toString().padLeft(2, '0')}:'
         '${(seconds % 60).toString().padLeft(2, '0')}';
 
     return Container(
@@ -75,15 +76,18 @@ class _SessionBannerState extends ConsumerState<SessionBanner> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Icon(session.isRunning ? Icons.timer : Icons.timer_off_outlined,
-              size: 18, color: scheme.onPrimaryContainer),
+          Icon(
+            session.isRunning ? Icons.timer : Icons.timer_off_outlined,
+            size: 18,
+            color: scheme.onPrimaryContainer,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               session.label == null
                   ? (session.isRunning
-                      ? l10n.sessionLearning(clock)
-                      : l10n.sessionPaused(clock))
+                        ? l10n.sessionLearning(clock)
+                        : l10n.sessionPaused(clock))
                   : l10n.sessionLabelled(clock, session.label!),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

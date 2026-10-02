@@ -19,32 +19,30 @@ void main() {
   const unit = 2;
 
   LearningEvent done(String layer, {int at = 1}) => LearningEvent(
-        id: 'e$layer$at',
-        profileId: 'p',
-        nodeId: node,
-        unitIndex: unit,
-        action: EventAction.done,
-        occurredAt: DateTime(2026, 3, at),
-        loggedAt: DateTime(2026, 3, at),
-        layers: [layer],
-      );
+    id: 'e$layer$at',
+    profileId: 'p',
+    nodeId: node,
+    unitIndex: unit,
+    action: EventAction.done,
+    occurredAt: DateTime(2026, 3, at),
+    loggedAt: DateTime(2026, 3, at),
+    layers: [layer],
+  );
 
-  LayerRoles rolesOf(Map<String, LayerRole> roles) => LayerRoles.fromEntries([
-        LayerConfigEntry(nodeId: node, roles: roles),
-      ]);
+  LayerRoles rolesOf(Map<String, LayerRole> roles) =>
+      LayerRoles.fromEntries([LayerConfigEntry(nodeId: node, roles: roles)]);
 
   UnitMefarshim ask(
     Map<String, LayerRole> roles, {
     List<LearningEvent> log = const [],
     List<String> order = const [mainLayerId, 'rashi', 'tosafos', 'maharsha'],
-  }) =>
-      UnitMefarshim.of(
-        roles: rolesOf(roles),
-        fold: FoldLog.fold(log),
-        layerOrder: order,
-        nodeId: node,
-        unitIndex: unit,
-      );
+  }) => UnitMefarshim.of(
+    roles: rolesOf(roles),
+    fold: FoldLog.fold(log),
+    layerOrder: order,
+    nodeId: node,
+    unitIndex: unit,
+  );
 
   test('the rows follow the mefarshim list, not the config or the log', () {
     final m = ask(
@@ -56,8 +54,11 @@ void main() {
       log: [done('tosafos')],
     );
 
-    expect(m.all.map((e) => e.layerId).toList(),
-        [mainLayerId, 'rashi', 'tosafos']);
+    expect(m.all.map((e) => e.layerId).toList(), [
+      mainLayerId,
+      'rashi',
+      'tosafos',
+    ]);
     expect(m.all.map((e) => e.isDone).toList(), [false, false, true]);
   });
 
@@ -87,18 +88,23 @@ void main() {
       expect(m.checkable.map((e) => e.layerId), [mainLayerId]);
     });
 
-    test('is offered as something to review, which is the case that was wrong',
-        () {
-      // The old chazara sheet filtered its options through the mefarshim list
-      // while seeding its selection from the log, so this layer was *selected
-      // and invisible*: submitted with no checkbox to untick it.
-      expect(m.reviewable.map((e) => e.layerId), [mainLayerId, 'rashi']);
-      expect(m.done, {mainLayerId, 'rashi'});
-      expect(m.done.difference({for (final e in m.reviewable) e.layerId}),
+    test(
+      'is offered as something to review, which is the case that was wrong',
+      () {
+        // The old chazara sheet filtered its options through the mefarshim list
+        // while seeding its selection from the log, so this layer was *selected
+        // and invisible*: submitted with no checkbox to untick it.
+        expect(m.reviewable.map((e) => e.layerId), [mainLayerId, 'rashi']);
+        expect(m.done, {mainLayerId, 'rashi'});
+        expect(
+          m.done.difference({for (final e in m.reviewable) e.layerId}),
           isEmpty,
-          reason: 'every layer the chazara sheet seeds must have a row it can '
-              'be unticked from');
-    });
+          reason:
+              'every layer the chazara sheet seeds must have a row it can '
+              'be unticked from',
+        );
+      },
+    );
   });
 
   test('a meforish deleted outright keeps its place in the list', () {
@@ -110,11 +116,17 @@ void main() {
       log: [done(mainLayerId), done('a-deleted-uuid')],
     );
 
-    expect(m.all.map((e) => e.layerId).toList(),
-        [mainLayerId, 'rashi', 'a-deleted-uuid']);
+    expect(m.all.map((e) => e.layerId).toList(), [
+      mainLayerId,
+      'rashi',
+      'a-deleted-uuid',
+    ]);
     expect(m.all.last.role, isNull);
-    expect(m.reviewable.map((e) => e.layerId),
-        [mainLayerId, 'rashi', 'a-deleted-uuid']);
+    expect(m.reviewable.map((e) => e.layerId), [
+      mainLayerId,
+      'rashi',
+      'a-deleted-uuid',
+    ]);
   });
 
   test('outstanding is what a fresh log arrives with ticked', () {
@@ -131,8 +143,11 @@ void main() {
     expect(m.outstanding, {'rashi'});
     // Optional mefarshim are tickable and are never pre-ticked: they do not
     // gate completion, so nothing about the unit says you meant to learn one.
-    expect(m.checkable.map((e) => e.layerId),
-        [mainLayerId, 'rashi', 'maharsha']);
+    expect(m.checkable.map((e) => e.layerId), [
+      mainLayerId,
+      'rashi',
+      'maharsha',
+    ]);
   });
 
   test('a null fold reads as nothing learned rather than throwing', () {

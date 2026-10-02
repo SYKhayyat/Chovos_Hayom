@@ -29,7 +29,10 @@ void main() {
       expect(erev.hebrewMonth, HebrewMonth.elul);
       expect(erev.hebrewYear, 5786);
 
-      expect(dayInfoFor(d(2025, 9, 23)).hebrewMonth, HebrewMonth.tishrei); // RH 5786
+      expect(
+        dayInfoFor(d(2025, 9, 23)).hebrewMonth,
+        HebrewMonth.tishrei,
+      ); // RH 5786
       expect(dayInfoFor(d(2027, 10, 2)).hebrewYear, 5788); // RH 5788
     });
 
@@ -65,32 +68,52 @@ void main() {
       var walked = 0;
       while (day <= end) {
         final info = dayInfoFor(day);
-        expect(info.weekday, day.midnight.weekday,
-            reason: 'weekday disagrees with the Gregorian date on $day');
+        expect(
+          info.weekday,
+          day.midnight.weekday,
+          reason: 'weekday disagrees with the Gregorian date on $day',
+        );
         expect(info.hebrewDayOfMonth, inInclusiveRange(1, 30));
         expect(info.hebrewMonth, inInclusiveRange(1, 13));
         expect(info.hebrewYear, inInclusiveRange(5500, 6000));
         if (previous != null) {
           if (info.hebrewMonth == previous.hebrewMonth) {
-            expect(info.hebrewDayOfMonth, previous.hebrewDayOfMonth! + 1,
-                reason: 'Hebrew day did not advance within $day');
+            expect(
+              info.hebrewDayOfMonth,
+              previous.hebrewDayOfMonth! + 1,
+              reason: 'Hebrew day did not advance within $day',
+            );
           } else {
-            expect(info.hebrewDayOfMonth, 1,
-                reason: 'a Hebrew month change must land on day 1 ($day)');
+            expect(
+              info.hebrewDayOfMonth,
+              1,
+              reason: 'a Hebrew month change must land on day 1 ($day)',
+            );
             final old = previous.hebrewMonth!;
             final next = info.hebrewMonth!;
-            final advance = next == old + 1 ||
+            final advance =
+                next == old + 1 ||
                 (old == 12 && (next == 13 || next == 1)) ||
                 (old == 13 && next == 1);
-            expect(advance, isTrue,
-                reason: 'Hebrew months must advance in order ($day): '
-                    '$old -> $next');
+            expect(
+              advance,
+              isTrue,
+              reason:
+                  'Hebrew months must advance in order ($day): '
+                  '$old -> $next',
+            );
             if (next == HebrewMonth.tishrei) {
-              expect(info.hebrewYear, previous.hebrewYear! + 1,
-                  reason: 'the Hebrew year rolls over at Tishrei ($day)');
+              expect(
+                info.hebrewYear,
+                previous.hebrewYear! + 1,
+                reason: 'the Hebrew year rolls over at Tishrei ($day)',
+              );
             } else {
-              expect(info.hebrewYear, previous.hebrewYear,
-                  reason: 'the Hebrew year must not roll over at Nissan ($day)');
+              expect(
+                info.hebrewYear,
+                previous.hebrewYear,
+                reason: 'the Hebrew year must not roll over at Nissan ($day)',
+              );
             }
           }
         }
@@ -141,14 +164,15 @@ void main() {
       }
     });
 
-    test('a month page holds every day of its month, plus its neighbours',
-        () {
+    test('a month page holds every day of its month, plus its neighbours', () {
       // A 42-cell grid is six weeks, so a short month is padded with the tail
       // of the month before and the head of the one after. That is what a month
       // grid *is* — and it is why a month page overlaps its neighbour's on
       // spill days, which the day and week ranges never do.
-      final window =
-          calendarWindow(d(2026, 2, 10), PlannerCalendarRange.month).toSet();
+      final window = calendarWindow(
+        d(2026, 2, 10),
+        PlannerCalendarRange.month,
+      ).toSet();
       for (var day = 1; day <= 28; day++) {
         expect(window, contains(d(2026, 2, day)));
       }
@@ -156,30 +180,41 @@ void main() {
       expect(window.length, 42);
     });
 
-    test('a range is named by its own first day, not by the page it opens on',
-        () {
+    test('a range is named by its own first day, not by the page it opens on', () {
       // The distinction that keeps a heading honest. 1 Jan 2026 is a Thursday,
       // so January's page opens on Mon 29 Dec 2025 to fill six rows — and
       // printing that as the heading would put December's date over January.
       final anchor = d(2026, 1, 10);
-      expect(PlannerCalendarRange.month.startFrom(anchor), d(2025, 12, 29),
-          reason: 'the page opens on the padding day');
-      expect(PlannerCalendarRange.month.namedDay(anchor), d(2026, 1, 1),
-          reason: 'but the month is named by the 1st');
+      expect(
+        PlannerCalendarRange.month.startFrom(anchor),
+        d(2025, 12, 29),
+        reason: 'the page opens on the padding day',
+      );
+      expect(
+        PlannerCalendarRange.month.namedDay(anchor),
+        d(2026, 1, 1),
+        reason: 'but the month is named by the 1st',
+      );
 
       // A week has no padding, so there is nothing to be confused about and the
       // two agree — which is what makes the day and month forms the exceptions.
-      expect(PlannerCalendarRange.week.startFrom(anchor),
-          PlannerCalendarRange.week.namedDay(anchor));
-      expect(PlannerCalendarRange.day.startFrom(anchor),
-          PlannerCalendarRange.day.namedDay(anchor));
+      expect(
+        PlannerCalendarRange.week.startFrom(anchor),
+        PlannerCalendarRange.week.namedDay(anchor),
+      );
+      expect(
+        PlannerCalendarRange.day.startFrom(anchor),
+        PlannerCalendarRange.day.namedDay(anchor),
+      );
 
       // A named day is always inside its own page, never outside it.
       for (final range in PlannerCalendarRange.values) {
         for (final day in [d(2026, 1, 1), d(2026, 2, 28), d(2026, 3, 31)]) {
-          expect(calendarWindow(day, range),
-              contains(range.namedDay(day)),
-              reason: '$range must name a day it is showing');
+          expect(
+            calendarWindow(day, range),
+            contains(range.namedDay(day)),
+            reason: '$range must name a day it is showing',
+          );
         }
       }
     });
@@ -187,8 +222,11 @@ void main() {
     test('every range steps by its own unit', () {
       final anchor = d(2026, 1, 10);
       expect(PlannerCalendarRange.day.step(anchor, 1), d(2026, 1, 11));
-      expect(PlannerCalendarRange.week.step(anchor, 1), d(2026, 1, 12),
-          reason: 'a week from Sat 10 Jan is Mon 12 Jan, not Sat 17 Jan');
+      expect(
+        PlannerCalendarRange.week.step(anchor, 1),
+        d(2026, 1, 12),
+        reason: 'a week from Sat 10 Jan is Mon 12 Jan, not Sat 17 Jan',
+      );
       expect(PlannerCalendarRange.month.step(anchor, 1), d(2026, 2, 1));
     });
 
@@ -214,7 +252,10 @@ void main() {
           final here = calendarWindow(anchor, range);
           for (final delta in [-7, -1, 1, 3, 12]) {
             expect(
-              calendarWindow(range.step(range.step(anchor, delta), -delta), range),
+              calendarWindow(
+                range.step(range.step(anchor, delta), -delta),
+                range,
+              ),
               here,
               reason: '$range round trip from $anchor',
             );
@@ -229,7 +270,10 @@ void main() {
       // has no 31st to land on.
       expect(PlannerCalendarRange.month.step(d(2026, 1, 31), 1), d(2026, 2, 1));
       expect(PlannerCalendarRange.month.step(d(2026, 3, 31), 1), d(2026, 4, 1));
-      expect(PlannerCalendarRange.month.step(d(2026, 1, 31), -1), d(2025, 12, 1));
+      expect(
+        PlannerCalendarRange.month.step(d(2026, 1, 31), -1),
+        d(2025, 12, 1),
+      );
     });
 
     test('stepping a month keeps the day of the month', () {
@@ -247,48 +291,55 @@ void main() {
     test('a page holds exactly its own days, whatever the anchor', () {
       for (final range in PlannerCalendarRange.values) {
         for (final anchor in [d(2026, 2, 1), d(2026, 2, 27), d(2026, 2, 28)]) {
-          expect(calendarWindow(anchor, range), hasLength(range.dayCount),
-              reason: '$range at $anchor');
+          expect(
+            calendarWindow(anchor, range),
+            hasLength(range.dayCount),
+            reason: '$range at $anchor',
+          );
         }
       }
     });
 
-    test('a stepped day or week page shares no day with the one it came from',
-        () {
-      // Day and week pages are exact, so stepping one never repeats a day. The
-      // month range is excluded on purpose and the reason is above: a 42-cell
-      // grid pads with its neighbours' days, so consecutive month pages
-      // deliberately share the spill.
-      final anchor = d(2026, 1, 10);
-      for (final range in [
-        PlannerCalendarRange.day,
-        PlannerCalendarRange.week,
-      ]) {
-        final here = calendarWindow(anchor, range).toSet();
-        final next = calendarWindow(range.step(anchor, 1), range).toSet();
-        final back = calendarWindow(range.step(anchor, -1), range).toSet();
-        expect(here.intersection(next), isEmpty, reason: '$range forwards');
-        expect(here.intersection(back), isEmpty, reason: '$range backwards');
-      }
-    });
+    test(
+      'a stepped day or week page shares no day with the one it came from',
+      () {
+        // Day and week pages are exact, so stepping one never repeats a day. The
+        // month range is excluded on purpose and the reason is above: a 42-cell
+        // grid pads with its neighbours' days, so consecutive month pages
+        // deliberately share the spill.
+        final anchor = d(2026, 1, 10);
+        for (final range in [
+          PlannerCalendarRange.day,
+          PlannerCalendarRange.week,
+        ]) {
+          final here = calendarWindow(anchor, range).toSet();
+          final next = calendarWindow(range.step(anchor, 1), range).toSet();
+          final back = calendarWindow(range.step(anchor, -1), range).toSet();
+          expect(here.intersection(next), isEmpty, reason: '$range forwards');
+          expect(here.intersection(back), isEmpty, reason: '$range backwards');
+        }
+      },
+    );
 
     test("consecutive month pages cover the calendar without a gap", () {
       // The other half of the spill: January's own days and February's own days
       // are disjoint and adjacent, so paging forward loses nothing even though
       // the two pages overlap on padding.
-      final january = calendarWindow(d(2026, 1, 10), PlannerCalendarRange.month)
-          .where((day) => day.midnight.month == 1)
-          .toSet();
-      final february =
-          calendarWindow(PlannerCalendarRange.month.step(d(2026, 1, 10), 1),
-              PlannerCalendarRange.month)
-              .where((day) => day.midnight.month == 2)
-              .toSet();
+      final january = calendarWindow(
+        d(2026, 1, 10),
+        PlannerCalendarRange.month,
+      ).where((day) => day.midnight.month == 1).toSet();
+      final february = calendarWindow(
+        PlannerCalendarRange.month.step(d(2026, 1, 10), 1),
+        PlannerCalendarRange.month,
+      ).where((day) => day.midnight.month == 2).toSet();
       expect(january.length, 31);
       expect(february.length, 28);
       expect(january.intersection(february), isEmpty);
-      expect(january.reduce((a, b) => a > b ? a : b) + 1,
-          february.reduce((a, b) => a < b ? a : b));
+      expect(
+        january.reduce((a, b) => a > b ? a : b) + 1,
+        february.reduce((a, b) => a < b ? a : b),
+      );
     });
   });
 
@@ -299,16 +350,24 @@ void main() {
         name: 'Rosh Hashanah',
         assignments: [
           PlanAssignment(
-              id: 'a', rule: HebrewDayRule(day: 1, month: HebrewMonth.tishrei)),
+            id: 'a',
+            rule: HebrewDayRule(day: 1, month: HebrewMonth.tishrei),
+          ),
         ],
       );
-      final days =
-          PlannerSchedule.daysOn(plan, dayInfoFor, d(2024, 1, 1), d(2029, 1, 1))
-              .toList();
-      expect(
-        days.map((x) => x.toString()),
-        ['2024-10-03', '2025-09-23', '2026-09-12', '2027-10-02', '2028-09-21'],
-      );
+      final days = PlannerSchedule.daysOn(
+        plan,
+        dayInfoFor,
+        d(2024, 1, 1),
+        d(2029, 1, 1),
+      ).toList();
+      expect(days.map((x) => x.toString()), [
+        '2024-10-03',
+        '2025-09-23',
+        '2026-09-12',
+        '2027-10-02',
+        '2028-09-21',
+      ]);
     });
 
     test('the 30th of a short Hebrew month never fires', () {
@@ -317,15 +376,21 @@ void main() {
         name: 'P',
         assignments: [PlanAssignment(id: 'a', rule: HebrewDayRule(day: 30))],
       );
-      final days =
-          PlannerSchedule.daysOn(plan, dayInfoFor, d(2025, 10, 20), d(2026, 12, 5))
-              .toList();
+      final days = PlannerSchedule.daysOn(
+        plan,
+        dayInfoFor,
+        d(2025, 10, 20),
+        d(2026, 12, 5),
+      ).toList();
       for (final day in days) {
         final info = dayInfoFor(day);
         if (info.hebrewMonth == HebrewMonth.cheshvan &&
             info.hebrewYear == 5786) {
-          expect(info.hebrewDayOfMonth, isNot(30),
-              reason: 'Cheshvan 5786 is 29 days long; a 30th cannot fire');
+          expect(
+            info.hebrewDayOfMonth,
+            isNot(30),
+            reason: 'Cheshvan 5786 is 29 days long; a 30th cannot fire',
+          );
         }
       }
       // Cheshvan 5787 is 30 days — the same rule must fire there.
@@ -346,12 +411,17 @@ void main() {
         name: 'W',
         assignments: [
           PlanAssignment(
-              id: 'a', rule: WeekdayRule(weekdays: {DateTime.wednesday})),
+            id: 'a',
+            rule: WeekdayRule(weekdays: {DateTime.wednesday}),
+          ),
         ],
       );
-      final days =
-          PlannerSchedule.daysOn(plan, dayInfoFor, d(2026, 9, 1), d(2026, 9, 30))
-              .toList();
+      final days = PlannerSchedule.daysOn(
+        plan,
+        dayInfoFor,
+        d(2026, 9, 1),
+        d(2026, 9, 30),
+      ).toList();
       expect(days, isNotEmpty);
       for (final day in days) {
         expect(day.midnight.weekday, DateTime.wednesday);

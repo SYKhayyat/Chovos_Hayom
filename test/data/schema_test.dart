@@ -115,7 +115,8 @@ void main() {
   /// microseconds, because that is what the last step of the deleted chain did
   /// and the squash inherited.
   const microseconds = 1750000000 * 1000000;
-  const insertEvent = 'INSERT INTO learning_events '
+  const insertEvent =
+      'INSERT INTO learning_events '
       '(id, profile_id, node_id, unit_index, action, occurred_at, logged_at, note) '
       "VALUES ('e1', 'p1', 'berachos', 2, 0, 1750000000, $microseconds, "
       "'seven years of this')";
@@ -174,14 +175,22 @@ void main() {
   }
 
   /// `(user_version, schema, event ids, logged_at by id, plan_id by id)`.
-  ({int version, List<String> schema, List<String> ids, List<int> loggedAt,
-      List<String?> planIds}) inspect() {
+  ({
+    int version,
+    List<String> schema,
+    List<String> ids,
+    List<int> loggedAt,
+    List<String?> planIds,
+  })
+  inspect() {
     final db = raw.sqlite3.open(path);
     final version =
         db.select('PRAGMA user_version').first['user_version'] as int;
     final schema = db
-        .select('SELECT sql FROM sqlite_master '
-            'WHERE sql IS NOT NULL ORDER BY type DESC, name')
+        .select(
+          'SELECT sql FROM sqlite_master '
+          'WHERE sql IS NOT NULL ORDER BY type DESC, name',
+        )
         .map((r) => r['sql'] as String)
         .toList();
     // **Read defensively.** One of this file's jobs is to inspect a database
@@ -191,8 +200,10 @@ void main() {
     final hasPlanId = db
         .select("SELECT name FROM pragma_table_info('learning_events')")
         .any((r) => r['name'] == 'plan_id');
-    final events = db.select('SELECT id, logged_at'
-        '${hasPlanId ? ', plan_id' : ''} FROM learning_events ORDER BY id');
+    final events = db.select(
+      'SELECT id, logged_at'
+      '${hasPlanId ? ', plan_id' : ''} FROM learning_events ORDER BY id',
+    );
     final out = (
       version: version,
       schema: schema,
@@ -201,8 +212,7 @@ void main() {
       // The step's whole claim: an event written before plans existed reads
       // back as off-plan, not as an error and not as a guess.
       planIds: [
-        for (final r in events)
-          hasPlanId ? r['plan_id'] as String? : null,
+        for (final r in events) hasPlanId ? r['plan_id'] as String? : null,
       ],
     );
     db.close();
@@ -229,7 +239,8 @@ void main() {
   List<(String, String)> layerConfigs() {
     final db = raw.sqlite3.open(path);
     final rows = db.select(
-        'SELECT node_id, roles_json FROM layer_configs ORDER BY node_id');
+      'SELECT node_id, roles_json FROM layer_configs ORDER BY node_id',
+    );
     final out = [
       for (final r in rows) (r['node_id'] as String, r['roles_json'] as String),
     ];
@@ -241,13 +252,16 @@ void main() {
     test('is created at the current version, in one step', () async {
       await open();
       expect(inspect().version, kSchemaVersion);
-      expect(kSchemaVersion, 3,
-          reason: 'the chain was squashed to 1; two steps since (drop '
-              'unit_index, add plan_id); a fourth needs another group here');
+      expect(
+        kSchemaVersion,
+        3,
+        reason:
+            'the chain was squashed to 1; two steps since (drop '
+            'unit_index, add plan_id); a fourth needs another group here',
+      );
     });
 
-    test('is the squashed shape, with unit_index gone from layer_configs',
-        () async {
+    test('is the squashed shape, with unit_index gone from layer_configs', () async {
       // The pair of claims this file exists to hold. Everything but
       // `layer_configs` is byte-for-byte what the twelve-step chain arrived at
       // — if a column, a default or the batch index moves here, a v1 database
@@ -265,32 +279,45 @@ void main() {
         schema.where((s) => !s.contains('layer_configs')),
         v3Schema.where((s) => !s.contains('layer_configs')),
       );
-      expect(schema.singleWhere((s) => s.contains('TABLE "layer_configs"')),
-          layerConfigsAtV2);
+      expect(
+        schema.singleWhere((s) => s.contains('TABLE "layer_configs"')),
+        layerConfigsAtV2,
+      );
     });
   });
 
   group('a database at v2', () {
-    test('gains plan_id, and every existing event reads back off-plan',
-        () async {
-      seed([...v3SchemaNoPlan], userVersion: 2);
-      final before = raw.sqlite3.open(path);
-      before.execute(insertEvent);
-      before.close();
+    test(
+      'gains plan_id, and every existing event reads back off-plan',
+      () async {
+        seed([...v3SchemaNoPlan], userVersion: 2);
+        final before = raw.sqlite3.open(path);
+        before.execute(insertEvent);
+        before.close();
 
-      await open();
+        await open();
 
-      final after = inspect();
-      expect(after.version, kSchemaVersion);
-      expect(after.ids, ['e1'], reason: 'the log is not what this step touches');
-      expect(after.planIds, [null],
-          reason: 'null is the *correct* reading: that tick was made in the '
+        final after = inspect();
+        expect(after.version, kSchemaVersion);
+        expect(after.ids, [
+          'e1',
+        ], reason: 'the log is not what this step touches');
+        expect(
+          after.planIds,
+          [null],
+          reason:
+              'null is the *correct* reading: that tick was made in the '
               'unit grid, before plans existed, and crediting it to a plan that '
-              'never asked for it would be a lie the user cannot see');
-      expect(after.schema.singleWhere(
-              (s) => s.contains('TABLE "learning_events"')),
-          v3Schema.singleWhere((s) => s.contains('TABLE "learning_events"')));
-    });
+              'never asked for it would be a lie the user cannot see',
+        );
+        expect(
+          after.schema.singleWhere(
+            (s) => s.contains('TABLE "learning_events"'),
+          ),
+          v3Schema.singleWhere((s) => s.contains('TABLE "learning_events"')),
+        );
+      },
+    );
 
     test('a tick written by a plan keeps it across a backup restore', () async {
       // The step is only half the claim. The other half is that a value written
@@ -298,10 +325,7 @@ void main() {
       // tick that reads back as off-plan is the failure this column exists to
       // prevent.
       await open();
-      await expectLater(
-        insertPlannedEvent(path),
-        completes,
-      );
+      await expectLater(insertPlannedEvent(path), completes);
       final after = inspect();
       expect(after.planIds, ['daf-yomi']);
     });
@@ -322,10 +346,14 @@ void main() {
 
       await open();
 
-      expect(inspect().version, kSchemaVersion,
-          reason: 'a replay must finish the job, not fail on a column that is '
-              'already there — the install has to be able to recover by '
-              'relaunching, since that is the only thing a user can do');
+      expect(
+        inspect().version,
+        kSchemaVersion,
+        reason:
+            'a replay must finish the job, not fail on a column that is '
+            'already there — the install has to be able to recover by '
+            'relaunching, since that is the only thing a user can do',
+      );
     });
   });
 
@@ -337,18 +365,30 @@ void main() {
 
       final after = inspect();
       expect(after.version, kSchemaVersion, reason: 'stamped up to the tip');
-      expect(after.ids, ['e1'], reason: 'the log is not what this step touches');
-      expect(after.loggedAt, [microseconds],
-          reason: 'the seconds-to-microseconds rewrite was the last step of the '
-              'deleted chain — running anything like it again would put every '
-              'event in the year 58692, which nothing downstream would notice '
-              'beyond the log quietly reordering itself');
-      expect(layerConfigs(), [('berachos', '{"main":"required"}')],
-          reason: 'the node-level row survives; the unit-scoped one is dropped '
-              'rather than folded into it, which would have replaced the '
-              'node\'s own answer with one unit\'s');
-      expect(after.schema.singleWhere((s) => s.contains('TABLE "layer_configs"')),
-          layerConfigsAtV2);
+      expect(after.ids, [
+        'e1',
+      ], reason: 'the log is not what this step touches');
+      expect(
+        after.loggedAt,
+        [microseconds],
+        reason:
+            'the seconds-to-microseconds rewrite was the last step of the '
+            'deleted chain — running anything like it again would put every '
+            'event in the year 58692, which nothing downstream would notice '
+            'beyond the log quietly reordering itself',
+      );
+      expect(
+        layerConfigs(),
+        [('berachos', '{"main":"required"}')],
+        reason:
+            'the node-level row survives; the unit-scoped one is dropped '
+            'rather than folded into it, which would have replaced the '
+            'node\'s own answer with one unit\'s',
+      );
+      expect(
+        after.schema.singleWhere((s) => s.contains('TABLE "layer_configs"')),
+        layerConfigsAtV2,
+      );
     });
 
     test('and is an ordinary database on every launch after that', () async {
@@ -415,8 +455,10 @@ void main() {
       // under *Show details* and appends it to the crash log. It has to name a
       // recovery that still exists: the build that wrote the file can still
       // open it, so the way out is a backup taken there.
-      final message =
-          const SchemaMismatchException(13, kSchemaVersion).toString();
+      final message = const SchemaMismatchException(
+        13,
+        kSchemaVersion,
+      ).toString();
       expect(message, contains('Export a backup'));
       expect(message, contains('fresh install'));
     });
@@ -429,12 +471,17 @@ void main() {
       await open(); // creates it at the current version
 
       final next = _FutureSchema(NativeDatabase(File(path)));
-      await expectLater(next.customSelect('SELECT 1').get(),
-          throwsA(isA<SchemaMismatchException>()));
+      await expectLater(
+        next.customSelect('SELECT 1').get(),
+        throwsA(isA<SchemaMismatchException>()),
+      );
       await next.close();
 
-      expect(inspect().version, kSchemaVersion,
-          reason: 'and leaves the database at the version it can still open');
+      expect(
+        inspect().version,
+        kSchemaVersion,
+        reason: 'and leaves the database at the version it can still open',
+      );
     });
   });
 }

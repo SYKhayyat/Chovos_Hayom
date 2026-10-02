@@ -47,16 +47,16 @@ class DriftProgressRepository implements ProgressRepository {
   @override
   Future<void> removeEvents(String profileId, List<String> eventIds) async {
     if (eventIds.isEmpty) return;
-    await (_db.delete(_db.learningEvents)
-          ..where((t) => t.profileId.equals(profileId) & t.id.isIn(eventIds)))
-        .go();
+    await (_db.delete(
+      _db.learningEvents,
+    )..where((t) => t.profileId.equals(profileId) & t.id.isIn(eventIds))).go();
   }
 
   @override
   Future<int> removeBatch(String profileId, String batchId) =>
-      (_db.delete(_db.learningEvents)
-            ..where((t) =>
-                t.profileId.equals(profileId) & t.batchId.equals(batchId)))
+      (_db.delete(_db.learningEvents)..where(
+            (t) => t.profileId.equals(profileId) & t.batchId.equals(batchId),
+          ))
           .go();
 
   @override
@@ -83,9 +83,9 @@ class DriftProgressRepository implements ProgressRepository {
   Future<void> updateEvent(LearningEvent e) async {
     // Only the annotation columns are mutable; identity/action are immutable.
     // Both halves of the key, or this edits whichever profile's row matched.
-    await (_db.update(_db.learningEvents)
-          ..where((t) => t.profileId.equals(e.profileId) & t.id.equals(e.id)))
-        .write(
+    await (_db.update(
+      _db.learningEvents,
+    )..where((t) => t.profileId.equals(e.profileId) & t.id.equals(e.id))).write(
       LearningEventsCompanion(
         occurredAt: Value(e.occurredAt),
         durationMin: Value(e.durationMin),
@@ -102,7 +102,9 @@ class DriftProgressRepository implements ProgressRepository {
 
   @override
   Future<void> addProfile(Profile p) async {
-    await _db.into(_db.profiles).insert(
+    await _db
+        .into(_db.profiles)
+        .insert(
           ProfilesCompanion.insert(
             id: p.id,
             name: p.name,
@@ -120,53 +122,51 @@ class DriftProgressRepository implements ProgressRepository {
   @override
   Future<void> deleteProfile(String profileId) async {
     await _db.transaction(() async {
-      await (_db.delete(_db.learningEvents)
-            ..where((t) => t.profileId.equals(profileId)))
-          .go();
-      await (_db.delete(_db.customNodes)
-            ..where((t) => t.profileId.equals(profileId)))
-          .go();
-      await (_db.delete(_db.customLayers)
-            ..where((t) => t.profileId.equals(profileId)))
-          .go();
-      await (_db.delete(_db.layerConfigs)
-            ..where((t) => t.profileId.equals(profileId)))
-          .go();
-      await (_db.delete(_db.profiles)..where((t) => t.id.equals(profileId)))
-          .go();
+      await (_db.delete(
+        _db.learningEvents,
+      )..where((t) => t.profileId.equals(profileId))).go();
+      await (_db.delete(
+        _db.customNodes,
+      )..where((t) => t.profileId.equals(profileId))).go();
+      await (_db.delete(
+        _db.customLayers,
+      )..where((t) => t.profileId.equals(profileId))).go();
+      await (_db.delete(
+        _db.layerConfigs,
+      )..where((t) => t.profileId.equals(profileId))).go();
+      await (_db.delete(
+        _db.profiles,
+      )..where((t) => t.id.equals(profileId))).go();
     });
   }
 
   LearningEvent _toEvent(LearningEventRow row) => LearningEvent(
-        id: row.id,
-        profileId: row.profileId,
-        nodeId: row.nodeId,
-        unitIndex: row.unitIndex,
-        action: row.action,
-        occurredAt: row.occurredAt,
-        loggedAt: row.loggedAt,
-        durationMin: row.durationMin,
-        note: row.note,
-        layers: _decodeLayers(row.layersJson),
-        batchId: row.batchId,
-        planId: row.planId,
-      );
+    id: row.id,
+    profileId: row.profileId,
+    nodeId: row.nodeId,
+    unitIndex: row.unitIndex,
+    action: row.action,
+    occurredAt: row.occurredAt,
+    loggedAt: row.loggedAt,
+    durationMin: row.durationMin,
+    note: row.note,
+    layers: _decodeLayers(row.layersJson),
+    batchId: row.batchId,
+    planId: row.planId,
+  );
 
   /// Stores the default single-'main' list as null to keep old rows unchanged.
   static String? _encodeLayers(List<String> layers) =>
       (layers.length == 1 && layers.first == mainLayerId)
-          ? null
-          : jsonEncode(layers);
+      ? null
+      : jsonEncode(layers);
 
   static List<String> _decodeLayers(String? json) => json == null
       ? const [mainLayerId]
       : (jsonDecode(json) as List).cast<String>();
 
-  Profile _toProfile(ProfileRow row) => Profile(
-        id: row.id,
-        name: row.name,
-        createdAt: row.createdAt,
-      );
+  Profile _toProfile(ProfileRow row) =>
+      Profile(id: row.id, name: row.name, createdAt: row.createdAt);
 
   /// One query definition per collection, read two ways.
   ///
@@ -175,12 +175,14 @@ class DriftProgressRepository implements ProgressRepository {
   /// lines each. A hand-written second query is how the reactive and one-shot
   /// answers come to disagree about the same rows.
   SimpleSelectStatement<CustomNodes, CustomNodeRow> _customNodesOf(
-          String profileId) =>
-      _db.select(_db.customNodes)..where((t) => t.profileId.equals(profileId));
+    String profileId,
+  ) => _db.select(_db.customNodes)..where((t) => t.profileId.equals(profileId));
 
   @override
   Stream<List<CatalogNode>> watchCustomNodes(String profileId) =>
-      _customNodesOf(profileId).watch().map((rows) => rows.map(_toNode).toList());
+      _customNodesOf(
+        profileId,
+      ).watch().map((rows) => rows.map(_toNode).toList());
 
   @override
   Future<List<CatalogNode>> getCustomNodes(String profileId) async =>
@@ -190,7 +192,9 @@ class DriftProgressRepository implements ProgressRepository {
   Future<void> addCustomNode(String profileId, CatalogNode node) async {
     // Idempotent by (profileId, id): re-importing a backup updates in place
     // rather than throwing or duplicating.
-    await _db.into(_db.customNodes).insertOnConflictUpdate(
+    await _db
+        .into(_db.customNodes)
+        .insertOnConflictUpdate(
           CustomNodesCompanion.insert(
             id: node.id,
             profileId: profileId,
@@ -204,45 +208,47 @@ class DriftProgressRepository implements ProgressRepository {
             unitOffset: Value(node.unitOffset),
             hidden: Value(node.hidden),
             unitNamesJson: Value(
-                node.unitNames.isEmpty ? null : jsonEncode(node.unitNames)),
+              node.unitNames.isEmpty ? null : jsonEncode(node.unitNames),
+            ),
           ),
         );
   }
 
   @override
   Future<void> removeCustomNode(String profileId, String nodeId) async {
-    await (_db.delete(_db.customNodes)
-          ..where((t) => t.profileId.equals(profileId) & t.id.equals(nodeId)))
-        .go();
+    await (_db.delete(
+      _db.customNodes,
+    )..where((t) => t.profileId.equals(profileId) & t.id.equals(nodeId))).go();
   }
 
   CatalogNode _toNode(CustomNodeRow row) => CatalogNode(
-        id: row.id,
-        parentId: row.parentId,
-        name: row.name,
-        nameHebrew: row.nameHebrew,
-        sortOrder: row.sortOrder,
-        kind: row.kind,
-        unitLabel: row.unitLabel,
-        unitCount: row.unitCount,
-        unitOffset: row.unitOffset,
-        hidden: row.hidden,
-        unitNames: row.unitNamesJson == null
-            ? const []
-            : (jsonDecode(row.unitNamesJson!) as List).cast<String>(),
-      );
+    id: row.id,
+    parentId: row.parentId,
+    name: row.name,
+    nameHebrew: row.nameHebrew,
+    sortOrder: row.sortOrder,
+    kind: row.kind,
+    unitLabel: row.unitLabel,
+    unitCount: row.unitCount,
+    unitOffset: row.unitOffset,
+    hidden: row.hidden,
+    unitNames: row.unitNamesJson == null
+        ? const []
+        : (jsonDecode(row.unitNamesJson!) as List).cast<String>(),
+  );
 
   // --- Mefarshim (custom layers) -------------------------------------------
 
   SimpleSelectStatement<CustomLayers, CustomLayerRow> _customLayersOf(
-          String profileId) =>
-      _db.select(_db.customLayers)
-        ..where((t) => t.profileId.equals(profileId))
-        ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]);
+    String profileId,
+  ) => _db.select(_db.customLayers)
+    ..where((t) => t.profileId.equals(profileId))
+    ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]);
 
   @override
-  Stream<List<Layer>> watchCustomLayers(String profileId) =>
-      _customLayersOf(profileId).watch().map((rows) => rows.map(_toLayer).toList());
+  Stream<List<Layer>> watchCustomLayers(String profileId) => _customLayersOf(
+    profileId,
+  ).watch().map((rows) => rows.map(_toLayer).toList());
 
   @override
   Future<List<Layer>> getCustomLayers(String profileId) async =>
@@ -253,7 +259,9 @@ class DriftProgressRepository implements ProgressRepository {
 
   @override
   Future<void> addCustomLayer(String profileId, Layer layer) async {
-    await _db.into(_db.customLayers).insertOnConflictUpdate(
+    await _db
+        .into(_db.customLayers)
+        .insertOnConflictUpdate(
           CustomLayersCompanion.insert(
             id: layer.id,
             profileId: profileId,
@@ -265,49 +273,51 @@ class DriftProgressRepository implements ProgressRepository {
 
   @override
   Future<void> removeCustomLayer(String profileId, String layerId) async {
-    await (_db.delete(_db.customLayers)
-          ..where((t) => t.profileId.equals(profileId) & t.id.equals(layerId)))
-        .go();
+    await (_db.delete(
+      _db.customLayers,
+    )..where((t) => t.profileId.equals(profileId) & t.id.equals(layerId))).go();
   }
 
   // --- Layer settings -------------------------------------------------------
 
   SimpleSelectStatement<LayerConfigs, LayerConfigRow> _layerConfigsOf(
-          String profileId) =>
+    String profileId,
+  ) =>
       _db.select(_db.layerConfigs)..where((t) => t.profileId.equals(profileId));
 
   @override
   Stream<List<LayerConfigEntry>> watchLayerConfigs(String profileId) =>
-      _layerConfigsOf(profileId)
-          .watch()
-          .map((rows) => rows.map(_toLayerConfig).toList());
+      _layerConfigsOf(
+        profileId,
+      ).watch().map((rows) => rows.map(_toLayerConfig).toList());
 
   @override
   Future<List<LayerConfigEntry>> getLayerConfigs(String profileId) async =>
       (await _layerConfigsOf(profileId).get()).map(_toLayerConfig).toList();
 
-  LayerConfigEntry _toLayerConfig(LayerConfigRow r) => LayerConfigEntry(
-        nodeId: r.nodeId,
-        roles: _decodeRoles(r.rolesJson),
-      );
+  LayerConfigEntry _toLayerConfig(LayerConfigRow r) =>
+      LayerConfigEntry(nodeId: r.nodeId, roles: _decodeRoles(r.rolesJson));
 
   @override
   Future<void> setLayerConfig(String profileId, LayerConfigEntry entry) async {
-    await _db.into(_db.layerConfigs).insertOnConflictUpdate(
+    await _db
+        .into(_db.layerConfigs)
+        .insertOnConflictUpdate(
           LayerConfigsCompanion.insert(
             profileId: profileId,
             nodeId: entry.nodeId,
-            rolesJson: jsonEncode(
-                {for (final e in entry.roles.entries) e.key: e.value.name}),
+            rolesJson: jsonEncode({
+              for (final e in entry.roles.entries) e.key: e.value.name,
+            }),
           ),
         );
   }
 
   @override
   Future<void> clearLayerConfig(String profileId, String nodeId) async {
-    await (_db.delete(_db.layerConfigs)
-          ..where(
-              (t) => t.profileId.equals(profileId) & t.nodeId.equals(nodeId)))
+    await (_db.delete(_db.layerConfigs)..where(
+          (t) => t.profileId.equals(profileId) & t.nodeId.equals(nodeId),
+        ))
         .go();
   }
 

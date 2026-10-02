@@ -9,43 +9,50 @@ import 'package:flutter_test/flutter_test.dart';
 
 var _seq = 0;
 LearningEvent done(String node, int unit, DateTime day) => LearningEvent(
-      id: 'e${_seq++}',
-      profileId: 'p',
-      nodeId: node,
-      unitIndex: unit,
-      action: EventAction.done,
-      occurredAt: day,
-      loggedAt: day,
-    );
+  id: 'e${_seq++}',
+  profileId: 'p',
+  nodeId: node,
+  unitIndex: unit,
+  action: EventAction.done,
+  occurredAt: day,
+  loggedAt: day,
+);
 
 LearningEvent undone(String node, int unit, DateTime day) => LearningEvent(
-      id: 'e${_seq++}',
-      profileId: 'p',
-      nodeId: node,
-      unitIndex: unit,
-      action: EventAction.undone,
-      occurredAt: day,
-      loggedAt: day,
-    );
+  id: 'e${_seq++}',
+  profileId: 'p',
+  nodeId: node,
+  unitIndex: unit,
+  action: EventAction.undone,
+  occurredAt: day,
+  loggedAt: day,
+);
 
 final catalog = Catalog([
-  const CatalogNode(id: 'root', parentId: null, name: 'Root', kind: NodeKind.category),
   const CatalogNode(
-      id: 'small',
-      parentId: 'root',
-      name: 'Small',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.perek,
-      unitCount: 3,
-      unitOffset: 1),
+    id: 'root',
+    parentId: null,
+    name: 'Root',
+    kind: NodeKind.category,
+  ),
   const CatalogNode(
-      id: 'big',
-      parentId: 'root',
-      name: 'Big',
-      kind: NodeKind.leaf,
-      unitLabel: UnitLabel.daf,
-      unitCount: 5,
-      unitOffset: 2),
+    id: 'small',
+    parentId: 'root',
+    name: 'Small',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.perek,
+    unitCount: 3,
+    unitOffset: 1,
+  ),
+  const CatalogNode(
+    id: 'big',
+    parentId: 'root',
+    name: 'Big',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.daf,
+    unitCount: 5,
+    unitOffset: 2,
+  ),
 ]);
 
 List<Siyum> siyumimFor(List<LearningEvent> events) {
@@ -70,11 +77,12 @@ void main() {
 
   test('a partially-done leaf is not a siyum', () {
     expect(
-        siyumimFor([
-          done('big', 2, DateTime(2026, 1, 1)),
-          done('big', 3, DateTime(2026, 1, 2)),
-        ]),
-        isEmpty);
+      siyumimFor([
+        done('big', 2, DateTime(2026, 1, 1)),
+        done('big', 3, DateTime(2026, 1, 2)),
+      ]),
+      isEmpty,
+    );
   });
 
   test('multiple siyumim are sorted most-recent first', () {
@@ -87,21 +95,26 @@ void main() {
     expect(siyumim.map((s) => s.node.id).toList(), ['root', 'big', 'small']);
   });
 
-  test('finishing everything under a category is a siyum on the category too',
-      () {
-    // The whole point: an app whose payoff is the siyum must not stay silent
-    // when you finish a seder.
-    final siyumim = siyumimFor([
-      for (var u = 1; u <= 3; u++) done('small', u, DateTime(2026, 1, 10)),
-      for (var u = 2; u <= 6; u++) done('big', u, DateTime(2026, 2, 20)),
-    ]);
-    final root = siyumim.firstWhere((s) => s.node.id == 'root');
-    expect(root.isCategory, isTrue);
-    expect(root.units, 8, reason: 'every unit underneath');
-    expect(root.completedOn, DateTime(2026, 2, 20),
-        reason: 'dated by the last unit anywhere underneath');
-    expect(root.depth, 0);
-  });
+  test(
+    'finishing everything under a category is a siyum on the category too',
+    () {
+      // The whole point: an app whose payoff is the siyum must not stay silent
+      // when you finish a seder.
+      final siyumim = siyumimFor([
+        for (var u = 1; u <= 3; u++) done('small', u, DateTime(2026, 1, 10)),
+        for (var u = 2; u <= 6; u++) done('big', u, DateTime(2026, 2, 20)),
+      ]);
+      final root = siyumim.firstWhere((s) => s.node.id == 'root');
+      expect(root.isCategory, isTrue);
+      expect(root.units, 8, reason: 'every unit underneath');
+      expect(
+        root.completedOn,
+        DateTime(2026, 2, 20),
+        reason: 'dated by the last unit anywhere underneath',
+      );
+      expect(root.depth, 0);
+    },
+  );
 
   test('a category with one unfinished child is not a siyum', () {
     final siyumim = siyumimFor([

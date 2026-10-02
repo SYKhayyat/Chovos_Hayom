@@ -75,22 +75,19 @@ class _CrashLogScreenState extends ConsumerState<CrashLogScreen> {
       body: contents == null
           ? const Center(child: CircularProgressIndicator())
           : isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text(
-                      l10n.crashLogEmpty,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: SelectableText(
-                    contents,
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-                  ),
-                ),
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Text(l10n.crashLogEmpty, textAlign: TextAlign.center),
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: SelectableText(
+                contents,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              ),
+            ),
     );
   }
 }

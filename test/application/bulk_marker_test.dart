@@ -27,25 +27,31 @@ class _CountingRepository extends DriftProgressRepository {
 /// cat ─┬─ a (units 2,3,4)
 ///      └─ b (units 1,2)
 Catalog buildCatalog() => Catalog([
-      const CatalogNode(
-          id: 'cat', parentId: null, name: 'Cat', kind: NodeKind.category),
-      const CatalogNode(
-          id: 'a',
-          parentId: 'cat',
-          name: 'A',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf,
-          unitOffset: 2,
-          unitCount: 3),
-      const CatalogNode(
-          id: 'b',
-          parentId: 'cat',
-          name: 'B',
-          kind: NodeKind.leaf,
-          unitLabel: UnitLabel.daf,
-          unitOffset: 1,
-          unitCount: 2),
-    ]);
+  const CatalogNode(
+    id: 'cat',
+    parentId: null,
+    name: 'Cat',
+    kind: NodeKind.category,
+  ),
+  const CatalogNode(
+    id: 'a',
+    parentId: 'cat',
+    name: 'A',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.daf,
+    unitOffset: 2,
+    unitCount: 3,
+  ),
+  const CatalogNode(
+    id: 'b',
+    parentId: 'cat',
+    name: 'B',
+    kind: NodeKind.leaf,
+    unitLabel: UnitLabel.daf,
+    unitOffset: 1,
+    unitCount: 2,
+  ),
+]);
 
 void main() {
   late ProgressRepository repo;
@@ -78,8 +84,10 @@ void main() {
       FoldLog.fold(await repo.getEvents('p'));
 
   test('finish-all on a category cascades to every descendant leaf', () async {
-    final result = await (await marker())
-        .finish(nodeId: 'cat', selection: const RequiredLayerSelection());
+    final result = await (await marker()).finish(
+      nodeId: 'cat',
+      selection: const RequiredLayerSelection(),
+    );
 
     expect(result.unitsAffected, 5); // a:3 + b:2
     expect(result.addedEventIds, hasLength(5));
@@ -88,19 +96,25 @@ void main() {
     expect(fold.doneUnits('b'), {1, 2});
   });
 
-  test('finish skips units already satisfying the target (no redundant events)',
-      () async {
-    await logger.markDone('a', 2); // pre-mark one unit
-    final result = await (await marker())
-        .finish(nodeId: 'a', selection: const RequiredLayerSelection());
+  test(
+    'finish skips units already satisfying the target (no redundant events)',
+    () async {
+      await logger.markDone('a', 2); // pre-mark one unit
+      final result = await (await marker()).finish(
+        nodeId: 'a',
+        selection: const RequiredLayerSelection(),
+      );
 
-    expect(result.unitsAffected, 2); // only a3, a4
-    expect((await repo.getEvents('p')), hasLength(3)); // 1 pre + 2 new
-  });
+      expect(result.unitsAffected, 2); // only a3, a4
+      expect((await repo.getEvents('p')), hasLength(3)); // 1 pre + 2 new
+    },
+  );
 
   test('single-layer finish marks just that layer across the leaf', () async {
-    final result = await (await marker())
-        .finish(nodeId: 'a', selection: const SingleLayerSelection('rashi'));
+    final result = await (await marker()).finish(
+      nodeId: 'a',
+      selection: const SingleLayerSelection('rashi'),
+    );
 
     expect(result.unitsAffected, 3);
     final fold = await currentFold();
@@ -131,8 +145,10 @@ void main() {
   });
 
   test('undo removes exactly the events a bulk action added', () async {
-    final result = await (await marker())
-        .finish(nodeId: 'cat', selection: const RequiredLayerSelection());
+    final result = await (await marker()).finish(
+      nodeId: 'cat',
+      selection: const RequiredLayerSelection(),
+    );
     await repo.removeEvents('p', result.addedEventIds);
 
     final fold = await currentFold();
@@ -141,40 +157,63 @@ void main() {
     expect(await repo.getEvents('p'), isEmpty);
   });
 
-  test('finish on an already-complete node reports nothing to change', () async {
-    await (await marker())
-        .finish(nodeId: 'a', selection: const RequiredLayerSelection());
-    final again = await (await marker())
-        .finish(nodeId: 'a', selection: const RequiredLayerSelection());
-    expect(again.isEmpty, isTrue);
-    expect(again.unitsAffected, 0);
-  });
+  test(
+    'finish on an already-complete node reports nothing to change',
+    () async {
+      await (await marker()).finish(
+        nodeId: 'a',
+        selection: const RequiredLayerSelection(),
+      );
+      final again = await (await marker()).finish(
+        nodeId: 'a',
+        selection: const RequiredLayerSelection(),
+      );
+      expect(again.isEmpty, isTrue);
+      expect(again.unitsAffected, 0);
+    },
+  );
 
-  test('planning writes nothing and reports the count the commit will use',
-      () async {
-    final m = await marker();
-    final plan =
-        m.planFinish(nodeId: 'cat', selection: const RequiredLayerSelection());
+  test(
+    'planning writes nothing and reports the count the commit will use',
+    () async {
+      final m = await marker();
+      final plan = m.planFinish(
+        nodeId: 'cat',
+        selection: const RequiredLayerSelection(),
+      );
 
-    expect(plan.unitsAffected, 5);
-    expect(await repo.getEvents('p'), isEmpty, reason: 'planning is read-only');
+      expect(plan.unitsAffected, 5);
+      expect(
+        await repo.getEvents('p'),
+        isEmpty,
+        reason: 'planning is read-only',
+      );
 
-    final result = await m.commit(plan);
-    expect(result.unitsAffected, plan.unitsAffected);
-  });
+      final result = await m.commit(plan);
+      expect(result.unitsAffected, plan.unitsAffected);
+    },
+  );
 
-  test('a plan that would change nothing is empty, so the UI can say so',
-      () async {
-    await (await marker())
-        .finish(nodeId: 'a', selection: const RequiredLayerSelection());
-    final plan = (await marker())
-        .planFinish(nodeId: 'a', selection: const RequiredLayerSelection());
-    expect(plan.isEmpty, isTrue);
-  });
+  test(
+    'a plan that would change nothing is empty, so the UI can say so',
+    () async {
+      await (await marker()).finish(
+        nodeId: 'a',
+        selection: const RequiredLayerSelection(),
+      );
+      final plan = (await marker()).planFinish(
+        nodeId: 'a',
+        selection: const RequiredLayerSelection(),
+      );
+      expect(plan.isEmpty, isTrue);
+    },
+  );
 
   test('every event of one bulk action shares a batch id', () async {
-    final result = await (await marker())
-        .finish(nodeId: 'cat', selection: const RequiredLayerSelection());
+    final result = await (await marker()).finish(
+      nodeId: 'cat',
+      selection: const RequiredLayerSelection(),
+    );
 
     expect(result.batchId, isNotNull);
     final events = await repo.getEvents('p');
@@ -184,18 +223,26 @@ void main() {
   });
 
   test('two bulk actions get different batch ids', () async {
-    final first = await (await marker())
-        .finish(nodeId: 'a', selection: const RequiredLayerSelection());
-    final second = await (await marker())
-        .finish(nodeId: 'b', selection: const RequiredLayerSelection());
+    final first = await (await marker()).finish(
+      nodeId: 'a',
+      selection: const RequiredLayerSelection(),
+    );
+    final second = await (await marker()).finish(
+      nodeId: 'b',
+      selection: const RequiredLayerSelection(),
+    );
     expect(first.batchId, isNot(second.batchId));
   });
 
   test('undo by batch id reverts exactly that batch, days later', () async {
-    final first = await (await marker())
-        .finish(nodeId: 'a', selection: const RequiredLayerSelection());
-    await (await marker())
-        .finish(nodeId: 'b', selection: const RequiredLayerSelection());
+    final first = await (await marker()).finish(
+      nodeId: 'a',
+      selection: const RequiredLayerSelection(),
+    );
+    await (await marker()).finish(
+      nodeId: 'b',
+      selection: const RequiredLayerSelection(),
+    );
 
     // No held event-id list — just the batch id, which the log itself carries.
     final removed = await repo.removeBatch('p', first.batchId!);
@@ -206,39 +253,44 @@ void main() {
     expect(fold.doneUnits('b'), {1, 2}, reason: 'the other batch is untouched');
   });
 
-  test('bulk writes are split into bounded transactions but keep one batch id',
-      () async {
-    final database = memoryDatabase();
-    final counting = _CountingRepository(database);
-    var ids = 0;
-    final service = LoggingService(
-      repository: counting,
-      profileId: 'p',
-      now: () => DateTime(2026, 1, 1, 8),
-      idGen: () => 'chunk-${ids++}',
-      maxBatchSize: 2,
-    );
-    final bulk = BulkMarker(
-      catalog: catalog,
-      fold: FoldLog.fold(const []),
-      layers: LayerRoles(),
-      logger: service,
-    );
+  test(
+    'bulk writes are split into bounded transactions but keep one batch id',
+    () async {
+      final database = memoryDatabase();
+      final counting = _CountingRepository(database);
+      var ids = 0;
+      final service = LoggingService(
+        repository: counting,
+        profileId: 'p',
+        now: () => DateTime(2026, 1, 1, 8),
+        idGen: () => 'chunk-${ids++}',
+        maxBatchSize: 2,
+      );
+      final bulk = BulkMarker(
+        catalog: catalog,
+        fold: FoldLog.fold(const []),
+        layers: LayerRoles(),
+        logger: service,
+      );
 
-    final result = await bulk.finish(
-      nodeId: 'cat',
-      selection: const RequiredLayerSelection(),
-    );
+      final result = await bulk.finish(
+        nodeId: 'cat',
+        selection: const RequiredLayerSelection(),
+      );
 
-    expect(counting.batchSizes, [2, 2, 1]);
-    expect(result.unitsAffected, 5);
-    expect((await counting.getEvents('p')).map((e) => e.batchId).toSet(),
-        {result.batchId});
-  });
+      expect(counting.batchSizes, [2, 2, 1]);
+      expect(result.unitsAffected, 5);
+      expect((await counting.getEvents('p')).map((e) => e.batchId).toSet(), {
+        result.batchId,
+      });
+    },
+  );
 
-  test('a single mark carries no batch id, so it never joins the undo list',
-      () async {
-    await logger.markDone('a', 2);
-    expect((await repo.getEvents('p')).single.batchId, isNull);
-  });
+  test(
+    'a single mark carries no batch id, so it never joins the undo list',
+    () async {
+      await logger.markDone('a', 2);
+      expect((await repo.getEvents('p')).single.batchId, isNull);
+    },
+  );
 }

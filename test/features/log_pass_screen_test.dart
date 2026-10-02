@@ -48,17 +48,17 @@ import '../support/memory_database.dart';
 /// work started with grew.
 void main() {
   LearningEvent done(int i) => LearningEvent(
-        id: 'e$i',
-        profileId: 'default',
-        nodeId: 'shas.moed.shabbos',
-        unitIndex: 2 + (i % 150),
-        action: EventAction.done,
-        occurredAt: DateTime(2025, 1, 1).add(Duration(hours: i * 6)),
-        loggedAt: DateTime(2025, 1, 1).add(Duration(hours: i * 6)),
-        // Every eleventh event carries a haara, so the journal has rows to build
-        // rather than a filter that falls out on the first field.
-        note: i % 11 == 0 ? 'haara' : null,
-      );
+    id: 'e$i',
+    profileId: 'default',
+    nodeId: 'shas.moed.shabbos',
+    unitIndex: 2 + (i % 150),
+    action: EventAction.done,
+    occurredAt: DateTime(2025, 1, 1).add(Duration(hours: i * 6)),
+    loggedAt: DateTime(2025, 1, 1).add(Duration(hours: i * 6)),
+    // Every eleventh event carries a haara, so the journal has rows to build
+    // rather than a filter that falls out on the first field.
+    note: i % 11 == 0 ? 'haara' : null,
+  );
 
   CountingLog logOf(int count) =>
       CountingLog([for (var i = 0; i < count; i++) done(i)]);
@@ -86,18 +86,19 @@ void main() {
   /// reasoning as `log_pass_count_test.dart`, and the only way to hand the graph
   /// a list that counts its own reads.
   Widget scoped(Widget child) => ProviderScope(
-        overrides: [
-          catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
-          progressRepositoryProvider.overrideWithValue(memoryRepository()),
-          appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
-          eventsProvider.overrideWith((ref) => events.stream),
-        ],
-        child: child,
-      );
+    overrides: [
+      catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
+      progressRepositoryProvider.overrideWithValue(memoryRepository()),
+      appPreferencesProvider.overrideWithValue(InMemoryPreferences()),
+      eventsProvider.overrideWith((ref) => events.stream),
+    ],
+    child: child,
+  );
 
   group('the real app', () {
-    testWidgets('a mark costs three passes with the dashboard up',
-        (tester) async {
+    testWidgets('a mark costs three passes with the dashboard up', (
+      tester,
+    ) async {
       await tester.pumpWidget(scoped(const ChovosHayomApp()));
       await pump(tester);
       events.add(logOf(300));
@@ -107,15 +108,20 @@ void main() {
       events.add(fresh);
       await pump(tester);
 
-      expect(fresh.passes, 3,
-          reason: 'the fold, the day index, and the backup axis — one each. The '
-              'third is the one the report leaves open: distinct units recorded '
-              'since an instant, keyed on loggedAt, which neither index can '
-              'answer. A fourth here is a walk nobody accounted for');
+      expect(
+        fresh.passes,
+        3,
+        reason:
+            'the fold, the day index, and the backup axis — one each. The '
+            'third is the one the report leaves open: distinct units recorded '
+            'since an instant, keyed on loggedAt, which neither index can '
+            'answer. A fourth here is a walk nobody accounted for',
+      );
     });
 
-    testWidgets('and three from the grid, where marks are actually made',
-        (tester) async {
+    testWidgets('and three from the grid, where marks are actually made', (
+      tester,
+    ) async {
       await tester.pumpWidget(scoped(const ChovosHayomApp()));
       await pump(tester);
       events.add(logOf(300));
@@ -130,13 +136,17 @@ void main() {
       events.add(fresh);
       await pump(tester);
 
-      expect(fresh.passes, 3,
-          reason: 'the grid asks one question — membership — and on its own it '
-              'costs one pass. The other two are the dashboard underneath: a '
-              'pushed route does not stop the screen it covered from '
-              're-deriving, and should not, because the alternative is arriving '
-              'back at a stale tree or flushing a derived ancestor mid-build. '
-              'So three is the number for the hot path, not two');
+      expect(
+        fresh.passes,
+        3,
+        reason:
+            'the grid asks one question — membership — and on its own it '
+            'costs one pass. The other two are the dashboard underneath: a '
+            'pushed route does not stop the screen it covered from '
+            're-deriving, and should not, because the alternative is arriving '
+            'back at a stale tree or flushing a derived ancestor mid-build. '
+            'So three is the number for the hot path, not two',
+      );
     });
   });
 
@@ -168,19 +178,24 @@ void main() {
         axis: 'membership per unit, and nothing else',
       ),
     ]) {
-      testWidgets('${screen.name} costs one pass up, none away',
-          (tester) async {
+      testWidgets('${screen.name} costs one pass up, none away', (
+        tester,
+      ) async {
         var open = true;
         late StateSetter setOpen;
 
-        await tester.pumpWidget(scoped(
-          localizedApp(
-            home: StatefulBuilder(builder: (context, setState) {
-              setOpen = setState;
-              return open ? screen.widget : const SizedBox.shrink();
-            }),
+        await tester.pumpWidget(
+          scoped(
+            localizedApp(
+              home: StatefulBuilder(
+                builder: (context, setState) {
+                  setOpen = setState;
+                  return open ? screen.widget : const SizedBox.shrink();
+                },
+              ),
+            ),
           ),
-        ));
+        );
         await pump(tester);
         events.add(logOf(200));
         await pump(tester);
@@ -188,9 +203,13 @@ void main() {
         final whileUp = logOf(201);
         events.add(whileUp);
         await pump(tester);
-        expect(whileUp.passes, 1,
-            reason: '${screen.axis} — one walk per change, which is the price '
-                'of the axis and is paid while it is being looked at');
+        expect(
+          whileUp.passes,
+          1,
+          reason:
+              '${screen.axis} — one walk per change, which is the price '
+              'of the axis and is paid while it is being looked at',
+        );
 
         setOpen(() => open = false);
         await pump(tester);
@@ -198,11 +217,15 @@ void main() {
         final whileAway = logOf(202);
         events.add(whileAway);
         await pump(tester);
-        expect(whileAway.passes, 0,
-            reason: 'the provider outlives the screen — it is not autoDispose — '
-                'but with nothing listening it is marked dirty and left alone. '
-                'If this ever reads 1, every mark made anywhere in the app is '
-                'paying for a screen the user closed');
+        expect(
+          whileAway.passes,
+          0,
+          reason:
+              'the provider outlives the screen — it is not autoDispose — '
+              'but with nothing listening it is marked dirty and left alone. '
+              'If this ever reads 1, every mark made anywhere in the app is '
+              'paying for a screen the user closed',
+        );
       });
     }
   });
@@ -230,25 +253,34 @@ void main() {
     /// app: a broadcast stream drops what it emits when nothing is subscribed,
     /// which would leave the sheet reading an empty log and every count zero.
     Future<({WidgetRef ref, CountingLog log})> openSheet(
-        WidgetTester tester) async {
+      WidgetTester tester,
+    ) async {
       late WidgetRef hostRef;
-      await tester.pumpWidget(scoped(
-        localizedApp(
-          home: Consumer(builder: (context, ref, _) {
-            hostRef = ref;
-            ref.watch(eventsProvider);
-            return Scaffold(
-              body: Builder(
-                builder: (context) => TextButton(
-                  onPressed: () => showUnitDetailsSheet(context, ref,
-                      node: fakeCatalog().byId('shas.moed.shabbos')!, unit: 2),
-                  child: const Text('open'),
-                ),
-              ),
-            );
-          }),
+      await tester.pumpWidget(
+        scoped(
+          localizedApp(
+            home: Consumer(
+              builder: (context, ref, _) {
+                hostRef = ref;
+                ref.watch(eventsProvider);
+                return Scaffold(
+                  body: Builder(
+                    builder: (context) => TextButton(
+                      onPressed: () => showUnitDetailsSheet(
+                        context,
+                        ref,
+                        node: fakeCatalog().byId('shas.moed.shabbos')!,
+                        unit: 2,
+                      ),
+                      child: const Text('open'),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ),
-      ));
+      );
       await pump(tester);
       final log = logOf(200);
       events.add(log);
@@ -257,15 +289,20 @@ void main() {
       log.reset();
       await tester.tap(find.text('open'));
       await pump(tester);
-      expect(log.passes, 1,
-          reason: "one unit's own events, in order — the axis the sheet exists "
-              'for, and the one time it is unavoidable');
+      expect(
+        log.passes,
+        1,
+        reason:
+            "one unit's own events, in order — the axis the sheet exists "
+            'for, and the one time it is unavoidable',
+      );
       log.reset();
       return (ref: hostRef, log: log);
     }
 
-    testWidgets('walks it again for a rebuild that is not a log change',
-        (tester) async {
+    testWidgets('walks it again for a rebuild that is not a log change', (
+      tester,
+    ) async {
       final open = await openSheet(tester);
 
       // A metrics change: a rotation, or the keyboard that a nested log or
@@ -274,31 +311,48 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       await pump(tester);
 
-      expect(open.log.passes, 1,
-          reason: 'nothing about the log changed and it was filtered again. '
-              'Accepted at this size — see the group doc — but it is a '
-              'per-build walk and not a per-change one, and that is the honest '
-              'name for it');
+      expect(
+        open.log.passes,
+        1,
+        reason:
+            'nothing about the log changed and it was filtered again. '
+            'Accepted at this size — see the group doc — but it is a '
+            'per-build walk and not a per-change one, and that is the honest '
+            'name for it',
+      );
     });
 
-    testWidgets('and not at all for a settings field it does not read',
-        (tester) async {
+    testWidgets('and not at all for a settings field it does not read', (
+      tester,
+    ) async {
       final open = await openSheet(tester);
 
-      await open.ref.read(settingsProvider.notifier).setThemeMode(ThemeMode.dark);
+      await open.ref
+          .read(settingsProvider.notifier)
+          .setThemeMode(ThemeMode.dark);
       await pump(tester);
-      expect(open.log.passes, 0,
-          reason: 'it takes one field out of the settings through a `.select`, '
-              'so a theme write does not rebuild it. Without that select a '
-              'per-build walk would make every settings write a log walk — '
-              'which is the exact shape backupStatusProvider was fixed for');
+      expect(
+        open.log.passes,
+        0,
+        reason:
+            'it takes one field out of the settings through a `.select`, '
+            'so a theme write does not rebuild it. Without that select a '
+            'per-build walk would make every settings write a log walk — '
+            'which is the exact shape backupStatusProvider was fixed for',
+      );
 
       // The one field it does read, for contrast: this is a real rebuild.
-      await open.ref.read(settingsProvider.notifier).setCalendar(CalendarMode.hebrew);
+      await open.ref
+          .read(settingsProvider.notifier)
+          .setCalendar(CalendarMode.hebrew);
       await pump(tester);
-      expect(open.log.passes, 1,
-          reason: 'the sheet renders dates, so a calendar change genuinely '
-              'rebuilds it — and a per-build walk turns that into a log walk');
+      expect(
+        open.log.passes,
+        1,
+        reason:
+            'the sheet renders dates, so a calendar change genuinely '
+            'rebuilds it — and a per-build walk turns that into a log walk',
+      );
     });
   });
 }

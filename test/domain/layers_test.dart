@@ -38,8 +38,13 @@ void main() {
 
     test('a unit is done only when every required layer is present', () {
       final req = LayerRoles(
-          nodeConfig: {'a': roles(required: ['main', 'rashi'])});
-      final partial = FoldLog.fold([ev(EventAction.done, layers: ['main'])]);
+        nodeConfig: {
+          'a': roles(required: ['main', 'rashi']),
+        },
+      );
+      final partial = FoldLog.fold([
+        ev(EventAction.done, layers: ['main']),
+      ]);
       expect(partial.doneUnits('a', req), isEmpty);
 
       final full = FoldLog.fold([
@@ -50,7 +55,9 @@ void main() {
     });
 
     test('with no resolver, text alone completes a unit (legacy behavior)', () {
-      final fold = FoldLog.fold([ev(EventAction.done, layers: ['main'])]);
+      final fold = FoldLog.fold([
+        ev(EventAction.done, layers: ['main']),
+      ]);
       expect(fold.doneUnits('a'), {2});
     });
 
@@ -86,7 +93,11 @@ void main() {
 
       expect(fold.completedLayers('a', 2), {'main', 'rashi'});
       expect(fold.reviewCount('a', 2), 2, reason: 'chazaras must not vanish');
-      expect(fold.doneAt('a', 2), isNotNull, reason: 'the learned-on date survives');
+      expect(
+        fold.doneAt('a', 2),
+        isNotNull,
+        reason: 'the learned-on date survives',
+      );
       expect(fold.touchedAt('a', 2), isNotNull);
       expect(fold.isAnnotated('a', 2), isTrue, reason: 'the haara survives');
     });
@@ -121,7 +132,9 @@ void main() {
   group('LayerRoles resolution', () {
     test('inherits from the nearest configured ancestor', () {
       final r = LayerRoles(
-        nodeConfig: {'shas': roles(required: ['main', 'rashi'])},
+        nodeConfig: {
+          'shas': roles(required: ['main', 'rashi']),
+        },
         parentOf: {'shas': null, 'bavli': 'shas', 'shabbos': 'bavli'},
       );
       expect(r.requiredFor('shabbos'), {'main', 'rashi'});
@@ -143,11 +156,18 @@ void main() {
       // wrote one. What is left is the property the callers depend on: the
       // required set is a fact about the node, which is why the fold and the
       // chazara schedule ask it once per node rather than once per unit.
-      final r = LayerRoles(nodeConfig: {'a': roles(required: ['main'])});
+      final r = LayerRoles(
+        nodeConfig: {
+          'a': roles(required: ['main']),
+        },
+      );
 
       expect(r.requiredFor('a'), {'main'});
-      expect(identical(r.requiredFor('a'), r.requiredFor('a')), isTrue,
-          reason: 'and it is memoized, so the loops above pay for it once');
+      expect(
+        identical(r.requiredFor('a'), r.requiredFor('a')),
+        isTrue,
+        reason: 'and it is memoized, so the loops above pay for it once',
+      );
     });
 
     test('unconfigured nodes default to text-only', () {
@@ -164,9 +184,10 @@ void main() {
   group('optional vs required', () {
     test('checkable includes optional; done depends only on required', () {
       final r = LayerRoles(
-          nodeConfig: {
-            'a': roles(required: ['main'], optional: ['rashi'])
-          });
+        nodeConfig: {
+          'a': roles(required: ['main'], optional: ['rashi']),
+        },
+      );
 
       expect(r.requiredFor('a'), {'main'});
       expect(r.forNode('a').keys, {'main', 'rashi'});
@@ -175,7 +196,9 @@ void main() {
 
       // Learning only the text completes the unit — the optional rashi does not
       // gate it...
-      final textOnly = FoldLog.fold([ev(EventAction.done, layers: ['main'])]);
+      final textOnly = FoldLog.fold([
+        ev(EventAction.done, layers: ['main']),
+      ]);
       expect(textOnly.doneUnits('a', r), {2});
       // ...and the fraction, which tracks only required, reads full.
       expect(r.fraction('a', 2, textOnly), 1.0);
@@ -187,11 +210,14 @@ void main() {
       // `offered ∪ required`. A role map has one entry per layer, so a required
       // layer is in the map, so it is checkable. There is nothing to reconcile.
       final r = LayerRoles(
-          nodeConfig: {
-            'a': roles(required: ['main', 'tosafos'])
-          });
-      expect(r.forNode('a').keys.toSet().containsAll(r.requiredFor('a')),
-          isTrue);
+        nodeConfig: {
+          'a': roles(required: ['main', 'tosafos']),
+        },
+      );
+      expect(
+        r.forNode('a').keys.toSet().containsAll(r.requiredFor('a')),
+        isTrue,
+      );
       expect(r.forNode('a').keys, {'main', 'tosafos'});
     });
 
@@ -203,9 +229,10 @@ void main() {
       // Nothing required means nothing gates completion, and `fraction` must not
       // divide by zero on the way to saying so.
       final r = LayerRoles(
-          nodeConfig: {
-            'a': roles(optional: ['rashi', 'tosafos'])
-          });
+        nodeConfig: {
+          'a': roles(optional: ['rashi', 'tosafos']),
+        },
+      );
       final none = FoldLog.fold(<LearningEvent>[]);
       expect(r.requiredFor('a'), isEmpty);
       expect(r.fraction('a', 2, none), 0.0);

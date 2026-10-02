@@ -19,9 +19,9 @@ import 'package:flutter/material.dart';
 /// supply both, because a `ListTile` needs a `Material` ancestor and
 /// `GoalsSection` reaches for the controller to move to the Calculator tab.
 Widget reportSection(Widget section, {int length = 5}) => DefaultTabController(
-      length: length,
-      child: Scaffold(body: section),
-    );
+  length: length,
+  child: Scaffold(body: section),
+);
 
 MaterialApp localizedApp({
   Widget? home,
@@ -35,13 +35,12 @@ MaterialApp localizedApp({
   /// the top right corner of every image and reads as a defect in the app
   /// rather than a fact about how tests are run.
   bool showBanner = true,
-}) =>
-    MaterialApp(
-      home: home,
-      debugShowCheckedModeBanner: showBanner,
-      locale: locale,
-      supportedLocales: AppLocalizations.supportedLocales,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      onGenerateRoute: onGenerateRoute,
-      onUnknownRoute: onUnknownRoute,
-    );
+}) => MaterialApp(
+  home: home,
+  debugShowCheckedModeBanner: showBanner,
+  locale: locale,
+  supportedLocales: AppLocalizations.supportedLocales,
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  onGenerateRoute: onGenerateRoute,
+  onUnknownRoute: onUnknownRoute,
+);

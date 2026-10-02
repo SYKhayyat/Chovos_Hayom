@@ -35,7 +35,8 @@ class PlannerCalendarScreen extends ConsumerStatefulWidget {
   const PlannerCalendarScreen({super.key});
 
   @override
-  ConsumerState<PlannerCalendarScreen> createState() => _PlannerCalendarScreenState();
+  ConsumerState<PlannerCalendarScreen> createState() =>
+      _PlannerCalendarScreenState();
 }
 
 class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
@@ -162,14 +163,17 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
                 : null,
             segments: [
               ButtonSegment(
-                  value: PlannerCalendarRange.day,
-                  label: Text(l10n.plannerCalendarDay)),
+                value: PlannerCalendarRange.day,
+                label: Text(l10n.plannerCalendarDay),
+              ),
               ButtonSegment(
-                  value: PlannerCalendarRange.week,
-                  label: Text(l10n.plannerCalendarWeek)),
+                value: PlannerCalendarRange.week,
+                label: Text(l10n.plannerCalendarWeek),
+              ),
               ButtonSegment(
-                  value: PlannerCalendarRange.month,
-                  label: Text(l10n.plannerCalendarMonth)),
+                value: PlannerCalendarRange.month,
+                label: Text(l10n.plannerCalendarMonth),
+              ),
             ],
             selected: {range},
             onSelectionChanged: (value) => setState(() => _range = value.first),
@@ -205,28 +209,28 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
             child: Focus(
               onKeyEvent: _onKey,
               child: PageView.builder(
-              controller: _pages,
-              onPageChanged: _onPage,
-              // Three pages, and not one per day of a browsable span. Each page
-              // derives its own window from the same step the arrows call, so a
-              // swipe costs one window and only three windows are ever built.
-              itemCount: 3,
-              itemBuilder: (context, page) => _page(
-                range: range,
-                // Page 0 is the window before, 2 the one after, derived rather
-                // than tracked: an offset kept in step with the anchor is
-                // exactly the state that drifts.
-                anchor: range.step(anchor, page - _middlePage),
-                catalog: catalog,
-                fold: fold,
-                config: config,
-                layers: layers,
-                today: Day.of(now),
-                siyumByDay: siyumByDay,
-                l10n: l10n,
-                mode: mode,
+                controller: _pages,
+                onPageChanged: _onPage,
+                // Three pages, and not one per day of a browsable span. Each page
+                // derives its own window from the same step the arrows call, so a
+                // swipe costs one window and only three windows are ever built.
+                itemCount: 3,
+                itemBuilder: (context, page) => _page(
+                  range: range,
+                  // Page 0 is the window before, 2 the one after, derived rather
+                  // than tracked: an offset kept in step with the anchor is
+                  // exactly the state that drifts.
+                  anchor: range.step(anchor, page - _middlePage),
+                  catalog: catalog,
+                  fold: fold,
+                  config: config,
+                  layers: layers,
+                  today: Day.of(now),
+                  siyumByDay: siyumByDay,
+                  l10n: l10n,
+                  mode: mode,
+                ),
               ),
-            ),
             ),
           ),
         ],
@@ -292,30 +296,30 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
 
     return switch (range) {
       PlannerCalendarRange.month => _MonthGrid(
-          days: window,
-          byDay: byDay,
-          siyumByDay: siyumByDay,
-          l10n: l10n,
-          dueOn: (day) => _dueOn(config, day),
-          onDay: onDay,
-        ),
+        days: window,
+        byDay: byDay,
+        siyumByDay: siyumByDay,
+        l10n: l10n,
+        dueOn: (day) => _dueOn(config, day),
+        onDay: onDay,
+      ),
       PlannerCalendarRange.week => _WeekList(
-          days: window,
-          byDay: byDay,
-          siyumByDay: siyumByDay,
-          l10n: l10n,
-          mode: mode,
-          dueOn: (day) => _dueOn(config, day),
-          onDay: onDay,
-        ),
+        days: window,
+        byDay: byDay,
+        siyumByDay: siyumByDay,
+        l10n: l10n,
+        mode: mode,
+        dueOn: (day) => _dueOn(config, day),
+        onDay: onDay,
+      ),
       PlannerCalendarRange.day => _DayList(
-          day: window.first,
-          config: config,
-          l10n: l10n,
-          mode: mode,
-          siyumim: siyumByDay[window.first],
-          onDay: onDay,
-        ),
+        day: window.first,
+        config: config,
+        l10n: l10n,
+        mode: mode,
+        siyumim: siyumByDay[window.first],
+        onDay: onDay,
+      ),
     };
   }
 
@@ -338,8 +342,7 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
     final named = range.namedDay(anchor);
     return switch (range) {
       PlannerCalendarRange.day ||
-      PlannerCalendarRange.month =>
-        DateDisplay.format(named.midnight, mode),
+      PlannerCalendarRange.month => DateDisplay.format(named.midnight, mode),
       PlannerCalendarRange.week =>
         // Both ends, because a week is not a point: the Monday alone reads as
         // a day rather than as the week that starts on it.
@@ -355,12 +358,12 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
   /// ever hear it.
   String _stepLabel(AppLocalizations l10n, {required bool back}) =>
       switch (_range) {
-        PlannerCalendarRange.day => back
-            ? l10n.plannerCalendarPreviousDay
-            : l10n.plannerCalendarNextDay,
-        PlannerCalendarRange.week => back
-            ? l10n.plannerCalendarPreviousWeek
-            : l10n.plannerCalendarNextWeek,
+        PlannerCalendarRange.day =>
+          back ? l10n.plannerCalendarPreviousDay : l10n.plannerCalendarNextDay,
+        PlannerCalendarRange.week =>
+          back
+              ? l10n.plannerCalendarPreviousWeek
+              : l10n.plannerCalendarNextWeek,
         PlannerCalendarRange.month =>
           back ? l10n.plannerCalendarPrevious : l10n.plannerCalendarNext,
       };
@@ -410,12 +413,8 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
     final controller = ref.read(plansConfigProvider.notifier);
     final mode2 = mode;
 
-    Future<void> save(LearningPlan next, String message) => guarded(
-          sheetContext,
-          ref,
-          () => controller.save(next),
-          what: message,
-        );
+    Future<void> save(LearningPlan next, String message) =>
+        guarded(sheetContext, ref, () => controller.save(next), what: message);
 
     // Every plan, not just the firing ones: adding to a day a plan's rule skips
     // is exactly what makes it "also how you force a plan onto a day its rule
@@ -428,7 +427,8 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
     final removable = [
       ...firing,
       for (final p in config.plans)
-        if (!firing.any((f) => f.id == p.id) && p.dateAmounts.containsKey(day)) p,
+        if (!firing.any((f) => f.id == p.id) && p.dateAmounts.containsKey(day))
+          p,
     ];
 
     return Column(
@@ -442,27 +442,16 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
               key: const ValueKey('day-add'),
               icon: const Icon(Icons.add),
               label: Text(l10n.plansDayAddWork),
-              onPressed: () => _addToDay(
-                sheetContext,
-                ref,
-                day,
-                all,
-                mode2,
-                save,
-              ),
+              onPressed: () =>
+                  _addToDay(sheetContext, ref, day, all, mode2, save),
             ),
             if (removable.isNotEmpty)
               TextButton.icon(
                 key: const ValueKey('day-remove'),
                 icon: const Icon(Icons.remove),
                 label: Text(l10n.plansRemove),
-                onPressed: () => _removeFromDay(
-                  sheetContext,
-                  ref,
-                  day,
-                  removable,
-                  save,
-                ),
+                onPressed: () =>
+                    _removeFromDay(sheetContext, ref, day, removable, save),
               ),
           ],
         ),
@@ -507,8 +496,10 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(l10n.plansAddExisting,
-                  style: Theme.of(sheet).textTheme.titleMedium),
+              child: Text(
+                l10n.plansAddExisting,
+                style: Theme.of(sheet).textTheme.titleMedium,
+              ),
             ),
             for (final plan in plans)
               ListTile(
@@ -535,7 +526,11 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
                         sheet,
                         title: l10n.plansAddNew,
                         showKindIcon: true,
-                        choices: nodeChoices(l10n, catalog, order: NodeOrder.name),
+                        choices: nodeChoices(
+                          l10n,
+                          catalog,
+                          order: NodeOrder.name,
+                        ),
                       );
                       if (chosen == null || !navigator.mounted) return;
                       // **The navigator's context, not `sheet`.** The sheet is
@@ -592,35 +587,42 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
     final navigator = Navigator.of(sheetContext);
     if (!navigator.mounted) return;
 
-    final choice = await showModalBottomSheet<({LearningPlan plan, bool whole})>(
-      context: sheetContext,
-      builder: (sheet) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(l10n.plansRemove,
-                  style: Theme.of(sheet).textTheme.titleMedium),
+    final choice =
+        await showModalBottomSheet<({LearningPlan plan, bool whole})>(
+          context: sheetContext,
+          builder: (sheet) => SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Text(
+                    l10n.plansRemove,
+                    style: Theme.of(sheet).textTheme.titleMedium,
+                  ),
+                ),
+                for (final plan in plans)
+                  ListTile(
+                    key: ValueKey('remove-one-${plan.id}'),
+                    title: Text(l10n.plansRemoveUnit),
+                    subtitle: Text(plan.name),
+                    onTap: () =>
+                        Navigator.of(sheet).pop((plan: plan, whole: false)),
+                  ),
+                for (final plan in plans)
+                  ListTile(
+                    key: ValueKey('remove-all-${plan.id}'),
+                    title: Text(l10n.plansRemovePlan),
+                    subtitle: Text(
+                      '${l10n.plansRemovePlanHelp} — ${plan.name}',
+                    ),
+                    onTap: () =>
+                        Navigator.of(sheet).pop((plan: plan, whole: true)),
+                  ),
+              ],
             ),
-            for (final plan in plans)
-              ListTile(
-                key: ValueKey('remove-one-${plan.id}'),
-                title: Text(l10n.plansRemoveUnit),
-                subtitle: Text(plan.name),
-                onTap: () => Navigator.of(sheet).pop((plan: plan, whole: false)),
-              ),
-            for (final plan in plans)
-              ListTile(
-                key: ValueKey('remove-all-${plan.id}'),
-                title: Text(l10n.plansRemovePlan),
-                subtitle: Text('${l10n.plansRemovePlanHelp} — ${plan.name}'),
-                onTap: () => Navigator.of(sheet).pop((plan: plan, whole: true)),
-              ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
     if (choice == null || !navigator.mounted) return;
 
     final next = choice.whole
@@ -631,7 +633,9 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
       choice.whole
           ? l10n.plansPlanSkipped(choice.plan.name)
           : l10n.plansRemovedUnit(
-              choice.plan.name, DayAmount.of(next, dayInfoFor(day))),
+              choice.plan.name,
+              DayAmount.of(next, dayInfoFor(day)),
+            ),
     );
   }
 
@@ -661,8 +665,13 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
 
     final result = switch (choice) {
       _ReflowKeep() => Recompute.keepAsIs(plan, catalog, fold, from),
-      _ReflowSpread(:final spread) =>
-        Recompute.spread(plan, catalog, fold, from, spread: spread),
+      _ReflowSpread(:final spread) => Recompute.spread(
+        plan,
+        catalog,
+        fold,
+        from,
+        spread: spread,
+      ),
     };
 
     final navigator = Navigator.of(context);
@@ -683,8 +692,7 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
     if (result.spreadOver == 0) {
       return l10n.plansRecomputeKept(result.shortfall);
     }
-    final spread =
-        l10n.plansRecomputeDone(result.shortfall, result.spreadOver);
+    final spread = l10n.plansRecomputeDone(result.shortfall, result.spreadOver);
     if (!result.finishDayMoved || result.newFinishDay == null) return spread;
     // **The date is named when it moves.** A siyum that slid without saying so is
     // one the user stops believing, and they would find out on the day.
@@ -700,8 +708,7 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
     Day from,
   ) async {
     final l10n = AppLocalizations.of(context);
-    final shortfall =
-        Recompute.shortfallAsOf(plan, catalog, fold, from);
+    final shortfall = Recompute.shortfallAsOf(plan, catalog, fold, from);
     final hasEnd = plan.pacing.finishDay != null;
 
     return showModalBottomSheet<_ReflowChoice>(
@@ -754,7 +761,9 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
 
     Widget rowFor(LedgerUnit u) {
       final node = catalog?.byId(u.nodeId);
-      final label = node == null ? '${u.nodeId} ${u.unitIndex}' : nodeAndUnit(l10n, node, u.unitIndex);
+      final label = node == null
+          ? '${u.nodeId} ${u.unitIndex}'
+          : nodeAndUnit(l10n, node, u.unitIndex);
       final dayText = DateDisplay.format(day.midnight, mode);
 
       String? subtitle;
@@ -875,147 +884,170 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
       // and leave the row unticked, with no error anywhere. `ConsumerWidget`
       // re-runs the subtree on every change, which is what makes "tick it and
       // watch it tick" true.
-      builder: (sheetContext) => Consumer(builder: (sheetContext, sheetRef, _) {
-        return SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            ListTile(
-              title: Text(DateDisplay.format(day.midnight, mode),
-                style: Theme.of(sheetContext).textTheme.titleMedium),
-            ),
-            if (firing.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(l10n.plansDaySheetNothing),
-              ),
-            for (final plan in firing)
-              ListTile(
-                title: Text(plan.name),
-                subtitle: Text(
-                  // `0` is a day off and says so; it must not read as an
-                  // absent amount, which would be the one thing this design
-                  // exists to prevent.
-                  DayAmount.of(plan, dayInfoFor(day)) == 0
-                      ? '0 · ${l10n.plansDayOff}'
-                      : '${DayAmount.of(plan, dayInfoFor(day))}'
-                          ' · ${l10n.plansUnitsPerDay}',
+      builder: (sheetContext) => Consumer(
+        builder: (sheetContext, sheetRef, _) {
+          return SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                ListTile(
+                  title: Text(
+                    DateDisplay.format(day.midnight, mode),
+                    style: Theme.of(sheetContext).textTheme.titleMedium,
+                  ),
                 ),
-                trailing: const Icon(Icons.edit),
-                onTap: () async {
-                  final navigator = Navigator.of(sheetContext);
-                  // Guarded before the await: the sheet may be gone by the time
-                  // the prompt returns, and `sheetContext` is not safe then.
-                  if (!navigator.mounted) return;
-                  final amount = await promptForText(
-                    sheetContext,
-                    title: l10n.plansDaySheetSetFor(plan.name),
-                    body: l10n.plansDateAmountHelp,
-                    label: l10n.plansUnitsPerDay,
-                    initialValue: '${DayAmount.of(plan, dayInfoFor(day))}',
-                    keyboardType: TextInputType.number,
-                    confirmLabel: l10n.plansSave,
-                    cancelLabel: l10n.plansCancel,
-                    validate: (v) => nonNegativeInt(v) == null
-                        ? l10n.plansAmountInvalid
-                        : null,
-                  );
-                  if (amount == null || !navigator.mounted) return;
-                  final next = nonNegativeInt(amount)!;
-                  final dates = {...plan.dateAmounts, day: next};
-                  // The sheet's context, not a context read after the await:
-                  // `ref` and `plan` are all this needs.
-                  await guarded(
-                    navigator.context,
-                    ref,
-                    () => ref
-                        .read(plansConfigProvider.notifier)
-                        .save(plan.copyWithDateAmounts(dates)),
-                    what: l10n.plansSaved,
-                  );
-                  navigator.pop();
-                },
-              ),
-            // **The ledger: what this day asks for, with the log applied.**
-            //
-            // Deliberately below the per-plan rows rather than instead of them.
-            // Ticking here writes to the **event log**, which is a different act
-            // from editing the amount above it — the rows change *the plan*, and
-            // a tick is a claim about *what was learned*. Every other view
-            // updates at once because they all read the log.
-            //
-            // And the reverse does not happen: a unit ticked in the **unit
-            // grid** still appears here, because the plan still asks for it.
-            // Nothing leaves a plan by being learned; only a deliberate planning
-            // act changes what a day asks. The gap between the two is the thing
-            // the calendar exists to show.
-            for (final plan in firing)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  key: ValueKey('recompute-open-${plan.id}'),
-                  icon: const Icon(Icons.auto_fix_high, size: 18),
-                  label: Text(l10n.plansRecompute),
-                  onPressed: () => recomputeFrom(
-                    sheetContext, sheetRef, plan, day, mode),
-                ),
-              ),
-            for (final entry in _ledgerFor(sheetRef, firing, day))
-              ..._ledgerSection(
-                  sheetContext, sheetRef, day, entry.plan, entry.units, mode),
-            // **The planning commands, on the day rather than on a plan row.**
-            //
-            // `+` lives here because the case that actually comes up is doing
-            // work on a day nothing scheduled — and a plan row is only on the
-            // day if a rule put it there, so a person doing extra on a quiet day
-            // has no row to press a button on and the feature is useless to
-            // them. `+` therefore offers every plan, **including one whose rule
-            // would not have fired today**, and a way to start a new one.
-            //
-            // Every one of these edits the *plan* and writes no event. A day can
-            // ask for eight units and have none done, and that is a legitimate
-            // state rather than an error.
-            _planCommands(sheetContext, sheetRef, day, firing, config, mode),
-            // A day that asks for units and has every one of them done is a
-            // finished day, and saying so is the point of the ledger. Written
-            // here rather than per plan, because it is a statement about the day.
-            if (_ledgerFor(sheetRef, firing, day).isNotEmpty &&
-                _ledgerAllDone(sheetRef, firing, day))
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(l10n.plansLedgerDoneAll,
-                    style: Theme.of(sheetContext).textTheme.bodySmall),
-              ),
-            if (firing.any((p) => p.dateAmounts.containsKey(day)))
-              TextButton.icon(
-                icon: const Icon(Icons.undo),
-                label: Text(l10n.plansDaySheetClear),
-                onPressed: () async {
-                  final navigator = Navigator.of(sheetContext);
-                  // Clear every plan's override for this date, so the day goes
-                  // back to asking whatever its weekday and base amount say.
-                  // Inside the write guard like every other write, and guarded
-                  // before the await: the sheet may be gone by then.
-                  if (!navigator.mounted) return;
-                  await guarded(
-                    navigator.context,
-                    ref,
-                    () async {
-                      final controller = ref.read(plansConfigProvider.notifier);
-                      for (final plan in firing) {
-                        final dates = {...plan.dateAmounts}..remove(day);
-                        await controller.save(plan.copyWithDateAmounts(dates));
-                      }
+                if (firing.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(l10n.plansDaySheetNothing),
+                  ),
+                for (final plan in firing)
+                  ListTile(
+                    title: Text(plan.name),
+                    subtitle: Text(
+                      // `0` is a day off and says so; it must not read as an
+                      // absent amount, which would be the one thing this design
+                      // exists to prevent.
+                      DayAmount.of(plan, dayInfoFor(day)) == 0
+                          ? '0 · ${l10n.plansDayOff}'
+                          : '${DayAmount.of(plan, dayInfoFor(day))}'
+                                ' · ${l10n.plansUnitsPerDay}',
+                    ),
+                    trailing: const Icon(Icons.edit),
+                    onTap: () async {
+                      final navigator = Navigator.of(sheetContext);
+                      // Guarded before the await: the sheet may be gone by the time
+                      // the prompt returns, and `sheetContext` is not safe then.
+                      if (!navigator.mounted) return;
+                      final amount = await promptForText(
+                        sheetContext,
+                        title: l10n.plansDaySheetSetFor(plan.name),
+                        body: l10n.plansDateAmountHelp,
+                        label: l10n.plansUnitsPerDay,
+                        initialValue: '${DayAmount.of(plan, dayInfoFor(day))}',
+                        keyboardType: TextInputType.number,
+                        confirmLabel: l10n.plansSave,
+                        cancelLabel: l10n.plansCancel,
+                        validate: (v) => nonNegativeInt(v) == null
+                            ? l10n.plansAmountInvalid
+                            : null,
+                      );
+                      if (amount == null || !navigator.mounted) return;
+                      final next = nonNegativeInt(amount)!;
+                      final dates = {...plan.dateAmounts, day: next};
+                      // The sheet's context, not a context read after the await:
+                      // `ref` and `plan` are all this needs.
+                      await guarded(
+                        navigator.context,
+                        ref,
+                        () => ref
+                            .read(plansConfigProvider.notifier)
+                            .save(plan.copyWithDateAmounts(dates)),
+                        what: l10n.plansSaved,
+                      );
+                      navigator.pop();
                     },
-                    what: l10n.plansSaved,
-                  );
-                  navigator.pop();
-                },
-              ),
-          ],
-        ),
-      );
-      }),
+                  ),
+                // **The ledger: what this day asks for, with the log applied.**
+                //
+                // Deliberately below the per-plan rows rather than instead of them.
+                // Ticking here writes to the **event log**, which is a different act
+                // from editing the amount above it — the rows change *the plan*, and
+                // a tick is a claim about *what was learned*. Every other view
+                // updates at once because they all read the log.
+                //
+                // And the reverse does not happen: a unit ticked in the **unit
+                // grid** still appears here, because the plan still asks for it.
+                // Nothing leaves a plan by being learned; only a deliberate planning
+                // act changes what a day asks. The gap between the two is the thing
+                // the calendar exists to show.
+                for (final plan in firing)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: ValueKey('recompute-open-${plan.id}'),
+                      icon: const Icon(Icons.auto_fix_high, size: 18),
+                      label: Text(l10n.plansRecompute),
+                      onPressed: () => recomputeFrom(
+                        sheetContext,
+                        sheetRef,
+                        plan,
+                        day,
+                        mode,
+                      ),
+                    ),
+                  ),
+                for (final entry in _ledgerFor(sheetRef, firing, day))
+                  ..._ledgerSection(
+                    sheetContext,
+                    sheetRef,
+                    day,
+                    entry.plan,
+                    entry.units,
+                    mode,
+                  ),
+                // **The planning commands, on the day rather than on a plan row.**
+                //
+                // `+` lives here because the case that actually comes up is doing
+                // work on a day nothing scheduled — and a plan row is only on the
+                // day if a rule put it there, so a person doing extra on a quiet day
+                // has no row to press a button on and the feature is useless to
+                // them. `+` therefore offers every plan, **including one whose rule
+                // would not have fired today**, and a way to start a new one.
+                //
+                // Every one of these edits the *plan* and writes no event. A day can
+                // ask for eight units and have none done, and that is a legitimate
+                // state rather than an error.
+                _planCommands(
+                  sheetContext,
+                  sheetRef,
+                  day,
+                  firing,
+                  config,
+                  mode,
+                ),
+                // A day that asks for units and has every one of them done is a
+                // finished day, and saying so is the point of the ledger. Written
+                // here rather than per plan, because it is a statement about the day.
+                if (_ledgerFor(sheetRef, firing, day).isNotEmpty &&
+                    _ledgerAllDone(sheetRef, firing, day))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      l10n.plansLedgerDoneAll,
+                      style: Theme.of(sheetContext).textTheme.bodySmall,
+                    ),
+                  ),
+                if (firing.any((p) => p.dateAmounts.containsKey(day)))
+                  TextButton.icon(
+                    icon: const Icon(Icons.undo),
+                    label: Text(l10n.plansDaySheetClear),
+                    onPressed: () async {
+                      final navigator = Navigator.of(sheetContext);
+                      // Clear every plan's override for this date, so the day goes
+                      // back to asking whatever its weekday and base amount say.
+                      // Inside the write guard like every other write, and guarded
+                      // before the await: the sheet may be gone by then.
+                      if (!navigator.mounted) return;
+                      await guarded(navigator.context, ref, () async {
+                        final controller = ref.read(
+                          plansConfigProvider.notifier,
+                        );
+                        for (final plan in firing) {
+                          final dates = {...plan.dateAmounts}..remove(day);
+                          await controller.save(
+                            plan.copyWithDateAmounts(dates),
+                          );
+                        }
+                      }, what: l10n.plansSaved);
+                      navigator.pop();
+                    },
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -1033,7 +1065,13 @@ class _PlannerCalendarScreenState extends ConsumerState<PlannerCalendarScreen> {
       (c) => ChainSchedule.activePlanIds(c, day, (id, at) {
         final candidate = config.plans.where((p) => p.id == id).firstOrNull;
         return candidate != null &&
-            PlanCompletion.completeBefore(candidate, catalog, fold, at, layers: layers);
+            PlanCompletion.completeBefore(
+              candidate,
+              catalog,
+              fold,
+              at,
+              layers: layers,
+            );
       }).contains(plan.id),
     );
   }
@@ -1094,64 +1132,66 @@ class _MonthGrid extends StatelessWidget {
             child: InkWell(
               onTap: () => onDay(day),
               child: Stack(
-              children: [
-                Center(
-                  // **Smaller type, not a smaller everything.**
-                  //
-                  // A cell is a seventh of the screen, and on the 240dp keypad
-                  // phone this app is built for that is 28 logical pixels — a
-                  // day number and an amount stacked need about 36 of them, so
-                  // every cell with something due on it overflowed and drew a
-                  // yellow stripe across the month.
-                  //
-                  // `FittedBox(scaleDown)` fixes the overflow, and it was the
-                  // whole fix until it was measured: it scales the *day number*
-                  // along with the amount, landing every cell at 0.78, so the
-                  // number that has to be readable comes out near 11sp and the
-                  // amount near 8.6. Trading a legibility problem for a smaller
-                  // legibility problem is not a fix.
-                  //
-                  // So on a compact screen the type is chosen small enough to
-                  // fit, which is the difference between *smaller* and
-                  // *distorted*, and the `FittedBox` stays as the backstop that
-                  // makes an overflow impossible on any screen — including one
-                  // narrower than the one this was measured on. On an ordinary
-                  // phone the scale is 1.0 and nothing is smaller than it was.
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('${day.midnight.day}',
+                children: [
+                  Center(
+                    // **Smaller type, not a smaller everything.**
+                    //
+                    // A cell is a seventh of the screen, and on the 240dp keypad
+                    // phone this app is built for that is 28 logical pixels — a
+                    // day number and an amount stacked need about 36 of them, so
+                    // every cell with something due on it overflowed and drew a
+                    // yellow stripe across the month.
+                    //
+                    // `FittedBox(scaleDown)` fixes the overflow, and it was the
+                    // whole fix until it was measured: it scales the *day number*
+                    // along with the amount, landing every cell at 0.78, so the
+                    // number that has to be readable comes out near 11sp and the
+                    // amount near 8.6. Trading a legibility problem for a smaller
+                    // legibility problem is not a fix.
+                    //
+                    // So on a compact screen the type is chosen small enough to
+                    // fit, which is the difference between *smaller* and
+                    // *distorted*, and the `FittedBox` stays as the backstop that
+                    // makes an overflow impossible on any screen — including one
+                    // narrower than the one this was measured on. On an ordinary
+                    // phone the scale is 1.0 and nothing is smaller than it was.
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '${day.midnight.day}',
                             style: isCompact(context)
                                 ? Theme.of(context).textTheme.labelMedium
-                                : null),
-                        // The total due, not one plan's amount: a day can have
-                        // several plans firing and the cell holds one number.
-                        if (dueOn(day) > 0)
-                          Text(
-                            '${dueOn(day)}',
-                            style: isCompact(context)
-                                ? Theme.of(context).textTheme.labelSmall
-                                    ?.copyWith(fontSize: 9)
-                                : Theme.of(context).textTheme.labelSmall,
+                                : null,
                           ),
-                      ],
+                          // The total due, not one plan's amount: a day can have
+                          // several plans firing and the cell holds one number.
+                          if (dueOn(day) > 0)
+                            Text(
+                              '${dueOn(day)}',
+                              style: isCompact(context)
+                                  ? Theme.of(context).textTheme.labelSmall
+                                        ?.copyWith(fontSize: 9)
+                                  : Theme.of(context).textTheme.labelSmall,
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                if (siyumim != null)
-                  Positioned(
-                    top: 1,
-                    right: 1,
-                    child: Icon(
-                      Icons.star,
-                      size: 10,
-                      color: Colors.amber.shade700,
+                  if (siyumim != null)
+                    Positioned(
+                      top: 1,
+                      right: 1,
+                      child: Icon(
+                        Icons.star,
+                        size: 10,
+                        color: Colors.amber.shade700,
+                      ),
                     ),
-                  ),
-              ],
+                ],
               ),
             ),
           ),
@@ -1182,28 +1222,32 @@ class _WeekList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView.builder(
-        itemCount: days.length,
-        itemBuilder: (context, index) {
-          final day = days[index];
-          final planned = byDay[day];
-          final siyumim = siyumByDay[day];
-          return ListTile(
-            onTap: () => onDay(day),
-            leading: Icon(Icons.circle, size: 12, color: _color(planned?.status)),
-            // Through `DateDisplay`, not `day.toString()`. `Day`'s own doc says its
-            // ISO form is "diagnostics and test failure output only", and this
-            // screen's heading right above already localises — so the raw string
-            // put an ISO column under a Hebrew month and ignored the setting.
-            title: Text(DateDisplay.format(day.midnight, mode)),
-            subtitle: _subtitle(day, planned, siyumim),
-            trailing: siyumim == null
-                ? null
-                : Icon(Icons.star, color: Colors.amber.shade700),
-          );
-        },
+    itemCount: days.length,
+    itemBuilder: (context, index) {
+      final day = days[index];
+      final planned = byDay[day];
+      final siyumim = siyumByDay[day];
+      return ListTile(
+        onTap: () => onDay(day),
+        leading: Icon(Icons.circle, size: 12, color: _color(planned?.status)),
+        // Through `DateDisplay`, not `day.toString()`. `Day`'s own doc says its
+        // ISO form is "diagnostics and test failure output only", and this
+        // screen's heading right above already localises — so the raw string
+        // put an ISO column under a Hebrew month and ignored the setting.
+        title: Text(DateDisplay.format(day.midnight, mode)),
+        subtitle: _subtitle(day, planned, siyumim),
+        trailing: siyumim == null
+            ? null
+            : Icon(Icons.star, color: Colors.amber.shade700),
       );
+    },
+  );
 
-  Widget? _subtitle(Day day, PlannedDay? planned, List<ScheduledSiyum>? siyumim) {
+  Widget? _subtitle(
+    Day day,
+    PlannedDay? planned,
+    List<ScheduledSiyum>? siyumim,
+  ) {
     // The units due come first: that is what the row is for.
     final due = dueOn(day);
     final parts = <String>[
@@ -1217,12 +1261,12 @@ class _WeekList extends StatelessWidget {
   }
 
   Color _color(PlannedDayStatus? status) => switch (status) {
-        PlannedDayStatus.done => Colors.green,
-        PlannedDayStatus.partlyDone => Colors.orange,
-        PlannedDayStatus.missed => Colors.red,
-        PlannedDayStatus.planned => Colors.blue,
-        null => Colors.grey,
-      };
+    PlannedDayStatus.done => Colors.green,
+    PlannedDayStatus.partlyDone => Colors.orange,
+    PlannedDayStatus.missed => Colors.red,
+    PlannedDayStatus.planned => Colors.blue,
+    null => Colors.grey,
+  };
 }
 
 /// One day, at full size: every plan that fires on it, by name, with what it
@@ -1280,8 +1324,10 @@ class _DayList extends StatelessWidget {
         if (siyumim != null)
           ListTile(
             leading: Icon(Icons.star, color: Colors.amber.shade700),
-            title: Text('${l10n.plannerCalendarSiyum}: '
-                '${[for (final s in siyumim!) s.node.name].join(', ')}'),
+            title: Text(
+              '${l10n.plannerCalendarSiyum}: '
+              '${[for (final s in siyumim!) s.node.name].join(', ')}',
+            ),
           ),
         if (firing.isEmpty)
           Padding(
@@ -1370,19 +1416,25 @@ class _ReflowSheetState extends State<_ReflowSheet> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(l10n.plansRecompute,
-                style: Theme.of(context).textTheme.titleMedium),
+            child: Text(
+              l10n.plansRecompute,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Text(l10n.plansRecomputeKept(widget.shortfall),
-                style: Theme.of(context).textTheme.bodySmall),
+            child: Text(
+              l10n.plansRecomputeKept(widget.shortfall),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ),
           if (widget.shortfall == 0)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(l10n.plansRecomputeNothingOwed,
-                  style: Theme.of(context).textTheme.bodySmall),
+              child: Text(
+                l10n.plansRecomputeNothingOwed,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ),
           RadioGroup<bool>(
             groupValue: _spread,
@@ -1409,8 +1461,10 @@ class _ReflowSheetState extends State<_ReflowSheet> {
           if (_spread && widget.shortfall > 0) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Text(l10n.plansRecomputeOver,
-                  style: Theme.of(context).textTheme.bodySmall),
+              child: Text(
+                l10n.plansRecomputeOver,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ),
             RadioGroup<_SpreadChoice>(
               groupValue: _current(),
@@ -1446,8 +1500,10 @@ class _ReflowSheetState extends State<_ReflowSheet> {
             if (!widget.hasEnd)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(l10n.plansRecomputeNoEnd,
-                    style: Theme.of(context).textTheme.bodySmall),
+                child: Text(
+                  l10n.plansRecomputeNoEnd,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
           ],
           Padding(
@@ -1463,9 +1519,7 @@ class _ReflowSheetState extends State<_ReflowSheet> {
                 FilledButton(
                   key: const ValueKey('recompute-apply'),
                   onPressed: () => Navigator.of(context).pop(
-                    _spread
-                        ? _ReflowSpread(_toSpread)
-                        : const _ReflowKeep(),
+                    _spread ? _ReflowSpread(_toSpread) : const _ReflowKeep(),
                   ),
                   child: Text(l10n.plansSave),
                 ),
@@ -1481,14 +1535,14 @@ class _ReflowSheetState extends State<_ReflowSheet> {
   _SpreadChoice _current() => _spreadUntilEnd
       ? const _SpreadChoice.untilEnd()
       : _spreadAll
-          ? const _SpreadChoice.all()
-          : _SpreadChoice.days(_days);
+      ? const _SpreadChoice.all()
+      : _SpreadChoice.days(_days);
 
   void _applyChoice(_SpreadChoice choice) => setState(() {
-        _days = choice.days ?? _days;
-        _spreadAll = choice.all;
-        _spreadUntilEnd = choice.untilEnd;
-      });
+    _days = choice.days ?? _days;
+    _spreadAll = choice.all;
+    _spreadUntilEnd = choice.untilEnd;
+  });
 
   bool _spreadAll = false;
   bool _spreadUntilEnd = false;
@@ -1499,7 +1553,6 @@ class _ReflowSheetState extends State<_ReflowSheet> {
     if (_spreadAll) return ReflowSpread.all;
     return ReflowSpread.days(_days);
   }
-
 }
 
 /// A choice of how far to spread. A tiny class rather than an enum so "N days"

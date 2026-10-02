@@ -21,10 +21,7 @@ import 'inherited_layer_roles.dart';
 /// a UI, a story for what a chazara against it means, and a resolver test —
 /// none of which the dead column was ever going to supply.
 class LayerConfigEntry {
-  const LayerConfigEntry({
-    required this.nodeId,
-    required this.roles,
-  });
+  const LayerConfigEntry({required this.nodeId, required this.roles});
 
   final String nodeId;
   final Map<String, LayerRole> roles;
@@ -34,14 +31,14 @@ class LayerConfigEntry {
 
   /// Only the layers that gate completion.
   Set<String> get required => {
-        for (final e in roles.entries)
-          if (e.value == LayerRole.required) e.key,
-      };
+    for (final e in roles.entries)
+      if (e.value == LayerRole.required) e.key,
+  };
 
   Map<String, dynamic> toJson() => {
-        'nodeId': nodeId,
-        'roles': {for (final e in roles.entries) e.key: e.value.name},
-      };
+    'nodeId': nodeId,
+    'roles': {for (final e in roles.entries) e.key: e.value.name},
+  };
 
   /// Reads the current shape and the two legacy ones.
   ///
@@ -71,10 +68,7 @@ class LayerConfigEntry {
         roles[l as String] = legacyRole;
       }
     }
-    return LayerConfigEntry(
-      nodeId: json['nodeId'] as String,
-      roles: roles,
-    );
+    return LayerConfigEntry(nodeId: json['nodeId'] as String, roles: roles);
   }
 
   /// This entry with [layerId] removed, or null when nothing would be left —
@@ -103,10 +97,7 @@ class LayerRoles {
   LayerRoles({
     Map<String, Map<String, LayerRole>> nodeConfig = const {},
     Map<String, String?> parentOf = const {},
-  }) : _set = InheritedLayerRoles(
-          nodeConfig: nodeConfig,
-          parentOf: parentOf,
-        );
+  }) : _set = InheritedLayerRoles(nodeConfig: nodeConfig, parentOf: parentOf);
 
   /// Build the resolver from stored entries — the shape both the repository and
   /// a backup hold them in.
@@ -119,11 +110,10 @@ class LayerRoles {
   factory LayerRoles.fromEntries(
     Iterable<LayerConfigEntry> entries, {
     Map<String, String?> parentOf = const {},
-  }) =>
-      LayerRoles(
-        nodeConfig: {for (final e in entries) e.nodeId: e.roles},
-        parentOf: parentOf,
-      );
+  }) => LayerRoles(
+    nodeConfig: {for (final e in entries) e.nodeId: e.roles},
+    parentOf: parentOf,
+  );
 
   final InheritedLayerRoles _set;
   final Map<String, Set<String>> _requiredCache = {};
@@ -166,7 +156,7 @@ class LayerRoles {
   }
 
   static Set<String> _required(Map<String, LayerRole> roles) => {
-        for (final e in roles.entries)
-          if (e.value == LayerRole.required) e.key,
-      };
+    for (final e in roles.entries)
+      if (e.value == LayerRole.required) e.key,
+  };
 }

@@ -6,9 +6,17 @@
 # be rebuilt, and a `BuildContext` used after an await. CI runs
 # `flutter analyze --fatal-infos`, so everything here is enforced, not advisory.
 #
-# What is deliberately *not* here: any rule that would reflow the source.
-# The code is hand-wrapped so its explanatory comments read as prose, and a
-# formatting rule would fight that for no correctness gain.
+# What is deliberately *not* here: any rule that would reflow the source. The
+# explanatory comments are hand-wrapped so they read as prose, and a lint rule
+# that moved them would make them worse to read.
+#
+# `dart format` is enforced, but in CI rather than here, and only over `lib`,
+# `test` and `integration_test`. That is a reversal: this file used to opt out
+# of formatting too, on the grounds that the formatter fought the hand-wrapping.
+# It does fight it — it expands argument signatures the way you would not write
+# them by hand — so the wrapping that survives is the wrapping in comments, and
+# the price paid is in signatures. Being able to say "formatted" and mean it was
+# judged worth that.
 include: package:flutter_lints/flutter.yaml
 
 analyzer:

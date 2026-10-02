@@ -51,22 +51,27 @@ void main() {
     expect((await repo.getEvents('b')).single.id, 'e1');
   });
 
-  test('a parsed backup can be handed to two things without being re-read',
-      () async {
-    // The preview and the write, in the order the screen does them. Same
-    // instance both times, which is the whole of the change.
-    final repo = memoryRepository();
-    final backup = BackupService.parse(jsonEncode({
-      'version': BackupService.currentVersion,
-      'events': const [],
-      'customNodes': const [],
-    }));
+  test(
+    'a parsed backup can be handed to two things without being re-read',
+    () async {
+      // The preview and the write, in the order the screen does them. Same
+      // instance both times, which is the whole of the change.
+      final repo = memoryRepository();
+      final backup = BackupService.parse(
+        jsonEncode({
+          'version': BackupService.currentVersion,
+          'events': const [],
+          'customNodes': const [],
+        }),
+      );
 
-    expect(await BackupService(repo).customisationsAtRisk('b', backup), 0);
-    final result = await BackupService(repo)
-        .importInto('b', backup, mode: ImportMode.restoreEverything);
-    expect(result.removedCustomisations, 0);
-  });
+      expect(await BackupService(repo).customisationsAtRisk('b', backup), 0);
+      final result = await BackupService(
+        repo,
+      ).importInto('b', backup, mode: ImportMode.restoreEverything);
+      expect(result.removedCustomisations, 0);
+    },
+  );
 
   /// And the rule, rather than the four sites that used to break it.
   test('only the file boundary turns backup text into a backup', () {
@@ -77,15 +82,19 @@ void main() {
     const boundary = 'lib/features/settings/settings_screen.dart';
     final banned = RegExp(r'BackupService\.parse\(|\bparse\(jsonStr\)');
 
-    expect(banned.hasMatch('final data = BackupService.parse(jsonStr);'),
-        isTrue);
+    expect(
+      banned.hasMatch('final data = BackupService.parse(jsonStr);'),
+      isTrue,
+    );
 
     final violations = <String>[];
     var atBoundary = 0;
     for (final path in dartSourcesUnder()) {
       if (path == definition) continue;
-      for (final line
-          in codeLines(File(path).readAsStringSync(), escapeHatch: escapeHatch)) {
+      for (final line in codeLines(
+        File(path).readAsStringSync(),
+        escapeHatch: escapeHatch,
+      )) {
         if (!banned.hasMatch(line.text)) continue;
         if (path == boundary) {
           atBoundary++;
@@ -95,13 +104,21 @@ void main() {
       }
     }
 
-    expect(violations, isEmpty,
-        reason: 'pass the BackupData down instead. A second parse is a second '
-            'full decode of a file that can be megabytes.\n\n'
-            '${violations.join('\n')}');
-    expect(atBoundary, 2,
-        reason: 'exactly two: the file the user picked and the text they '
-            'pasted. A third would be a third decode, and a first would mean '
-            'this guard has stopped pointing at the boundary');
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'pass the BackupData down instead. A second parse is a second '
+          'full decode of a file that can be megabytes.\n\n'
+          '${violations.join('\n')}',
+    );
+    expect(
+      atBoundary,
+      2,
+      reason:
+          'exactly two: the file the user picked and the text they '
+          'pasted. A third would be a third decode, and a first would mean '
+          'this guard has stopped pointing at the boundary',
+    );
   });
 }

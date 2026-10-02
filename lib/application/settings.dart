@@ -46,7 +46,8 @@ class SettingsState {
   final Set<String> hiddenMeforishBars;
 
   /// Whether [layerId]'s tree coverage line should render.
-  bool showsMeforishBar(String layerId) => !hiddenMeforishBars.contains(layerId);
+  bool showsMeforishBar(String layerId) =>
+      !hiddenMeforishBars.contains(layerId);
 
   SettingsState copyWith({
     CalendarMode? calendar,
@@ -57,18 +58,16 @@ class SettingsState {
     Set<String>? hiddenMeforishBars,
     bool? backupReminderEnabled,
     int? backupIntervalDays,
-  }) =>
-      SettingsState(
-        calendar: calendar ?? this.calendar,
-        themeMode: themeMode ?? this.themeMode,
-        reminderEnabled: reminderEnabled ?? this.reminderEnabled,
-        hebrewLayout: hebrewLayout ?? this.hebrewLayout,
-        sort: sort ?? this.sort,
-        hiddenMeforishBars: hiddenMeforishBars ?? this.hiddenMeforishBars,
-        backupReminderEnabled:
-            backupReminderEnabled ?? this.backupReminderEnabled,
-        backupIntervalDays: backupIntervalDays ?? this.backupIntervalDays,
-      );
+  }) => SettingsState(
+    calendar: calendar ?? this.calendar,
+    themeMode: themeMode ?? this.themeMode,
+    reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+    hebrewLayout: hebrewLayout ?? this.hebrewLayout,
+    sort: sort ?? this.sort,
+    hiddenMeforishBars: hiddenMeforishBars ?? this.hiddenMeforishBars,
+    backupReminderEnabled: backupReminderEnabled ?? this.backupReminderEnabled,
+    backupIntervalDays: backupIntervalDays ?? this.backupIntervalDays,
+  );
 
   /// Every setter allocates a new state through [copyWith], and three code
   /// paths — `applyBackup`, `clearAll`, and a profile switch — rebuild one from
@@ -93,8 +92,15 @@ class SettingsState {
       setEquals(other.hiddenMeforishBars, hiddenMeforishBars);
 
   @override
-  int get hashCode => Object.hash(calendar, themeMode, reminderEnabled,
-      hebrewLayout, backupReminderEnabled, backupIntervalDays, sort);
+  int get hashCode => Object.hash(
+    calendar,
+    themeMode,
+    reminderEnabled,
+    hebrewLayout,
+    backupReminderEnabled,
+    backupIntervalDays,
+    sort,
+  );
 }
 
 class SettingsNotifier extends Notifier<SettingsState> {
@@ -114,8 +120,9 @@ class SettingsNotifier extends Notifier<SettingsState> {
   /// Where [key] lives: bare for the three device-wide settings, prefixed with
   /// the profile for everything else. One place decides, so a reader and a
   /// writer cannot disagree about which store a setting is in.
-  String _keyFor(String key) =>
-      PrefKeys.deviceWide.contains(key) ? key : PrefKeys.scoped(_profileId, key);
+  String _keyFor(String key) => PrefKeys.deviceWide.contains(key)
+      ? key
+      : PrefKeys.scoped(_profileId, key);
 
   String? _get(String key) =>
       ref.read(appPreferencesProvider).getString(_keyFor(key));
@@ -170,15 +177,24 @@ class SettingsNotifier extends Notifier<SettingsState> {
 
   SettingsState _load() {
     return SettingsState(
-      calendar: _enumByName(CalendarMode.values, _get(PrefKeys.calendarMode),
-          fallback: CalendarMode.gregorian),
-      themeMode: _enumByName(ThemeMode.values, _get(PrefKeys.themeMode),
-          fallback: ThemeMode.system),
+      calendar: _enumByName(
+        CalendarMode.values,
+        _get(PrefKeys.calendarMode),
+        fallback: CalendarMode.gregorian,
+      ),
+      themeMode: _enumByName(
+        ThemeMode.values,
+        _get(PrefKeys.themeMode),
+        fallback: ThemeMode.system,
+      ),
       reminderEnabled: _get(PrefKeys.reminderEnabled) == 'true',
       hebrewLayout: _get(PrefKeys.hebrewLayout) == 'true',
       sort: SortConfig(
-        metric: _enumByName(SortMetric.values, _get(PrefKeys.sortMetric),
-            fallback: SortMetric.catalog),
+        metric: _enumByName(
+          SortMetric.values,
+          _get(PrefKeys.sortMetric),
+          fallback: SortMetric.catalog,
+        ),
         descending: _get(PrefKeys.sortDescending) == 'true',
         level: int.tryParse(_get(PrefKeys.sortLevel) ?? ''),
       ),
@@ -188,7 +204,8 @@ class SettingsNotifier extends Notifier<SettingsState> {
       backupReminderEnabled: _get(PrefKeys.backupReminderEnabled) != 'false',
       // Same shape as the intervals above: the parse is shared, the fallback is
       // this layer's own answer to a value nobody can be asked about.
-      backupIntervalDays: positiveInt(_get(PrefKeys.backupIntervalDays)) ??
+      backupIntervalDays:
+          positiveInt(_get(PrefKeys.backupIntervalDays)) ??
           BackupReminder.defaultIntervalDays,
     );
   }
@@ -263,26 +280,28 @@ class SettingsNotifier extends Notifier<SettingsState> {
   /// someone else's phone must not flip their app into a language they do not
   /// read.
   Map<String, dynamic> toBackup() => {
-        PrefKeys.reminderEnabled: state.reminderEnabled.toString(),
-        PrefKeys.sortMetric: state.sort.metric.name,
-        PrefKeys.sortDescending: state.sort.descending.toString(),
-        PrefKeys.sortLevel: state.sort.level?.toString() ?? '',
-        PrefKeys.hiddenMeforishBars: state.hiddenMeforishBars.join(','),
-        PrefKeys.backupReminderEnabled: state.backupReminderEnabled.toString(),
-        PrefKeys.backupIntervalDays: state.backupIntervalDays.toString(),
-        // Learning cycles aren't part of SettingsState — CyclesController owns
-        // them — but they are a per-profile preference, so they travel with the
-        // backup like the rest. Read straight from the pref; '' for a profile
-        // with no cycles yet, which imports back as "no cycles".
-        PrefKeys.cycles: ref
-                .read(appPreferencesProvider)
-                .getString(PrefKeys.scoped(_profileId, PrefKeys.cycles)) ??
-            '',
-        PrefKeys.plans: ref
-                .read(appPreferencesProvider)
-                .getString(PrefKeys.scoped(_profileId, PrefKeys.plans)) ??
-            '',
-      };
+    PrefKeys.reminderEnabled: state.reminderEnabled.toString(),
+    PrefKeys.sortMetric: state.sort.metric.name,
+    PrefKeys.sortDescending: state.sort.descending.toString(),
+    PrefKeys.sortLevel: state.sort.level?.toString() ?? '',
+    PrefKeys.hiddenMeforishBars: state.hiddenMeforishBars.join(','),
+    PrefKeys.backupReminderEnabled: state.backupReminderEnabled.toString(),
+    PrefKeys.backupIntervalDays: state.backupIntervalDays.toString(),
+    // Learning cycles aren't part of SettingsState — CyclesController owns
+    // them — but they are a per-profile preference, so they travel with the
+    // backup like the rest. Read straight from the pref; '' for a profile
+    // with no cycles yet, which imports back as "no cycles".
+    PrefKeys.cycles:
+        ref
+            .read(appPreferencesProvider)
+            .getString(PrefKeys.scoped(_profileId, PrefKeys.cycles)) ??
+        '',
+    PrefKeys.plans:
+        ref
+            .read(appPreferencesProvider)
+            .getString(PrefKeys.scoped(_profileId, PrefKeys.plans)) ??
+        '',
+  };
 
   /// Apply a serialised preferences map (from an imported backup) to the active
   /// profile. Backups store bare keys, so importing one into a different profile
@@ -315,7 +334,10 @@ class SettingsNotifier extends Notifier<SettingsState> {
   /// match the file", so it clears the profile's own keys first and takes the
   /// backup's answers whole — including for keys an older backup omits, which
   /// is why the clear happens even when [settings] is empty.
-  Future<void> applyBackup(Map<String, dynamic> settings, ImportMode mode) async {
+  Future<void> applyBackup(
+    Map<String, dynamic> settings,
+    ImportMode mode,
+  ) async {
     if (settings.isEmpty && !mode.replacesCustomisation) return;
     final prefs = ref.read(appPreferencesProvider);
     if (mode.replacesCustomisation) {
@@ -353,7 +375,11 @@ class SettingsNotifier extends Notifier<SettingsState> {
   }
 }
 
-T _enumByName<T extends Enum>(List<T> values, String? name, {required T fallback}) {
+T _enumByName<T extends Enum>(
+  List<T> values,
+  String? name, {
+  required T fallback,
+}) {
   if (name == null) return fallback;
   for (final v in values) {
     if (v.name == name) return v;
@@ -361,5 +387,6 @@ T _enumByName<T extends Enum>(List<T> values, String? name, {required T fallback
   return fallback;
 }
 
-final settingsProvider =
-    NotifierProvider<SettingsNotifier, SettingsState>(SettingsNotifier.new);
+final settingsProvider = NotifierProvider<SettingsNotifier, SettingsState>(
+  SettingsNotifier.new,
+);

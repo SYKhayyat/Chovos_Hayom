@@ -55,10 +55,14 @@ void main() {
       probe = probe.add(const Duration(days: 1));
     }
 
-    expect(found, isNotNull,
-        reason: 'no day in two years of the Bavli cycle is in Shabbos, which '
-            'means the cycle calculator changed under this test rather than '
-            'this test being wrong about a date');
+    expect(
+      found,
+      isNotNull,
+      reason:
+          'no day in two years of the Bavli cycle is in Shabbos, which '
+          'means the cycle calculator changed under this test rather than '
+          'this test being wrong about a date',
+    );
     date = found!;
 
     final day = bavli.unitsOn(date).single;
@@ -80,24 +84,30 @@ void main() {
         child: localizedApp(home: const CyclesScreen(), locale: locale),
       );
 
-  testWidgets('an English heading gets the Hebrew line beside it',
-      (tester) async {
-    await tester.pumpWidget(screen(locale: const Locale('en'), repo: memoryRepository()));
+  testWidgets('an English heading gets the Hebrew line beside it', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      screen(locale: const Locale('en'), repo: memoryRepository()),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Shabbos · daf $daf'), findsOneWidget);
     expect(find.text('שבת · דף $daf'), findsOneWidget);
   });
 
-  testWidgets('a Hebrew heading does not get the same words underneath it',
-      (tester) async {
+  testWidgets('a Hebrew heading does not get the same words underneath it', (
+    tester,
+  ) async {
     final repo = memoryRepository();
     // The bundled catalog names every node in Hebrew; the fake deliberately does
     // not, so the Hebrew name is supplied here the same way a user's override
     // supplies one. Without it a Hebrew reader's heading is a transliteration
     // and the Hebrew line is the only Hebrew on the row — which is the case
     // below.
-    final node = (await FakeCatalogRepository().load()).byId('shas.moed.shabbos')!;
+    final node = (await FakeCatalogRepository().load()).byId(
+      'shas.moed.shabbos',
+    )!;
     await repo.addCustomNode('default', node.copyWith(nameHebrew: 'שבת'));
 
     await tester.pumpWidget(screen(locale: const Locale('he'), repo: repo));
@@ -109,15 +119,19 @@ void main() {
     expect(find.text('Shabbos · daf $daf'), findsNothing);
   });
 
-  testWidgets('a Hebrew reader whose sefer is not named in Hebrew still gets it',
-      (tester) async {
-    // The heading falls back to the name the node has — "Shabbos" — so the
-    // Hebrew line is carrying the only Hebrew on the row and must stay. A rule
-    // written as "hide it under a Hebrew locale" would have deleted it here.
-    await tester.pumpWidget(screen(locale: const Locale('he'), repo: memoryRepository()));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'a Hebrew reader whose sefer is not named in Hebrew still gets it',
+    (tester) async {
+      // The heading falls back to the name the node has — "Shabbos" — so the
+      // Hebrew line is carrying the only Hebrew on the row and must stay. A rule
+      // written as "hide it under a Hebrew locale" would have deleted it here.
+      await tester.pumpWidget(
+        screen(locale: const Locale('he'), repo: memoryRepository()),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Shabbos · דף $daf'), findsOneWidget);
-    expect(find.text('שבת · דף $daf'), findsOneWidget);
-  });
+      expect(find.text('Shabbos · דף $daf'), findsOneWidget);
+      expect(find.text('שבת · דף $daf'), findsOneWidget);
+    },
+  );
 }

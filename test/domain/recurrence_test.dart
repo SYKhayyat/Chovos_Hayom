@@ -13,15 +13,14 @@ void main() {
     int? hebrewDayOfMonth,
     int? hebrewMonth,
     int? hebrewYear,
-  }) =>
-      DayInfo(
-        day: Day(ordinal),
-        weekday: weekday,
-        dayOfMonth: dayOfMonth,
-        hebrewDayOfMonth: hebrewDayOfMonth,
-        hebrewMonth: hebrewMonth,
-        hebrewYear: hebrewYear,
-      );
+  }) => DayInfo(
+    day: Day(ordinal),
+    weekday: weekday,
+    dayOfMonth: dayOfMonth,
+    hebrewDayOfMonth: hebrewDayOfMonth,
+    hebrewMonth: hebrewMonth,
+    hebrewYear: hebrewYear,
+  );
 
   void roundTrips(RecurrenceRule rule) {
     final json = rule.toJson();
@@ -33,10 +32,14 @@ void main() {
     test('matches every day, Hebrew fields present or not', () {
       const rule = DailyRule();
       expect(rule.matches(info()), isTrue);
-      expect(rule.matches(info(weekday: DateTime.sunday, dayOfMonth: 31)), isTrue);
+      expect(
+        rule.matches(info(weekday: DateTime.sunday, dayOfMonth: 31)),
+        isTrue,
+      );
       expect(
         rule.matches(
-            info(hebrewDayOfMonth: 1, hebrewMonth: HebrewMonth.tishrei)),
+          info(hebrewDayOfMonth: 1, hebrewMonth: HebrewMonth.tishrei),
+        ),
         isTrue,
       );
     });
@@ -62,15 +65,19 @@ void main() {
       expect(rule.matches(info()), isFalse);
     });
 
-    test('declares a calendar, round-trips, and compares order-insensitively',
-        () {
-      const rule = WeekdayRule(weekdays: {DateTime.friday, DateTime.monday});
-      expect(rule.calendar, RuleCalendar.gregorian);
-      roundTrips(rule);
-      expect(rule,
-          const WeekdayRule(weekdays: {DateTime.monday, DateTime.friday}));
-      expect(rule, isNot(const WeekdayRule(weekdays: {DateTime.friday})));
-    });
+    test(
+      'declares a calendar, round-trips, and compares order-insensitively',
+      () {
+        const rule = WeekdayRule(weekdays: {DateTime.friday, DateTime.monday});
+        expect(rule.calendar, RuleCalendar.gregorian);
+        roundTrips(rule);
+        expect(
+          rule,
+          const WeekdayRule(weekdays: {DateTime.monday, DateTime.friday}),
+        );
+        expect(rule, isNot(const WeekdayRule(weekdays: {DateTime.friday})));
+      },
+    );
   });
 
   group('DayOfMonthRule', () {
@@ -98,41 +105,55 @@ void main() {
     test('matches a day of every Hebrew month when no month is pinned', () {
       const rule = HebrewDayRule(day: 1);
       expect(
-          rule.matches(
-              info(hebrewDayOfMonth: 1, hebrewMonth: HebrewMonth.nissan)),
-          isTrue);
+        rule.matches(
+          info(hebrewDayOfMonth: 1, hebrewMonth: HebrewMonth.nissan),
+        ),
+        isTrue,
+      );
       expect(
-          rule.matches(
-              info(hebrewDayOfMonth: 1, hebrewMonth: HebrewMonth.tishrei)),
-          isTrue);
+        rule.matches(
+          info(hebrewDayOfMonth: 1, hebrewMonth: HebrewMonth.tishrei),
+        ),
+        isTrue,
+      );
       expect(
-          rule.matches(
-              info(hebrewDayOfMonth: 2, hebrewMonth: HebrewMonth.nissan)),
-          isFalse);
+        rule.matches(
+          info(hebrewDayOfMonth: 2, hebrewMonth: HebrewMonth.nissan),
+        ),
+        isFalse,
+      );
     });
 
     test('with a pinned month, matches only that month', () {
       const rule = HebrewDayRule(day: 1, month: HebrewMonth.tishrei);
       expect(
-          rule.matches(
-              info(hebrewDayOfMonth: 1, hebrewMonth: HebrewMonth.tishrei)),
-          isTrue);
+        rule.matches(
+          info(hebrewDayOfMonth: 1, hebrewMonth: HebrewMonth.tishrei),
+        ),
+        isTrue,
+      );
       expect(
-          rule.matches(
-              info(hebrewDayOfMonth: 1, hebrewMonth: HebrewMonth.nissan)),
-          isFalse);
+        rule.matches(
+          info(hebrewDayOfMonth: 1, hebrewMonth: HebrewMonth.nissan),
+        ),
+        isFalse,
+      );
     });
 
     test('the 30th matches only months the reader reports a 30th for', () {
       const rule = HebrewDayRule(day: 30);
       expect(
-          rule.matches(
-              info(hebrewDayOfMonth: 30, hebrewMonth: HebrewMonth.cheshvan)),
-          isTrue);
+        rule.matches(
+          info(hebrewDayOfMonth: 30, hebrewMonth: HebrewMonth.cheshvan),
+        ),
+        isTrue,
+      );
       expect(
-          rule.matches(
-              info(hebrewDayOfMonth: 29, hebrewMonth: HebrewMonth.cheshvan)),
-          isFalse);
+        rule.matches(
+          info(hebrewDayOfMonth: 29, hebrewMonth: HebrewMonth.cheshvan),
+        ),
+        isFalse,
+      );
     });
 
     test('fails loudly when the Hebrew fields are absent', () {
@@ -140,16 +161,18 @@ void main() {
       expect(() => rule.matches(info()), throwsStateError);
     });
 
-    test('declares the Hebrew calendar and round-trips with and without month',
-        () {
-      const pinned = HebrewDayRule(day: 1, month: HebrewMonth.tishrei);
-      const unpinned = HebrewDayRule(day: 1);
-      expect(pinned.calendar, RuleCalendar.hebrew);
-      expect(unpinned.calendar, RuleCalendar.hebrew);
-      roundTrips(pinned);
-      roundTrips(unpinned);
-      expect(pinned, isNot(unpinned));
-    });
+    test(
+      'declares the Hebrew calendar and round-trips with and without month',
+      () {
+        const pinned = HebrewDayRule(day: 1, month: HebrewMonth.tishrei);
+        const unpinned = HebrewDayRule(day: 1);
+        expect(pinned.calendar, RuleCalendar.hebrew);
+        expect(unpinned.calendar, RuleCalendar.hebrew);
+        roundTrips(pinned);
+        roundTrips(unpinned);
+        expect(pinned, isNot(unpinned));
+      },
+    );
   });
 
   group('combinations', () {
@@ -158,12 +181,18 @@ void main() {
         WeekdayRule(weekdays: {DateTime.saturday}),
         DayOfMonthRule(days: {1}),
       ]);
-      expect(rule.matches(info(weekday: DateTime.saturday, dayOfMonth: 15)),
-          isTrue);
-      expect(rule.matches(info(weekday: DateTime.monday, dayOfMonth: 1)),
-          isTrue);
-      expect(rule.matches(info(weekday: DateTime.monday, dayOfMonth: 15)),
-          isFalse);
+      expect(
+        rule.matches(info(weekday: DateTime.saturday, dayOfMonth: 15)),
+        isTrue,
+      );
+      expect(
+        rule.matches(info(weekday: DateTime.monday, dayOfMonth: 1)),
+        isTrue,
+      );
+      expect(
+        rule.matches(info(weekday: DateTime.monday, dayOfMonth: 15)),
+        isFalse,
+      );
     });
 
     test('an empty OrRule matches nothing', () {
@@ -175,26 +204,32 @@ void main() {
         DayOfMonthRule(days: {1}),
         WeekdayRule(weekdays: {DateTime.wednesday}),
       ]);
-      expect(rule.matches(info(weekday: DateTime.wednesday, dayOfMonth: 1)),
-          isTrue);
-      expect(rule.matches(info(weekday: DateTime.monday, dayOfMonth: 1)),
-          isFalse);
+      expect(
+        rule.matches(info(weekday: DateTime.wednesday, dayOfMonth: 1)),
+        isTrue,
+      );
+      expect(
+        rule.matches(info(weekday: DateTime.monday, dayOfMonth: 1)),
+        isFalse,
+      );
     });
 
     test('an empty AndRule matches everything', () {
       expect(const AndRule([]).matches(info()), isTrue);
     });
 
-    test('"every day except Shabbos" is an AndRule of daily and not-Shabbos',
-        () {
-      const rule = AndRule([
-        DailyRule(),
-        NotRule(WeekdayRule(weekdays: {DateTime.saturday})),
-      ]);
-      expect(rule.matches(info(weekday: DateTime.friday)), isTrue);
-      expect(rule.matches(info(weekday: DateTime.saturday)), isFalse);
-      expect(rule.matches(info(weekday: DateTime.sunday)), isTrue);
-    });
+    test(
+      '"every day except Shabbos" is an AndRule of daily and not-Shabbos',
+      () {
+        const rule = AndRule([
+          DailyRule(),
+          NotRule(WeekdayRule(weekdays: {DateTime.saturday})),
+        ]);
+        expect(rule.matches(info(weekday: DateTime.friday)), isTrue);
+        expect(rule.matches(info(weekday: DateTime.saturday)), isFalse);
+        expect(rule.matches(info(weekday: DateTime.sunday)), isTrue);
+      },
+    );
 
     test('a composite is Hebrew when any part is', () {
       expect(
@@ -202,9 +237,10 @@ void main() {
         RuleCalendar.hebrew,
       );
       expect(
-        const OrRule(
-                [DailyRule(), WeekdayRule(weekdays: {DateTime.monday})])
-            .calendar,
+        const OrRule([
+          DailyRule(),
+          WeekdayRule(weekdays: {DateTime.monday}),
+        ]).calendar,
         RuleCalendar.gregorian,
       );
       expect(
@@ -227,62 +263,101 @@ void main() {
 
   group('JSON', () {
     test('unknown rule types are refused loudly', () {
-      expect(() => RecurrenceRule.fromJson({'type': 'fortnightly'}),
-          throwsFormatException);
+      expect(
+        () => RecurrenceRule.fromJson({'type': 'fortnightly'}),
+        throwsFormatException,
+      );
       expect(() => RecurrenceRule.fromJson({}), throwsFormatException);
     });
 
     test('invalid day numbers in a DayOfMonthRule are refused', () {
       expect(
-          () => RecurrenceRule.fromJson({'type': 'dayOfMonth', 'days': [32]}),
-          throwsFormatException);
+        () => RecurrenceRule.fromJson({
+          'type': 'dayOfMonth',
+          'days': [32],
+        }),
+        throwsFormatException,
+      );
       expect(
-          () => RecurrenceRule.fromJson({'type': 'dayOfMonth', 'days': [0]}),
-          throwsFormatException);
+        () => RecurrenceRule.fromJson({
+          'type': 'dayOfMonth',
+          'days': [0],
+        }),
+        throwsFormatException,
+      );
     });
 
     test('invalid weekdays are refused', () {
       expect(
-          () => RecurrenceRule.fromJson({'type': 'weekdays', 'weekdays': [0]}),
-          throwsFormatException);
+        () => RecurrenceRule.fromJson({
+          'type': 'weekdays',
+          'weekdays': [0],
+        }),
+        throwsFormatException,
+      );
       expect(
-          () => RecurrenceRule.fromJson({'type': 'weekdays', 'weekdays': [8]}),
-          throwsFormatException);
+        () => RecurrenceRule.fromJson({
+          'type': 'weekdays',
+          'weekdays': [8],
+        }),
+        throwsFormatException,
+      );
     });
 
     test('an out-of-range Hebrew day or month is refused', () {
       expect(
-          () => RecurrenceRule.fromJson({'type': 'hebrewDay', 'day': 0}),
-          throwsFormatException);
+        () => RecurrenceRule.fromJson({'type': 'hebrewDay', 'day': 0}),
+        throwsFormatException,
+      );
       expect(
-          () => RecurrenceRule.fromJson({'type': 'hebrewDay', 'day': 31}),
-          throwsFormatException);
+        () => RecurrenceRule.fromJson({'type': 'hebrewDay', 'day': 31}),
+        throwsFormatException,
+      );
       expect(
-          () => RecurrenceRule.fromJson(
-              {'type': 'hebrewDay', 'day': 1, 'month': 0}),
-          throwsFormatException);
+        () => RecurrenceRule.fromJson({
+          'type': 'hebrewDay',
+          'day': 1,
+          'month': 0,
+        }),
+        throwsFormatException,
+      );
       expect(
-          () => RecurrenceRule.fromJson(
-              {'type': 'hebrewDay', 'day': 1, 'month': 14}),
-          throwsFormatException);
+        () => RecurrenceRule.fromJson({
+          'type': 'hebrewDay',
+          'day': 1,
+          'month': 14,
+        }),
+        throwsFormatException,
+      );
     });
 
     test('a malformed composite is refused', () {
-      expect(() => RecurrenceRule.fromJson({'type': 'or'}),
-          throwsFormatException);
-      expect(() => RecurrenceRule.fromJson({'type': 'not', 'rule': {}}),
-          throwsFormatException);
       expect(
-          () => RecurrenceRule.fromJson(
-              {'type': 'and', 'rules': [{'type': 'nonsense'}]}),
-          throwsFormatException);
+        () => RecurrenceRule.fromJson({'type': 'or'}),
+        throwsFormatException,
+      );
+      expect(
+        () => RecurrenceRule.fromJson({'type': 'not', 'rule': {}}),
+        throwsFormatException,
+      );
+      expect(
+        () => RecurrenceRule.fromJson({
+          'type': 'and',
+          'rules': [
+            {'type': 'nonsense'},
+          ],
+        }),
+        throwsFormatException,
+      );
     });
   });
 
   group('DayInfo', () {
     test('is a value: equal fields compare equal, different fields do not', () {
-      expect(info(ordinal: 5, weekday: DateTime.friday),
-          info(ordinal: 5, weekday: DateTime.friday));
+      expect(
+        info(ordinal: 5, weekday: DateTime.friday),
+        info(ordinal: 5, weekday: DateTime.friday),
+      );
       expect(info(ordinal: 5), isNot(info(ordinal: 6)));
       expect(info(hebrewDayOfMonth: 1), isNot(info(hebrewDayOfMonth: 2)));
     });

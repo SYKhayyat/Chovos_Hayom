@@ -24,13 +24,13 @@ import 'package:flutter_test/flutter_test.dart';
 ///    shows up as a screen that has quietly stopped updating.
 void main() {
   List<File> dartFiles(String root) => [
-        for (final e in Directory(root).listSync(recursive: true))
-          if (e is File &&
-              e.path.endsWith('.dart') &&
-              !e.path.replaceAll(r'\', '/').contains('/l10n/generated/') &&
-              !e.path.endsWith('.g.dart'))
-            e,
-      ];
+    for (final e in Directory(root).listSync(recursive: true))
+      if (e is File &&
+          e.path.endsWith('.dart') &&
+          !e.path.replaceAll(r'\', '/').contains('/l10n/generated/') &&
+          !e.path.endsWith('.g.dart'))
+        e,
+  ];
 
   String posix(File f) => f.path.replaceAll(r'\', '/');
 
@@ -43,7 +43,8 @@ void main() {
       final lines = file.readAsLinesSync();
       for (var i = 0; i < lines.length; i++) {
         final line = lines[i];
-        if (line.trimLeft().startsWith('//') || line.trimLeft().startsWith('///')) {
+        if (line.trimLeft().startsWith('//') ||
+            line.trimLeft().startsWith('///')) {
           continue;
         }
         if (!line.contains('family<')) continue;
@@ -52,12 +53,16 @@ void main() {
       }
     }
 
-    expect(violations, isEmpty,
-        reason: 'A Riverpod family keeps one element per argument alive for the '
-            'life of the container. Use `Provider.autoDispose.family`, or if an '
-            'element genuinely must outlive its listeners, say so with '
-            '`ref.keepAlive()` inside it rather than by dropping the '
-            'modifier.\n\n${violations.join('\n')}');
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'A Riverpod family keeps one element per argument alive for the '
+          'life of the container. Use `Provider.autoDispose.family`, or if an '
+          'element genuinely must outlive its listeners, say so with '
+          '`ref.keepAlive()` inside it rather than by dropping the '
+          'modifier.\n\n${violations.join('\n')}',
+    );
   });
 
   test('nothing watches the whole SettingsState to read one field', () {
@@ -70,9 +75,7 @@ void main() {
     /// and this provider's re-derivation walked the event log. Two fields out of
     /// nine is exactly the case `.select` exists for, so it now uses two of them
     /// and is off the list.
-    const allowed = {
-      'lib/features/settings/settings_screen.dart',
-    };
+    const allowed = {'lib/features/settings/settings_screen.dart'};
     // `ref.watch(settingsProvider)` with no `.select` before the closing paren.
     final unselected = RegExp(r'watch\(\s*settingsProvider\s*\)');
     final violations = <String>[];
@@ -86,11 +89,15 @@ void main() {
       }
     }
 
-    expect(violations, isEmpty,
-        reason: 'Every setter allocates a new SettingsState, so watching the '
-            'whole object means rebuilding on a change to a field you do not '
-            'read. Use `settingsProvider.select((s) => s.theOneField)`.'
-            '\n\n${violations.join('\n')}');
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'Every setter allocates a new SettingsState, so watching the '
+          'whole object means rebuilding on a change to a field you do not '
+          'read. Use `settingsProvider.select((s) => s.theOneField)`.'
+          '\n\n${violations.join('\n')}',
+    );
   });
 
   group('value types compare all of their fields', () {
@@ -113,8 +120,11 @@ void main() {
     /// a *neighbouring* class in the same file are not attributed to this one.
     String classBody(String source, String name) {
       final start = RegExp('class\\s+$name\\b').firstMatch(source);
-      expect(start, isNotNull,
-          reason: 'this guard names a class that no longer exists');
+      expect(
+        start,
+        isNotNull,
+        reason: 'this guard names a class that no longer exists',
+      );
       var i = source.indexOf('{', start!.end);
       final open = i;
       var depth = 0;
@@ -142,32 +152,44 @@ void main() {
             .split('\n')
             .where((l) => !l.trimLeft().startsWith('//'))
             .join('\n');
-        final fields = RegExp(r'^\s{2}final\s+[\w<>,\s?]+?\s(\w+);',
-                multiLine: true)
-            .allMatches(code)
-            .map((m) => m.group(1)!)
-            .toList();
-        expect(fields, isNotEmpty,
-            reason: 'no fields found — the field regex has stopped matching, '
-                'which would make this guard silently vacuous');
+        final fields = RegExp(
+          r'^\s{2}final\s+[\w<>,\s?]+?\s(\w+);',
+          multiLine: true,
+        ).allMatches(code).map((m) => m.group(1)!).toList();
+        expect(
+          fields,
+          isNotEmpty,
+          reason:
+              'no fields found — the field regex has stopped matching, '
+              'which would make this guard silently vacuous',
+        );
 
-        final equals = RegExp(r'bool operator ==\(Object other\) =>(.*?);',
-                dotAll: true)
-            .firstMatch(code);
-        expect(equals, isNotNull,
-            reason: '${entry.key} is handed out by a provider and has no '
-                'operator ==, so every rebuild of it notifies unconditionally');
+        final equals = RegExp(
+          r'bool operator ==\(Object other\) =>(.*?);',
+          dotAll: true,
+        ).firstMatch(code);
+        expect(
+          equals,
+          isNotNull,
+          reason:
+              '${entry.key} is handed out by a provider and has no '
+              'operator ==, so every rebuild of it notifies unconditionally',
+        );
 
         final compared = equals!.group(1)!;
         final missing = [
           for (final f in fields)
             if (!RegExp('\\b$f\\b').hasMatch(compared)) f,
         ];
-        expect(missing, isEmpty,
-            reason: '${entry.key}.operator == ignores ${missing.join(', ')}. '
-                'A field left out of the comparison is a change the UI will '
-                'never hear about — the failure mode is a screen that has '
-                'quietly stopped updating, which no other test looks for.');
+        expect(
+          missing,
+          isEmpty,
+          reason:
+              '${entry.key}.operator == ignores ${missing.join(', ')}. '
+              'A field left out of the comparison is a change the UI will '
+              'never hear about — the failure mode is a screen that has '
+              'quietly stopped updating, which no other test looks for.',
+        );
       });
     }
   });

@@ -45,7 +45,12 @@ class GoalStatus {
 
   @override
   int get hashCode => Object.hash(
-      remaining, requiredPerDay, currentPace, projectedFinish, target);
+    remaining,
+    requiredPerDay,
+    currentPace,
+    projectedFinish,
+    target,
+  );
 }
 
 /// Evaluates a target-date goal against actual pace. Pure.
@@ -60,11 +65,18 @@ class GoalEvaluator {
   }) {
     return GoalStatus(
       remaining: remaining,
-      requiredPerDay:
-          Predictor.requiredPerDay(remaining: remaining, from: from, target: target),
+      requiredPerDay: Predictor.requiredPerDay(
+        remaining: remaining,
+        from: from,
+        target: target,
+      ),
       currentPace: currentPace,
       projectedFinish: currentPace > 0
-          ? Predictor.finishDate(remaining: remaining, perDay: currentPace, from: from)
+          ? Predictor.finishDate(
+              remaining: remaining,
+              perDay: currentPace,
+              from: from,
+            )
           : null,
       target: target,
     );

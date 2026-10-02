@@ -44,13 +44,13 @@ enum ReportSection {
   chazara;
 
   String label(AppLocalizations l10n) => switch (this) {
-        ReportSection.overview => l10n.reportTabOverview,
-        ReportSection.calculator => l10n.reportTabCalculator,
-        ReportSection.goals => l10n.reportTabGoals,
-        ReportSection.siyumim => l10n.reportTabSiyumim,
-        ReportSection.mefarshim => l10n.reportTabMefarshim,
-        ReportSection.chazara => l10n.reportTabChazara,
-      };
+    ReportSection.overview => l10n.reportTabOverview,
+    ReportSection.calculator => l10n.reportTabCalculator,
+    ReportSection.goals => l10n.reportTabGoals,
+    ReportSection.siyumim => l10n.reportTabSiyumim,
+    ReportSection.mefarshim => l10n.reportTabMefarshim,
+    ReportSection.chazara => l10n.reportTabChazara,
+  };
 }
 
 /// A report section whose content is figures rather than controls.
@@ -82,7 +82,7 @@ class ReportBody extends StatelessWidget {
   /// Builds the scroll view, which must take the controller passed in — that is
   /// what the arrow keys move. See [DpadScroll.builder].
   final Widget Function(BuildContext context, ScrollController controller)
-      builder;
+  builder;
 
   @override
   Widget build(BuildContext context) =>

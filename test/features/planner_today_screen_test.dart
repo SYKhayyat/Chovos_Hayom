@@ -20,17 +20,17 @@ void main() {
   const profile = 'default';
 
   LearningPlan plan() => const LearningPlan(
-        id: 'p1',
-        name: 'Daily plan',
-        assignments: [
-          PlanAssignment(
-            id: 'a1',
-            rule: DailyRule(),
-            targetNodeId: 'shas.moed.shabbos',
-            label: 'Text',
-          ),
-        ],
-      );
+    id: 'p1',
+    name: 'Daily plan',
+    assignments: [
+      PlanAssignment(
+        id: 'a1',
+        rule: DailyRule(),
+        targetNodeId: 'shas.moed.shabbos',
+        label: 'Text',
+      ),
+    ],
+  );
 
   Widget screen({
     required ProgressRepository repo,
@@ -52,7 +52,9 @@ void main() {
     );
   }
 
-  testWidgets('lists a daily assignment and logs its next unit', (tester) async {
+  testWidgets('lists a daily assignment and logs its next unit', (
+    tester,
+  ) async {
     final repo = memoryRepository();
     await tester.pumpWidget(screen(repo: repo));
     await tester.pumpAndSettle();
