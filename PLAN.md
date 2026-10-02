@@ -197,11 +197,50 @@ Filed from the #41 session. A plan now says **what** to work through and **when*
 about the same object. **After Phase 6** — nothing in it is blocked, and nothing
 in it blocks anything there.
 
-- [ ] #50 a plan says how many times: "do this N times a day" (not merely "N
-  units"), and a plan can ask to be **reviewed** — everything planned in the last
+- [x] #50 a plan says how many times: "do this N times a day" (not merely "N
+  units"), and a plan can ask to be reviewed — everything planned in the last
   *y* days — on a fixed date, every *x* days, or a day of the week. (Medium)
-  Needs a ruling on whether "three times a day" is a counter separate from
-  chazara; #45 owns that answer, so land after it.
+  Shipped in two halves, because they are the same gap from two sides.
+  **(1) "N times a day" needed no new field, and that is the result.** A
+  *wrapping* range is the user already saying "go round again", so a plan asking
+  for three over a range of one is asking for that unit three times — and the
+  ledger was handing back **one row**, with the count line reading "0 of 1 done"
+  for a plan asking three. `DayLedger.unitsFor` now cycles a wrapping range,
+  which is the whole feature. `LedgerUnit` grew `occurrence` (which pass of the
+  unit this row is) and `doneToday`; the pass is read off
+  `LogFold.doneCountOn`, which already counted them, so **no stored state was
+  added**.
+  **It is not chazara, and that was settled by evidence rather than by ruling.**
+  Three `done` events in one day are `chazaraCount == 1` — #45's "learned means
+  chazara" already makes the two different facts. "I did it three times this
+  morning" is three `done` events; "I have been over it three times over the
+  years" is a `reviewed` event each time after the first. Two counters, two
+  events, one fold.
+  A range that does **not** wrap still stops at its end, short ledger and
+  visible: it has nothing more to offer, and repeating its units would be
+  inventing work the plan did not ask for.
+  **(2) The review schedule is a fold that asks, never records.** `PlanReview`
+  (`windowDays` + a sealed `ReviewWhen`: `ReviewOnDate`, `ReviewEveryDays`,
+  `ReviewOnWeekday`) is a field on the plan; `PlanReviewFold.dueOn` answers what
+  is due on a day from the log. A review the user did not perform is never
+  written, so nothing has to be kept in step.
+  Three of the issue's open questions, answered:
+  - **Ask or record? Ask.** The issue flagged recording as "a write the user did
+    not perform"; that is also the only answer consistent with #45, and it makes
+    the whole question answerable with no stored review date.
+  - **Overlapping windows?** One unit is one unit. Two plans covering a daf make
+    it due **once** — listing it twice would double-count the work and make a
+    two-plan day look like a backlog.
+  - **The window is calendar days for every plan**, even a Hebrew-calendar one.
+    A Hebrew month is 29 or 30 of them, and making the window Hebrew for some
+    plans and not others would be a difference nobody would notice until a unit
+    sat due for a fortnight. The rule's calendar governs which days the plan
+    fires on; the window governs elapsed time.
+  **A unit that has had its one review is not asked for a second.** The plan asks
+  for a review of what it covered, not a standing appointment, and a plan that
+  kept re-asking would turn the report into a to-do list of work already done.
+  Also: the ledger row key now carries the pass, so a plan asking for one unit
+  three times has three addressable rows rather than one key three times over.
 
 Also open, from the same session and not planner scope:
 

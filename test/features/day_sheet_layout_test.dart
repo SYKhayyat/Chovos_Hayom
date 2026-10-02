@@ -77,9 +77,10 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// A ledger row, which every layout renders with the same key.
+  /// A ledger row, which every layout renders with the same key. The trailing
+  /// `0` is the unit's first pass on the day (#50's occurrence).
   Finder box(String planId, int unit) =>
-      find.byKey(ValueKey('ledger-$planId-$shabbos-$unit'));
+      find.byKey(ValueKey('ledger-$planId-$shabbos-$unit-0'));
 
   group('the default', () {
     testWidgets('is grouped by plan, with no setting stored', (tester) async {

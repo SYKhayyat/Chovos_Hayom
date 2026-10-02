@@ -6,6 +6,7 @@ import 'day_amount.dart';
 import 'fold_log.dart';
 import 'layer_roles.dart';
 import 'learning_plan.dart';
+import 'plan_review.dart';
 import 'plan_run.dart';
 
 /// Where one plan stands and how fast it is moving.
@@ -29,6 +30,7 @@ class PlanStanding {
     required this.recentPerDay,
     required this.recentDays,
     required this.since,
+    required this.review,
     this.coversNothing = false,
   });
 
@@ -43,6 +45,7 @@ class PlanStanding {
       recentPerDay = null,
       recentDays = 0,
       since = null,
+      review = null,
       coversNothing = true;
 
   /// Units done by the day asked about. Never a fraction on its own — see [total].
@@ -97,6 +100,11 @@ class PlanStanding {
   /// Whether the plan names nothing to work through at all. See [isEmpty].
   final bool coversNothing;
 
+  /// The plan's review request, carried so a screen can say whether there is one
+  /// to report. Not a count and not a fold — the schedule is a property of the
+  /// plan, and what is *due* on a given day is [PlanReviewFold]'s question.
+  final PlanReview? review;
+
   /// True when the plan names nothing to work through, so there is nothing here
   /// to report — and nothing for a screen to invent a number about.
   ///
@@ -144,6 +152,7 @@ class PlanStanding {
       other.recentPerDay == recentPerDay &&
       other.recentDays == recentDays &&
       other.since == since &&
+      other.review == review &&
       other.coversNothing == coversNothing;
 
   @override
@@ -156,6 +165,7 @@ class PlanStanding {
     recentPerDay,
     recentDays,
     since,
+    review,
     coversNothing,
   );
 
@@ -241,6 +251,7 @@ class PlanRate {
         recentPerDay: null,
         recentDays: 0,
         since: null,
+        review: plan.review,
       );
     }
 
@@ -265,6 +276,7 @@ class PlanRate {
       ),
       recentDays: recent.days,
       since: since,
+      review: plan.review,
     );
   }
 

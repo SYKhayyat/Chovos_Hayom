@@ -1,5 +1,6 @@
 import 'package:chovos_hayom/core/day.dart';
 
+import 'plan_review.dart';
 import 'recurrence.dart';
 import '../../core/equality.dart';
 
@@ -368,6 +369,7 @@ class LearningPlan {
     this.flowsToNextItem = false,
     this.startDay,
     this.pacing = const AmountPerDay(1),
+    this.review,
   });
 
   final String id;
@@ -434,6 +436,15 @@ class LearningPlan {
   /// both. See [PlanPacing].
   final PlanPacing pacing;
 
+  /// When this plan would like its recent work reviewed, and how far back that
+  /// reaches — or null, which is a real answer meaning **this plan asks for no
+  /// review** (#50).
+  ///
+  /// **A statement about something the plan did, not a schedule to run.** The
+  /// log records the reviews that happened; this says which ones would be worth
+  /// having, and nothing is written when the day comes round.
+  final PlanReview? review;
+
   /// True once [startDay] has arrived. Null means today, so this is
   /// `startDay == null || !today.isBefore(startDay!)`.
   bool startsOn(Day day) => startDay == null || !(day < startDay!);
@@ -454,6 +465,7 @@ class LearningPlan {
     // Omitted when null, which is "today". See [startDay].
     if (startDay != null) 'startDay': startDay.toString(),
     'pacing': pacing.toJson(),
+    if (review != null) 'review': review!.toJson(),
     if (weekdayAmounts.isNotEmpty)
       'weekdayAmounts': {
         for (final e in weekdayAmounts.entries) '${e.key}': e.value,
@@ -517,6 +529,11 @@ class LearningPlan {
           : PlanPacing.fromJson(
               (json['pacing'] as Map<dynamic, dynamic>).cast<String, dynamic>(),
             ),
+      review: json['review'] == null
+          ? null
+          : PlanReview.fromJson(
+              (json['review'] as Map<dynamic, dynamic>).cast<String, dynamic>(),
+            ),
       weekdayAmounts: _weekdayAmountsFrom(json['weekdayAmounts']),
       dateAmounts: _dateAmountsFrom(json['dateAmounts']),
     );
@@ -568,6 +585,7 @@ class LearningPlan {
       other.flowsToNextItem == flowsToNextItem &&
       other.startDay == startDay &&
       other.pacing == pacing &&
+      other.review == review &&
       _sameItems(items, other.items) &&
       mapEquals(other.weekdayAmounts, weekdayAmounts) &&
       mapEquals(other.dateAmounts, dateAmounts) &&
@@ -583,6 +601,7 @@ class LearningPlan {
     spillover,
     startDay,
     pacing,
+    review,
     Object.hashAllUnordered(
       weekdayAmounts.entries.map((e) => Object.hash(e.key, e.value)),
     ),
@@ -620,6 +639,7 @@ class LearningPlan {
     flowsToNextItem: flowsToNextItem,
     startDay: startDay,
     pacing: pacing,
+    review: review,
   );
 
   static bool _sameItems(List<PlanItem> a, List<PlanItem> b) {

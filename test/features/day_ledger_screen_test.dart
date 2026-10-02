@@ -36,19 +36,32 @@ void main() {
   /// Not `const`, so the amount can be varied — a `const` here would have looked
   /// tidier and quietly ignored the parameter, which is the sort of thing that
   /// makes a test pass for the wrong reason.
-  String planJson({int unitsPerDay = 3}) => jsonEncode(
-    PlansConfig(
-      plans: [
-        LearningPlan(
-          id: 'daf-yomi',
-          name: 'Daf Yomi',
-          unitsPerDay: unitsPerDay,
-          assignments: const [PlanAssignment(id: 'a', rule: DailyRule())],
-          items: const [PlanItem(id: 'i1', nodeId: 'shas.moed.shabbos')],
-        ),
-      ],
-    ).toJson(),
-  );
+  String planJson({int unitsPerDay = 3, bool oneWrappingUnit = false}) =>
+      jsonEncode(
+        PlansConfig(
+          plans: [
+            LearningPlan(
+              id: 'daf-yomi',
+              name: 'Daf Yomi',
+              unitsPerDay: unitsPerDay,
+              assignments: const [PlanAssignment(id: 'a', rule: DailyRule())],
+              // A one-unit *wrapping* range is "do this N times a day" (#50);
+              // the plain one is Daf Yomi's 156 dapim.
+              items: oneWrappingUnit
+                  ? const [
+                      PlanItem(
+                        id: 'i1',
+                        nodeId: 'shas.moed.shabbos',
+                        startUnit: 2,
+                        endUnit: 2,
+                        wrapsRange: true,
+                      ),
+                    ]
+                  : const [PlanItem(id: 'i1', nodeId: 'shas.moed.shabbos')],
+            ),
+          ],
+        ).toJson(),
+      );
 
   /// The day sheet, open on [theDay], over [repo].
   /// Two plans, the second on a weekday rule so it is **not** firing on the 5th
@@ -111,9 +124,13 @@ void main() {
     return prefs;
   }
 
-  /// The ledger's checkbox for one unit.
-  Finder box(int unit) =>
-      find.byKey(ValueKey('ledger-daf-yomi-$shabbos-$unit'));
+  /// The ledger's checkbox for one unit's [pass]-th occurrence today.
+  ///
+  /// **The pass is part of the key** (#50), because a plan that asks for the same
+  /// unit three times has three rows for it, and a finder that could not say
+  /// which pass it meant would be pointing at whichever the tree held first.
+  Finder box(int unit, [int pass = 0]) =>
+      find.byKey(ValueKey('ledger-daf-yomi-$shabbos-$unit-$pass'));
 
   group('the ledger appears', () {
     testWidgets('a day asks for its units, with the count', (tester) async {
@@ -220,7 +237,10 @@ void main() {
         ).toJson(),
       );
       await openSheet(tester, plans: prefs);
-      expect(find.byKey(const ValueKey('ledger-off-$shabbos-2')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('ledger-off-$shabbos-2-0')),
+        findsNothing,
+      );
     });
   });
 
@@ -450,6 +470,64 @@ void main() {
         plans.firstWhere((p) => p.id == 'other').dateAmounts,
         isEmpty,
         reason: 'recomputing one plan must not disturb another',
+      );
+    });
+  });
+
+  group('a plan that asks for the same unit more than once a day (#50)', () {
+    testWidgets('offers a row per pass, and one is not three', (tester) async {
+      // The wrap setting is the user saying "go round again", so a one-unit
+      // wrapping range asked for three times is three passes of that unit. Before
+      // #50 this offered **one** row and read "0 of 1 done" for a plan asking
+      // three.
+      final repo = memoryRepository();
+      await openSheet(
+        tester,
+        plans: planJson(unitsPerDay: 3, oneWrappingUnit: true),
+        repo: repo,
+      );
+
+      expect(box(2, 0), findsOneWidget);
+      expect(box(2, 1), findsOneWidget);
+      expect(box(2, 2), findsOneWidget);
+      expect(find.textContaining('0 of 3'), findsOneWidget);
+    });
+
+    testWidgets('ticking a pass writes one event, and shows as one done', (
+      tester,
+    ) async {
+      final repo = memoryRepository();
+      await openSheet(
+        tester,
+        plans: planJson(unitsPerDay: 3, oneWrappingUnit: true),
+        repo: repo,
+      );
+
+      await tester.tap(box(2, 1));
+      await tester.pumpAndSettle();
+
+      final events = await repo.getEvents('default');
+      final ticks = events.where((e) => e.unitIndex == 2).toList();
+      expect(
+        ticks,
+        hasLength(1),
+        reason:
+            'a tap on one row is one pass; three rows sharing a key is how a '
+            'single tap becomes three ticks nobody asked for',
+      );
+      // **The boxes fill as a count.** Three taps of one unit are three events
+      // and nothing in the log says which was first, so the ledger cannot say
+      // *which* box is ticked — only how many. Inventing an identity for them
+      // would be inventing a fact.
+      expect(
+        tester.widget<CheckboxListTile>(box(2, 0)).value,
+        isTrue,
+        reason: 'one pass done, so the first box',
+      );
+      expect(
+        tester.widget<CheckboxListTile>(box(2, 1)).value,
+        isFalse,
+        reason: 'and the second is still owed',
       );
     });
   });

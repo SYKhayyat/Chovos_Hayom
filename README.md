@@ -169,9 +169,15 @@ reports a bare count of units done and never a percentage, because there is no t
 of. The rate is measured per day the plan **asked for**, so a Shabbos-only plan kept up on perfectly
 is not reported as falling behind. The same screen is where you **recompute**: keep the amounts, or
 spread the shortfall over the next 3 days, 7, 14, all of them, or up to the plan's own end — and it
-says so when spreading pushes the finish date. Ticking a unit from the calendar writes to the log
-with the plan it was made for; ticking it in the unit grid does not, which is how the two screens stay
-independent.
+says so when spreading pushes the finish date. A plan can also say **how many
+times**: a range that starts over, asked for three units a day, is three passes of
+those units rather than three different ones — so "twice a day" of one thing is a
+plan, not a workaround. And a plan can **ask to be reviewed** — on one date, every
+few days, or on a weekday (the weekly Shabbos review) — and then reports what it
+would like back from the last *y* days. It asks rather than records: nothing is
+written when the day comes round, and the log holds the reviews you actually did.
+Ticking a unit from the calendar writes to the log with the plan it was made for; ticking it in the unit
+grid does not, which is how the two screens stay independent.
 
 **One report, five tabs** — Overview, Calculator, Goals, Siyumim, Mefarshim — each keeping its own
 address (`/stats`, `/calculator`, `/goals`, `/siyumim`, `/mefarshim`).

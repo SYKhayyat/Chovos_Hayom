@@ -342,7 +342,13 @@ class DaySheet extends ConsumerWidget {
         // Keyed by node and unit, never by position: a day's ledger can hold the
         // same unit twice when two plans each contribute it, and a finder that
         // counted rows would then be pointing at whichever happens to be first.
-        key: ValueKey('ledger-${plan.id}-${u.nodeId}-${u.unitIndex}'),
+        // **The occurrence is part of the key.** A plan that asks for the same
+        // unit three times has three rows for it, and without this they share
+        // one key — so a finder matching a row is pointing at whichever of the
+        // three the tree happens to hold, and a tap lands on an arbitrary one.
+        key: ValueKey(
+          'ledger-${plan.id}-${u.nodeId}-${u.unitIndex}-${u.occurrence}',
+        ),
         contentPadding: EdgeInsets.zero,
         dense: true,
         value: u.doneHere,

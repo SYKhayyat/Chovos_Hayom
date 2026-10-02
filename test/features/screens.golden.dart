@@ -11,8 +11,8 @@ import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:chovos_hayom/features/common/date_field.dart';
 import 'package:chovos_hayom/features/planner/calendar_screen.dart';
-import 'package:chovos_hayom/features/planner/edit_plan_advanced_screen.dart';
 import 'package:chovos_hayom/features/planner/plan_screen.dart';
+import 'package:chovos_hayom/features/planner/edit_plan_advanced_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -145,27 +145,33 @@ void main() {
     String? plans = plansJson,
     ProgressRepository? repo,
     String? daySheetLayout,
+    DateTime Function()? clock,
   }) async {
     tester.view.devicePixelRatio = sonimDpr;
     tester.view.physicalSize = size;
     addTearDown(tester.view.reset);
+
+    // **Built rather than written as a map literal with conditionals.** Both
+    // seeds are optional, and the two ways to say "only if the caller asked" are
+    // a conditional entry (which trips `use_null_aware_elements`) and the
+    // null-aware marker (which does not narrow the value's type, so the map's
+    // `String` value type still complains). A local says it once, plainly.
+    final seed = <String, String>{};
+    if (plans != null) seed[PrefKeys.scoped('default', PrefKeys.plans)] = plans;
+    if (daySheetLayout != null) {
+      seed[PrefKeys.scoped('default', PrefKeys.daySheetLayout)] =
+          daySheetLayout;
+    }
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          appPreferencesProvider.overrideWithValue(
-            InMemoryPreferences({
-              if (plans != null)
-                PrefKeys.scoped('default', PrefKeys.plans): plans,
-              if (daySheetLayout != null)
-                PrefKeys.scoped('default', PrefKeys.daySheetLayout):
-                    daySheetLayout,
-            }),
-          ),
+          appPreferencesProvider.overrideWithValue(InMemoryPreferences(seed)),
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
           progressRepositoryProvider.overrideWithValue(
             repo ?? memoryRepository(),
           ),
-          clockProvider.overrideWithValue(() => DateTime(2026, 1, 10)),
+          clockProvider.overrideWithValue(clock ?? () => DateTime(2026, 1, 10)),
         ],
         // A boundary to capture, because the test binding's root render object is
         // a `_ReusableRenderView` and not a `RenderRepaintBoundary` — so there is
@@ -308,6 +314,48 @@ void main() {
           '"endUnit":25}],"weekdayAmounts":{"6":0}}]}',
     );
     await shoot(tester, '09-plan-standing-sonim');
+  });
+
+  testWidgets('the plan screen\'s review section, which needs a review day', (
+    tester,
+  ) async {
+    // **On a day the plan would like reviewed**, because the other three states —
+    // no review set, a review set but not today, nothing learned in the window —
+    // are all about what is *absent*, and none of them shows what this render is
+    // for. 2026-03-14 is a Saturday, two days after the work below.
+    final repo = memoryRepository();
+    for (final unit in [2, 3, 4]) {
+      await repo.addEvent(
+        LearningEvent(
+          id: 'r$unit',
+          profileId: 'default',
+          nodeId: 'shas.moed.shabbos',
+          unitIndex: unit,
+          action: EventAction.done,
+          occurredAt: DateTime(2026, 3, 12),
+          loggedAt: DateTime(2026, 3, 12),
+        ),
+      );
+    }
+    await at(
+      tester,
+      home: const PlanScreen(planId: 'p'),
+      repo: repo,
+      clock: () => DateTime(2026, 3, 14, 9),
+      plans:
+          '{"plans":[{"id":"p","name":"Yoma","displayCalendar":"gregorian",'
+          '"assignments":[{"id":"a","rule":{"type":"daily"}}],"overrides":[],'
+          '"unitsPerDay":3,"spillover":"ignore","flowsToNextItem":false,'
+          '"startDay":"2026-03-12",'
+          '"pacing":{"mode":"amountPerDay","unitsPerDay":3},'
+          '"review":{"windowDays":7,'
+          '"when":{"kind":"onWeekday","weekday":6}},'
+          '"items":[{"id":"i0","nodeId":"shas.moed.shabbos","startUnit":2,'
+          '"endUnit":25}]}]}',
+    );
+    await tester.drag(find.byType(ListView), const Offset(0, -260));
+    await tester.pumpAndSettle();
+    await shoot(tester, '11-plan-review-sonim');
   });
 
   testWidgets('the day sheet in its collapsed layout, on the phone', (

@@ -9,8 +9,11 @@ import '../../app/routes.dart';
 import '../../core/calendar.dart';
 import '../../core/day.dart';
 import '../../domain/entities/catalog.dart';
+import '../../domain/entities/catalog_node.dart';
+import '../../domain/entities/enums.dart';
 import '../../domain/usecases/plan_position.dart';
 import '../../domain/usecases/plan_rate.dart';
+import '../../domain/usecases/plan_review.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/date_field.dart';
 import '../common/naming.dart';
@@ -75,6 +78,7 @@ class PlanScreen extends ConsumerWidget {
           planId: planId,
           standing: s,
           position: ref.watch(planPositionProvider(planId)),
+          dueForReview: ref.watch(planReviewDueProvider(planId)),
           catalog: ref.watch(mergedCatalogProvider).asData?.value,
         ),
       },
@@ -109,12 +113,17 @@ class _PlanBody extends ConsumerWidget {
     required this.planId,
     required this.standing,
     required this.position,
+    required this.dueForReview,
     required this.catalog,
   });
 
   final String planId;
   final PlanStanding standing;
   final PlanPosition? position;
+
+  /// What the plan would like reviewed today. Empty on a day that is not one of
+  /// its review days, and empty for a plan that asks for no review.
+  final List<ReviewDue>? dueForReview;
   final Catalog? catalog;
 
   @override
@@ -128,6 +137,10 @@ class _PlanBody extends ConsumerWidget {
         _Standing(standing: standing, position: position, catalog: catalog),
         const Divider(height: 32),
         _Rate(standing: standing, mode: mode),
+        if (standing.review != null) ...[
+          const Divider(height: 32),
+          _Review(due: dueForReview, mode: mode, catalog: catalog),
+        ],
         const Divider(height: 32),
         // **The home of recompute** (#47). One implementation with the day's
         // sheet, so "keep the amounts" and "spread them over three days" mean
@@ -176,6 +189,75 @@ class _PlanBody extends ConsumerWidget {
     if (from == null || !navigator.mounted) return;
     await Reflow.from(navigator.context, ref, plan, from, mode);
   }
+}
+
+/// What this plan would like reviewed today (#50).
+///
+/// **Asks, never records.** The plan says when it would like its recent work
+/// back; the log records the reviews that happened. Nothing is written when the
+/// day comes round, so a review the user did not do cannot appear here — and a
+/// unit that has had its one review is not asked for a second.
+class _Review extends StatelessWidget {
+  const _Review({required this.due, required this.mode, required this.catalog});
+
+  final List<ReviewDue>? due;
+  final CalendarMode mode;
+  final Catalog? catalog;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final items = due ?? const <ReviewDue>[];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.plansReview, style: theme.textTheme.titleMedium),
+        const SizedBox(height: 8),
+        if (due == null)
+          const SizedBox.shrink()
+        else if (items.isEmpty)
+          Text(l10n.plansReviewNotToday, style: theme.textTheme.bodySmall)
+        else ...[
+          Text(
+            l10n.plansReviewDueCount(items.length),
+            style: theme.textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 4),
+          // **The unit, and when it was learned** — a review is done in the
+          // order things were learned, and the date is what makes the window
+          // legible rather than an invisible cut-off.
+          for (final item in items)
+            ListTile(
+              key: ValueKey('review-${item.nodeId}-${item.unitIndex}'),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              leading: const Icon(Icons.refresh),
+              title: Text(
+                nodeAndUnit(
+                  l10n,
+                  catalog?.byId(item.nodeId) ?? _missingNode(item.nodeId),
+                  item.unitIndex,
+                ),
+              ),
+              subtitle: item.learnedOn == null
+                  ? null
+                  : Text(
+                      l10n.plansReviewLearnedOn(
+                        DateDisplay.format(item.learnedOn!.midnight, mode),
+                      ),
+                    ),
+            ),
+        ],
+      ],
+    );
+  }
+
+  /// A stand-in for a sefer the catalog no longer has, so a deleted custom node
+  /// still prints something rather than crashing the plan screen.
+  static CatalogNode _missingNode(String id) =>
+      CatalogNode(id: id, parentId: null, name: id, kind: NodeKind.category);
 }
 
 /// How far the plan has got.

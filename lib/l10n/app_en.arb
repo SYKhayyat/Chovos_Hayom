@@ -1271,6 +1271,33 @@
   "planRecomputeFromHelp": "Choose the day to recompute from. This is the same reflow the calendar's day sheet offers.",
   "planRecomputeDayTitle": "Recompute from which day?",
 
+  "@_PLAN_REVIEW": {},
+  "plansReview": "Review",
+  "plansReviewHelp": "On the day you choose, everything this plan covered in the last few days is due a review. Nothing is written for you — the log records the reviews you actually do.",
+  "plansReviewOff": "No review",
+  "plansReviewOffHelp": "This plan does not ask for its work to come back.",
+  "plansReviewOnWeekday": "On a day of the week",
+  "plansReviewOnWeekdayHelp": "The weekly Shabbos review, and the reason this exists.",
+  "plansReviewEveryDays": "Every few days",
+  "plansReviewEveryDaysHelp": "Counted from the plan\u2019s start, or from today if it has none.",
+  "plansReviewOnDate": "On one date",
+  "plansReviewOnDateHelp": "One day only — \"review on 15 Tevet\".",
+  "plansReviewWindow": "How far back to look",
+  "plansReviewWindowHelp": "How many days of this plan\u2019s work count as due. Counted in calendar days, whatever calendar the plan\u2019s rule is written in.",
+  "plansReviewEvery": "Every {days} days",
+  "@plansReviewEvery": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "plansReviewDueCount": "{count} due a review",
+  "@plansReviewDueCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "plansReviewNotToday": "Not a review day.",
+  "plansReviewLearnedOn": "Learned {date}",
+  "@plansReviewLearnedOn": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+
   "@_CRASH_LOG": {},
   "crashLogTitle": "Crash log",
   "crashLogCopy": "Copy to clipboard",

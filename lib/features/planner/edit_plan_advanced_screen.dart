@@ -11,6 +11,7 @@ import '../../core/day.dart';
 import '../../core/parse.dart';
 import '../../domain/entities/catalog.dart';
 import '../../domain/usecases/learning_plan.dart';
+import '../../domain/usecases/plan_review.dart';
 import '../../domain/usecases/plan_run.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/date_field.dart';
@@ -71,6 +72,11 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
   late Day? _startDay;
   late PlanPacing _pacing;
 
+  /// The plan's review request, or null for "this plan asks for no review"
+  /// (#50). Null is a real setting here rather than "not configured": the
+  /// default for a plan nobody has touched is to ask for no review.
+  late PlanReview? _review;
+
   /// Why the start date is a toggle and not a field showing today.
   ///
   /// The plan's own rule is that an unset start date *means* today
@@ -90,6 +96,7 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
     _startToday = widget.plan.startDay == null;
     _startDay = widget.plan.startDay;
     _pacing = widget.plan.pacing;
+    _review = widget.plan.review;
   }
 
   /// Applies the edits to the plan they came from, rather than rebuilding it.
@@ -113,6 +120,7 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
       flowsToNextItem: _flows,
       startDay: _startsToday ? null : _startDay,
       pacing: _pacing,
+      review: _review,
     );
   }
 
@@ -504,11 +512,281 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
               trailing: const Icon(Icons.chevron_right),
               onTap: _pickFinishDay,
             ),
+          const Divider(height: 32),
+          _header(l10n.plansReview),
+          _reviewControls(l10n, mode),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              l10n.plansReviewHelp,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
           const SizedBox(height: 24),
         ],
       ),
     );
   }
+
+  /// The review schedule's own controls: a kind, and whatever that kind needs.
+  ///
+  /// **Off is the first option, and it is a real setting.** A plan nobody has
+  /// touched does not ask for a review, and the control says so rather than
+  /// showing a schedule the plan does not have.
+  Widget _reviewControls(AppLocalizations l10n, CalendarMode mode) {
+    final review = _review;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        RadioGroup<_ReviewKind>(
+          groupValue: _reviewKind,
+          onChanged: (v) => setState(() => _setReviewKind(v!)),
+          child: Column(
+            children: [
+              for (final kind in _ReviewKind.values)
+                RadioListTile<_ReviewKind>(
+                  key: ValueKey('review-${kind.name}'),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  value: kind,
+                  title: Text(_reviewKindLabel(l10n, kind)),
+                  subtitle: Text(_reviewKindHelp(l10n, kind)),
+                ),
+            ],
+          ),
+        ),
+        if (review != null) ...[
+          // **The window is asked in days and only in days.** A plan whose rule
+          // is written in the Hebrew calendar still reaches back in calendar
+          // days; a Hebrew month is 29 or 30 of them, and making the window
+          // Hebrew for some plans and not others would be a difference nobody
+          // would notice until a unit sat due for a fortnight.
+          TextField(
+            key: const ValueKey('review-window'),
+            controller: _windowController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: l10n.plansReviewWindow,
+              helperText: l10n.plansReviewWindowHelp,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (review.when is ReviewOnWeekday) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                l10n.plansReviewOnWeekdayHelp,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                for (var i = 0; i < 7; i++)
+                  Padding(
+                    padding: const EdgeInsets.all(1),
+                    child: OutlinedButton(
+                      key: ValueKey('review-weekday-${i + 1}'),
+                      onPressed: () => setState(() {
+                        _review = PlanReview(
+                          windowDays: _review!.windowDays,
+                          when: ReviewOnWeekday(i + 1),
+                        );
+                      }),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(40, 40),
+                        padding: EdgeInsets.zero,
+                        backgroundColor:
+                            (review.when as ReviewOnWeekday).weekday == i + 1
+                            ? Theme.of(context).colorScheme.primaryContainer
+                            : null,
+                      ),
+                      child: Text('${i + 1}'),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+          if (review.when is ReviewOnDate)
+            ListTile(
+              key: const ValueKey('review-on-date'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                DateDisplay.format(
+                  (review.when as ReviewOnDate).day.midnight,
+                  mode,
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _pickReviewDate,
+            ),
+          if (review.when is ReviewEveryDays) ...[
+            ListTile(
+              key: const ValueKey('review-every-days'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                l10n.plansReviewEvery((review.when as ReviewEveryDays).days),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _pickReviewEvery,
+            ),
+          ],
+        ],
+      ],
+    );
+  }
+
+  Future<void> _pickReviewDate() async {
+    final l10n = AppLocalizations.of(context);
+    final review = _review;
+    if (review == null) return;
+    final today = Day.of(ref.read(clockProvider)());
+    final picked = await promptForDate(
+      context,
+      initial: (review.when as ReviewOnDate).day,
+      reference: today,
+      mode: ref.read(settingsProvider).calendar,
+      title: l10n.plansReviewOnDate,
+      confirmLabel: l10n.plansSave,
+      cancelLabel: l10n.plansCancel,
+    );
+    if (picked == null || !mounted) return;
+    setState(
+      () => _review = PlanReview(
+        windowDays: review.windowDays,
+        when: ReviewOnDate(picked),
+      ),
+    );
+  }
+
+  Future<void> _pickReviewEvery() async {
+    final l10n = AppLocalizations.of(context);
+    final review = _review;
+    if (review == null) return;
+    final navigator = Navigator.of(context);
+    if (!navigator.mounted) return;
+    final days = await promptForText(
+      context,
+      title: l10n.plansReviewEveryDays,
+      body: l10n.plansReviewEveryDaysHelp,
+      label: l10n.plansReviewEvery(_defaultEveryDays()),
+      initialValue: '${(review.when as ReviewEveryDays).days}',
+      keyboardType: TextInputType.number,
+      confirmLabel: l10n.plansSave,
+      cancelLabel: l10n.plansCancel,
+      validate: (v) => nonNegativeInt(v) == null || nonNegativeInt(v)! < 1
+          ? l10n.plansAmountInvalid
+          : null,
+    );
+    if (days == null || !navigator.mounted) return;
+    final every = nonNegativeInt(days)!;
+    if (every < 1) return;
+    setState(() {
+      _review = PlanReview(
+        windowDays: _review!.windowDays,
+        // **The start day is kept**, because changing the period is not
+        // changing when the count began. The two are separate settings, and
+        // moving one silently is how a schedule drifts from what was chosen.
+        when: ReviewEveryDays(
+          every,
+          from: (review.when as ReviewEveryDays).from,
+        ),
+      );
+    });
+  }
+
+  /// The period a new "every few days" review starts at — a week, which is the
+  /// shortest period anybody asks a chazara for.
+  static int _defaultEveryDays() => 7;
+
+  /// The window the field shows, and what the field edits.
+  ///
+  /// **One number, read once.** A screen that shows a window and saves a
+  /// different one is the bug this pair exists to prevent, so the controller is
+  /// only ever written from the plan and read on save.
+  late final TextEditingController _windowController = TextEditingController(
+    text: '${_review?.windowDays ?? 7}',
+  )..addListener(_onWindowChanged);
+
+  void _onWindowChanged() {
+    final days = nonNegativeInt(_windowController.text);
+    final review = _review;
+    if (days == null || days < 1 || review == null) return;
+    if (days == review.windowDays) return;
+    setState(() => _review = PlanReview(windowDays: days, when: review.when));
+  }
+
+  @override
+  void dispose() {
+    _windowController.dispose();
+    super.dispose();
+  }
+
+  _ReviewKind get _reviewKind {
+    final when = _review?.when;
+    if (when is ReviewOnWeekday) return _ReviewKind.weekday;
+    if (when is ReviewEveryDays) return _ReviewKind.everyDays;
+    if (when is ReviewOnDate) return _ReviewKind.onDate;
+    return _ReviewKind.off;
+  }
+
+  /// Switching the kind keeps the window, so flipping between the three
+  /// schedules and back does not lose how far the review reaches.
+  void _setReviewKind(_ReviewKind kind) {
+    setState(() {
+      final window = _review?.windowDays ?? _windowInt();
+      final every = _review?.when is ReviewEveryDays
+          ? (_review!.when as ReviewEveryDays).days
+          : _defaultEveryDays();
+      final from = _review?.when is ReviewEveryDays
+          ? (_review!.when as ReviewEveryDays).from
+          : null;
+      _review = switch (kind) {
+        _ReviewKind.off => null,
+        _ReviewKind.weekday => PlanReview(
+          windowDays: window,
+          when: ReviewOnWeekday(
+            _review?.when is ReviewOnWeekday
+                ? (_review!.when as ReviewOnWeekday).weekday
+                : DateTime.saturday,
+          ),
+        ),
+        _ReviewKind.everyDays => PlanReview(
+          windowDays: window,
+          when: ReviewEveryDays(every, from: from),
+        ),
+        _ReviewKind.onDate => PlanReview(
+          windowDays: window,
+          when: ReviewOnDate(
+            _review?.when is ReviewOnDate
+                ? (_review!.when as ReviewOnDate).day
+                : Day.of(ref.read(clockProvider)()),
+          ),
+        ),
+      };
+      _windowController.text = '$window';
+    });
+  }
+
+  int _windowInt() => nonNegativeInt(_windowController.text) ?? 7;
+
+  static String _reviewKindLabel(AppLocalizations l10n, _ReviewKind kind) =>
+      switch (kind) {
+        _ReviewKind.off => l10n.plansReviewOff,
+        _ReviewKind.weekday => l10n.plansReviewOnWeekday,
+        _ReviewKind.everyDays => l10n.plansReviewEveryDays,
+        _ReviewKind.onDate => l10n.plansReviewOnDate,
+      };
+
+  static String _reviewKindHelp(AppLocalizations l10n, _ReviewKind kind) =>
+      switch (kind) {
+        _ReviewKind.off => l10n.plansReviewOffHelp,
+        _ReviewKind.weekday => l10n.plansReviewOnWeekdayHelp,
+        _ReviewKind.everyDays => l10n.plansReviewEveryDaysHelp,
+        _ReviewKind.onDate => l10n.plansReviewOnDateHelp,
+      };
 
   _PacingKind get _pacingKind =>
       _pacing.finishDay != null ? _PacingKind.finishBy : _PacingKind.perDay;
@@ -800,6 +1078,13 @@ class _AdvancedFormState extends ConsumerState<_AdvancedForm> {
 /// has a value type to compare and the choice is made in exactly one place
 /// ([_AdvancedFormState._setPacingKind]).
 enum _PacingKind { perDay, finishBy }
+
+/// Which review schedule a plan asks for, **or none at all** (#50).
+///
+/// Off is a value rather than an absence, because "this plan does not ask for a
+/// review" is the answer for every plan nobody has touched, and a control that
+/// could not express it would show a schedule the plan does not have.
+enum _ReviewKind { off, weekday, everyDays, onDate }
 
 /// One optional unit bound.
 ///

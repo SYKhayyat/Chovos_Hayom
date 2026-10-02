@@ -11,6 +11,7 @@ import '../domain/usecases/plan_chain.dart';
 import '../domain/usecases/plan_completion.dart';
 import '../domain/usecases/plan_position.dart';
 import '../domain/usecases/plan_rate.dart';
+import '../domain/usecases/plan_review.dart';
 import 'providers.dart';
 import 'stats.dart';
 
@@ -123,6 +124,41 @@ final planByIdProvider = Provider.autoDispose.family<LearningPlan?, String>((
     if (plan.id == id) return plan;
   }
   return null;
+});
+
+/// What a plan would like reviewed on a day — a **named alias** so
+/// `autoDispose.family<` stays on one line and the guard can see it. See
+/// [planReviewDueProvider].
+typedef ReviewDues = List<ReviewDue>?;
+
+/// What the plan [id] would like reviewed today, per [PlanReviewFold].
+///
+/// Null while the catalog or the log is still loading, and **empty for a plan
+/// that asks for no review** — which is the answer for every plan nobody has
+/// touched, not a missing value.
+///
+/// Auto-disposed for the reason the rest of this family is: it walks the plan's
+/// ranges and is only needed while its screen is open.
+// **On one line, and deliberately.** `notify_guard_test`'s autoDispose check
+// reads a line at a time, so a wrapped `autoDispose` on the line above
+// `.family<` is invisible to it — and the shape is the one a reader checking
+// this file by eye would miss too. The siblings below are written this way for
+// the same reason.
+final planReviewDueProvider = Provider.autoDispose.family<ReviewDues, String>((
+  ref,
+  id,
+) {
+  final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+  final fold = ref.watch(foldProvider).asData?.value;
+  final plan = ref.watch(planByIdProvider(id));
+  if (catalog == null || fold == null || plan == null) return null;
+  return PlanReviewFold.dueOn(
+    plan,
+    catalog,
+    fold,
+    Day.of(ref.watch(clockProvider)()),
+    layers: ref.watch(layerRolesProvider),
+  );
 });
 
 /// Where the plan [id] stands and how fast it is moving.

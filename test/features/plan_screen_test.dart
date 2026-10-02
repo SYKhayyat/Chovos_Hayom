@@ -10,6 +10,7 @@ import 'package:chovos_hayom/data/repositories/drift_progress_repository.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/usecases/learning_plan.dart';
+import 'package:chovos_hayom/domain/usecases/plan_review.dart';
 import 'package:chovos_hayom/domain/usecases/recurrence.dart';
 import 'package:chovos_hayom/features/planner/plan_screen.dart';
 import 'package:flutter/material.dart';
@@ -54,12 +55,14 @@ void main() {
     Day? from,
     RecurrenceRule? rule,
     List<PlanItem>? items,
+    PlanReview? review,
   }) => LearningPlan(
     id: 'p',
     name: 'Daf Yomi',
     unitsPerDay: unitsPerDay,
     pacing: AmountPerDay(unitsPerDay),
     startDay: from,
+    review: review,
     items:
         items ??
         [
@@ -333,6 +336,85 @@ void main() {
         saved.dateAmounts,
         isNotEmpty,
         reason: 'three days short, spread over the days that follow',
+      );
+    });
+  });
+
+  group('what the plan would like reviewed (#50)', () {
+    testWidgets('a plan that asks for no review shows no review section', (
+      tester,
+    ) async {
+      // **The absence of a section is the setting.** Every plan nobody has
+      // touched does not ask for a review, and a section saying so on each of
+      // them would be noise on the common case.
+      await seed(plan(from: today - 6));
+      await pump(tester);
+      expect(find.text('Review'), findsNothing);
+      expect(find.text('Not a review day.'), findsNothing);
+    });
+
+    testWidgets('and one that has a schedule says when today is not its day', (
+      tester,
+    ) async {
+      // 2026-03-10 is a Tuesday, so a Saturday review is not due today — which
+      // is an answer rather than a gap: the fold asks about one day, and a plan
+      // with a schedule is not a plan carrying a list of pending reviews.
+      await seed(
+        plan(
+          from: today - 6,
+          review: const PlanReview(
+            windowDays: 7,
+            when: ReviewOnWeekday(DateTime.saturday),
+          ),
+        ),
+      );
+      await pump(tester);
+      expect(find.text('Review'), findsOneWidget);
+      expect(find.text('Not a review day.'), findsOneWidget);
+    });
+
+    testWidgets('lists what is due on a review day, with when it was learned', (
+      tester,
+    ) async {
+      // 2026-03-14 is the Saturday.
+      final sabbath = Day.of(DateTime(2026, 3, 14));
+      await log([2, 3], sabbath - 2);
+      await seed(
+        plan(
+          from: sabbath - 6,
+          review: const PlanReview(
+            windowDays: 7,
+            when: ReviewOnWeekday(DateTime.saturday),
+          ),
+        ),
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appPreferencesProvider.overrideWithValue(prefs),
+            catalogRepositoryProvider.overrideWithValue(
+              FakeCatalogRepository(),
+            ),
+            progressRepositoryProvider.overrideWithValue(repository),
+            clockProvider.overrideWithValue(() => DateTime(2026, 3, 14, 9)),
+          ],
+          child: localizedApp(
+            home: const PlanScreen(planId: 'p'),
+            onGenerateRoute: AppRouter.onGenerateRoute,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Review'), findsOneWidget);
+      expect(find.text('2 due a review'), findsOneWidget);
+      expect(find.textContaining('Shabbos · daf 2'), findsWidgets);
+      expect(
+        find.text('Learned 2026-03-12'),
+        findsNWidgets(2),
+        reason:
+            'both units were learned that day, and the date is what makes '
+            'the window legible rather than an invisible cut-off',
       );
     });
   });
