@@ -21,6 +21,7 @@ class SettingsState {
     this.hiddenMeforishBars = const {},
     this.backupReminderEnabled = true,
     this.backupIntervalDays = BackupReminder.defaultIntervalDays,
+    this.daySheetLayout = DaySheetLayout.byPlan,
   });
 
   final CalendarMode calendar;
@@ -37,6 +38,11 @@ class SettingsState {
 
   /// When true, the whole app renders in Hebrew (right-to-left) layout. Optional.
   final bool hebrewLayout;
+
+  /// How the day sheet arranges a day's work. A setting rather than a per-day
+  /// choice because the number of plans firing is usually the same from day to
+  /// day, so the layout that suits a person suits their week (#48).
+  final DaySheetLayout daySheetLayout;
 
   /// How the catalog tree's children are ordered.
   final SortConfig sort;
@@ -58,6 +64,7 @@ class SettingsState {
     Set<String>? hiddenMeforishBars,
     bool? backupReminderEnabled,
     int? backupIntervalDays,
+    DaySheetLayout? daySheetLayout,
   }) => SettingsState(
     calendar: calendar ?? this.calendar,
     themeMode: themeMode ?? this.themeMode,
@@ -67,6 +74,7 @@ class SettingsState {
     hiddenMeforishBars: hiddenMeforishBars ?? this.hiddenMeforishBars,
     backupReminderEnabled: backupReminderEnabled ?? this.backupReminderEnabled,
     backupIntervalDays: backupIntervalDays ?? this.backupIntervalDays,
+    daySheetLayout: daySheetLayout ?? this.daySheetLayout,
   );
 
   /// Every setter allocates a new state through [copyWith], and three code
@@ -88,6 +96,7 @@ class SettingsState {
       other.hebrewLayout == hebrewLayout &&
       other.backupReminderEnabled == backupReminderEnabled &&
       other.backupIntervalDays == backupIntervalDays &&
+      other.daySheetLayout == daySheetLayout &&
       other.sort == sort &&
       setEquals(other.hiddenMeforishBars, hiddenMeforishBars);
 
@@ -99,6 +108,7 @@ class SettingsState {
     hebrewLayout,
     backupReminderEnabled,
     backupIntervalDays,
+    daySheetLayout,
     sort,
   );
 }
@@ -207,6 +217,14 @@ class SettingsNotifier extends Notifier<SettingsState> {
       backupIntervalDays:
           positiveInt(_get(PrefKeys.backupIntervalDays)) ??
           BackupReminder.defaultIntervalDays,
+      // Absent reads as the default, and the default is [DaySheetLayout.byPlan]
+      // rather than [DaySheetLayout.values.first] by luck: a new layout added
+      // above it must not silently become what an existing install sees.
+      daySheetLayout: _enumByName(
+        DaySheetLayout.values,
+        _get(PrefKeys.daySheetLayout),
+        fallback: DaySheetLayout.byPlan,
+      ),
     );
   }
 
@@ -258,6 +276,11 @@ class SettingsNotifier extends Notifier<SettingsState> {
     state = state.copyWith(backupIntervalDays: effective);
   }
 
+  Future<void> setDaySheetLayout(DaySheetLayout layout) async {
+    await _set(PrefKeys.daySheetLayout, layout.name);
+    state = state.copyWith(daySheetLayout: layout);
+  }
+
   Future<void> setCalendar(CalendarMode mode) async {
     await _set(PrefKeys.calendarMode, mode.name);
     state = state.copyWith(calendar: mode);
@@ -287,6 +310,7 @@ class SettingsNotifier extends Notifier<SettingsState> {
     PrefKeys.hiddenMeforishBars: state.hiddenMeforishBars.join(','),
     PrefKeys.backupReminderEnabled: state.backupReminderEnabled.toString(),
     PrefKeys.backupIntervalDays: state.backupIntervalDays.toString(),
+    PrefKeys.daySheetLayout: state.daySheetLayout.name,
     // Learning cycles aren't part of SettingsState — CyclesController owns
     // them — but they are a per-profile preference, so they travel with the
     // backup like the rest. Read straight from the pref; '' for a profile

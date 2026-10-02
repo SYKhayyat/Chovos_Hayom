@@ -51,6 +51,11 @@ class PrefKeys {
   /// How many days of unsaved learning to tolerate before saying so.
   static const backupIntervalDays = 'backupIntervalDays';
 
+  /// How the day sheet arranges a day's work: grouped by plan, flat, or
+  /// collapsed. Absent reads as `byPlan` — see [DaySheetLayout], which is why
+  /// that one rather than either of the others.
+  static const daySheetLayout = 'daySheetLayout';
+
   /// The in-flight learning session (JSON). Persisted so a timer survives the
   /// sheet being dismissed, the app being backgrounded, and the process dying.
   static const sessionTimer = 'sessionTimer';
@@ -109,6 +114,7 @@ class PrefKeys {
     plans,
     backupReminderEnabled,
     backupIntervalDays,
+    daySheetLayout,
   ];
 
   /// Per-profile **state**, as opposed to per-profile settings.

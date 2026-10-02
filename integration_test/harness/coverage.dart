@@ -90,6 +90,7 @@ final Map<String, List<String>> harnessCovers = {
   ],
   Routes.settings: [
     'settings/everything-is-reachable',
+    'settings/day-sheet-layout',
     'settings/a-setting-sticks',
     'settings/backup-can-be-taken',
     'principles/compact-layout-holds',

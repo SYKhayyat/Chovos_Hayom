@@ -158,14 +158,20 @@ sefarim with a unit range each (and say whether the range starts over), a start 
 pacing mode — an amount a day, *or* a date to finish by, never both. Any day can be made different:
 an amount for a chosen weekday, an amount for a chosen date, and an amount of `0` as a day off. A
 missing day is answered per plan: leave the schedule alone, roll it into tomorrow, or slide everything
-later. A **plan screen** shows where one plan stands and how fast it is *actually* moving — a plan
-asking 7 blatt a day that you have been doing 3 on is a plan about to fall behind, and nothing on the
-calendar says so. A plan with no end — a wrapping range, or no last unit — reports a bare count of
-units done and never a percentage, because there is no total to be a fraction of. The same screen is
-where you **recompute**: keep the amounts, or spread the shortfall over the next 3 days, 7, 14, all of
-them, or up to the plan's own end — and it says so when spreading pushes the finish date. Ticking a
-unit from the calendar writes to the log with the plan it was made for; ticking it in the unit grid
-does not, which is how the two screens stay independent.
+later. Tapping a day in the calendar opens its **day sheet**, laid out as one of three ways —
+**grouped by plan** (the default, and the only one that stays readable when several plans fall on the
+same day), **one flat list** naming each unit's plan, or **collapsed summaries** with a count per
+plan that expand when tapped — chosen once in **Settings**, because how many plans fall on a day is
+usually the same from day to day. A **plan screen** shows where one plan stands and how fast it is
+*actually* moving — a plan asking 7 blatt a day that you have been doing 3 on is a plan about to fall
+behind, and nothing on the calendar says so. A plan with no end — a wrapping range, or no last unit —
+reports a bare count of units done and never a percentage, because there is no total to be a fraction
+of. The rate is measured per day the plan **asked for**, so a Shabbos-only plan kept up on perfectly
+is not reported as falling behind. The same screen is where you **recompute**: keep the amounts, or
+spread the shortfall over the next 3 days, 7, 14, all of them, or up to the plan's own end — and it
+says so when spreading pushes the finish date. Ticking a unit from the calendar writes to the log
+with the plan it was made for; ticking it in the unit grid does not, which is how the two screens stay
+independent.
 
 **One report, five tabs** — Overview, Calculator, Goals, Siyumim, Mefarshim — each keeping its own
 address (`/stats`, `/calculator`, `/goals`, `/siyumim`, `/mefarshim`).

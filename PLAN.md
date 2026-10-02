@@ -160,8 +160,35 @@ one ruling that shaped it and one consequence worth knowing before #42:
   The reflow sheet moved out of `calendar_screen.dart` into
   `planner/reflow_sheet.dart` so the day sheet and the plan screen share one
   implementation rather than two that could each lose a remainder.
-- [ ] #48 the day sheet's layout is a setting in Settings, with three layouts;
+- [x] #48 the day sheet's layout is a setting in Settings, with three layouts;
   default is grouped by plan, the only one readable when several plans fire. (Low)
+  Shipped: `DaySheetLayout` (`byPlan` / `flat` / `collapsed`) in `core/calendar.dart`
+  beside `CalendarMode` — `application/settings.dart` has to hold it, which a
+  widget file cannot do. One pref key, per-profile, in the backup.
+  **The setting changes only how the day's *work* is listed.** The per-plan amount
+  rows, the `+`/`−` commands and the reflow are the same in all three, because
+  they are facts about a plan and about the day rather than about how the units
+  read — a layout switch that also moved the buttons would be three settings to
+  learn rather than one. Each layout is asserted to keep the rest.
+  Two rulings worth writing down:
+  - **The reflow sits inside a collapsed plan's expansion.** It is something you
+    do *to one plan*, and the layout exists for a day with many plans and little
+    interest in most of them. Opening the plan you mean is the price of the
+    compact view, paid only on the plan it applies to.
+  - **The count is on the collapsed line even while collapsed.** A glance still
+    has to say whether anything is outstanding — that is the whole reason to pick
+    this layout rather than to scroll.
+  The sheet was inline in `calendar_screen.dart` and is now `DaySheet` in its own
+  file: three copies of a sheet that edits plans, writes to the log and offers a
+  reflow are three chances for them to disagree about what a day is. The
+  `+`/`−` helpers moved **verbatim** — the first attempt at a rewrite silently
+  turned two buttons into one-per-plan and lost the node picker behind "start a
+  new plan", which is the kind of change that reads as a refactor and is a
+  feature removal.
+  The golden harness now loads the **full** `MaterialIcons` font from
+  `bin/cache/artifacts` rather than the engine's `font_subset/fixtures` subset
+  (~1000 glyphs of several thousand), which was rendering every icon outside that
+  subset as a notdef box — in a golden, indistinguishable from a broken app.
 
 ## Phase 7 — what a plan says about *how often* (new scope)
 

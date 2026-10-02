@@ -71,6 +71,16 @@ Future<void> loadDeviceFonts() async {
       '${Platform.environment['FLUTTER_ROOT'] ?? ''}$engineFonts',
     ],
     'MaterialIcons': [
+      // **The full font the app actually ships, first.** The engine also keeps
+      // a deliberately partial `MaterialIcons-Regular.ttf` under
+      // `font_subset/fixtures` — about a thousand glyphs of the several
+      // thousand — and using it meant every icon outside that subset rendered
+      // as a notdef box, which in a golden reads as a broken app rather than as
+      // a missing font. `bin/cache/artifacts/material_fonts` is what a build
+      // bundles, so it is the right font to be looking at; the fixture stays as
+      // the fallback for an SDK laid out differently.
+      '$flutterRoot/bin/cache/artifacts/material_fonts/'
+          'MaterialIcons-Regular.otf',
       '$flutterRoot/engine/src/flutter/tools/font_subset/fixtures/'
           'MaterialIcons-Regular.ttf',
     ],
@@ -134,6 +144,7 @@ void main() {
     Size size = sonim,
     String? plans = plansJson,
     ProgressRepository? repo,
+    String? daySheetLayout,
   }) async {
     tester.view.devicePixelRatio = sonimDpr;
     tester.view.physicalSize = size;
@@ -142,11 +153,13 @@ void main() {
       ProviderScope(
         overrides: [
           appPreferencesProvider.overrideWithValue(
-            InMemoryPreferences(
-              plans == null
-                  ? null
-                  : {PrefKeys.scoped('default', PrefKeys.plans): plans},
-            ),
+            InMemoryPreferences({
+              if (plans != null)
+                PrefKeys.scoped('default', PrefKeys.plans): plans,
+              if (daySheetLayout != null)
+                PrefKeys.scoped('default', PrefKeys.daySheetLayout):
+                    daySheetLayout,
+            }),
           ),
           catalogRepositoryProvider.overrideWithValue(FakeCatalogRepository()),
           progressRepositoryProvider.overrideWithValue(
@@ -295,6 +308,41 @@ void main() {
           '"endUnit":25}],"weekdayAmounts":{"6":0}}]}',
     );
     await shoot(tester, '09-plan-standing-sonim');
+  });
+
+  testWidgets('the day sheet in its collapsed layout, on the phone', (
+    tester,
+  ) async {
+    // **The third layout at the real width**, which is where it earns its place:
+    // with several plans on one day, grouped is a screenful of rows and collapsed
+    // is two lines. Nothing else in this file shows that difference.
+    await at(
+      tester,
+      home: const PlannerCalendarScreen(),
+      plans:
+          '{"plans":['
+          '{"id":"daf","name":"Daf Yomi","displayCalendar":"gregorian",'
+          '"assignments":[{"id":"a","rule":{"type":"daily"}}],"overrides":[],'
+          '"unitsPerDay":5,"spillover":"ignore","flowsToNextItem":false,'
+          '"items":[{"id":"i1","nodeId":"shas.moed.shabbos","startUnit":2,'
+          '"endUnit":25}]},'
+          '{"id":"other","name":"Shas BeAliyah","displayCalendar":"gregorian",'
+          '"assignments":[{"id":"a","rule":{"type":"daily"}}],"overrides":[],'
+          '"unitsPerDay":7,"spillover":"ignore","flowsToNextItem":false,'
+          '"items":[{"id":"i1","nodeId":"shas.moed.shabbos","startUnit":30,'
+          '"endUnit":40}]}]}',
+      daySheetLayout: 'collapsed',
+    );
+    await tester.tap(find.text('Day'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(ListTile).first);
+    await tester.pumpAndSettle();
+    // **Scrolled so the collapsed lines are in frame.** At the Sonim's height the
+    // sheet opens below the range control, so a straight capture shows the date
+    // and the two amount rows and nothing of the layout this render exists for.
+    await tester.drag(find.byType(BottomSheet), const Offset(0, -180));
+    await tester.pumpAndSettle();
+    await shoot(tester, '10-day-sheet-collapsed-sonim');
   });
 
   testWidgets('the calendar in Hebrew, which no previous render could show', (

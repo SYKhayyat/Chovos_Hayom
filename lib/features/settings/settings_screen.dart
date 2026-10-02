@@ -154,6 +154,37 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const Divider(),
+          // **The day sheet's layout, and a setting rather than a control in the
+          // sheet** (#48). How many plans fall on a day is usually the same from
+          // day to day, so the layout that suits a person suits their week; and a
+          // switch that only appears once you have opened the sheet is a switch
+          // that gets used once and then sits there.
+          _SectionHeader(l10n.settingsSectionDaySheet),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: Text(l10n.settingsDaySheetLayoutExplain),
+          ),
+          RadioGroup<DaySheetLayout>(
+            groupValue: settings.daySheetLayout,
+            onChanged: (v) => guarded(
+              context,
+              ref,
+              () => notifier.setDaySheetLayout(v ?? DaySheetLayout.byPlan),
+              what: l10n.whatChangingDaySheetLayout,
+            ),
+            child: Column(
+              children: [
+                for (final layout in DaySheetLayout.values)
+                  RadioListTile<DaySheetLayout>(
+                    key: ValueKey('settings-day-sheet-${layout.name}'),
+                    value: layout,
+                    title: Text(_daySheetLabel(l10n, layout)),
+                    subtitle: Text(_daySheetHelp(l10n, layout)),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(),
           _SectionHeader(l10n.settingsSectionReminders),
           SwitchListTile(
             title: Text(l10n.settingsDailyNudge),
@@ -968,6 +999,36 @@ class _MeforishBarSwitch extends ConsumerWidget {
     );
   }
 }
+
+/// The three day-sheet layouts, by name — **a whole sentence each**, never a
+/// word glued to a value.
+///
+/// [DaySheetLayout.byPlan] is first because it is the default and the only one
+/// that stays readable when several plans fall on a day, and that ordering is
+/// also what the radio group walks.
+({String label, String help}) _daySheetLabels(
+  AppLocalizations l10n,
+  DaySheetLayout layout,
+) => switch (layout) {
+  DaySheetLayout.byPlan => (
+    label: l10n.settingsDaySheetByPlan,
+    help: l10n.settingsDaySheetByPlanHelp,
+  ),
+  DaySheetLayout.flat => (
+    label: l10n.settingsDaySheetFlat,
+    help: l10n.settingsDaySheetFlatHelp,
+  ),
+  DaySheetLayout.collapsed => (
+    label: l10n.settingsDaySheetCollapsed,
+    help: l10n.settingsDaySheetCollapsedHelp,
+  ),
+};
+
+String _daySheetLabel(AppLocalizations l10n, DaySheetLayout layout) =>
+    _daySheetLabels(l10n, layout).label;
+
+String _daySheetHelp(AppLocalizations l10n, DaySheetLayout layout) =>
+    _daySheetLabels(l10n, layout).help;
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader(this.title);

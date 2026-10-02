@@ -96,6 +96,36 @@ List<Journey> appJourneys() => [
     ],
   ),
   Journey(
+    id: 'settings/day-sheet-layout',
+    area: 'settings',
+    task: "change the day sheet's layout, and find the day sheet in it",
+    steps: [
+      ...Nav.settings,
+      const ScrollTo('Day sheet', note: 'the layout setting'),
+      const SeeAnyOf([
+        'Grouped by plan',
+        'One list of everything',
+        'Summaries that expand',
+      ], note: 'the three layouts are offered'),
+      const TapAny(['Summaries that expand'], note: 'the compact one'),
+      const Settle('after choosing it'),
+      // The claim, and the whole of #48: it is a **setting**, so it outlives the
+      // screen. A control that only changed the sheet you are looking at would
+      // pass a test that never came back.
+      const Back(note: 'leave settings'),
+      ...Nav.calendar,
+      const TapAny(['Day'], note: 'the day range names a date'),
+      const Settle('after switching to days'),
+      const TapAny(['2026-', '2025-'], note: 'the day heading'),
+      const Settle('after opening the day'),
+      // Collapsed means one line per plan with a count, and the units behind a
+      // tap — which is what the layout was chosen for.
+      const SeeAnyOf(['0 of'], note: 'a summary line with its count'),
+      const Shot('day-sheet-collapsed'),
+    ],
+    tags: {'keys'},
+  ),
+  Journey(
     id: 'settings/backup-can-be-taken',
     area: 'settings',
     task: 'export a backup and be told it worked',
