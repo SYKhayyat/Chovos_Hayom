@@ -156,7 +156,10 @@ class _UnitGrid extends ConsumerWidget {
         final fraction = isDone
             ? 1.0
             : (layered ? roles.fraction(node.id, unit, fold) : 0.0);
-        final reviewCount = fold.reviewCount(node.id, unit);
+        // **How many times finished, not how many reviews (#46).** Learning is
+        // the first pass (#45), so these differ by one, and the box answers
+        // "how many rounds" — the same question its sefer's lines answer.
+        final passes = fold.chazaraCount(node.id, unit);
         final hasDetails = isDone && fold.isAnnotated(node.id, unit);
         return _UnitCell(
           label: node.unitDisplay(unit),
@@ -177,12 +180,12 @@ class _UnitGrid extends ConsumerWidget {
                   unitHeading(l10n, node, unit), (fraction * 100).round())
             else
               l10n.gridCellSemanticNotDone(unitHeading(l10n, node, unit)),
-            if (reviewCount > 0) l10n.gridCellSemanticReviews(reviewCount),
+            if (passes > 1) l10n.gridCellSemanticReviews(passes - 1),
             if (hasDetails) l10n.gridCellSemanticHasDetails,
           ].join(', '),
           isDone: isDone,
           fraction: fraction,
-          reviewCount: reviewCount,
+          passes: passes,
           // The "there are details here" dot. Comes off the shared fold rather
           // than a scan of the whole log on every grid rebuild.
           hasDetails: hasDetails,
@@ -292,7 +295,7 @@ class _UnitCell extends StatefulWidget {
     required this.semanticLabel,
     required this.isDone,
     required this.fraction,
-    required this.reviewCount,
+    required this.passes,
     required this.hasDetails,
     required this.onTap,
     required this.onLongPress,
@@ -308,7 +311,9 @@ class _UnitCell extends StatefulWidget {
 
   /// 0..1 share of required layers done — a partial fill for layered units.
   final double fraction;
-  final int reviewCount;
+  /// How many times this unit has been finished (#46). The corner shows this
+  /// from 2 upward: a `1` on every learned box would be noise.
+  final int passes;
   final bool hasDetails;
   final VoidCallback onTap;
 
@@ -329,7 +334,7 @@ class _UnitCellState extends State<_UnitCell> {
     final scheme = Theme.of(context).colorScheme;
     final isDone = widget.isDone;
     final fraction = widget.fraction;
-    final reviewCount = widget.reviewCount;
+    final passes = widget.passes;
     final label = widget.label;
     final partial = !isDone && fraction > 0;
     // The label wraps the InkWell rather than replacing its semantics: the
@@ -429,16 +434,23 @@ class _UnitCellState extends State<_UnitCell> {
                         ),
                       ),
                     ),
-                    if (reviewCount > 0)
-                      // Directional: the chazara count belongs in the trailing
-                      // top corner and the note glyph in the leading bottom one,
+                    if (passes > 1)
+                      // **Just the number** (#46): a plain `2` reads as "finished
+                      // twice" without a spiral to decode, and the corner is a
+                      // few pixels wide at 240dp. Dropped below 2, so a `1` on
+                      // every learned box — which is what it would be — is
+                      // avoided and a marked one means something.
+                      //
+                      // Directional: this count belongs in the trailing top
+                      // corner and the note glyph in the leading bottom one,
                       // which swap sides under a right-to-left layout.
                       PositionedDirectional(
-                        end: 4,
-                        top: 2,
-                        child: Text('↻$reviewCount',
+                        end: 3,
+                        top: 1,
+                        child: Text('$passes',
                             style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
                                 color: isDone
                                     ? scheme.onPrimary
                                     : scheme.primary)),

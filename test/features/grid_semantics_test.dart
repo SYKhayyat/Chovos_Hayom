@@ -32,6 +32,28 @@ void main() {
         durationMin: unit == 4 ? 30 : null,
       );
 
+  LearningEvent reviewed(int unit, String id) => LearningEvent(
+        id: id,
+        profileId: 'default',
+        nodeId: 'shas.moed.shabbos',
+        unitIndex: unit,
+        action: EventAction.reviewed,
+        occurredAt: DateTime(2026, 1, 5),
+        loggedAt: DateTime(2026, 1, 5),
+      );
+
+  /// The digits in a cell's trailing-top corner, in order.
+  ///
+  /// A cell's own label is also a bare number, so looking for `2` finds the label
+  /// of daf 2 as well as any corner count — this asks the corner specifically.
+  List<String> cornerNumbers(WidgetTester tester) => [
+        for (final text in tester.widgetList<Text>(find.byType(Text)))
+          if (text.data != null &&
+              text.style?.fontSize == 9 &&
+              RegExp(r'^\d+$').hasMatch(text.data!))
+            text.data!,
+      ];
+
   Widget grid(ProgressRepository repo,
           {Locale locale = const Locale('en')}) =>
       ProviderScope(
@@ -84,6 +106,61 @@ void main() {
       findsOneWidget,
     );
     handle.dispose();
+  });
+
+  // #46 — the corner number is *how many times finished*, not how many reviews,
+  // and it is omitted below 2.
+  group('the corner number', () {
+    testWidgets('a daf finished once shows nothing', (tester) async {
+      final handle = tester.ensureSemantics();
+      final repo = memoryRepository();
+      await repo.addEvent(done(2));
+
+      await tester.pumpWidget(grid(repo));
+      await tester.pumpAndSettle();
+
+      expect(cornerNumbers(tester), isEmpty);
+      handle.dispose();
+    });
+
+    testWidgets('a daf finished twice shows 2', (tester) async {
+      final handle = tester.ensureSemantics();
+      final repo = memoryRepository();
+      await repo.addEvents([done(2), reviewed(2, 'r2')]);
+
+      await tester.pumpWidget(grid(repo));
+      await tester.pumpAndSettle();
+
+      // One review, two passes. Showing the review count would put a 1 here and
+      // read as "finished once" — which is exactly what it is not.
+      expect(cornerNumbers(tester), ['2']);
+      handle.dispose();
+    });
+
+    testWidgets('and a third time shows 3', (tester) async {
+      final handle = tester.ensureSemantics();
+      final repo = memoryRepository();
+      await repo.addEvents([done(2), reviewed(2, 'r2'), reviewed(2, 'r2b')]);
+
+      await tester.pumpWidget(grid(repo));
+      await tester.pumpAndSettle();
+
+      expect(cornerNumbers(tester), ['3']);
+      handle.dispose();
+    });
+
+    testWidgets('it is announced as chazara too, not left to the corner',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      final repo = memoryRepository();
+      await repo.addEvents([done(2), reviewed(2, 'r2')]);
+
+      await tester.pumpWidget(grid(repo));
+      await tester.pumpAndSettle();
+
+      expect(find.bySemanticsLabel(RegExp('1 chazara')), findsOneWidget);
+      handle.dispose();
+    });
   });
 
   testWidgets('the cell announces as a button, checked, and reachable',

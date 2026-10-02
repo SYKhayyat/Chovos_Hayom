@@ -9,6 +9,7 @@ import 'package:chovos_hayom/domain/entities/layer.dart';
 import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:chovos_hayom/features/reports/calculator_section.dart';
+import 'package:chovos_hayom/features/reports/chazara_section.dart';
 import 'package:chovos_hayom/features/reports/goals_section.dart';
 import 'package:chovos_hayom/features/reports/mefarshim_section.dart';
 import 'package:chovos_hayom/features/reports/overview_section.dart';
@@ -95,6 +96,10 @@ void main() {
         Routes.goals: ReportSection.goals,
         Routes.siyumim: ReportSection.siyumim,
         Routes.mefarshim: ReportSection.mefarshim,
+        // #46: the chazara report is a tab, and the route name it used to have
+        // as a screen of its own now opens it there — so an old link to
+        // `/chazara` still lands somewhere real.
+        Routes.chazara: ReportSection.chazara,
       };
       for (final entry in expected.entries) {
         final screen = AppRouter.screenFor(entry.key);
@@ -312,6 +317,67 @@ void main() {
       expect(find.text('Shabbos'), findsOneWidget,
           reason: 'the undo restores the same target date, not a blank goal');
       expect(find.textContaining('By '), findsOneWidget);
+    });
+  });
+
+  group('Chazara', () {
+    // #46 — the tab the drawer's chazara row opens. #45 removed the screen that
+    // row used to lead to, so these pin that the destination answers a question
+    // rather than just drawing something.
+
+    LearningEvent reviewed(int unit, String id, {int at = 5}) => LearningEvent(
+          id: id,
+          profileId: profile,
+          nodeId: 'shas.moed.shabbos',
+          unitIndex: unit,
+          action: EventAction.reviewed,
+          occurredAt: DateTime(2026, 1, at),
+          loggedAt: DateTime(2026, 1, at),
+        );
+
+    testWidgets('says so when nothing has been gone back to', (tester) async {
+      final repo = memoryRepository();
+      await repo.addEvent(done(2, id: 'd2'));
+      await tester.pumpWidget(section(const ChazaraSection(), repo));
+      await tester.pumpAndSettle();
+
+      // A learned daf nobody has returned to is the commonest state, and this
+      // tab must present it as neither an achievement nor a deficit.
+      expect(find.textContaining('Nothing chazara'), findsOneWidget);
+    });
+
+    testWidgets('lists a unit that has been gone back to, with its count',
+        (tester) async {
+      final repo = memoryRepository();
+      await repo.addEvents([done(2, id: 'd2'), reviewed(2, 'r2')]);
+      await tester.pumpWidget(section(const ChazaraSection(), repo));
+      await tester.pumpAndSettle();
+
+      // Learning is the first pass, so one review means **two** passes. Showing
+      // the review count would disagree with the number on this unit's box and
+      // with the sefer's bar, which both count passes.
+      expect(find.text('2'), findsWidgets);
+      expect(find.textContaining('Shabbos'), findsWidgets);
+    });
+
+    testWidgets('the most-returned unit comes first', (tester) async {
+      final repo = memoryRepository();
+      await repo.addEvents([
+        done(2, id: 'd2'),
+        reviewed(2, 'r2'),
+        done(3, id: 'd3'),
+        reviewed(3, 'r3'),
+        reviewed(3, 'r3b', at: 6),
+      ]);
+      await tester.pumpWidget(section(const ChazaraSection(), repo));
+      await tester.pumpAndSettle();
+
+      // "What am I keeping up with?" is answered by order as much as by count.
+      final counts = [
+        for (final t in tester.widgetList<Text>(find.byType(Text)))
+          if (t.data == '2' || t.data == '3') t.data,
+      ];
+      expect(counts.take(2), ['3', '2']);
     });
   });
 

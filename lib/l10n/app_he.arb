@@ -252,6 +252,13 @@
 
   "mefarshimProgressEmpty": "עדיין לא נלמד דבר.\nככל שתסמן מפרשים, הסיכומים שלהם יופיעו כאן.",
 
+  "@_REPORT_CHAZARA": {},
+  "reportTabChazara": "חזרות",
+  "chazaraEmpty": "אין עדיין חזרות.\nלמד משהו וחזור עליו, והוא יופיע כאן.",
+  "chazaraRepeatedCount": "{count, plural, =1{יחידה אחת שחזרת עליה} other{{count} יחידות שחזרת עליהן}}",
+  "@chazaraRepeatedCount": { "placeholders": { "count": { "type": "int" } } },
+  "chazaraPassHint": "הושלם יותר מפעם אחת",
+
   "siyumEmpty": "אין עדיין סיומים.\nסיים כל יחידה בספר — או בסדר שלם — והוא יופיע כאן. חזק!",
   "siyumCount": "{count, plural, =1{סיום אחד} other{{count} סיומים}} — יישר כח!",
   "siyumCompleted": "הסתיים {date} · {units}",

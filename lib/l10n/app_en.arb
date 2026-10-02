@@ -525,6 +525,13 @@
   "mefarshimProgressEmpty": "Nothing learned yet.\nAs you check off mefarshim, their totals appear here.",
 
   "@_REPORT_SIYUMIM": {},
+  "@_REPORT_CHAZARA": {},
+  "reportTabChazara": "Chazara",
+  "chazaraEmpty": "Nothing chazara'd yet.\nLearn something, go back to it, and it will be listed here.",
+  "chazaraRepeatedCount": "{count, plural, =1{1 unit you have gone back to} other{{count} units you have gone back to}}",
+  "@chazaraRepeatedCount": { "placeholders": { "count": { "type": "int" } } },
+  "chazaraPassHint": "finished more than once",
+
   "siyumEmpty": "No siyumim yet.\nFinish every unit of a sefer — or of a whole seder — and it will appear here. חזק!",
   "siyumCount": "{count, plural, =1{1 siyum} other{{count} siyumim}} — יישר כח!",
   "@siyumCount": { "placeholders": { "count": { "type": "int" } } },

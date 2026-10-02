@@ -45,12 +45,20 @@ class RollUp {
           byLayer[layerId] = (byLayer[layerId] ?? 0) + 1;
         }
       });
+      // The extra rounds (#46), counted the same way `learned` is: over the units
+      // this leaf actually has marks for, in range only. `chazaraCount` already
+      // refuses a unit that is not fully learned, and passes the same `layers`
+      // resolver, so a partly-done daf lands on neither line.
+      final twice = fold.unitsWithPasses(node.id, 2, layers).length;
+      final thrice = fold.unitsWithPasses(node.id, 3, layers).length;
       return ProgressNode(
         node: node,
         learned: learned,
         total: node.unitCount,
         children: const [],
         learnedByLayer: byLayer,
+        finishedAgain: twice,
+        finishedAgainAgain: thrice,
       );
     }
 
@@ -60,10 +68,14 @@ class RollUp {
     ];
     var learned = 0;
     var total = 0;
+    var twice = 0;
+    var thrice = 0;
     final byLayer = <String, int>{};
     for (final c in children) {
       learned += c.learned;
       total += c.total;
+      twice += c.finishedAgain;
+      thrice += c.finishedAgainAgain;
       c.learnedByLayer.forEach((layerId, count) {
         byLayer[layerId] = (byLayer[layerId] ?? 0) + count;
       });
@@ -74,6 +86,8 @@ class RollUp {
       total: total,
       children: children,
       learnedByLayer: byLayer,
+      finishedAgain: twice,
+      finishedAgainAgain: thrice,
     );
   }
 }

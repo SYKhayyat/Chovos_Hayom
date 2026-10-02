@@ -100,14 +100,21 @@ one ruling that shaped it and one consequence worth knowing before #42:
   a fold over the log and **nothing about a review is stored** — there were no
   stored review dates to wipe, which is the point. The scheduler, the screen,
   the `/chazara` route and the interval setting are gone; the drawer row reports
-  units passed more than once and opens statistics. **The destination is #46's
-  job**: the row points at the report screen, which does not show these numbers
-  yet, so #46 opens with a chazara section there rather than starting somewhere
-  else.
-- [ ] #46 progress bar and box: a completion line and a chazara line (units
+  units passed more than once. **The destination was #46's job** and is now
+  filled: a `Chazara` tab on the report screen, which the row opens.
+- [x] #46 progress bar and box: a completion line and a chazara line (units
   reviewed at least once), sometimes more than one chazara line; `due` comes out;
   the bar gets a colour; when a hairline will not fit the line changes colour
   instead; the box carries a corner number of times finished. (Medium)
+  Shipped: `RoundsBar` draws one line per **round** — learned, then gone back
+  to once, twice — each its own colour and thinning as the stack grows, capped at
+  three lines with a `+n` marker for deeper rounds rather than a bar that quietly
+  under-reports. A line with nothing on it is **not drawn**: an empty second line
+  reads as "you are behind" when it means the opposite. Only fully-learned dafim
+  count, so a daf with 2 of 3 meforishim is on no line. The box shows a bare
+  `2`/`3` from two passes up (the `1` on every learned box would be noise), which
+  is passes rather than reviews so it agrees with the sefer's lines. `due` is gone
+  from the bar, having gone with the scheduler in #45.
 - [ ] #47 a screen per plan: how far it has got and how much per day you are
   actually doing. An open-ended plan reports a bare count, never a fraction.
   Also the home of recompute. (Medium)

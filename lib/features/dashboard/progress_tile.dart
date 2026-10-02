@@ -10,6 +10,7 @@ import '../../domain/entities/progress_node.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../common/guarded.dart';
 import '../common/naming.dart';
+import '../common/rounds_bar.dart';
 import '../unit_grid/bulk_actions_sheet.dart';
 import '../unit_grid/mefarshim_config_sheet.dart';
 
@@ -209,13 +210,19 @@ class _ProgressBar extends ConsumerWidget {
           // The bar itself carries no semantics — its value is announced by the
           // count underneath, which is the same information in words. Marking it
           // decorative stops a screen reader reading the node twice.
+          //
+          // **One line per round the reader has (#46)**, so a sefer shows what
+          // has been retained as well as what has been covered. Lines with
+          // nothing on them are not drawn — see [RoundsBar] for why an empty
+          // second line would say the opposite of the truth.
           ExcludeSemantics(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                minHeight: 6,
-                value: node.total == 0 ? 0 : node.learned / node.total,
-              ),
+            child: RoundsBar(
+              learned: node.learned,
+              total: node.total,
+              extra: [node.finishedAgain, node.finishedAgainAgain],
+              // Rounds past the third are real but not drawn, so the bar says so
+              // rather than quietly under-reporting how deep it goes.
+              overflow: node.maxRound - 3 < 0 ? 0 : node.maxRound - 3,
             ),
           ),
           const SizedBox(height: 2),

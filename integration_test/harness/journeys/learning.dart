@@ -94,8 +94,8 @@ List<Journey> learningJourneys() => [
           // row never hides itself: "nothing is due" is not a state any more,
           // and a row that appears and disappears with hidden state is a row
           // nobody learns to find. What it carries is a count of units passed
-          // more than once, and it opens the statistics screen where the
-          // numbers live.
+          // more than once, and it opens the Chazara tab of the report screen
+          // where those units are listed (#46).
           const TapTooltip(Nav.openMenu),
           const SeeAnyOf(['Chazara']),
           const TapAny(['Chazara']),

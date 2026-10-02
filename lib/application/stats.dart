@@ -221,25 +221,35 @@ final chazaraReportProvider = Provider<List<ChazaraPass>>((ref) {
   ];
 });
 
-/// How many units have more than one pass — the "been over this again" figure.
+/// Units finished **more than once**, most-returned-to first — the chazara
+/// report the drawer row opens (#46).
 ///
-/// This is the number the drawer shows, and it is deliberately *not* a count of
-/// outstanding work: a badge of "what you have not done yet" measured the
-/// app's state rather than the reader's, which is the wrong thing to put in front
-/// of someone opening a menu.
-final chazaraRepeatedCountProvider = Provider<int>((ref) {
+/// **Not [chazaraReportProvider].** That one answers "every unit with at least
+/// one pass", which under #45 is every unit you have learned — a list of the
+/// catalog you have touched, not a chazara report. The report is about what you
+/// have gone *back* to, so this filters to the repeated ones and both the tab
+/// and the drawer's badge count the same set.
+final chazaraRepeatedProvider = Provider<List<ChazaraPass>>((ref) {
   final fold = ref.watch(foldProvider).asData?.value;
-  if (fold == null) return 0;
+  if (fold == null) return const [];
   final catalog = ref.watch(mergedCatalogProvider).asData?.value;
-  var total = 0;
-  for (final pass in Chazara.repeatedUnits(fold)) {
-    if (catalog == null ||
-        (catalog.byId(pass.nodeId)?.containsUnit(pass.unitIndex) ?? false)) {
-      total++;
-    }
-  }
-  return total;
+  return [
+    for (final pass in Chazara.repeatedUnits(fold))
+      if (catalog == null ||
+          (catalog.byId(pass.nodeId)?.containsUnit(pass.unitIndex) ?? false))
+        pass,
+  ];
 });
+
+/// How many units have been finished more than once.
+///
+/// This is the drawer's badge, and it is deliberately **not** a count of
+/// outstanding work: a badge of "what you have not done yet" measured the app's
+/// state rather than the reader's, which is the wrong thing to put in front of
+/// someone opening a menu.
+final chazaraRepeatedCountProvider = Provider<int>(
+  (ref) => ref.watch(chazaraRepeatedProvider).length,
+);
 
 /// Completed nodes at every level (siyumim), most-recently-finished first.
 final siyumimProvider = Provider<List<Siyum>>((ref) {

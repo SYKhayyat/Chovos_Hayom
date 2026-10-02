@@ -639,7 +639,7 @@ class _AppDrawer extends ConsumerWidget {
                 subtitle: Text(l10n.navChazaraSubtitle),
                 trailing:
                     repeated == 0 ? null : Badge(label: Text('$repeated')),
-                onTap: () => _go(context, Routes.stats),
+                onTap: () => _go(context, Routes.chazara),
               );
             }),
             // Five rows until this one: Statistics, Siyum calculator, Goals,

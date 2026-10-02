@@ -53,6 +53,9 @@ abstract final class Routes {
   static const goals = '/goals';
   static const siyumim = '/siyumim';
   static const mefarshim = '/mefarshim';
+  /// The chazara report — a tab of the report screen (#46), not a screen
+  /// of its own, so an old link to `/chazara` still lands somewhere.
+  static const chazara = '/chazara';
 
   static const cycles = '/cycles';
   static const newCycle = '/cycles/new';
@@ -116,6 +119,7 @@ abstract final class AppRouter {
       ['goals'] => const ReportScreen(section: ReportSection.goals),
       ['siyumim'] => const ReportScreen(section: ReportSection.siyumim),
       ['mefarshim'] => const ReportScreen(section: ReportSection.mefarshim),
+      ['chazara'] => const ReportScreen(section: ReportSection.chazara),
       ['cycles'] => const CyclesScreen(),
       ['cycles', 'new'] => const EditCycleScreen(),
       ['cycles', 'edit', final id] => EditCycleScreen(cycleId: id),

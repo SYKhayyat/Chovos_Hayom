@@ -188,6 +188,34 @@ class LogFold {
     return reviewCount(nodeId, unitIndex) + 1;
   }
 
+  /// Every unit of [nodeId] that has been finished at least [passes] times.
+  ///
+  /// **One line of a sefer's bar (#46), which is a question about *rounds*, not
+  /// about time.** `passes` 1 is the ordinary "learned" count; 2 is "been over
+  /// more than once"; 3 is "more than twice". A bar draws one line per round it
+  /// has anything to show, so what the bar needs is not a total but "how many
+  /// reached *at least* this round" — which is why this takes a threshold
+  /// instead of returning the biggest number available.
+  ///
+  /// Reads [chazaraCount] per unit rather than keeping a second tally, so the
+  /// two cannot disagree about what a pass is. `layers` is passed for the same
+  /// reason [doneUnits] takes it: **a partly-done unit has not finished a
+  /// round**, so without it a daf with two of three meforishim would count as
+  /// learned and appear on the first line.
+  Set<int> unitsWithPasses(String nodeId, int passes, [LayerRoles? layers]) {
+    if (passes <= 1) return doneUnits(nodeId, layers);
+    final byUnit = completedByNode[nodeId];
+    if (byUnit == null) return const {};
+    final out = <int>{};
+    final req = layers?.requiredFor(nodeId) ?? const {mainLayerId};
+    byUnit.forEach((unit, completed) {
+      if (completed.isEmpty) return;
+      if (!_subset(req, completed)) return;
+      if (chazaraCount(nodeId, unit) >= passes) out.add(unit);
+    });
+    return out;
+  }
+
   static bool _subset(Set<String> required, Set<String> have) {
     for (final r in required) {
       if (!have.contains(r)) return false;

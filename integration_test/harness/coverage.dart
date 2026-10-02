@@ -73,6 +73,13 @@ final Map<String, List<String>> harnessCovers = {
     'principles/compact-layout-holds',
   ],
   Routes.newCycle: ['planner/cycles-round-trip'],
+  // The chazara report is a tab of the report screen, so it is reached the same
+  // way the other tabs are (#46).
+  Routes.chazara: [
+    'reports/tabs',
+    'learning/chazara-report',
+    'principles/compact-layout-holds',
+  ],
   Routes.journal: [
     'learning/journal-round-trip',
     'principles/compact-layout-holds',

@@ -5,6 +5,7 @@ import '../../core/focus.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'calculator_section.dart';
 import 'goals_section.dart';
+import 'chazara_section.dart';
 import 'mefarshim_section.dart';
 import 'overview_section.dart';
 import 'siyumim_section.dart';
@@ -39,7 +40,8 @@ enum ReportSection {
   calculator,
   goals,
   siyumim,
-  mefarshim;
+  mefarshim,
+  chazara;
 
   String label(AppLocalizations l10n) => switch (this) {
         ReportSection.overview => l10n.reportTabOverview,
@@ -47,6 +49,7 @@ enum ReportSection {
         ReportSection.goals => l10n.reportTabGoals,
         ReportSection.siyumim => l10n.reportTabSiyumim,
         ReportSection.mefarshim => l10n.reportTabMefarshim,
+        ReportSection.chazara => l10n.reportTabChazara,
       };
 }
 
@@ -174,6 +177,7 @@ class ReportScreen extends StatelessWidget {
             GoalsSection(),
             SiyumimSection(),
             MefarshimSection(),
+            ChazaraSection(),
           ],
         ),
       ),

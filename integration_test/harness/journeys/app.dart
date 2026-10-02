@@ -24,7 +24,14 @@ List<Journey> appJourneys() => [
         steps: [
           ...Nav.reports,
           const SomethingIsShown(note: 'the report screen opened'),
-          for (final tab in ['Calculator', 'Goals', 'Siyumim', 'Mefarshim']) ...[
+          for (final tab in [
+            'Calculator',
+            'Goals',
+            'Siyumim',
+            'Mefarshim',
+            'Chazara', // #46 — the newest tab, and a journey that named every
+                       // tab but this one would never have looked at it.
+          ]) ...[
             TabTo(tab),
             const SomethingIsShown(note: 'a report tab drew something'),
           ],
