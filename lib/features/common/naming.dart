@@ -317,6 +317,28 @@ String requiredPerDayText(double rate) {
   return (hundredths.ceilToDouble() / 100).toStringAsFixed(2);
 }
 
+/// A *measured* daily rate, as the app says it: at most one decimal, rounded
+/// to nearest.
+///
+/// **Deliberately the opposite rounding to [requiredPerDayText].** That one is a
+/// requirement and rounds up, because 100 dapim over 30 days is 3.3333 and
+/// "3.33" does not get you there. This one is a measurement of what actually
+/// happened, and rounding it *up* would report a learner as doing more than they
+/// did — the same number with the direction of its error reversed, which is why
+/// one function cannot serve both.
+///
+/// One decimal rather than two, because the difference is here to be read at a
+/// glance on a 240dp screen next to the rate the plan asks for; a figure precise
+/// to a hundredth of a daf implies an accuracy the log does not have. Whole
+/// numbers print without a decimal point, because "5 a day" is what a plan asking
+/// five says and "5.0 a day" reads as a measurement rather than a setting.
+String measuredPerDayText(double rate) {
+  if (!rate.isFinite) return '—';
+  final rounded = double.parse(rate.toStringAsFixed(1));
+  if (rounded == rounded.roundToDouble()) return '${rounded.round()}';
+  return rounded.toStringAsFixed(1);
+}
+
 /// Minutes as a readable duration: "45 min", "2h", "1h 20m".
 String formatMinutes(AppLocalizations l10n, int minutes) {
   if (minutes < 60) return l10n.durationMinutes(minutes);

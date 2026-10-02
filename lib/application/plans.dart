@@ -10,6 +10,7 @@ import '../domain/usecases/learning_plan.dart';
 import '../domain/usecases/plan_chain.dart';
 import '../domain/usecases/plan_completion.dart';
 import '../domain/usecases/plan_position.dart';
+import '../domain/usecases/plan_rate.dart';
 import 'providers.dart';
 import 'stats.dart';
 
@@ -105,6 +106,49 @@ extension on PlansConfig {
 
 final plansConfigProvider = NotifierProvider<PlansController, PlansConfig>(
   PlansController.new,
+);
+
+/// One plan by id, or null when there is no such plan.
+///
+/// A single lookup rather than the whole list, because the plan screen reads one
+/// and the list is a field the editor has to scan. Returns null rather than
+/// throwing so a plan deleted from under an open screen — which happens when the
+/// delete button is used on the very screen showing it — resolves to something
+/// the screen can say rather than to a crash.
+final planByIdProvider = Provider.autoDispose.family<LearningPlan?, String>((
+  ref,
+  id,
+) {
+  for (final plan in ref.watch(plansConfigProvider).plans) {
+    if (plan.id == id) return plan;
+  }
+  return null;
+});
+
+/// Where the plan [id] stands and how fast it is moving.
+///
+/// **Auto-disposed, like every other family here** (`notify_guard_test.dart`
+/// enforces it): this one walks the plan's ranges and then the days it has been
+/// running, and a plan screen closed an hour ago has no business re-deriving
+/// that on every mark.
+///
+/// Null while the catalog or the log is still loading, rather than a standing
+/// with nothing in it — an empty plan and an unreadable log are different states
+/// and the screen says so for one of them.
+final planStandingProvider = Provider.autoDispose.family<PlanStanding?, String>(
+  (ref, id) {
+    final catalog = ref.watch(mergedCatalogProvider).asData?.value;
+    final fold = ref.watch(foldProvider).asData?.value;
+    final plan = ref.watch(planByIdProvider(id));
+    if (catalog == null || fold == null || plan == null) return null;
+    return PlanRate.of(
+      plan,
+      catalog,
+      fold,
+      Day.of(ref.watch(clockProvider)()),
+      layers: ref.watch(layerRolesProvider),
+    );
+  },
 );
 
 class TodayAssignment {

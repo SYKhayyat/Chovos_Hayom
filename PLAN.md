@@ -1,7 +1,7 @@
 # PLAN — Chovos_Hayom (closest to release; work top to bottom)
 
 Worker loop: top unchecked item only, fix + widget/unit test, commit, check off, stop.
-Done (closed): #1, #2, #3, #4, #5, #6?, #7, #8, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20, #21, #22, #23, #29, #30. (#6 epic tracker stays open as index.)
+Done (closed): #1, #2, #3, #4, #5, #6?, #7, #8, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20, #21, #22, #23, #29, #30, #47. (#6 epic tracker stays open as index.)
 
 ## Phase 1 — Release blockers (the 1 High + correctness Mediums)
 - [x] #33 derive_cost wall-clock guard still flaky: healthy and regression costs too close to separate by timing. (Medium)
@@ -115,9 +115,51 @@ one ruling that shaped it and one consequence worth knowing before #42:
   `2`/`3` from two passes up (the `1` on every learned box would be noise), which
   is passes rather than reviews so it agrees with the sefer's lines. `due` is gone
   from the bar, having gone with the scheduler in #45.
-- [ ] #47 a screen per plan: how far it has got and how much per day you are
+- [x] #47 a screen per plan: how far it has got and how much per day you are
   actually doing. An open-ended plan reports a bare count, never a fraction.
   Also the home of recompute. (Medium)
+  Shipped: `Routes.plan` (`/planner/plans/view/<id>`) opens `PlanScreen`, and the
+  plans list's tap opens **this** rather than the editor — tapping a plan's name
+  is a request to see the plan, and the screen has its own edit button. Two
+  rulings the issue left open, both settled here:
+  - **The rate is per day the plan *asked for*, not per calendar day.** A plan
+    that fires only on Shabbos and asks ten a Shabbos, kept up on perfectly,
+    divides by its *active* days; divided by calendar days it reports 10 ÷ 7
+    against an asked 10 and reads as running at a seventh of speed. A deliberate
+    day off (an amount of `0`) is in neither side. This is the one number on the
+    screen that could mis-report a perfectly on-pace plan, so the denominator is
+    the days the plan actually asked on.
+  - **Both windows are shown, each named with the days it covers** — the
+    whole-plan average (`since <date>`) and the recent seven. A whole-plan
+    average hides a plan that started well and stopped; a recent window is noisy
+    on a young plan; each is the other's cure, so the screen shows both and names
+    the window behind each. `since` is the plan's own start date when it has one,
+    and the first day worked otherwise — `startDay` null means *today*, and a rate
+    averaged over one unfinished day is not a rate.
+  `asOf` is **excluded** from the window, which is deliberately the opposite of
+  what `Recompute.shortfallAsOf` does with the same day: a shortfall wants that
+  day's work counted, a rate averaged over a partly-finished day is depressed by
+  work *not yet done* rather than work *not done*. Both reasons are written where
+  they are applied.
+  **Two fixes at the root, both needed before the screen could be honest:**
+  - `PlanRange.rangesOf` is now **the one answer to "what does this plan
+    cover?"** — the item sequence, or the assignment targets when it has no
+    sequence, which is the fallback `PlanProgress` already made. `totalUnits`,
+    `doneUnits` and `unitInRange` all read it, so an index means the same thing
+    everywhere and a deleted node leaves a hole rather than sliding the chain
+    down one. Until this, a plan with no sequence reported **no total and zero
+    done** — read as "infinite with nothing done" when all it was was a plan with
+    no sefer named on it, which is the shape the plan editor makes. `DayLedger`
+    reads it too, so the day sheet's ledger now has rows for such a plan instead
+    of none.
+  - `totalUnits`'s null is now read as *three* states — no end, wraps, names
+    nothing — via `PlanStanding.coversNothing`. A plan that names a sefer and has
+    simply not been worked on yet is a **fourth** state, and conflating it with
+    the third told a user who set a plan up yesterday to add a sefer they had
+    already added.
+  The reflow sheet moved out of `calendar_screen.dart` into
+  `planner/reflow_sheet.dart` so the day sheet and the plan screen share one
+  implementation rather than two that could each lose a remainder.
 - [ ] #48 the day sheet's layout is a setting in Settings, with three layouts;
   default is grouped by plan, the only one readable when several plans fire. (Low)
 

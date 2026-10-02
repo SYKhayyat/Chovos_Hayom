@@ -40,8 +40,12 @@ class PlansScreen extends ConsumerWidget {
                   title: Text(plan.name),
                   subtitle: Text(describePlan(l10n, plan)),
                   trailing: const Icon(Icons.chevron_right),
+                  // **Opens the plan's own screen, not its editor** (#47).
+                  // Tapping a plan's name is a request to see that plan, and
+                  // editing was never the same request — the screen has an edit
+                  // button for the one who means it.
                   onTap: () =>
-                      Navigator.pushNamed(context, Routes.editPlan(plan.id)),
+                      Navigator.pushNamed(context, Routes.plan(plan.id)),
                 );
               },
             ),

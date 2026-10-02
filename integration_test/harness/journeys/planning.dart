@@ -281,6 +281,40 @@ List<Journey> planningJourneys() => [
     ],
   ),
   Journey(
+    id: 'planner/plan-standing',
+    area: 'planning',
+    task: 'open a plan and see where it stands and how fast it is going',
+    steps: [
+      ...Nav.plans,
+      const TapAny(['Harness plan', 'New plan'], note: 'a plan to open'),
+      const Settle('after opening the plan'),
+      const SomethingIsShown(note: 'the plan screen opened'),
+      // Two sections, and the rate is the one this screen exists for: the
+      // calendar can say what a day asks for, and only this says whether it is
+      // being done.
+      const SeeAnyOf(['Where it stands']),
+      const SeeAnyOf([
+        'How it is going',
+        'does not name a sefer',
+        'Nothing worked yet',
+      ], note: 'the rate section, or the honest reason there is not one'),
+      const SeeAnyOf([
+        'units done',
+        'Recompute from a day',
+      ], note: 'a count of units, never a percentage'),
+      // The reflow entry point, and the date it asks for.
+      const TapAny([
+        'Recompute from a day',
+      ], note: 'recompute from a chosen day'),
+      const Settle('after asking for a day'),
+      const SeeAnyOf([
+        'Recompute from which day?',
+      ], note: 'the shared date field'),
+      const Shot('planner-plan-standing'),
+    ],
+    tags: {'keys'},
+  ),
+  Journey(
     id: 'planner/cycles-round-trip',
     area: 'planning',
     task: 'make a learning cycle and see it listed',

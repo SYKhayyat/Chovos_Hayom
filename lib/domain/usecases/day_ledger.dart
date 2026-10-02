@@ -76,6 +76,12 @@ class DayLedger {
   /// has. The shortfall shows as a short ledger — visible — rather than as the
   /// same units offered twice, which would be a number the log has no event for
   /// and the grid no cell to show.
+  ///
+  /// **Over [PlanRange.rangesOf], not over `plan.items` directly.** A plan can
+  /// name what to work through in its assignments rather than in a sequence, and
+  /// a ledger that only walked the sequence offered such a plan no row at all —
+  /// which reads on the day sheet as "nothing is scheduled here" about a plan
+  /// that is plainly scheduled.
   static List<LedgerUnit> unitsFor(
     LearningPlan plan,
     Catalog catalog,
@@ -87,8 +93,8 @@ class DayLedger {
     if (amount <= 0) return const [];
 
     final out = <LedgerUnit>[];
-    for (var i = 0; i < plan.items.length && out.length < amount; i++) {
-      final range = PlanRange.resolve(plan, catalog, i);
+    for (final range in PlanRange.rangesOf(plan, catalog)) {
+      if (out.length >= amount) break;
       if (range == null) continue;
       for (final (node, unit) in range.walk(catalog)) {
         if (out.length >= amount) break;

@@ -12,6 +12,7 @@ import '../features/profiles/profiles_screen.dart';
 import '../features/planner/calendar_screen.dart';
 import '../features/planner/edit_plan_advanced_screen.dart';
 import '../features/planner/edit_plan_screen.dart';
+import '../features/planner/plan_screen.dart';
 import '../features/planner/plans_screen.dart';
 import '../features/planner/today_screen.dart';
 import '../features/reports/report_screen.dart';
@@ -42,6 +43,15 @@ abstract final class Routes {
   static const plannerToday = '/planner/today';
   static const plannerCalendar = '/planner/calendar';
   static const plannerPlans = '/planner/plans';
+
+  /// One plan's own screen — where it stands and how fast it is moving (#47).
+  ///
+  /// **Under `/view/`, not bare under `/plans/`.** `/planner/plans/<id>` would
+  /// collide with `/planner/plans/edit/<id>` for a plan whose id happens to be
+  /// `edit` — and Ids are UUIDs today, but a route table that is only correct
+  /// because of what ids look like is a trap set for whoever changes them. That
+  /// is the same reasoning `/cycles/edit/<id>` was given over `/cycles/<id>`.
+  static String plan(String planId) => '/planner/plans/view/${_seg(planId)}';
 
   /// The five report routes. They are one screen — [ReportScreen], opened on a
   /// different tab — and they stay five *names* because a name is what a deep
@@ -113,6 +123,7 @@ abstract final class AppRouter {
       ['planner', 'calendar'] => const PlannerCalendarScreen(),
       ['planner', 'plans'] => const PlansScreen(),
       ['planner', 'plans', 'new'] => const EditPlanScreen(),
+      ['planner', 'plans', 'view', final id] => PlanScreen(planId: id),
       ['planner', 'plans', 'edit', 'advanced', final id] =>
         EditPlanAdvancedScreen(planId: id),
       ['planner', 'plans', 'edit', final id] => EditPlanScreen(planId: id),

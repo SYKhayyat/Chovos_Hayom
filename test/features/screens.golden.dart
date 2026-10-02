@@ -7,10 +7,12 @@ import 'package:chovos_hayom/core/day.dart';
 import 'package:chovos_hayom/core/preferences.dart';
 import 'package:chovos_hayom/domain/entities/catalog_node.dart';
 import 'package:chovos_hayom/domain/entities/enums.dart';
+import 'package:chovos_hayom/domain/entities/learning_event.dart';
 import 'package:chovos_hayom/domain/repositories/progress_repository.dart';
 import 'package:chovos_hayom/features/common/date_field.dart';
 import 'package:chovos_hayom/features/planner/calendar_screen.dart';
 import 'package:chovos_hayom/features/planner/edit_plan_advanced_screen.dart';
+import 'package:chovos_hayom/features/planner/plan_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -251,6 +253,48 @@ void main() {
           '"weekdayAmounts":{"6":0}}]}',
     );
     await shoot(tester, '05-plan-sequence-sonim');
+  });
+
+  testWidgets('the plan screen: standing and rate, which need the log', (
+    tester,
+  ) async {
+    // **With work in the log**, because that is the state the screen is for and
+    // the only one that shows a rate. An empty log renders "nothing worked yet",
+    // which is the honest message and a dull photograph of it.
+    //
+    // The plan asks 12 a day with none on Shabbos, and 20 units were done over
+    // ten days — so it is *behind*, which is the line worth seeing rendered at
+    // the Sonim's real width.
+    final repo = memoryRepository();
+    for (var i = 0; i < 10; i++) {
+      for (var u = 2; u <= 3; u++) {
+        await repo.addEvent(
+          LearningEvent(
+            id: 'e$i-$u',
+            profileId: 'default',
+            nodeId: 'shas.moed.shabbos',
+            unitIndex: u + i * 2,
+            action: EventAction.done,
+            occurredAt: DateTime(2025, 12, 29).add(Duration(days: i)),
+            loggedAt: DateTime(2025, 12, 29).add(Duration(days: i)),
+          ),
+        );
+      }
+    }
+    await at(
+      tester,
+      home: const PlanScreen(planId: 'p'),
+      repo: repo,
+      plans:
+          '{"plans":[{"id":"p","name":"Yoma","displayCalendar":"gregorian",'
+          '"assignments":[{"id":"a","rule":{"type":"daily"},'
+          '"targetNodeId":"shas.moed.shabbos"}],"overrides":[],'
+          '"unitsPerDay":12,"spillover":"ignore","flowsToNextItem":true,'
+          '"startDay":"2025-12-29",'
+          '"items":[{"id":"i0","nodeId":"shas.moed.shabbos","startUnit":2,'
+          '"endUnit":25}],"weekdayAmounts":{"6":0}}]}',
+    );
+    await shoot(tester, '09-plan-standing-sonim');
   });
 
   testWidgets('the calendar in Hebrew, which no previous render could show', (

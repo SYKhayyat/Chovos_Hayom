@@ -146,9 +146,26 @@ three states: *Off*, *Available* (checkable, does not gate completion) or *Requi
 any node — all of Shas, one seder, one mesechta — and it inherits down until something nearer
 overrides it. The tree shows a thin per-meforish coverage line under each main bar.
 
-**Chazara.** Every review is a first-class pass with its own date, duration, mefarshim and haara. A
-spaced-repetition list shows what is due, most-overdue first, with a badge; reviewing pushes the next
-date out. Intervals are yours to set.
+**Chazara.** Every review is a first-class pass with its own date, duration, mefarshim and haara.
+**Learned means chazara**: the first pass *is* the learning, so nothing is scheduled and nothing is
+stored about when a daf is due — the count of passes is a fold over the log. A **Chazara** tab on the
+report screen lists the units that have been over more than once, and each sefer's bar draws one line
+per round you have reached — learned, then gone back to once, twice — so a daf you have seen three
+times reads as three lines rather than as one full bar.
+
+**Plans.** A plan is a real thing you own, not a recurrence rule in a settings file. Give it a chain of
+sefarim with a unit range each (and say whether the range starts over), a start date, and **one**
+pacing mode — an amount a day, *or* a date to finish by, never both. Any day can be made different:
+an amount for a chosen weekday, an amount for a chosen date, and an amount of `0` as a day off. A
+missing day is answered per plan: leave the schedule alone, roll it into tomorrow, or slide everything
+later. A **plan screen** shows where one plan stands and how fast it is *actually* moving — a plan
+asking 7 blatt a day that you have been doing 3 on is a plan about to fall behind, and nothing on the
+calendar says so. A plan with no end — a wrapping range, or no last unit — reports a bare count of
+units done and never a percentage, because there is no total to be a fraction of. The same screen is
+where you **recompute**: keep the amounts, or spread the shortfall over the next 3 days, 7, 14, all of
+them, or up to the plan's own end — and it says so when spreading pushes the finish date. Ticking a
+unit from the calendar writes to the log with the plan it was made for; ticking it in the unit grid
+does not, which is how the two screens stay independent.
 
 **One report, five tabs** — Overview, Calculator, Goals, Siyumim, Mefarshim — each keeping its own
 address (`/stats`, `/calculator`, `/goals`, `/siyumim`, `/mefarshim`).

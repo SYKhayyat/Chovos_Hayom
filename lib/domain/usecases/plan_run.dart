@@ -63,6 +63,43 @@ class PlanRange {
     }
   }
 
+  /// Every range [plan] covers, in order — **one answer to one question.**
+  ///
+  /// A plan's item sequence is the answer when it has one, and a plan with no
+  /// sequence is answered from its assignment targets instead, which is the same
+  /// fallback `PlanProgress` has always made. Two readers answering "what does
+  /// this plan cover?" differently is how a plan got reported as *infinite with
+  /// nothing done* when all it was was a plan with no sefer named on it yet.
+  ///
+  /// **One slot per item, null where the item's node is gone.** Not compacted:
+  /// callers index this by item, and dropping a hole would slide every later item
+  /// down one and hand a plan the wrong sefer's answer.
+  static List<PlanRange?> rangesOf(LearningPlan plan, Catalog catalog) {
+    if (plan.items.isNotEmpty) {
+      return [
+        for (var i = 0; i < plan.items.length; i++) resolve(plan, catalog, i),
+      ];
+    }
+    // No sequence. An assignment names *what* to work through and carries no
+    // range and no wrap — so the range is the node's whole extent, and it never
+    // wraps, because inventing a wrap here would be a setting nobody can see.
+    final out = <PlanRange?>[];
+    for (final assignment in plan.assignments) {
+      final id = assignment.targetNodeId;
+      final node = id == null ? null : catalog.byId(id);
+      out.add(node == null ? null : _wholeOf(node, catalog));
+    }
+    return out;
+  }
+
+  /// The whole of [node] as a range — the bounds the catalog gives it, unwrapped.
+  static PlanRange _wholeOf(CatalogNode node, Catalog catalog) => PlanRange(
+    node: node,
+    first: _firstUnitOf(node, catalog),
+    last: _lastUnitOf(node, catalog),
+    wraps: false,
+  );
+
   /// The range for item [index] of [plan], or null when the plan has no such
   /// item or its node is not in the catalog.
   ///
@@ -153,18 +190,22 @@ class PlanRunProgress {
   const PlanRunProgress._();
 
   /// How many units [plan] covers, or **null when it has no total** — an open
-  /// range, or one that wraps.
+  /// range, one that wraps, or a plan that names nothing to work through.
   ///
   /// Null and not zero, and the difference is the whole point: zero is "there is
   /// nothing to do", which is a different statement from "there is no end to
   /// count to". Only a finite plan can be reported as a fraction, and inventing
   /// a denominator for an endless one is the kind of number this repository's
   /// rules exist to stop.
+  ///
+  /// **A plan with nothing in it is also null, and that is a different reason.**
+  /// The three cases answer different questions — "no end", "never finishes",
+  /// "names no sefer" — and only [PlanRange.rangesOf] can tell them apart, so a
+  /// screen showing standing reads that rather than inferring it from this null.
   static int? totalUnits(LearningPlan plan, Catalog catalog) {
     var total = 0;
     var any = false;
-    for (var i = 0; i < plan.items.length; i++) {
-      final range = PlanRange.resolve(plan, catalog, i);
+    for (final range in PlanRange.rangesOf(plan, catalog)) {
       if (range == null) continue;
       any = true;
       if (range.wraps) return null;
@@ -190,8 +231,9 @@ class PlanRunProgress {
     LayerRoles? layers,
   }) {
     var done = 0;
-    for (var i = 0; i < plan.items.length; i++) {
-      done += doneInRange(plan, catalog, fold, asOf, i, layers: layers);
+    for (final range in PlanRange.rangesOf(plan, catalog)) {
+      if (range == null) continue;
+      done += _doneInRange(fold, catalog, range, asOf, layers);
     }
     return done;
   }
@@ -209,8 +251,22 @@ class PlanRunProgress {
     int index, {
     LayerRoles? layers,
   }) {
-    final range = PlanRange.resolve(plan, catalog, index);
+    final ranges = PlanRange.rangesOf(plan, catalog);
+    if (index < 0 || index >= ranges.length) return 0;
+    final range = ranges[index];
     if (range == null) return 0;
+    return _doneInRange(fold, catalog, range, asOf, layers);
+  }
+
+  /// The done count for one range, shared by the whole-plan total and the
+  /// per-range reader so the two cannot answer differently about one range.
+  static int _doneInRange(
+    LogFold fold,
+    Catalog catalog,
+    PlanRange range,
+    Day asOf,
+    LayerRoles? layers,
+  ) {
     var done = 0;
     for (final (node, unit) in range.walk(catalog)) {
       // **Per node, not once for the range.** A required set is a fact about the
@@ -218,7 +274,7 @@ class PlanRunProgress {
       // resolving it once against an arbitrary node id makes every unit in a
       // multi-leaf range answer the wrong question. It is also the same default
       // `PlanCompletion` uses, so a unit cannot be "done" here and owed there.
-      final required = layers?.requiredFor(node.id) ?? {mainLayerId};
+      final required = _requiredFor(layers, node.id);
       final at = fold.doneAt(node.id, unit);
       if (at == null || Day.of(at) >= asOf) continue;
       if (required.every(fold.completedLayers(node.id, unit).contains)) done++;
@@ -245,7 +301,11 @@ class PlanRunProgress {
     LayerRoles? layers,
   }) => unitInRange(plan, catalog, fold, asOf, 0, layers: layers);
 
-  /// As [unitOn], but for item [index] of the chain.
+  /// As [unitOn], but for range [index] of the plan's sequence.
+  ///
+  /// Indexed into [PlanRange.rangesOf], so index *n* means the same thing to
+  /// this, to the totals and to the day ledger — and a hole left by a deleted
+  /// node holds its place rather than sliding the rest of the chain down one.
   static int? unitInRange(
     LearningPlan plan,
     Catalog catalog,
@@ -254,7 +314,9 @@ class PlanRunProgress {
     int index, {
     LayerRoles? layers,
   }) {
-    final range = PlanRange.resolve(plan, catalog, index);
+    final ranges = PlanRange.rangesOf(plan, catalog);
+    if (index < 0 || index >= ranges.length) return null;
+    final range = ranges[index];
     if (range == null) return null;
     if (range.node.isLeaf) {
       final required = _requiredFor(layers, range.node.id);

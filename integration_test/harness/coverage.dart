@@ -112,6 +112,9 @@ final Map<String, List<String>> harnessCovers = {
     'planner/plan-rules',
     'planner/plan-overrides-and-sequence',
   ],
+  // The plan's own screen (#47) — where it stands and how fast it is moving,
+  // and the home of the reflow the day sheet also offers.
+  Routes.plan('harness-plan'): ['planner/plan-standing'],
   Routes.editPlanAdvanced('harness-plan'): [
     'planner/plan-rules',
     'planner/plan-overrides-and-sequence',

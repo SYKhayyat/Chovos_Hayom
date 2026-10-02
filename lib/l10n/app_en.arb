@@ -1218,6 +1218,49 @@
   "plansPacingFinishByHelp": "The daily amount is worked out from what is left and how many days remain.",
   "plansPacingFinishDate": "Finish by",
 
+  "@_PLAN_STANDING": {},
+  "planStandingTitle": "Where it stands",
+  "planStandingProgress": "{done} of {total} units done",
+  "@planStandingProgress": {
+    "description": "A plan with an end, as a fraction. Only ever shown where the plan really has a total — an endless plan reports a count instead, because a bar needs a denominator and inventing one is the number this app exists not to show.",
+    "placeholders": { "done": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "planStandingCount": "{done} units done",
+  "@planStandingCount": {
+    "description": "An endless plan's whole progress: a bare count of units done, never a percentage. It has no end to be a fraction of.",
+    "placeholders": { "done": { "type": "int" } }
+  },
+  "planStandingOn": "On {unit}",
+  "@planStandingOn": {
+    "placeholders": { "unit": { "type": "String" } }
+  },
+  "planStandingFinished": "Finished.",
+  "planStandingNone": "This plan does not name a sefer yet, so there is nothing here to measure. Add one in its overrides and sequence to see how it is going.",
+
+  "@_PLAN_RATE": {},
+  "planRateTitle": "How it is going",
+  "planRateAverage": "Doing {rate} a day since {date}",
+  "@planRateAverage": {
+    "description": "The whole-plan average. Named with the day it starts from, because an average over an unnamed window is a number with no scale.",
+    "placeholders": { "rate": { "type": "String" }, "date": { "type": "String" } }
+  },
+  "planRateRecent": "Doing {rate} a day, over the last {days, plural, =1{1 day} other{{days} days}} it asked on",
+  "@planRateRecent": {
+    "description": "The recent window. A whole-plan average hides a plan that started well and stopped, so both figures are shown; fewer than seven days on a young plan.",
+    "placeholders": { "rate": { "type": "String" }, "days": { "type": "int" } }
+  },
+  "planRateAsked": "This plan asks for {rate} a day.",
+  "@planRateAsked": {
+    "description": "What the plan itself asks for, averaged over the days it asked on. Overrides are already in it, so a deliberately lighter weekday is not read as a shortfall.",
+    "placeholders": { "rate": { "type": "String" } }
+  },
+  "planRateBehind": "Behind the rate this plan asks for.",
+  "planRateNone": "Nothing worked yet, so there is no rate to show.",
+  "planEdit": "Edit plan",
+  "planRecomputeFrom": "Recompute from a day",
+  "planRecomputeFromHelp": "Choose the day to recompute from. This is the same reflow the calendar's day sheet offers.",
+  "planRecomputeDayTitle": "Recompute from which day?",
+
   "@_CRASH_LOG": {},
   "crashLogTitle": "Crash log",
   "crashLogCopy": "Copy to clipboard",
