@@ -1,7 +1,7 @@
 # PLAN — Chovos_Hayom (closest to release; work top to bottom)
 
 Worker loop: top unchecked item only, fix + widget/unit test, commit, check off, stop.
-Done (closed): #1, #2, #3, #4, #5, #6?, #7, #8, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20, #21, #22, #23, #29, #30, #47. (#6 epic tracker stays open as index.)
+Done (closed): #1, #2, #3, #4, #5, #6?, #7, #8, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20, #21, #22, #23, #29, #30, #40, #47, #48, #50. (#6 epic tracker stays open as index.)
 
 ## Phase 1 — Release blockers (the 1 High + correctness Mediums)
 - [x] #33 derive_cost wall-clock guard still flaky: healthy and regression costs too close to separate by timing. (Medium)
@@ -244,10 +244,45 @@ in it blocks anything there.
 
 Also open, from the same session and not planner scope:
 
-- [ ] #49 device harness: 26 of 30 journeys still fail on wrong selectors; the
-  D-pad path has never run at all. (High — the Sonim has no touchscreen)
+- [ ] #49 device harness: 26 of 30 journeys still fail; the D-pad path has never
+  run at all. (High — the Sonim has no touchscreen) **Needs the device.** The
+  selectors were audited statically first, because most of these look like string
+  bugs and are not: of 102 candidate strings across `TapAny`/`SeeAnyOf`, **101
+  resolve** against `lib/` and both `.arb` files. Judged naively 19 look "missing",
+  but 18 are journey seed data or unused fallbacks — **wrong-looking is not
+  wrong**, and an alternative-candidate list passes on its first candidate.
+  The one real find was unpassable rather than unproven:
+  `planner/date-ambiguous-is-reported` asserted `find.text('2026-04-01')`, but
+  `date_field.dart` renders the refusal as **one** sentence — `Text(_error!)` over
+  `dateEntryAmbiguous([…].join('  ·  '))` — so no widget's entire text is a bare
+  date, on any device. It was also calendar-blind (`DateDisplay.format` is ISO in
+  gregorian, Hebrew in hebrew; default is gregorian), so it broke on journey
+  *order*. Fixed with a `SeeContaining` act over `find.textContaining`, each
+  reading checked in both calendars via the app's own formatter.
+  **This explains one step, not the 26.** The failures in the issue are
+  *navigation* ("on the dashboard, not in the grid"), where the string was never
+  the problem. Take `keys` first when a device is attached — largest unexplored
+  area and the only input on the Sonim — and note that `GoHome` reaches home by
+  tapping app-bar `BackButton` widgets, which a no-touchscreen user may not be
+  able to reach at all.
 - [ ] #39 Linux target aborts on first frame on NixOS: `eglInitialize` fails
-  0x3010. Build is green; runtime is not. (Medium)
+  0x3010. Build is green; runtime is not. (Medium) **Needs a machine with a
+  working EGL, not a fix in this repo.** The app is built correctly and its
+  graphics stack is complete; a 15-line probe against the same `libEGL` cannot
+  open **any** display — X11, Wayland, and Mesa's `SURFACELESS_MESA`, which needs
+  no display, no DRM node and no compositor — all nil, and the client extension
+  string is empty. So the compositor (this issue's own alternative hypothesis) is
+  excluded, as are Mesa packaging and the vendor manifest. One correction worth
+  keeping: a single run appeared to be fixed by `GDK_BACKEND=x11`, and it was
+  **not** — five re-runs all aborted, so the workaround built on it was removed
+  rather than shipped over the real bug. The open thread is the empty client
+  extension string: initialise EGL outside any nix shell to tell "this machine
+  cannot run GL" from "the pinned combination cannot".
+  A real, separate bug did surface and is fixed: the runner matched devices by
+  grepping `flutter devices --machine` for `"id":"…","name":"…"` as one string,
+  which depends on key order *and* spacing, so on 3.44 it matched nothing and
+  reported **"No device found" with a desktop attached**. That made this Linux
+  target's whole purpose — running the harness — unstartable.
 
 ## Routing rule for new issues
 Any AI opening an issue here MUST insert it above: data-loss/correctness → Phase 1, polish → Phase 2, new planner scope → Phase 4. Never let roadmap outrank a High. See AI_ISSUE_ROUTING.md.
