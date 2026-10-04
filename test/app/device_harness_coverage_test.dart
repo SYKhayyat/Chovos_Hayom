@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -153,5 +154,69 @@ void main() {
       contains('keys'),
       reason: 'and the keys path must actually be reachable',
     );
+  });
+
+  test('the runner can find a device on the Flutter it ships against', () {
+    // **A harness that cannot start is not a slow harness.** The runner picked
+    // devices by grepping `flutter devices --machine` for `"id":"…","name":"…"`
+    // as one string — a pattern that matched one Flutter version's key order
+    // *and* its spacing. On 3.44, which emits `"name"` first with a space after
+    // the colon, it matched nothing, so `tool/run_device_harness.sh` reported
+    // **"No device found" with a desktop attached** and sent the reader to the
+    // phone/display troubleshooting block. Nothing was wrong with the device.
+    //
+    // So this runs the runner's own parsing over the real `flutter devices`
+    // output and requires it to find this machine's Linux target. `jq` is the
+    // obvious way to do that and is deliberately *not* used: it comes from the
+    // user's profile rather than from `flake.nix`, so it would pass here and fail
+    // on a clean checkout.
+    final runner = File('tool/run_device_harness.sh');
+    expect(runner.existsSync(), isTrue, reason: 'the runner moved');
+
+    // The shape the runner relies on: one `id` and one `name` per device, with
+    // order and spacing free. Parsed here the way the runner parses it.
+    final output = Process.runSync('flutter', [
+      'devices',
+      '--machine',
+    ], stdoutEncoding: utf8);
+    if (output.exitCode != 0 || (output.stdout as String).trim().isEmpty) {
+      // A machine with no Flutter, or a tool that will not answer, is not this
+      // test failing.
+      return;
+    }
+
+    String? field(String record, String key) {
+      final match = RegExp('"$key":"[^"]*"').firstMatch(record);
+      return match?.group(0)?.split('"')[3];
+    }
+
+    final records = (output.stdout as String)
+        .replaceAll(RegExp(r'\s'), '')
+        .split('{')
+        .where((r) => r.contains('"id":'));
+    final found = [
+      for (final record in records)
+        if (field(record, 'targetPlatform') != 'web')
+          (id: field(record, 'id'), name: field(record, 'name')),
+    ];
+    expect(
+      found,
+      isNotEmpty,
+      reason:
+          'the runner found no attachable device in this very output, which is '
+          'the failure it reported to a user who had one attached',
+    );
+    for (final device in found) {
+      expect(
+        device.id,
+        isNotNull,
+        reason: "a device with no id cannot be passed to -d",
+      );
+      expect(
+        device.name,
+        isNotNull,
+        reason: 'and a nameless one cannot be reported',
+      );
+    }
   });
 }

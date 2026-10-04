@@ -55,11 +55,31 @@ fi
 # Devices, and a clear failure rather than a confusing one when there is not
 # exactly the one you meant. `flutter test -d` with a bad id picks *something*,
 # and a harness run on the wrong phone is a wasted afternoon.
-DEVICES="$(flutter devices --machine 2>/dev/null \
-  | grep -o '"id":"[^"]*","name":"[^"]*"' || true)"
-ATTACHABLE="$(printf '%s\n' "$DEVICES" | grep -v '"targetPlatform":"web"' || true)"
+#
+# **Every field is pulled on its own, because matching a fixed shape does not
+# survive a Flutter release.** This used to grep for `"id":"…","name":"…"` as
+# one string, which is a pattern that only ever matched one version's key order
+# *and* its spacing: 3.44 emits `"name"` first, with a space after the colon, so
+# the grep matched nothing and the script reported **"No device found" with a
+# desktop attached** — a harness that cannot start, looking like a machine with
+# no device. `jq` would be the obvious fix and is not available: it comes from
+# the user's profile, not from `flake.nix`, so the script would work on this
+# machine and not on a clean checkout. Normalising whitespace and pulling each
+# key independently is order- and spacing-independent and needs nothing.
+device_field() { printf '%s' "$1" | grep -o "\"$2\":\"[^\"]*\"" | head -1 | cut -d'"' -f4; }
+
+DEVICES=""
+while IFS= read -r record; do
+  [ -n "$record" ] || continue
+  [ "$(device_field "$record" targetPlatform)" = "web" ] && continue
+  DEVICES="$DEVICES$(device_field "$record" id)|$(device_field "$record" name)
+"
+done <<EOF
+$(flutter devices --machine 2>/dev/null | tr -d '[:space:]' | tr '{' '\n' | grep '"id":' || true)
+EOF
 
 if [ "$LIST" = "1" ]; then
+
   # Read the catalogue out of the guard test rather than parsing the journey
   # files with a shell script, so this listing and the coverage table cannot
   # disagree. Needs no device: that is the point of it.
@@ -73,7 +93,7 @@ if [ "$LIST" = "1" ]; then
   exit 0
 fi
 
-COUNT="$(printf '%s\n' "$ATTACHABLE" | grep -c '"id"' || true)"
+COUNT="$(printf '%s' "$DEVICES" | grep -c . || true)"
 if [ "$COUNT" -eq 0 ]; then
   cat >&2 <<'EOF'
 No device found.
@@ -87,22 +107,23 @@ No device found.
         nix develop --command tool/run_device_harness.sh
 
     and it needs a display that can actually create an EGL context. A headless
-    box, a VM without a passed-through GPU, or a `ssh` session with no X
-    forwarding will build the app perfectly and then abort on the first frame
-    with "No provider of eglGetPlatformDisplayEXT found".
+    box, a VM without a passed-through GPU, or an `ssh` session with no display
+    will build the app perfectly and then abort on the first frame with
+    "No provider of eglGetPlatformDisplayEXT found" — see issue #39, which is the
+    standing record of that investigation.
 EOF
   exit 1
 fi
 if [ "$COUNT" -gt 1 ]; then
   echo "More than one device is attached; say which:" >&2
-  printf '%s\n' "$ATTACHABLE" | sed 's/.*"id":"\([^"]*\)","name":"\([^"]*\)".*/  \1  \2/' >&2
+  printf '%s' "$DEVICES" | sed 's/^/  /' >&2
   echo >&2
   echo "Then re-run with a -d flag added, e.g. SHOTS=1 DEVICE=<id> $0" >&2
   exit 1
 fi
 
-DEVICE="$(printf '%s\n' "$ATTACHABLE" | sed 's/.*"id":"\([^"]*\)".*/\1/')"
-NAME="$(printf '%s\n' "$ATTACHABLE" | sed 's/.*"name":"\([^"]*\)".*/\2/')"
+DEVICE="$(printf '%s' "$DEVICES" | head -1 | cut -d'|' -f1)"
+NAME="$(printf '%s' "$DEVICES" | head -1 | cut -d'|' -f2)"
 echo "Device: $NAME ($DEVICE)   input: $INPUT   shots: $SHOTS${ONLY:+   only: $ONLY}"
 
 # A journey that hangs must not hang the run, and neither must the app. The
