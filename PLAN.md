@@ -4,6 +4,39 @@ Worker loop: top unchecked item only, fix + widget/unit test, commit, check off,
 Done (closed): #1, #2, #3, #4, #5, #6?, #7, #8, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20, #21, #22, #23, #29, #30, #40, #47, #48, #50. (#6 epic tracker stays open as index.)
 
 ## Phase 1 — Release blockers (the 1 High + correctness Mediums)
+- [ ] #51 Sonim 240x324: drawer stops responding after one drawer navigation
+  (**possibly the app** — a real user may not be able to leave the tree), and a
+  lazy `Drawer` means 6 of 10 destinations are never built so the harness cannot
+  reach them. (High — blocks #49)
+  **Filed from a machine with no phone, which is only possible because the
+  harness needs nothing but a `WidgetTester`.** `screenshot()` is already inert
+  without `HARNESS_SHOTS`, so `ChovosHayomApp` pumps with the existing
+  `test/support` fakes at `kSonimDp`/`kPhoneDp` and the whole catalogue runs in
+  ~15s, reproducing the device run's shape (**2 passed, 38 failed**) with the
+  failure text #49 lacked. Two defects, and they must be one issue because the
+  second blocks the first's fix:
+  **(1) Lazy drawer = harness defect.** `dashboard_screen.dart:217` is the app's
+  only `drawer:`. Flutter builds `Drawer` children lazily, so at 240x324
+  `Reports`, `Settings`, `Notes Journal`, `Profiles`, `Add custom sefer` and
+  `Planner calendar` are **absent from the widget tree**, and `Today's goals` has
+  8 of its 48 pixels on screen. `Nav.to('Reports')` is
+  `OpenDrawer()` + `TapAny(['Reports'])`, and `find.text` on an unbuilt widget is
+  empty however many times it is asked — nothing has to become *visible*, the
+  widget has to be *built*. A person scrolls; the harness never did.
+  **(2) At 240x324 the drawer never reopens — possibly the app.** The same
+  sequence works completely at 411x891 (`Reports` reachable after reopening), and
+  fails only on the small screen: the menu button stays hit-testable at
+  `(8,8,48,48)` before and after, so `OpenDrawer` takes its tap path and the
+  drawer still does not open. Ruled out: settle timing (`pump(2s)` ×2, and
+  close-then-reopen, both stay dead) and off-screen items (rects are inside the
+  viewport). **Not claimed as an app bug** — a widget test is not a device, and an
+  `AbsorbPointer`/`OverlayEntry`/route-transition state could differ. The
+  resolving test is one run on the Moto G: open drawer → tap `Learning tree` →
+  reopen → tap `Reports`.
+  **A fix that measured worse was reverted rather than kept:** scroll-then-tap
+  took the catalogue from 2 passed/38 failed to **0/40**. The instinct to keep a
+  change that "obviously" addresses a stated cause is the same one that produced
+  the false `GDK_BACKEND=x11` fix on #39, so it goes in the record.
 - [x] #33 derive_cost wall-clock guard still flaky: healthy and regression costs too close to separate by timing. (Medium)
 - [x] #29 planner week view anchored to the 1st of the month, not the current week. (Medium)
 - [x] #30 planner week list shows a raw ISO date, bypassing DateDisplay/Hebrew labels. (Medium)
