@@ -563,6 +563,48 @@ class SeeAnyOf extends Act {
   }
 }
 
+/// Looks for text *inside* a sentence, where [SeeAnyOf] needs the whole thing.
+///
+/// **Some of the app's best messages are a sentence with the fact buried in it**,
+/// and [SeeAnyOf]'s exact match cannot see them at all. The date field is the
+/// clearest case: when a typed date has two readings it renders
+///
+///     That could be more than one date: 2026-01-04  ·  2026-04-01.
+///     Write it with the month named, or with the year first.
+///
+/// as a single [Text] (see `date_field.dart`, which hands `_problem()` straight
+/// to `Text(_error!)`). A journey that asserts `find.text('2026-04-01')` is
+/// asking for a widget holding exactly those ten characters, and there is no such
+/// widget on that screen on any device in any calendar — so the step cannot pass,
+/// and no amount of fixing it on the device will make it.
+///
+/// So: substring, for when the fact is in the sentence and the sentence is not
+/// the point. When a whole control's label *is* the point, prefer [SeeAnyOf] —
+/// a substring match will happily find a date inside a date it should not.
+class SeeContaining extends Act {
+  const SeeContaining(this.candidates, {this.note});
+
+  final List<String> candidates;
+  final String? note;
+
+  @override
+  String get intent =>
+      'see text containing one of ${candidates.join(', ')}'
+      '${note == null ? '' : ' — $note'}';
+
+  @override
+  Future<void> run(HarnessContext c) async {
+    await const Settle('before looking inside any of them').run(c);
+    if (candidates.every((t) => find.textContaining(t).evaluate().isEmpty)) {
+      throw StateError(
+        'none of ${candidates.join(', ')} is on screen, inside any sentence '
+        'either.\n'
+        'On screen: ${_visibleText(c).take(40).join(' | ')}',
+      );
+    }
+  }
+}
+
 /// A screenshot, which is the evidence a person looks at when a step fails and
 /// the only record of what the screen *looked* like rather than what it said.
 class Shot extends Act {

@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 
+import 'package:chovos_hayom/core/calendar.dart';
 import '../action.dart';
 import '../journey.dart';
 import '../navigation.dart';
@@ -247,8 +248,29 @@ List<Journey> planningJourneys() => [
       const Settle('after typing the ambiguous date'),
       const TapAny(['Save'], note: 'try to accept it'),
       const Settle('after trying to accept'),
-      const SeeAnyOf(['2026-01-04'], note: 'one reading is named'),
-      const SeeAnyOf(['2026-04-01'], note: 'and so is the other'),
+      // **Both readings, named, in whichever calendar this profile is in.**
+      //
+      // These were `SeeAnyOf(['2026-01-04'])` and `SeeAnyOf(['2026-04-01'])`,
+      // which cannot match on any device. The field renders the refusal as one
+      // sentence — `Text(_problem())` — so there is no widget whose entire text
+      // is a bare date, and `find.text` needs exactly that. The journey was
+      // unpassable rather than merely unproven.
+      //
+      // It was also calendar-blind: `DateDisplay.format` writes ISO in
+      // Gregorian mode and a Hebrew date in Hebrew mode, and the default is
+      // Gregorian — so it would have broken the moment any earlier journey left
+      // the profile on Hebrew. Both readings are therefore checked against both
+      // renderings, and as substrings, so what is asserted is the app's promise
+      // (it refused to pick, and named both options) rather than one profile's
+      // date format.
+      SeeContaining(
+        _bothCalendars(DateTime(2026, 1, 4)),
+        note: 'one reading is named',
+      ),
+      SeeContaining(
+        _bothCalendars(DateTime(2026, 4, 1)),
+        note: 'and so is the other',
+      ),
       const Shot('planner-date-ambiguous'),
     ],
   ),
@@ -336,4 +358,13 @@ List<Journey> planningJourneys() => [
       const Shot('planner-cycles'),
     ],
   ),
+];
+
+/// The same day as the app would write it in **either** calendar.
+///
+/// The app's own formatter, not a copy of it: a journey that spelled the dates
+/// out itself would go stale the moment the format changed, and would then fail
+/// as a "wrong selector" while the app was right.
+List<String> _bothCalendars(DateTime day) => [
+  for (final mode in CalendarMode.values) DateDisplay.format(day, mode),
 ];
