@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' hide Viewport;
 import 'package:chovos_hayom/main.dart' as app;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -66,7 +67,7 @@ void main() {
     addTearDown(() => Viewport.restoreTextScale(tester));
 
     await app.main();
-    await _settle(tester, 'the app starting up');
+    await _awaitDashboard(tester);
 
     final device = DeviceProfile.read(tester);
     say('\n=== Chovos Hayom device harness ===');
@@ -103,6 +104,54 @@ void main() {
 /// A deadline on every settle, because `pumpAndSettle`'s default is ten minutes
 /// and a journey that trips a never-settling animation would otherwise hold the
 /// whole run for the length of a coffee.
+/// Waits for the dashboard to finish loading, **without** waiting for the frame
+/// to go quiet.
+///
+/// **A `CircularProgressIndicator` never stops, so `pumpAndSettle` cannot settle
+/// while the app is loading — and on a real device it does not settle in time.**
+/// `dashboard_screen.dart` shows one for the whole of `forest.when(loading:)`,
+/// and the real bundled catalogue on a phone takes longer to fold over the log
+/// than this harness's 8-second cap. The run then died before printing a single
+/// journey:
+///
+/// ```
+/// ✓ Built build/app/outputs/flutter-apk/app-debug.apk
+/// Installing ...                                          12.3s
+/// pumpAndSettle timed out                                 ← at device_harness_test.dart:69
+/// ```
+///
+/// That is the harness assuming the app is quiet when it is merely *busy*, and
+/// it makes the device harness **unrunnable**, which is worth more than any one
+/// journey selector. A fake-catalogue widget test never sees it because the load
+/// is instant — which is exactly why it survived so long.
+///
+/// So this waits for the spinner to be *gone*, which is the real condition, and
+/// gives up with something that says so.
+Future<void> _awaitDashboard(WidgetTester tester) async {
+  const deadline = Duration(seconds: 60);
+  final started = DateTime.now();
+  var frames = 0;
+  while (DateTime.now().difference(started) < deadline) {
+    await tester.pump(const Duration(milliseconds: 100));
+    frames++;
+    final spinner = find.byType(CircularProgressIndicator);
+    if (spinner.evaluate().isEmpty) {
+      say(
+        '  loaded after ${DateTime.now().difference(started).inMilliseconds}ms '
+        '($frames frames)',
+      );
+      await _settle(tester, 'the dashboard having loaded');
+      return;
+    }
+  }
+  throw StateError(
+    'the dashboard was still loading after ${deadline.inSeconds}s. '
+    'The app shows a CircularProgressIndicator while the catalogue folds over '
+    'the log, so this is a real load failure or a slow device — not a harness '
+    'problem. On screen: ${find.byType(Text).evaluate().take(10).map((e) => (e.widget as Text).data).join(' | ')}',
+  );
+}
+
 Future<void> _settle(WidgetTester tester, String why) => tester.pumpAndSettle(
   const Duration(milliseconds: 100),
   EnginePhase.sendSemanticsUpdate,

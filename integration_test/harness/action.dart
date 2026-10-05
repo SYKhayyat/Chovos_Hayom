@@ -185,6 +185,24 @@ class TapAny extends Act {
   }
 }
 
+/// The drawer's destinations, as this app names them.
+///
+/// **Duplicated from the drawer on purpose rather than imported**, because the
+/// point of the check that uses it is to notice the drawer has nothing usable in
+/// it. Sharing the constant would let a rename make the check agree with the bug.
+const Set<String> _drawerLabels = {
+  'Learning tree',
+  'Learning cycles',
+  'Plans',
+  "Today's goals",
+  'Planner calendar',
+  'Reports',
+  'Notes Journal',
+  'Profiles',
+  'Add custom sefer',
+  'Settings',
+};
+
 /// Taps something identified by its tooltip — an icon-only control, which is
 /// most of the app's navigation.
 /// Opens the navigation drawer — or does nothing, if it is already open.
@@ -228,6 +246,48 @@ class OpenDrawer extends Act {
     if (_canPress(c, button)) {
       await tester.tap(button, warnIfMissed: false);
       await const Settle('after opening the drawer').run(c);
+    }
+    // **And then check the drawer is actually usable, whichever way we got
+    // here.** Tapping the menu button and assuming a drawer came open is the
+    // swallowed-tap mistake one level up: the *next* step fails somewhere else
+    // entirely, and blames itself. On a real Sonim XP5s (240x325dp) that is
+    // exactly what happened to 38 of 40 journeys, and why this issue's failure
+    // list read as a pile of unrelated selector problems.
+    //
+    // What the device actually showed was a **third state** neither branch above
+    // anticipates — the menu button not pressable *and* the drawer's
+    // destinations not pressable. `OpenDrawer` reads an unpressable menu as
+    // "already open" and returns, and the next step then finds nothing to tap.
+    // So the state is checked rather than assumed, and the message says which
+    // of the two defects it is, because they are different bugs:
+    //
+    // - destinations **not built** → a lazy `Drawer`, #51 defect 1;
+    // - destinations built but **not pressable** → the drawer is inert, #51
+    //   defect 2, and that one is the app.
+    final notBuilt = <String>[];
+    final notPressable = <String>[];
+    var pressable = <String>[];
+    for (final label in _drawerLabels) {
+      final f = find.text(label);
+      if (f.evaluate().isEmpty) {
+        notBuilt.add(label);
+      } else if (f.hitTestable().evaluate().isEmpty) {
+        notPressable.add(label);
+      } else {
+        pressable = [...pressable, label];
+      }
+    }
+    if (pressable.isEmpty) {
+      throw StateError(
+        'the drawer cannot be used, so every step after this one would be '
+        'measuring the wrong screen.\n'
+        '  menu button pressable: ${_canPress(c, button)}\n'
+        '  drawer destinations built but not pressable: '
+        '${notPressable.isEmpty ? '(none)' : notPressable.join(', ')}\n'
+        '  drawer destinations never built: '
+        '${notBuilt.isEmpty ? '(none)' : notBuilt.join(', ')}\n'
+        'On screen: ${_visibleText(c).take(40).join(' | ')}',
+      );
     }
     // Otherwise the drawer is already open, which is the state this step wanted
     // to reach. Saying nothing is right: there was nothing to do.
@@ -276,18 +336,45 @@ class GoHome extends Act {
     // A scrim is how an open drawer and an open sheet both present themselves.
     // Tapping a *page* route's barrier is a no-op, so this cannot dismiss a
     // screen that was not dismissable to begin with.
+    //
+    // **Only a barrier that is actually a scrim.** There is nearly always *a*
+    // `ModalBarrier` in the tree — the dashboard has one that is not a scrim, it
+    // is `dismissible: false` with no colour and covers the whole screen — and
+    // `tester.tap(barrier, warnIfMissed: false)` does not care what it aimed at:
+    // if the barrier cannot be pressed, the tap lands on **whatever is behind it**,
+    // which on the dashboard is a row of the tree.
+    //
+    // So this was tapping a sefer, navigating into it, and then popping back —
+    // before the drawer ever opened. The app was left subtly wrong, and the
+    // symptom appeared a step later as "the drawer is built but not pressable",
+    // which pointed at the drawer and not at the reset. Caught by bisecting this
+    // loop, not by reading it.
     for (var i = 0; i < 3; i++) {
-      if (find.byType(ModalBarrier).evaluate().isEmpty) break;
+      final barrier = find.byType(ModalBarrier);
+      if (barrier.evaluate().isEmpty) break;
+      final scrim = barrier.hitTestable();
+      if (scrim.evaluate().isEmpty) break;
       final before = _screenSignature(tester);
-      await tester.tap(find.byType(ModalBarrier).last, warnIfMissed: false);
+      await tester.tap(scrim.last, warnIfMissed: false);
       await _settle(tester);
       if (_screenSignature(tester) == before) break;
     }
 
     // The app bar's back button, while there is one. Five is generous: a
     // journey that opened a sefer, a node editor and a sheet needs three.
+    //
+    // **Only a back button that can actually be pressed**, for the same reason
+    // as the scrim above. There is a `BackButton` in the drawer's own "way back"
+    // row, and the drawer is built even while it is closed — so `find.byType`
+    // finds one, `tester.tap(..., warnIfMissed: false)` aims at it, the tap does
+    // not reach it, and it lands on **the tree behind**, opening a sefer.
+    //
+    // Bisected, because the symptom was nowhere near the cause: after this loop
+    // the drawer was "built but not pressable", which reads like a drawer bug
+    // and is not one. The first journey to run would tap its way into a sefer on
+    // the way to the tree, and every step after that measured the wrong screen.
     for (var i = 0; i < 5; i++) {
-      final back = find.byType(BackButton);
+      final back = find.byType(BackButton).hitTestable();
       if (back.evaluate().isEmpty) break;
       await tester.tap(back.first, warnIfMissed: false);
       await _settle(tester);
@@ -310,6 +397,21 @@ class GoHome extends Act {
     try {
       await tester.pumpAndSettle();
     } catch (_) {
+      // **Pump on, do not give up.** This app has a screen that never settles —
+      // the dashboard shows a `CircularProgressIndicator` for the whole of its
+      // loading state — so `pumpAndSettle` can time out while the app is simply
+      // busy. Swallowing that with a single `pump()` left whatever animation was
+      // running *in flight*, and the next tap landed on a moving target: the
+      // drawer would come up built but not pressable, and the symptom pointed at
+      // the drawer rather than at the reset that caused it.
+      //
+      // So the fallback keeps stepping frames until nothing is scheduled, which
+      // is what "settled" was being asked for in the first place.
+      for (var i = 0; i < 40; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        if (tester.binding.hasScheduledFrame) continue;
+        return;
+      }
       await tester.pump();
     }
   }
