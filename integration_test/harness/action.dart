@@ -115,6 +115,34 @@ class Tap extends Act {
   Future<void> run(HarnessContext c) async {
     final finder = _reach(c, find.text(text));
     if (c.input == HarnessInput.pointer) {
+      // **A tap that lands on nothing must not pass for a tap that worked.**
+      //
+      // `tester.tap(..., warnIfMissed: false)` is silent when the target is not
+      // hit-testable, and `_reach` only checks that the widget *exists*. Together
+      // those mean a journey can tap a widget that cannot be pressed, get no
+      // error, and carry on from a screen it never reached — which is exactly
+      // what #49's learning journeys were doing:
+      //
+      // ```
+      // TapAny(['Learning tree'])   → drawer is inert at 240x324, tap swallowed
+      // TapAny(['1', '2', '3'])     → looks for daf numbers on the dashboard
+      // Bad state: none of 1, 2, 3 is on screen.
+      // On screen: Kol HaTorah Kula | 0 / 156 | … | Learning tree | Plans
+      // ```
+      //
+      // Note what the "On screen" line shows: *Learning tree* is right there in
+      // the list — the tap found it, pressed nothing, and the next step blamed the
+      // step after it. That is a failure report that points at the wrong line,
+      // and it is why this was so hard to see. See #51 for why the drawer is
+      // inert at that size.
+      if (finder.hitTestable().evaluate().isEmpty) {
+        throw StateError(
+          '"$text" is on screen but nothing can be pressed right now, so this '
+          'tap would do nothing and every step after it would be measuring the '
+          'wrong screen.\n'
+          'On screen: ${_visibleText(c).take(40).join(' | ')}',
+        );
+      }
       await c.tester.tap(finder, warnIfMissed: false);
     } else {
       await focusAndActivate(c, finder);
