@@ -1,0 +1,37 @@
+# Publishes the current main as a GitHub pre-release so Obtainium (with
+# "include pre-releases" on) can install it. Run by hand: Actions > Pre-release.
+# The APK is debug-signed (no keystore secret in CI), so it will not update over
+# an install signed with the real release key.
+name: Pre-release
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter build apk --release
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          short=$(git rev-parse --short HEAD)
+          ver=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)
+          cp build/app/outputs/flutter-apk/app-release.apk "chovos-hayom-$ver-main.$short.apk"
+          gh release create "v$ver-main.$short" "chovos-hayom-$ver-main.$short.apk" \
+            --prerelease --target "$GITHUB_SHA" \
+            --title "main @ $short (pre-release)" \
+            --notes "Unreleased build of main at $short. Debug-signed."
